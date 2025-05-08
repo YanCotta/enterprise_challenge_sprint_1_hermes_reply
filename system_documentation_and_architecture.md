@@ -1,36 +1,37 @@
 # Documentação Final – Fase 1: Smart Maintenance SaaS
 
 **Desafio FIAP SP em parceria com Hermes Reply**  
-**Autor:** Yan Pimentel Cotta et al.  
-**Data de Entrega:** 08 de Maio de 2025, 23h59  
+**Autor:** Yan Pimentel Cotta 
+**RM:** 562836
+**Data de Entrega:** 08 de Maio de 2025 
 **Versão:** 1.3  
 
 ---
 
 ## 1. Introdução
 
-Este documento consolida a Fase 1 do projeto **Smart Maintenance SaaS**, uma solução inovadora de manutenção preditiva para o setor industrial, desenvolvida em parceria com a **Hermes Reply**. Nosso objetivo é atender ao desafio FIAP SP, entregando uma proposta técnica robusta, clara e profissional, digna de apresentação a uma grande empresa de tecnologia.
+Este documento consolida a Fase 1 do projeto **Smart Maintenance SaaS**, uma solução inovadora de manutenção preditiva para o setor industrial, desenvolvida em parceria com a **Hermes Reply**. Nosso objetivo é atender ao desafio FIAP , entregando uma proposta técnica robusta, clara e profissional, digna de apresentação a uma grande empresa de tecnologia.
 
 ### 1.1 Contextualização do Problema
 Empresas industriais enfrentam interrupções inesperadas na produção devido a falhas em equipamentos críticos, resultando em paradas não planejadas, perda de produtividade e altos custos de manutenção corretiva. A abordagem tradicional de manutenção reativa ou preventiva é ineficiente, pois não prevê falhas com precisão, levando a intervenções desnecessárias ou tardias. Com a Indústria 4.0, a integração de **IoT**, **IA** e **análise de dados em tempo real** oferece uma oportunidade para transformar a gestão de ativos, promovendo uma manutenção proativa e inteligente.
 
 ### 1.2 Objetivo do Projeto
-Desenvolver uma plataforma SaaS multi-tenant escalável para manutenção preditiva de equipamentos industriais, utilizando dados de sensores em tempo real. A solução deve:
+Desenvolver uma plataforma SaaS Multi-Agentic escalável para manutenção preditiva de equipamentos industriais, utilizando dados de sensores em tempo real. A solução deve:
 - Monitorar equipamentos continuamente via **IoT**.
 - Detectar anomalias e prever falhas com modelos de **Machine Learning**.
-- Automatizar alertas e agendamentos de manutenção.
-- Oferecer um dashboard interativo e relatórios inteligentes.
+- Automatizar alertas e agendamentos de manutenção com sistema **Multi-Agêntico Orquestrato utilizando MCP, A2A e frameworks contemporâneas como CrewAI e LangChain**
+- Oferecer um dashboard interativo e relatórios inteligentes com frontend moderno.
 - Garantir escalabilidade, segurança e alta disponibilidade.
 
 ### 1.3 Entregável da Fase 1
-Esta documentação detalha a metodologia, o **technology stack**, o pipeline de dados, a arquitetura do sistema e a validação dos requisitos da Fase 1. Inclui três representações visuais (diagramas Mermaid) e um plano de desenvolvimento, atendendo aos padrões de uma apresentação técnica de alto nível.
+Esta documentação detalha a metodologia, o **technology stack**, o **pipeline de dados**, a **arquitetura do sistema** e a validação dos requisitos da Fase 1. **Inclui três representações visuais** (diagramas Mermaid) e um plano de desenvolvimento, atendendo aos padrões de uma apresentação técnica de alto nível.
 
 ---
 
 ## 2. Arquitetura do Sistema
 
 ### 2.1 Visão Geral
-A **Smart Maintenance SaaS** é uma plataforma multi-tenant baseada em nuvem, projetada para suportar múltiplos clientes com isolamento de dados seguro. Ela utiliza uma arquitetura modular com um sistema multi-agente no backend, orquestrado por protocolos avançados como **Google’s Agent-to-Agent (A2A)**, **Model Context Protocol (MCP)** e **Agent Communication Protocol (ACP)**. A solução integra **IoT**, **IA** e capacidades de **human-in-the-loop**, oferecendo monitoramento em tempo real, análise preditiva, agendamento automatizado e relatórios inteligentes.
+A **Smart Maintenance SaaS** é uma plataforma multi-agentic baseada em nuvem, projetada para suportar múltiplos clientes com isolamento de dados seguro. Ela utiliza uma arquitetura modular com um sistema multi-agente no backend, orquestrado por protocolos avançados como **Google’s Agent-to-Agent (A2A)**, **Model Context Protocol (MCP)** e **Agent Communication Protocol (ACP)**. A solução integra **IoT**, **IA** e capacidades de **human-in-the-loop**, oferecendo monitoramento em tempo real, análise preditiva, agendamento automatizado e relatórios inteligentes.
 
 ### 2.2 Componentes Principais
 
@@ -46,19 +47,19 @@ A **Smart Maintenance SaaS** é uma plataforma multi-tenant baseada em nuvem, pr
 #### 2.2.2 Backend: Sistema Multi-Agente
 - **Funcionalidade**: Processa dados, detecta anomalias, prevê falhas e automatiza fluxos de trabalho.
 - **Tecnologias**:
-  - **Google A2A, MCP, ACP**: Comunicação segura e integração de ferramentas externas.
-  - **LangChain/CrewAI**: Frameworks para implementação de agentes.
-  - **LLMs**: OpenAI API para deploy rápido ou modelos locais (e.g., LLaMA) para otimização de custos.
+  - **Google A2A, MCP, ACP**: Comunicação segura e integração de ferramentas externas e tool-calling.
+  - **LangChain/CrewAI/AutoGen/others**: Frameworks para implementação de agentes.
+  - **LLMs**: OpenAI API para deploy rápido ou modelos locais (e.g., LLaMA com menos parâmetros {7B, 13B, 30B}, ou DeepSeek R1) para otimização de custos.
   - **FastAPI**: API RESTful para comunicação com o frontend.
   - **gRPC**: Comunicação eficiente entre microsserviços.
 - **Agentes**:
-  - **Monitor Agent**: Detecta anomalias com modelos de ML (e.g., Isolation Forest, Autoencoders).
+  - **Monitor Agent**: Detecta anomalias com modelos de ML (e.g., Isolation Forest, Autoencoders, Random Forest, SVM, etc).
   - **Validator Agent**: Confirma anomalias com lógica híbrida (regras + inferência bayesiana).
-  - **Orchestrator Agent**: Coordena agentes usando aprendizado por reforço para otimizar decisões.
-  - **Scheduler Agent**: Agenda manutenções via APIs externas (e.g., Google Calendar).
-  - **Reporter Agent**: Gera relatórios e envia e-mails (e.g., Gmail API).
-  - **Learning Agent**: Otimiza o sistema com base em dados históricos e feedback.
-  - **Human-in-the-Loop**: Permite intervenção humana em decisões críticas.
+  - **Orchestrator Agent**: Coordena agentes usando aprendizado por reforço (RL)para otimizar decisões.
+  - **Scheduler Agent**: Agenda manutenções via APIs externas utilizando MCP (Model Context Protocol) (e.g., Google Calendar, WhatsApp para contatar engineers, etc).
+  - **Reporter Agent**: Gera relatórios e envia e-mails (e.g., Gmail API; ou sistema de software proprietário).
+  - **Learning Agent**: Otimiza o sistema com base em dados históricos e feedback utilizando RAG (Retrieval Augmented Generation) com uma database vetorial como FAISS.
+  - **Human-in-the-Loop**: Permite intervenção humana em decisões críticas com suporte humano via frontend.
 
 #### 2.2.3 Frontend
 - **Funcionalidade**: Dashboard interativo para monitoramento em tempo real e controle humano.
@@ -135,7 +136,7 @@ A tabela abaixo detalha as tecnologias por camada, com justificativas para cada 
 
 ### 3.1 Protocolos de Agentes
 - **Google’s A2A**: Comunicação bidirecional confiável entre agentes via **gRPC** com **mTLS**.
-- **MCP**: Troca de contexto de modelos e acesso a ferramentas externas (e.g., APIs de calendário e e-mail).
+- **MCP**: Troca de contexto de modelos e acesso a ferramentas externas (e.g., APIs de calendário, whatsapp, e e-mail).
 - **ACP**: Orquestra mensagens, mantendo histórico e consistência.
 
 ---
@@ -144,7 +145,7 @@ A tabela abaixo detalha as tecnologias por camada, com justificativas para cada 
 
 ### 4.1 Características Principais
 1. **Processamento em Tempo Real**: Ingestão contínua via Kafka e análise com **KSQL/Flink**.
-2. **Análise Preditiva**: Modelos de ML (e.g., LSTM, regressão) preveem falhas.
+2. **Análise Preditiva**: Modelos de ML (e.g., LSTM, regressão, outros dependentes de testes para descobrir o mais otimizado, possibilidade de utilizar IBM'S Watson AutoML tool para descobrir o melhor modelo) preveem falhas.
 3. **Alertas Automatizados**: Notificações via **AWS SNS** (e-mail, SMS).
 4. **Agendamento de Manutenção**: Otimizado por algoritmos genéticos e APIs externas.
 5. **Dashboard Interativo**: Visualização em tempo real com controle humano.
@@ -206,38 +207,18 @@ sequenceDiagram
 4. **Simulação**: Configuração de Wokwi e broker MQTT.
 5. **Documentação**: Redação deste documento com diagramas.
 
-### 6.2 Cronograma para Fases Futuras
-| **Atividade**                  | **Responsável**   | **Prazo**    |
-|--------------------------------|-------------------|--------------|
-| Provisionamento de Infra       | Equipe DevOps     | 10/05/2025   |
-| Desenvolvimento de Agentes     | Equipe Backend    | 17/05/2025   |
-| Treinamento de Modelos         | Equipe ML         | 24/05/2025   |
-| Desenvolvimento do Dashboard   | Equipe Frontend   | 31/05/2025   |
-| Testes de Integração          | QA                | 07/06/2025   |
-| Ajustes Finais                 | Todos             | 14/06/2025   |
-
----
-
 ## 7. Justificativas e Melhorias
 
-### 7.1 Justificativas
+### 7.1 Destaques:
 - **Kafka**: Streaming confiável e escalável com **KSQL/Flink** para análises em tempo real.
 - **Learning Agent**: Adaptação contínua baseada em dados históricos.
 - **Edge Computing**: Redução de latência com **AWS IoT Greengrass**.
 - **Blockchain**: Logs imutáveis para auditoria (futuro).
 
-### 7.2 Sugestões de Aprimoramento
+### 7.2 Aprimoramentos para serem integrados no pré-projeto:
 - **ML Avançado**: Integração de **AutoML** para otimização automática de modelos.
 - **Data Lake em S3**: Análise de longo prazo e conformidade.
 - **Microserviços Desacoplados**: Escalonamento independente via **gRPC**.
-
----
-
-## 8. Validação dos Requisitos da Fase 1
-- **Documentação Completa**: Metodologia, tecnologias, pipeline e arquitetura detalhados.
-- **Coerência Técnica**: Solução modular, segura e escalável.
-- **Profissionalismo**: Estrutura organizada, diagramas claros e terminologia técnica.
-- **Entrega**: Disponível via GitHub com README e diagramas exportáveis.
 
 ---
 
