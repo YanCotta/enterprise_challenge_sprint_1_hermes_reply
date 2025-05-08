@@ -1,13 +1,5 @@
 # Smart Maintenance SaaS - Desafio FIAP x Hermes Reply
 
-<div align="center">
-  <a href="https://www.fiap.com.br/">
-    <img src="./assets/logo-fiap.png" alt="FIAP - Faculdade de Informática e Administração Paulista" width="400">
-  </a>
-</div>
-
-<br>
-
 ## Sobre o Projeto
 
 O Smart Maintenance SaaS é uma solução inovadora de manutenção preditiva para o setor industrial, desenvolvida como parte do desafio FIAP SP em parceria com a Hermes Reply. O projeto utiliza tecnologias avançadas de IoT, IA e análise de dados em tempo real para transformar a gestão de ativos industriais.
@@ -64,21 +56,13 @@ O sistema é composto por diferentes agentes especializados:
 
 ## Equipe
 
-- Yan Pimentel Cotta et al.
+- Yan Pimentel Cotta / RM: 562836
 
 ## Status do Projeto
 
 - ✅ Fase 1: Documentação e Arquitetura (Atual)
 - 🔄 Fase 2: Implementação (Em breve)
 
-## Cronograma
-
-- Provisionamento de Infraestrutura: 10/05/2025
-- Desenvolvimento de Agentes: 17/05/2025
-- Treinamento de Modelos: 24/05/2025
-- Desenvolvimento do Dashboard: 31/05/2025
-- Testes de Integração: 07/06/2025
-- Ajustes Finais: 14/06/2025
 
 ## Licença
 
@@ -90,5 +74,5 @@ Para mais informações sobre a arquitetura e implementação técnica, consulte
 
 ---
 
-**Data de Entrega:** 08 de Maio de 2025, 23h59  
+**Data de Entrega:** 08 de Maio de 2025
 **Versão:** 1.3
