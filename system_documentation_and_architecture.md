@@ -1,27 +1,118 @@
-# Documentação Final – Fase 1: Smart Maintenance SaaS
+<div align="center">
 
-**Desafio FIAP SP em parceria com Hermes Reply**  
-**Autor:** Yan Pimentel Cotta 
-**RM:** 562836
-**Data de Entrega:** 08 de Maio de 2025 
-**Versão:** 1.3  
+# 🏭 Smart Maintenance SaaS
+### Documentação Final – Fase 1
+
+[![FIAP### 2.1 Visão Geral da Arquitetura 🏗️
+
+<div align="center">
+
+[![Arquitetura](https://img.shields.io/badge/Tipo-Multi--Agent%20Cloud--Native-blue)]()
+[![Escalabilidade](https://img.shields.io/badge/Design-Modular%20%26%20Escalável-green)]()
+[![Segurança](https://img.shields.io/badge/Security-Multi--Tenant-red)]()
+
+</div>
+
+A **Smart Maintenance SaaS** é uma plataforma multi-agentic de última geração, construída sobre três pilares fundamentais:
+
+#### 1. Infraestrutura Cloud-Native 🌐
+
+- **Multi-Tenant**: Isolamento seguro de dados por cliente
+- **Escalabilidade**: Design horizontal e vertical
+- **Alta Disponibilidade**: Redundância e failover
+
+#### 2. Sistema Multi-Agent Avançado 🤖
+
+- **Orquestração**: Protocolos A2A da Google
+- **Contextualização**: MCP para integração de ferramentas
+- **Comunicação**: ACP para consistência de mensagens
+
+#### 3. Integração IoT & IA 💡
+
+- **Edge Computing**: Processamento na borda
+- **Machine Learning**: Modelos preditivos
+- **Human-in-the-Loop**: Supervisão inteligentehttps://img.shields.io/badge/FIAP-Challenge-red)](https://www.fiap.com.br)
+[![Hermes Reply](https://img.shields.io/badge/Partner-Hermes%20Reply-blue)](https://www.reply.com/hermes-reply/en/)
+[![Status](https://img.shields.io/badge/Status-Phase%201-green)](.)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+
+</div>
+
+<div align="center">
+
+| Informação | Detalhe |
+|------------|---------|
+| **Autor** | Yan Pimentel Cotta |
+| **RM** | 562836 |
+| **Entrega** | 08 de Maio de 2025 |
+| **Versão** | 1.3 |
+
+</div>
 
 ---
 
-## 1. Introdução
+## 📋 1. Introdução
 
 Este documento consolida a Fase 1 do projeto **Smart Maintenance SaaS**, uma solução inovadora de manutenção preditiva para o setor industrial, desenvolvida em parceria com a **Hermes Reply**. Nosso objetivo é atender ao desafio FIAP , entregando uma proposta técnica robusta, clara e profissional, digna de apresentação a uma grande empresa de tecnologia.
 
 ### 1.1 Contextualização do Problema
-Empresas industriais enfrentam interrupções inesperadas na produção devido a falhas em equipamentos críticos, resultando em paradas não planejadas, perda de produtividade e altos custos de manutenção corretiva. A abordagem tradicional de manutenção reativa ou preventiva é ineficiente, pois não prevê falhas com precisão, levando a intervenções desnecessárias ou tardias. Com a Indústria 4.0, a integração de **IoT**, **IA** e **análise de dados em tempo real** oferece uma oportunidade para transformar a gestão de ativos, promovendo uma manutenção proativa e inteligente.
+
+#### Desafios Atuais 🔍
+
+Empresas industriais enfrentam desafios críticos em suas operações:
+
+- **Interrupções Não Planejadas** ⚠️
+  - Paradas inesperadas na produção
+  - Perda significativa de produtividade
+  - Custos elevados de manutenção corretiva
+
+- **Limitações das Abordagens Tradicionais** 📉
+  - Manutenção reativa ineficiente
+  - Previsão imprecisa de falhas
+  - Intervenções desnecessárias ou tardias
+
+#### Oportunidade com Indústria 4.0 🚀
+
+A integração de tecnologias modernas oferece soluções inovadoras:
+
+- **IoT** - Monitoramento em tempo real
+- **IA** - Análise preditiva avançada
+- **Big Data** - Análise de dados em tempo real
+
+Esta convergência tecnológica permite uma transformação na gestão de ativos, promovendo uma manutenção verdadeiramente proativa e inteligente.
 
 ### 1.2 Objetivo do Projeto
-Desenvolver uma plataforma SaaS Multi-Agentic escalável para manutenção preditiva de equipamentos industriais, utilizando dados de sensores em tempo real. A solução deve:
-- Monitorar equipamentos continuamente via **IoT**.
-- Detectar anomalias e prever falhas com modelos de **Machine Learning**.
-- Automatizar alertas e agendamentos de manutenção com sistema **Multi-Agêntico Orquestrato utilizando MCP, A2A e frameworks contemporâneas como CrewAI e LangChain**
-- Oferecer um dashboard interativo e relatórios inteligentes com frontend moderno.
-- Garantir escalabilidade, segurança e alta disponibilidade.
+
+#### Visão Geral 🎯
+
+Desenvolver uma plataforma SaaS Multi-Agentic de última geração para manutenção preditiva industrial.
+
+#### Objetivos Específicos ✨
+
+1. **Monitoramento IoT** 📡
+   - Coleta contínua de dados via sensores
+   - Processamento em tempo real
+   - Análise de métricas críticas
+
+2. **Inteligência Artificial** 🤖
+   - Detecção de anomalias via ML
+   - Previsão de falhas com modelos avançados
+   - Aprendizado contínuo e adaptativo
+
+3. **Sistema Multi-Agêntico** 🔄
+   - Orquestração via MCP e A2A
+   - Integração com LangChain e CrewAI
+   - Automação de decisões complexas
+
+4. **Interface Moderna** 💻
+   - Dashboard interativo em tempo real
+   - Relatórios inteligentes automatizados
+   - UX/UI otimizada para operadores
+
+5. **Infraestrutura Robusta** 🏗️
+   - Arquitetura escalável horizontalmente
+   - Segurança em múltiplas camadas
+   - Alta disponibilidade garantida
 
 ### 1.3 Entregável da Fase 1
 Esta documentação detalha a metodologia, o **technology stack**, o **pipeline de dados**, a **arquitetura do sistema** e a validação dos requisitos da Fase 1. **Inclui três representações visuais** (diagramas Mermaid) e um plano de desenvolvimento, atendendo aos padrões de uma apresentação técnica de alto nível.
@@ -33,25 +124,73 @@ Esta documentação detalha a metodologia, o **technology stack**, o **pipeline 
 ### 2.1 Visão Geral
 A **Smart Maintenance SaaS** é uma plataforma multi-agentic baseada em nuvem, projetada para suportar múltiplos clientes com isolamento de dados seguro. Ela utiliza uma arquitetura modular com um sistema multi-agente no backend, orquestrado por protocolos avançados como **Google’s Agent-to-Agent (A2A)**, **Model Context Protocol (MCP)** e **Agent Communication Protocol (ACP)**. A solução integra **IoT**, **IA** e capacidades de **human-in-the-loop**, oferecendo monitoramento em tempo real, análise preditiva, agendamento automatizado e relatórios inteligentes.
 
-### 2.2 Componentes Principais
+### 2.2 Componentes da Arquitetura 🔧
 
-#### 2.2.1 Camada IoT
-- **Funcionalidade**: Coleta dados em tempo real de sensores industriais.
-- **Tecnologias**:
-  - **ESP32**: Microcontroladores para aquisição de dados (e.g., temperatura, vibração, pressão).
-  - **MQTT**: Protocolo leve para transmissão de dados a um broker (e.g., Mosquitto).
-  - **Apache Kafka**: Streaming de dados tolerante a falhas com alta taxa de transferência.
-  - **AWS IoT Greengrass**: Pré-processamento na borda para reduzir latência.
-- **Fluxo de Dados**: Sensores → MQTT → Kafka → Backend.
+#### 2.2.1 Camada IoT 📡
 
-#### 2.2.2 Backend: Sistema Multi-Agente
-- **Funcionalidade**: Processa dados, detecta anomalias, prevê falhas e automatiza fluxos de trabalho.
-- **Tecnologias**:
-  - **Google A2A, MCP, ACP**: Comunicação segura e integração de ferramentas externas e tool-calling.
-  - **LangChain/CrewAI/AutoGen/others**: Frameworks para implementação de agentes.
-  - **LLMs**: OpenAI API para deploy rápido ou modelos locais (e.g., LLaMA com menos parâmetros {7B, 13B, 30B}, ou DeepSeek R1) para otimização de custos.
-  - **FastAPI**: API RESTful para comunicação com o frontend.
-  - **gRPC**: Comunicação eficiente entre microsserviços.
+##### Funcionalidade Principal
+
+Coleta e processamento de dados em tempo real de sensores industriais, com capacidade de edge computing.
+
+##### Stack Tecnológico
+
+| Componente | Tecnologia | Propósito |
+|------------|------------|-----------|
+| **Hardware** | ESP32 | Aquisição de dados (temperatura, vibração, pressão) |
+| **Protocolo** | MQTT | Transmissão leve e eficiente de dados |
+| **Streaming** | Apache Kafka | Pipeline de dados tolerante a falhas |
+| **Edge** | AWS IoT Greengrass | Pré-processamento na borda |
+
+##### Fluxo de Dados
+
+```mermaid
+flowchart LR
+    A[Sensores] -->|Coleta| B[ESP32]
+    B -->|MQTT| C[Broker]
+    C -->|Stream| D[Kafka]
+    D -->|Processamento| E[Backend]
+```
+
+#### 2.2.2 Backend: Sistema Multi-Agente 🤖
+
+##### Sistema de Processamento Inteligente
+
+O coração do sistema é composto por uma arquitetura multi-agente avançada que processa dados, detecta anomalias, prevê falhas e automatiza fluxos de trabalho críticos.
+
+##### Stack de IA & Comunicação
+
+| Categoria | Tecnologia | Finalidade |
+|-----------|------------|------------|
+| **Protocolos** | Google A2A, MCP, ACP | Comunicação segura e tool-calling |
+| **Frameworks** | LangChain, CrewAI, AutoGen | Implementação de agentes |
+| **Modelos** | OpenAI API / LLaMA / DeepSeek | Processamento de linguagem natural |
+| **APIs** | FastAPI | Interface RESTful |
+| **Comunicação** | gRPC | Microsserviços eficientes |
+
+##### Arquitetura de Agentes
+
+```mermaid
+graph TD
+    subgraph "Core Agents"
+        MA[Monitor Agent]
+        VA[Validator Agent]
+        OA[Orchestrator Agent]
+    end
+    subgraph "Support Agents"
+        SA[Scheduler Agent]
+        RA[Reporter Agent]
+        LA[Learning Agent]
+    end
+    subgraph "Human Interface"
+        HI[Human-in-the-Loop]
+    end
+    MA -->|Dados| VA
+    VA -->|Validação| OA
+    OA -->|Tarefas| SA
+    OA -->|Relatórios| RA
+    OA -->|Feedback| LA
+    OA <-->|Supervisão| HI
+```
 - **Agentes**:
   - **Monitor Agent**: Detecta anomalias com modelos de ML (e.g., Isolation Forest, Autoencoders, Random Forest, SVM, etc).
   - **Validator Agent**: Confirma anomalias com lógica híbrida (regras + inferência bayesiana).
@@ -61,28 +200,89 @@ A **Smart Maintenance SaaS** é uma plataforma multi-agentic baseada em nuvem, p
   - **Learning Agent**: Otimiza o sistema com base em dados históricos e feedback utilizando RAG (Retrieval Augmented Generation) com uma database vetorial como FAISS.
   - **Human-in-the-Loop**: Permite intervenção humana em decisões críticas com suporte humano via frontend.
 
-#### 2.2.3 Frontend
-- **Funcionalidade**: Dashboard interativo para monitoramento em tempo real e controle humano.
-- **Tecnologias**:
-  - **Next.js**: Framework React com renderização server-side.
-  - **Node.js**: Runtime para integrações.
-  - **TypeScript**: Segurança de tipos.
-  - **Tailwind CSS**: Estilização responsiva.
-  - **D3.js**: Visualizações avançadas de dados.
+#### 2.2.3 Frontend 💻
 
-#### 2.2.4 Banco de Dados
-- **Funcionalidade**: Armazena dados de sensores, logs de agentes e registros de manutenção.
-- **Tecnologias**:
-  - **PostgreSQL**: Banco relacional.
-  - **TimescaleDB**: Extensão para séries temporais.
-  - **Amazon S3**: Data Lake para histórico bruto.
+##### Interface de Usuário Moderna
 
-#### 2.2.5 Infraestrutura em Nuvem
-- **Funcionalidade**: Garante escalabilidade, segurança e alta disponibilidade.
-- **Tecnologias**:
-  - **AWS**: IoT Core, EC2, RDS, Lambda, SNS, ECS.
-  - **Docker**: Containerização de microsserviços.
-  - **Kubernetes**: Orquestração e escalonamento automático.
+Dashboard interativo que combina monitoramento em tempo real com controles intuitivos para supervisão humana.
+
+##### Stack Frontend
+
+| Tecnologia | Versão | Propósito |
+|------------|---------|-----------|
+| **Next.js** | 14+ | SSR & Performance |
+| **TypeScript** | 5+ | Type Safety |
+| **Tailwind** | 3+ | UI Responsivo |
+| **D3.js** | 7+ | Visualização Avançada |
+
+##### Recursos de Interface
+
+- **Monitoramento Real-Time** 📊
+  - Dashboards dinâmicos
+  - Métricas em tempo real
+  - Gráficos interativos
+
+- **Controles de Supervisão** 🎮
+  - Aprovação de decisões
+  - Ajuste de parâmetros
+  - Intervenção manual
+
+- **Visualização de Dados** 📈
+  - Análise de tendências
+  - Detecção de anomalias
+  - Previsões de falha
+
+#### 2.2.4 Banco de Dados 💾
+
+##### Arquitetura de Dados
+
+Sistema híbrido que combina banco relacional, séries temporais e data lake para máxima eficiência e escalabilidade.
+
+##### Componentes de Armazenamento
+
+| Componente | Tecnologia | Uso |
+|------------|------------|-----|
+| **RDBMS** | PostgreSQL | Dados estruturados, relacionamentos |
+| **Time Series** | TimescaleDB | Métricas de sensores, séries temporais |
+| **Data Lake** | Amazon S3 | Histórico bruto, backups |
+
+##### Fluxos de Dados
+
+```mermaid
+graph LR
+    S[Sensores] -->|Real-time| T[TimescaleDB]
+    T -->|Agregação| P[PostgreSQL]
+    T -->|Arquivo| L[Data Lake]
+    P -->|Backup| L
+```
+
+#### 2.2.5 Infraestrutura Cloud ☁️
+
+##### Arquitetura AWS-Native
+
+Infraestrutura cloud-native projetada para alta disponibilidade, escalabilidade e segurança.
+
+##### Componentes Cloud
+
+| Serviço | Propósito | Características |
+|---------|-----------|-----------------|
+| **IoT Core** | Gerenciamento IoT | MQTT, Device Shadow |
+| **EC2/ECS** | Computação | Auto-scaling, Load Balancing |
+| **RDS** | Banco de Dados | Alta Disponibilidade, Backup |
+| **Lambda** | Serverless | Eventos, Integrações |
+| **SNS** | Notificações | Push, Email, SMS |
+
+##### Containerização & Orquestração
+
+- **Docker** 🐳
+  - Microsserviços isolados
+  - Build reproduzível
+  - Deploy consistente
+
+- **Kubernetes** ⚓
+  - Auto-scaling
+  - Self-healing
+  - Rolling updates
 
 ### 2.3 Diagrama de Arquitetura Geral
 ```mermaid
@@ -119,20 +319,78 @@ graph TD
 
 ---
 
-## 3. Stack Tecnológico
+## 3. Stack Tecnológico 🛠️
 
-A tabela abaixo detalha as tecnologias por camada, com justificativas para cada escolha:
+### Visão Geral das Tecnologias
 
-| **Camada**         | **Tecnologias**                       | **Justificativa**                              |
-|--------------------|----------------------------------------|------------------------------------------|
-| **IoT**           | ESP32, MQTT, Apache Kafka, AWS IoT Greengrass | Coleta robusta, streaming escalável e pré-processamento na borda |
-| **Backend**       | Python, FastAPI, gRPC, LangChain/CrewAI, Google A2A/MCP/ACP, OpenAI API ou LLMs Locais | Sistema multi-agente modular, comunicação eficiente e APIs escaláveis |
-| **Frontend**      | Next.js, Node.js, TypeScript, Tailwind CSS, D3.js | Dashboard interativo, responsivo e com visualizações avançadas |
-| **Banco de Dados** | PostgreSQL, TimescaleDB, Amazon S3    | Armazenamento estruturado, séries temporais e histórico bruto |
-| **Infraestrutura** | AWS (IoT Core, EC2, RDS, Lambda, SNS, ECS), Docker, Kubernetes | Escalabilidade, segurança e alta disponibilidade |
-| **ML Ops**        | TensorFlow/PyTorch, Scikit-learn, MLflow, SageMaker | Ciclo completo de desenvolvimento e deploy de modelos |
-| **Observabilidade** | Prometheus, Grafana, AWS CloudWatch  | Métricas, logs e alertas para SLO/SLI |
-| **Segurança**     | AWS Cognito, OAuth2, mTLS, TLS, Criptografia at-rest | Autenticação, autorização e proteção de dados |
+Nossa stack foi cuidadosamente selecionada para garantir escalabilidade, manutenibilidade e inovação.
+
+<div align="center">
+
+### 🔧 Componentes Principais
+
+</div>
+
+#### IoT & Edge Computing 📡
+
+- **Hardware & Protocolos**
+  - `ESP32` - Microcontroladores robustos
+  - `MQTT` - Comunicação IoT otimizada
+  - `Apache Kafka` - Streaming de dados
+  - `AWS IoT Greengrass` - Edge computing
+
+#### Backend & IA 🧠
+
+- **Core & APIs**
+  - `Python` & `FastAPI` - Base robusta
+  - `gRPC` - Comunicação eficiente
+  - `LangChain/CrewAI` - Framework de agentes
+  - `A2A/MCP/ACP` - Protocolos Google
+
+#### Frontend & UX 🎨
+
+- **Framework & UI**
+  - `Next.js` - SSR & performance
+  - `TypeScript` - Type safety
+  - `Tailwind CSS` - Design moderno
+  - `D3.js` - Visualizações dinâmicas
+
+#### Dados & Storage 💾
+
+- **Persistência**
+  - `PostgreSQL` - Base relacional
+  - `TimescaleDB` - Séries temporais
+  - `Amazon S3` - Data Lake escalável
+
+#### Cloud & DevOps ☁️
+
+- **Infraestrutura**
+  - `AWS Suite` - Core services
+  - `Docker` & `Kubernetes` - Containerização
+  - `Terraform` - IaC
+
+#### ML & Analytics 📊
+
+- **Machine Learning**
+  - `TensorFlow/PyTorch` - Deep Learning
+  - `Scikit-learn` - ML clássico
+  - `MLflow` - MLOps
+  - `SageMaker` - Automação
+
+#### Observabilidade 📈
+
+- **Monitoramento**
+  - `Prometheus` - Métricas
+  - `Grafana` - Visualização
+  - `AWS CloudWatch` - Logs
+
+#### Segurança 🔒
+
+- **Proteção & Auth**
+  - `AWS Cognito` - IAM
+  - `OAuth2/JWT` - Autenticação
+  - `mTLS/TLS` - Criptografia
+  - `At-rest Encryption` - Dados
 
 ### 3.1 Protocolos de Agentes
 - **Google’s A2A**: Comunicação bidirecional confiável entre agentes via **gRPC** com **mTLS**.
@@ -143,84 +401,287 @@ A tabela abaixo detalha as tecnologias por camada, com justificativas para cada 
 
 ## 4. Funcionalidade
 
-### 4.1 Características Principais
-1. **Processamento em Tempo Real**: Ingestão contínua via Kafka e análise com **KSQL/Flink**.
-2. **Análise Preditiva**: Modelos de ML (e.g., LSTM, regressão, outros dependentes de testes para descobrir o mais otimizado, possibilidade de utilizar IBM'S Watson AutoML tool para descobrir o melhor modelo) preveem falhas.
-3. **Alertas Automatizados**: Notificações via **AWS SNS** (e-mail, SMS).
-4. **Agendamento de Manutenção**: Otimizado por algoritmos genéticos e APIs externas.
-5. **Dashboard Interativo**: Visualização em tempo real com controle humano.
-6. **Relatórios Inteligentes**: Insights gerados por NLP e recomendações automáticas.
+## 4. Funcionalidades e Fluxos 🔄
 
-### 4.2 Fluxo de Trabalho Multi-Agente
-1. **Monitor Agent**: Detecta anomalia → Validator Agent.
-2. **Validator Agent**: Confirma → Orchestrator Agent.
-3. **Orchestrator Agent**: Decide ação → Scheduler/Reporter Agents.
-4. **Scheduler Agent**: Agenda manutenção via API.
-5. **Reporter Agent**: Envia relatórios e registra logs.
-6. **Learning Agent**: Otimiza com base em feedback.
-7. **Human-in-the-Loop**: Intervenção manual quando necessário.
+### 4.1 Recursos Principais ⭐
 
----
+#### Processamento em Tempo Real
+- **Ingestão Contínua** via Apache Kafka
+- **Análise Streaming** com KSQL/Flink
+- **Processamento Distribuído** escalável
 
-## 5. Representações Visuais
+#### Análise Preditiva Avançada
+- **Modelos ML** adaptáveis (LSTM, Random Forest)
+- **AutoML** com IBM Watson
+- **Otimização Contínua** de parâmetros
 
-### 5.1 Diagrama de Interação Multi-Agente
-```mermaid
-graph TD
-    A[Monitor Agent] -->|A2A| B[Validator Agent]
-    B -->|A2A| C[Orchestrator Agent]
-    C -->|A2A| D[Scheduler Agent]
-    C -->|A2A| E[Reporter Agent]
-    C -->|A2A| F[Learning Agent]
-    C <--> G[Human-in-the-Loop]
-    D -->|MCP: Calendar API| H[External Tool]
-    E -->|MCP: Gmail API| H
-```
+#### Sistema de Alertas
+- **Notificações** via AWS SNS
+- **Multicanal**: Email, SMS, WhatsApp
+- **Priorização** inteligente
 
-### 5.2 Diagrama de Fluxo de Dados em Tempo Real
+#### Manutenção Inteligente
+- **Agendamento** otimizado por GA
+- **Integração** com sistemas externos
+- **Gestão** de recursos
+
+#### Interface Interativa
+- **Dashboard** em tempo real
+- **Controles** intuitivos
+- **Visualizações** dinâmicas
+
+#### Relatórios Avançados
+- **Insights** via NLP
+- **Recomendações** automáticas
+- **Análise** preditiva
+
+### 4.2 Workflow Multi-Agent 🤖
+
 ```mermaid
 sequenceDiagram
-    participant S as ESP32
+    participant MA as Monitor Agent
+    participant VA as Validator
+    participant OA as Orchestrator
+    participant SA as Scheduler
+    participant RA as Reporter
+    participant LA as Learning
+    participant HI as Human
+
+    MA->>VA: Detecta Anomalia
+    VA->>OA: Valida & Confirma
+    OA->>SA: Agenda Manutenção
+    OA->>RA: Solicita Relatório
+    OA->>LA: Envia Feedback
+    OA->>HI: Solicita Aprovação
+    HI->>OA: Confirma Ação
+    LA->>OA: Otimiza Decisões
+```
+
+#### Detalhamento do Fluxo
+
+| Agente | Função | Interações |
+|--------|--------|------------|
+| **Monitor** | Detecção | Sensores → Validator |
+| **Validator** | Confirmação | Monitor → Orchestrator |
+| **Orchestrator** | Coordenação | Todos os Agentes |
+| **Scheduler** | Agendamento | Orchestrator → APIs |
+| **Reporter** | Relatórios | Orchestrator → Usuários |
+| **Learning** | Otimização | Feedback → Sistema |
+| **Human** | Supervisão | Interface → Orchestrator |
+
+---
+
+## 5. Visualizações do Sistema 📊
+
+### 5.1 Arquitetura Multi-Agente
+
+<div align="center">
+
+#### Diagrama de Interação entre Agentes
+
+</div>
+
+```mermaid
+graph TD
+    subgraph "Core System"
+        A[Monitor Agent] -->|A2A| B[Validator Agent]
+        B -->|A2A| C[Orchestrator Agent]
+        C -->|A2A| D[Scheduler Agent]
+        C -->|A2A| E[Reporter Agent]
+        C -->|A2A| F[Learning Agent]
+    end
+    
+    subgraph "External"
+        H[External APIs]
+    end
+    
+    subgraph "Human Control"
+        G[Human-in-Loop]
+    end
+    
+    C <--> G
+    D -->|Calendar| H
+    E -->|Email/SMS| H
+    
+    style A fill:#ff9900,stroke:#fff,stroke-width:2px
+    style B fill:#00aa41,stroke:#fff,stroke-width:2px
+    style C fill:#232f3e,stroke:#fff,stroke-width:2px
+    style G fill:#cc2939,stroke:#fff,stroke-width:2px
+```
+
+### 5.2 Pipeline de Dados em Tempo Real
+
+<div align="center">
+
+#### Fluxo de Processamento de Dados
+
+</div>
+
+```mermaid
+sequenceDiagram
+    participant S as IoT Devices
     participant M as MQTT Broker
-    participant K as Apache Kafka
-    participant Mon as Monitor Agent
-    participant DB as TimescaleDB
-    participant UI as Dashboard
-    S->>M: Publica dados
-    M->>K: Envia para Kafka
-    K->>Mon: Consome eventos
-    Mon->>DB: Armazena dados brutos
-    Mon->>Orchestrator: Envia anomalia
-    Orchestrator->>DB: Registra decisão
-    Orchestrator->>UI: Atualiza dashboard
-    Orchestrator->>SNS: Envia alerta
+    participant K as Kafka Stream
+    participant P as Processing
+    participant D as Database
+    participant U as UI/Dashboard
+    
+    Note over S,U: Fluxo de Dados End-to-End
+    
+    S->>M: 1. Coleta de Dados
+    M->>K: 2. Stream de Eventos
+    K->>P: 3. Processamento
+    P->>D: 4. Persistência
+    P-->>U: 5. Visualização
+    
+    Note over P,D: Análise & ML
+    Note over P,U: Alertas & Reports
+```
+
+#### Legendas & Detalhes
+
+| Componente | Função | Tecnologias |
+|------------|---------|-------------|
+| **IoT Devices** | Coleta de dados | ESP32, Sensores |
+| **MQTT Broker** | Comunicação | Mosquitto, AWS IoT |
+| **Kafka Stream** | Processamento | KSQL, Flink |
+| **Processing** | Análise | ML Models, Agents |
+| **Database** | Armazenamento | TimescaleDB, S3 |
+| **UI/Dashboard** | Visualização | Next.js, D3.js |
 ```
 
 ---
 
-## 6. Pipeline de Implementação
+## 6. Roadmap de Implementação 🛣️
 
-### 6.1 Passos da Fase 1
-1. **Análise de Requisitos**: Estudo das necessidades industriais e definição de constraints SaaS.
-2. **Seleção de Tecnologias**: Escolha de frameworks e LLMs.
-3. **Design de Arquitetura**: Mapeamento de interações e pipeline de dados.
-4. **Simulação**: Configuração de Wokwi e broker MQTT.
-5. **Documentação**: Redação deste documento com diagramas.
+### 6.1 Fase 1: Fundação
 
-## 7. Justificativas e Melhorias
+<div align="center">
 
-### 7.1 Destaques:
-- **Kafka**: Streaming confiável e escalável com **KSQL/Flink** para análises em tempo real.
-- **Learning Agent**: Adaptação contínua baseada em dados históricos.
-- **Edge Computing**: Redução de latência com **AWS IoT Greengrass**.
-- **Blockchain**: Logs imutáveis para auditoria (futuro).
+| Etapa | Status | Descrição |
+|-------|--------|-----------|
+| **Análise** | ✅ | Requisitos & Constraints |
+| **Tecnologias** | ✅ | Stack & Frameworks |
+| **Arquitetura** | ✅ | Design & Pipeline |
+| **Simulação** | ✅ | POC & MQTT |
+| **Documentação** | ✅ | Specs & Diagramas |
 
-### 7.2 Aprimoramentos para serem integrados no pré-projeto:
-- **ML Avançado**: Integração de **AutoML** para otimização automática de modelos.
-- **Data Lake em S3**: Análise de longo prazo e conformidade.
-- **Microserviços Desacoplados**: Escalonamento independente via **gRPC**.
+</div>
+
+### 6.2 Próximos Passos
+
+```mermaid
+gantt
+    title Timeline de Implementação
+    dateFormat  YYYY-MM-DD
+    section Fase 1
+    Análise           :done,    des1, 2025-05-01, 2025-05-08
+    Documentação      :done,    des2, 2025-05-05, 2025-05-08
+    section Fase 2
+    Setup Cloud       :active,  des3, 2025-05-10, 7d
+    Implementação     :         des4, after des3, 14d
+    Testes           :         des5, after des4, 7d
+```
+
+## 7. Diferenciais & Evolução 🚀
+
+### 7.1 Destaques Técnicos
+
+#### Processamento Avançado
+- 🔄 **Kafka + KSQL/Flink**
+  - Stream processing escalável
+  - Análise em tempo real
+  - Alta throughput
+
+#### IA & Aprendizado
+- 🧠 **Learning Agent**
+  - Adaptação contínua
+  - Feedback loop
+  - Otimização automática
+
+#### Edge Computing
+- ⚡ **AWS IoT Greengrass**
+  - Baixa latência
+  - Processamento local
+  - Economia de banda
+
+#### Segurança
+- 🔒 **Blockchain (Futuro)**
+  - Auditoria imutável
+  - Rastreabilidade
+  - Compliance
+
+### 7.2 Roadmap de Evolução
+
+#### Fase 2: Aprimoramentos
+
+1. **ML & Analytics**
+   - Integração AutoML
+   - Modelos customizados
+   - Pipeline MLOps
+
+2. **Data & Storage**
+   - Data Lake S3
+   - Retenção inteligente
+   - Analytics avançado
+
+3. **Arquitetura**
+   - Microserviços gRPC
+   - Escalabilidade horizontal
+   - Resiliência distribuída
 
 ---
 
-## 9. Conclusão
-Esta proposta estabelece uma base sólida para o **Smart Maintenance SaaS**, alinhada aos requisitos do desafio FIAP. A arquitetura é inovadora, escalável e pronta para prototipação na Fase 2. Aguardamos feedback da Hermes Reply e tutores para ajustes e avanços.
+## 9. Conclusão 🎯
+
+<div align="center">
+
+### Smart Maintenance SaaS: Inovação na Indústria 4.0
+
+[![Status](https://img.shields.io/badge/Fase%201-Concluída-success)]()
+[![Próxima Fase](https://img.shields.io/badge/Fase%202-Em%20Breve-blue)]()
+
+</div>
+
+### 9.1 Resumo de Conquistas
+
+- ✅ **Arquitetura Multi-Agent** consolidada
+- ✅ **Stack Tecnológico** de ponta
+- ✅ **Pipeline de Dados** otimizado
+- ✅ **Protocolos** padronizados
+- ✅ **Documentação** completa
+
+### 9.2 Diferenciais do Projeto
+
+1. **Inovação Tecnológica** 🚀
+   - Arquitetura Multi-Agent avançada
+   - Edge Computing otimizado
+   - Machine Learning state-of-the-art
+
+2. **Escalabilidade** ⚡
+   - Design cloud-native
+   - Microsserviços modulares
+   - Processamento distribuído
+
+3. **Manutenibilidade** 🛠️
+   - Código documentado
+   - Padrões modernos
+   - DevOps ready
+
+### 9.3 Próximos Passos
+
+Aguardamos o feedback da **Hermes Reply** e tutores da **FIAP** para:
+- Refinamento da arquitetura
+- Ajustes no design técnico
+- Início da implementação
+
+<div align="center">
+
+---
+
+**Projeto desenvolvido por:**  
+Yan Pimentel Cotta (RM: 562836)
+
+FIAP x Hermes Reply Challenge | Maio 2025
+
+</div>

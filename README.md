@@ -1,78 +1,184 @@
-# Smart Maintenance SaaS - Desafio FIAP x Hermes Reply
+<div align="center">
 
-## Sobre o Projeto
+# Smart Maintenance SaaS
 
-O Smart Maintenance SaaS é uma solução inovadora de manutenção preditiva para o setor industrial, desenvolvida como parte do desafio FIAP SP em parceria com a Hermes Reply. O projeto utiliza tecnologias avançadas de IoT, IA e análise de dados em tempo real para transformar a gestão de ativos industriais.
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+[![Status](https://img.shields.io/badge/Status-Prototype-orange)](.)
+[![FIAP](https://img.shields.io/badge/FIAP-Challange-red)](https://www.fiap.com.br)
+[![Hermes Reply](https://img.shields.io/badge/Partner-Hermes%20Reply-blue)](https://www.reply.com/hermes-reply/en/)
 
-## Funcionalidades Principais
+<h3>
+    Uma solução inovadora de manutenção preditiva industrial potencializada por Multi-Agent AI Systems
+</h3>
 
-- 🔍 Monitoramento contínuo de equipamentos via IoT
-- 🤖 Detecção de anomalias e previsão de falhas com Machine Learning
-- ⚡ Alertas automáticos e agendamento inteligente de manutenção
-- 📊 Dashboard interativo e relatórios inteligentes
-- ⚙️ Sistema multi-agente com arquitetura escalável
+[Ver Documentação](#documentation) •
+[Relatório Técnico](./system_documentation_and_architecture.md) •
+[Arquitetura](#arquitetura) •
+[Funcionalidades](#funcionalidades-principais)
 
-## Stack Tecnológico
+</div>
 
-### IoT e Edge Computing
-- ESP32 para aquisição de dados
-- MQTT para comunicação
-- Apache Kafka para streaming de dados
-- AWS IoT Greengrass para processamento na borda
+## 🎯 Sobre o Projeto
 
-### Backend (Sistema Multi-Agente)
-- Python com FastAPI
-- gRPC para comunicação entre serviços
-- LangChain/CrewAI para implementação de agentes
-- Integração com LLMs (OpenAI API ou modelos locais)
+O **Smart Maintenance SaaS** é uma solução inovadora de manutenção preditiva para o setor industrial, desenvolvida como parte do desafio FIAP SP em parceria com a Hermes Reply. O projeto utiliza tecnologias avançadas de IoT, IA e análise de dados em tempo real para transformar a gestão de ativos industriais.
 
-### Frontend
-- Next.js
-- TypeScript
-- Tailwind CSS
-- D3.js para visualizações
+## ⭐ Funcionalidades Principais
 
-### Banco de Dados
-- PostgreSQL com TimescaleDB
-- Amazon S3 para Data Lake
+<div align="center">
 
-### Infraestrutura Cloud
-- AWS (IoT Core, EC2, RDS, Lambda, SNS, ECS)
-- Docker e Kubernetes
+| Funcionalidade | Descrição |
+|---------------|-----------|
+| 🔍 **Monitoramento IoT** | Monitoramento contínuo de equipamentos via IoT |
+| 🤖 **ML Predictions** | Detecção de anomalias e previsão de falhas com Machine Learning |
+| ⚡ **Smart Scheduling** | Alertas automáticos e agendamento inteligente de manutenção |
+| 📊 **Analytics** | Dashboard interativo e relatórios inteligentes |
+| ⚙️ **Multi-Agent System** | Sistema multi-agente com arquitetura escalável |
 
-## Arquitetura
+</div>
 
-O sistema é composto por diferentes agentes especializados:
-- Monitor Agent: Detecção de anomalias
-- Validator Agent: Confirmação de anomalias
-- Orchestrator Agent: Coordenação de decisões
-- Scheduler Agent: Agendamento de manutenções
-- Reporter Agent: Geração de relatórios
-- Learning Agent: Otimização contínua
+## 🛠️ Stack Tecnológico
 
-## Instalação e Uso
+<details>
+<summary>🌐 IoT e Edge Computing</summary>
 
-*Documentação em desenvolvimento para a Fase 2 do projeto*
+- **ESP32** - Aquisição de dados em tempo real
+- **MQTT** - Protocolo de comunicação leve e eficiente
+- **Apache Kafka** - Streaming de dados escalável
+- **AWS IoT Greengrass** - Processamento na borda otimizado
 
-## Equipe
+</details>
 
-- Yan Pimentel Cotta / RM: 562836
+<details>
+<summary>🧠 Backend (Sistema Multi-Agente)</summary>
 
-## Status do Projeto
+- **Python/FastAPI** - Framework web assíncrono de alta performance
+- **gRPC** - Comunicação eficiente entre microsserviços
+- **LangChain/CrewAI** - Framework robusto para implementação de agentes
+- **LLMs** - Integração com OpenAI API ou modelos locais otimizados
 
-- ✅ Fase 1: Documentação e Arquitetura (Atual)
-- 🔄 Fase 2: Implementação (Em breve)
+</details>
 
+<details>
+<summary>🎨 Frontend</summary>
 
-## Licença
+- **Next.js** - Framework React moderno com SSR
+- **TypeScript** - Desenvolvimento tipado e seguro
+- **Tailwind CSS** - Design responsivo e customizável
+- **D3.js** - Visualizações de dados interativas
 
-Este projeto está sob a licença incluída no arquivo [LICENSE](LICENSE).
+</details>
 
-## Documentação Detalhada
+<details>
+<summary>💾 Banco de Dados</summary>
 
-Para mais informações sobre a arquitetura e implementação técnica, consulte o arquivo [system_documentation_and_architecture.md](system_documentation_and_architecture.md).
+- **PostgreSQL/TimescaleDB** - Armazenamento otimizado para séries temporais
+- **Amazon S3** - Data Lake escalável e durável
+
+</details>
+
+<details>
+<summary>☁️ Infraestrutura Cloud</summary>
+
+- **AWS Suite** - IoT Core, EC2, RDS, Lambda, SNS, ECS
+- **Container Stack** - Docker + Kubernetes para orquestração
+
+</details>
+
+## 🏗️ Arquitetura
+
+<div align="center">
+
+### Sistema Multi-Agente Especializado
+
+| Agente | Responsabilidade | Tecnologias |
+|--------|-----------------|-------------|
+| 🔍 **Monitor** | Detecção de anomalias | ML Models, Time Series Analysis |
+| ✅ **Validator** | Confirmação de anomalias | Inferência Bayesiana, Regras |
+| 🎯 **Orchestrator** | Coordenação de decisões | RL, Decision Making |
+| 📅 **Scheduler** | Agendamento de manutenções | MCP, Calendar Integration |
+| 📊 **Reporter** | Geração de relatórios | NLP, Data Visualization |
+| 🧠 **Learning** | Otimização contínua | RAG, Feedback Loop |
+
+</div>
+
+## 🚀 Desenvolvimento e Instalação
+
+<details>
+<summary>📋 Pré-requisitos</summary>
+
+```bash
+# Ambiente de desenvolvimento
+Python 3.11+
+Node.js 20+
+Docker & Kubernetes
+AWS CLI configurado
+```
+
+</details>
+
+<details>
+<summary>⚙️ Configuração (Fase 2)</summary>
+
+```bash
+# Clone o repositório
+git clone <repository-url>
+
+# Instale as dependências
+pip install -r requirements.txt
+
+# Configure as variáveis de ambiente
+cp .env.example .env
+```
+
+</details>
+
+## 👥 Equipe
+
+<div align="center">
+
+| Membro | Registro | Responsabilidade |
+|--------|-----------|-----------------|
+| **Yan Pimentel Cotta** | RM: 562836 | Tech Lead & Arquiteto |
+
+</div>
+
+## 📊 Status do Projeto
+
+<div align="center">
+
+| Fase | Status | Data |
+|------|--------|------|
+| ✅ **Fase 1: Documentação** | `Concluído` | Maio 2025 |
+| 🔄 **Fase 2: Implementação** | `Em Breve` | Junho 2025 |
+
+</div>
+
+## 📜 Licença
+
+<div align="center">
+
+Este projeto está licenciado sob a [Licença MIT](LICENSE) - veja o arquivo LICENSE para detalhes.
+
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+
+</div>
+
+## 📚 Documentação
+
+<div align="center">
+
+[![Documentação](https://img.shields.io/badge/Docs-System%20Architecture-blue)](./system_documentation_and_architecture.md)
+
+Para informações detalhadas sobre a arquitetura e implementação técnica, consulte nossa [Documentação Completa](./system_documentation_and_architecture.md).
+
+</div>
 
 ---
 
-**Data de Entrega:** 08 de Maio de 2025
-**Versão:** 1.3
+<div align="center">
+
+**Data de Entrega:** `08 de Maio de 2025` | **Versão:** `1.3`
+
+<sub>Desenvolvido com ❤️ pela Equipe Smart Maintenance</sub>
+
+</div>
