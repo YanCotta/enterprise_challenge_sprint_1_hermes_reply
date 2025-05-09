@@ -11,7 +11,7 @@
     Uma Solução Vanguardista de Manutenção Preditiva Industrial Potencializada por Multi-Agentic AI Systems, MCP & A2A
 </h3>
 
-[Relatório Técnico](./system_documentation_and_architecture.md) •
+[Relatório Técnico](./system_documentation_and_architecture.md)
 
 </div>
 
