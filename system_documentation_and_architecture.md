@@ -11,42 +11,59 @@
 
 </div>
 
+<div align="center">
+
 ## 📑 Índice
 
-1. [Introdução](#-1-introdução)
-   - [1.1 Contextualização do Problema](#11-contextualização-do-problema)
-   - [1.2 Objetivo do Projeto](#12-objetivo-do-projeto)
-   - [1.3 Entregável da Fase 1](#13-entregável-da-fase-1)
+<div class="index-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 800px; margin: 0 auto;">
 
-2. [Arquitetura do Sistema](#2-arquitetura-do-sistema)
-   - [2.1 Visão Geral](#21-visão-geral)
-   - [2.2 Componentes da Arquitetura](#22-componentes-da-arquitetura-)
-     - [2.2.1 Camada IoT](#221-camada-iot-)
-     - [2.2.2 Backend: Sistema Multi-Agente](#222-backend-sistema-multi-agente-)
-     - [2.2.3 Frontend](#223-frontend-)
-     - [2.2.4 Banco de Dados](#224-banco-de-dados-)
-     - [2.2.5 Infraestrutura Cloud](#225-infraestrutura-cloud-)
-   - [2.3 Diagrama de Arquitetura Geral](#23-diagrama-de-arquitetura-geral)
+<div>
 
-3. [Stack Tecnológico](#3-stack-tecnológico-)
-   - [3.1 Protocolos de Agentes](#31-protocolos-de-agentes)
+### 📋 1. [Introdução](#-1-introdução)
+- [Contextualização](#11-contextualização-do-problema)
+- [Objetivos](#12-objetivo-do-projeto)
+- [Entregáveis](#13-entregável-da-fase-1)
 
-4. [Funcionalidades e Fluxos](#4-funcionalidades-e-fluxos-)
-   - [4.1 Recursos Principais](#41-recursos-principais-)
-   - [4.2 Workflow Multi-Agent](#42-workflow-multi-agent-)
+### 🏗️ 2. [Arquitetura](#2-arquitetura-do-sistema)
+- [Visão Geral](#21-visão-geral)
+- [Componentes](#22-componentes-da-arquitetura-)
+  - [IoT](#221-camada-iot-)
+  - [Backend](#222-backend-sistema-multi-agente-)
+  - [Frontend](#223-frontend-)
+  - [Database](#224-banco-de-dados-)
+  - [Cloud](#225-infraestrutura-cloud-)
+- [Diagrama Geral](#23-diagrama-de-arquitetura-geral)
 
-5. [Visualizações do Sistema](#5-visualizações-do-sistema-)
-   - [5.1 Arquitetura Multi-Agente](#51-arquitetura-multi-agente)
-   - [5.2 Pipeline de Dados em Tempo Real](#52-pipeline-de-dados-em-tempo-real)
+### 🛠️ 3. [Stack Tecnológico](#3-stack-tecnológico-)
+- [Protocolos](#31-protocolos-de-agentes)
 
-6. [Diferenciais & Evolução](#7-diferenciais--evolução-)
-   - [6.1 Destaques Técnicos](#71-destaques-técnicos-)
-   - [6.2 Roadmap de Evolução](#72-roadmap-de-evolução)
+</div>
 
-7. [Conclusão](#9-conclusão-)
-   - [7.1 Resumo de Conquistas](#91-resumo-de-conquistas)
-   - [7.2 Diferenciais do Projeto](#92-diferenciais-do-projeto)
-   - [7.3 Próximos Passos](#93-próximos-passos)
+<div>
+
+### 🔄 4. [Funcionalidades](#4-funcionalidades-e-fluxos-)
+- [Recursos Core](#41-recursos-principais-)
+- [Workflow](#42-workflow-multi-agent-)
+
+### 📊 5. [Visualizações](#5-visualizações-do-sistema-)
+- [Arquitetura Multi-Agente](#51-arquitetura-multi-agente)
+- [Pipeline de Dados](#52-pipeline-de-dados-em-tempo-real)
+
+### 🚀 6. [Diferenciais](#7-diferenciais--evolução-)
+- [Destaques](#71-destaques-técnicos-)
+- [Roadmap](#72-roadmap-de-evolução)
+
+### ✨ 7. [Conclusão](#9-conclusão-)
+- [Conquistas](#91-resumo-de-conquistas)
+- [Diferenciais](#92-diferenciais-do-projeto)
+- [Próximos Passos](#93-próximos-passos)
+
+</div>
+
+</div>
+
+</div>
+
 
 </div>
 
