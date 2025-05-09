@@ -550,39 +550,6 @@ sequenceDiagram
 | **UI/Dashboard** | Visualização | Next.js, D3.js |
 ```
 
----
-
-## 6. Roadmap de Implementação 🛣️
-
-### 6.1 Fase 1: Fundação
-
-<div align="center">
-
-| Etapa | Status | Descrição |
-|-------|--------|-----------|
-| **Análise** | ✅ | Requisitos & Constraints |
-| **Tecnologias** | ✅ | Stack & Frameworks |
-| **Arquitetura** | ✅ | Design & Pipeline |
-| **Simulação** | ✅ | POC & MQTT |
-| **Documentação** | ✅ | Specs & Diagramas |
-
-</div>
-
-### 6.2 Próximos Passos
-
-```mermaid
-gantt
-    title Timeline de Implementação
-    dateFormat  YYYY-MM-DD
-    section Fase 1
-    Análise           :done,    des1, 2025-05-01, 2025-05-08
-    Documentação      :done,    des2, 2025-05-05, 2025-05-08
-    section Fase 2
-    Setup Cloud       :active,  des3, 2025-05-10, 7d
-    Implementação     :         des4, after des3, 14d
-    Testes           :         des5, after des4, 7d
-```
-
 ## 7. Diferenciais & Evolução 🚀
 
 ### 7.1 Destaques Técnicos
