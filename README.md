@@ -8,13 +8,10 @@
 [![Hermes Reply](https://img.shields.io/badge/Partner-Hermes%20Reply-blue)](https://www.reply.com/hermes-reply/en/)
 
 <h3>
-    Uma solução inovadora de manutenção preditiva industrial potencializada por Multi-Agent AI Systems
+    Uma Solução Vanguardista de Manutenção Preditiva Industrial Potencializada por Multi-Agentic AI Systems, MCP & A2A
 </h3>
 
-[Ver Documentação](#documentation) •
 [Relatório Técnico](./system_documentation_and_architecture.md) •
-[Arquitetura](#arquitetura) •
-[Funcionalidades](#funcionalidades-principais)
 
 </div>
 
@@ -30,9 +27,9 @@ O **Smart Maintenance SaaS** é uma solução inovadora de manutenção preditiv
 |---------------|-----------|
 | 🔍 **Monitoramento IoT** | Monitoramento contínuo de equipamentos via IoT |
 | 🤖 **ML Predictions** | Detecção de anomalias e previsão de falhas com Machine Learning |
-| ⚡ **Smart Scheduling** | Alertas automáticos e agendamento inteligente de manutenção |
+| ⚡ **Smart Scheduling** | Alertas automáticos e agendamento inteligente de manutenção utilizando MCP (Anthropic's Model Context Protocol) |
 | 📊 **Analytics** | Dashboard interativo e relatórios inteligentes |
-| ⚙️ **Multi-Agent System** | Sistema multi-agente com arquitetura escalável |
+| ⚙️ **Multi-Agentic System** | Sistema multi-agente orquestrado com arquitetura escalável utilizando LangChain ou CrewAI, com MCP (Anthropic's Model Context Protocol) e A2A (Google's Agent to Agent)
 
 </div>
 
@@ -55,6 +52,7 @@ O **Smart Maintenance SaaS** é uma solução inovadora de manutenção preditiv
 - **gRPC** - Comunicação eficiente entre microsserviços
 - **LangChain/CrewAI** - Framework robusto para implementação de agentes
 - **LLMs** - Integração com OpenAI API ou modelos locais otimizados
+- **MCP & A2A** - Comunicação inter-agêntica, function calling and tool use
 
 </details>
 
@@ -101,44 +99,15 @@ O **Smart Maintenance SaaS** é uma solução inovadora de manutenção preditiv
 
 </div>
 
-## 🚀 Desenvolvimento e Instalação
-
-<details>
-<summary>📋 Pré-requisitos</summary>
-
-```bash
-# Ambiente de desenvolvimento
-Python 3.11+
-Node.js 20+
-Docker & Kubernetes
-AWS CLI configurado
-```
-
-</details>
-
-<details>
-<summary>⚙️ Configuração (Fase 2)</summary>
-
-```bash
-# Clone o repositório
-git clone <repository-url>
-
-# Instale as dependências
-pip install -r requirements.txt
-
-# Configure as variáveis de ambiente
-cp .env.example .env
-```
-
-</details>
-
 ## 👥 Equipe
 
 <div align="center">
 
-| Membro | Registro | Responsabilidade |
-|--------|-----------|-----------------|
-| **Yan Pimentel Cotta** | RM: 562836 | Tech Lead & Arquiteto |
+| Membro | Registro |
+|--------|-----------|
+| **Yan Pimentel Cotta** | RM: 562836 |
+
+</div>
 
 </div>
 
@@ -179,6 +148,3 @@ Para informações detalhadas sobre a arquitetura e implementação técnica, co
 
 **Data de Entrega:** `08 de Maio de 2025` | **Versão:** `1.3`
 
-<sub>Desenvolvido com ❤️ pela Equipe Smart Maintenance</sub>
-
-</div>
