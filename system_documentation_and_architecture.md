@@ -11,34 +11,42 @@
 
 </div>
 
-A **Smart Maintenance SaaS** é uma plataforma multi-agentic de última geração, construída sobre três pilares fundamentais:
+## 📑 Índice
 
-#### 1. Infraestrutura Cloud-Native 🌐
+1. [Introdução](#-1-introdução)
+   - [1.1 Contextualização do Problema](#11-contextualização-do-problema)
+   - [1.2 Objetivo do Projeto](#12-objetivo-do-projeto)
+   - [1.3 Entregável da Fase 1](#13-entregável-da-fase-1)
 
-- **Multi-Tenant**: Isolamento seguro de dados por cliente
-- **Escalabilidade**: Design horizontal e vertical
-- **Alta Disponibilidade**: Redundância e failover
+2. [Arquitetura do Sistema](#2-arquitetura-do-sistema)
+   - [2.1 Visão Geral](#21-visão-geral)
+   - [2.2 Componentes da Arquitetura](#22-componentes-da-arquitetura-)
+     - [2.2.1 Camada IoT](#221-camada-iot-)
+     - [2.2.2 Backend: Sistema Multi-Agente](#222-backend-sistema-multi-agente-)
+     - [2.2.3 Frontend](#223-frontend-)
+     - [2.2.4 Banco de Dados](#224-banco-de-dados-)
+     - [2.2.5 Infraestrutura Cloud](#225-infraestrutura-cloud-)
+   - [2.3 Diagrama de Arquitetura Geral](#23-diagrama-de-arquitetura-geral)
 
-#### 2. Sistema Multi-Agent Avançado 
+3. [Stack Tecnológico](#3-stack-tecnológico-)
+   - [3.1 Protocolos de Agentes](#31-protocolos-de-agentes)
 
-- **Orquestração**: Protocolos A2A (Agent to Agent) do Google
-- **Contextualização**: Anthropic's MCP (Model Context Protocol) para integração de ferramentas
-- **Comunicação**: ACP para consistência de mensagens
+4. [Funcionalidades e Fluxos](#4-funcionalidades-e-fluxos-)
+   - [4.1 Recursos Principais](#41-recursos-principais-)
+   - [4.2 Workflow Multi-Agent](#42-workflow-multi-agent-)
 
-#### 3. Integração IoT & IA 💡
+5. [Visualizações do Sistema](#5-visualizações-do-sistema-)
+   - [5.1 Arquitetura Multi-Agente](#51-arquitetura-multi-agente)
+   - [5.2 Pipeline de Dados em Tempo Real](#52-pipeline-de-dados-em-tempo-real)
 
-- **Edge Computing**: Processamento na borda
-- **Machine Learning**: Modelos preditivos
-- **Human-in-the-Loop**: Supervisão inteligente
+6. [Diferenciais & Evolução](#7-diferenciais--evolução-)
+   - [6.1 Destaques Técnicos](#71-destaques-técnicos-)
+   - [6.2 Roadmap de Evolução](#72-roadmap-de-evolução)
 
-<div align="center">
-
-[![FIAP](https://img.shields.io/badge/FIAP-Challenge-red)](https://www.fiap.com.br)
-[![Hermes Reply](https://img.shields.io/badge/Partner-Hermes%20Reply-blue)](https://www.reply.com/hermes-reply/en/)
-[![Status](https://img.shields.io/badge/Status-Phase%201-green)](.)
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-
-</div>
+7. [Conclusão](#9-conclusão-)
+   - [7.1 Resumo de Conquistas](#91-resumo-de-conquistas)
+   - [7.2 Diferenciais do Projeto](#92-diferenciais-do-projeto)
+   - [7.3 Próximos Passos](#93-próximos-passos)
 
 </div>
 
