@@ -4,7 +4,7 @@
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-Prototype-orange)](.)
-[![FIAP](https://img.shields.io/badge/FIAP-Challange-red)](https://www.fiap.com.br)
+[![FIAP](https://img.shields.io/badge/FIAP-Challenge-red)](https://www.fiap.com.br)
 [![Hermes Reply](https://img.shields.io/badge/Partner-Hermes%20Reply-blue)](https://www.reply.com/hermes-reply/en/)
 
 <h3>
