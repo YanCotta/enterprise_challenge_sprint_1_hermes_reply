@@ -3,8 +3,6 @@
 # 🏭 Smart Maintenance SaaS
 ### Documentação Final – Fase 1
 
-[![FIAP### 2.1 Visão Geral da Arquitetura 🏗️
-
 <div align="center">
 
 [![Arquitetura](https://img.shields.io/badge/Tipo-Multi--Agent%20Cloud--Native-blue)]()
@@ -21,20 +19,26 @@ A **Smart Maintenance SaaS** é uma plataforma multi-agentic de última geraçã
 - **Escalabilidade**: Design horizontal e vertical
 - **Alta Disponibilidade**: Redundância e failover
 
-#### 2. Sistema Multi-Agent Avançado 🤖
+#### 2. Sistema Multi-Agent Avançado 
 
-- **Orquestração**: Protocolos A2A da Google
-- **Contextualização**: MCP para integração de ferramentas
+- **Orquestração**: Protocolos A2A (Agent to Agent) do Google
+- **Contextualização**: Anthropic's MCP (Model Context Protocol) para integração de ferramentas
 - **Comunicação**: ACP para consistência de mensagens
 
 #### 3. Integração IoT & IA 💡
 
 - **Edge Computing**: Processamento na borda
 - **Machine Learning**: Modelos preditivos
-- **Human-in-the-Loop**: Supervisão inteligentehttps://img.shields.io/badge/FIAP-Challenge-red)](https://www.fiap.com.br)
+- **Human-in-the-Loop**: Supervisão inteligente
+
+<div align="center">
+
+[![FIAP](https://img.shields.io/badge/FIAP-Challenge-red)](https://www.fiap.com.br)
 [![Hermes Reply](https://img.shields.io/badge/Partner-Hermes%20Reply-blue)](https://www.reply.com/hermes-reply/en/)
 [![Status](https://img.shields.io/badge/Status-Phase%201-green)](.)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+
+</div>
 
 </div>
 
@@ -115,7 +119,7 @@ Desenvolver uma plataforma SaaS Multi-Agentic de última geração para manuten�
    - Alta disponibilidade garantida
 
 ### 1.3 Entregável da Fase 1
-Esta documentação detalha a metodologia, o **technology stack**, o **pipeline de dados**, a **arquitetura do sistema** e a validação dos requisitos da Fase 1. **Inclui três representações visuais** (diagramas Mermaid) e um plano de desenvolvimento, atendendo aos padrões de uma apresentação técnica de alto nível.
+Esta documentação detalha a metodologia, o **technology stack**, o **pipeline de dados**, a **arquitetura do sistema** e a validação dos requisitos da Fase 1. **Inclui três representações visuais** (diagramas Mermaid) e um plano de desenvolvimento.
 
 ---
 
@@ -345,7 +349,7 @@ Nossa stack foi cuidadosamente selecionada para garantir escalabilidade, manuten
   - `Python` & `FastAPI` - Base robusta
   - `gRPC` - Comunicação eficiente
   - `LangChain/CrewAI` - Framework de agentes
-  - `A2A/MCP/ACP` - Protocolos Google
+  - `A2A/MCP/ACP` - Protocolos Google e Anthropic
 
 #### Frontend & UX 🎨
 
@@ -548,7 +552,6 @@ sequenceDiagram
 | **Processing** | Análise | ML Models, Agents |
 | **Database** | Armazenamento | TimescaleDB, S3 |
 | **UI/Dashboard** | Visualização | Next.js, D3.js |
-```
 
 ## 7. Diferenciais & Evolução 🚀
 
