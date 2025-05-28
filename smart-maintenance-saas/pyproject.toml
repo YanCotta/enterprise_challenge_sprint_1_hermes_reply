@@ -1,0 +1,48 @@
+[tool.poetry]
+name = "smart-maintenance-saas"
+version = "0.1.0"
+description = "A sophisticated SaaS platform for intelligent maintenance management using AI/ML capabilities"
+authors = ["Your Organization <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "smart_maintenance_saas"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.104.0"
+uvicorn = "^0.24.0"
+sqlalchemy = "^2.0.23"
+psycopg2-binary = "^2.9.9"
+alembic = "^1.12.1"
+pydantic = "^2.5.0"
+pydantic-settings = "^2.1.0"
+redis = "^5.0.1"
+kafka-python = "^2.0.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+httpx = "^0.25.1"
+black = "^23.11.0"
+isort = "^5.12.0"
+flake8 = "^6.1.0"
+mypy = "^1.7.0"
+pre-commit = "^3.5.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
