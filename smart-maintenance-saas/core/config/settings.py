@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     
     # Database
     database_url: str = "postgresql://smart_user:strong_password@localhost:5432/smart_maintenance_db"
+    db_host: str = "localhost"
+    db_port: int = 5432
+    db_user: str = "smart_user"
+    db_password: str = "strong_password"
+    db_name: str = "smart_maintenance_db"
+    
+    # Test Database
+    test_database_url: str = "postgresql://smart_user:strong_password@localhost:5432/smart_maintenance_db_test"
     
     # Redis (for future use)
     redis_url: str = "redis://localhost:6379"
