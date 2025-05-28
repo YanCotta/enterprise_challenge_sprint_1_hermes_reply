@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: smart_maintenance_db
+    environment:
+      POSTGRES_USER: smart_user
+      POSTGRES_PASSWORD: strong_password
+      POSTGRES_DB: smart_maintenance_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smart_user -d smart_maintenance_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+    name: smart_maintenance_pg_data
