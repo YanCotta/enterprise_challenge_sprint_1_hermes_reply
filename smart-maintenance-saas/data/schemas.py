@@ -191,5 +191,3 @@ class SensorDataSummary(BaseModel):
 #     "AssetInformation",
 #     "SensorDataSummary",
 # ]
-
-print("smart-maintenance-saas/data/schemas.py loaded with Pydantic models.")
