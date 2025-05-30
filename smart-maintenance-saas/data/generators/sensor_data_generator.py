@@ -4,9 +4,7 @@ import time
 from datetime import datetime, timedelta
 from enum import Enum
 
-# SensorType and SensorReading are now imported from smart_maintenance_saas.data.schemas
-# Add necessary import:
-# from smart_maintenance_saas.data.schemas import SensorType, SensorReading
+from smart_maintenance_saas.data.schemas import SensorReading, SensorType
 
 import numpy as np
 from typing import List

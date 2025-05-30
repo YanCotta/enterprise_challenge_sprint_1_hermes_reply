@@ -59,9 +59,20 @@ class SensorReadingBase(BaseModel):
         return v.astimezone(datetime.timezone.utc)
 
 
-class SensorReadingCreate(SensorReadingBase):
-    """Schema for creating a new sensor reading."""
-    pass
+# (SensorType, SensorReading, AnomalyAlert, MaintenanceTask should already be in this file)
+
+class SensorReadingCreate(BaseModel):
+    sensor_id: str = Field(..., description="Unique sensor identifier")
+    sensor_type: SensorType # Assumes SensorType enum is defined above or imported
+    value: float
+    unit: str
+    timestamp: Optional[datetime] = None # Can be optional, server might set it if None
+    quality: Optional[float] = Field(default=1.0, ge=0, le=1)
+    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+    class Config:
+        orm_mode = True # or from_attributes = True for Pydantic v2
+        use_enum_values = True
 
 
 # Note: The original SensorReading that inherited SensorReadingBase is now replaced by the one above.
