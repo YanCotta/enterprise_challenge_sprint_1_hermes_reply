@@ -1,152 +1,107 @@
-"""
-Event Bus for inter-agent communication in Smart Maintenance SaaS.
-
-This module provides a simple, in-memory event bus for asynchronous communication
-between different components and agents in the system. Events are published by
-type and can be subscribed to by multiple handlers.
-"""
-
 import asyncio
-import inspect
+from collections import defaultdict
+from typing import Callable, Any, DefaultDict, List, Coroutine
 import logging
-from typing import Any, Callable, Dict, List, Union
+import traceback
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Set up a basic logger for the module
 logger = logging.getLogger(__name__)
-
-# Type alias for event handlers
-EventHandler = Callable[[Any], Any]
+# Configure logging (e.g., to console with a specific format)
+# This basic configuration can be done here for simplicity, or managed globally in the application
+if not logger.handlers: # Avoid adding multiple handlers if this module is reloaded
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO) # Default level, can be configured as needed
 
 
 class EventBus:
     """
-    A simple in-memory event bus for asynchronous inter-agent communication.
-    
-    This implementation supports:
-    - Subscribing handlers to specific event types
-    - Publishing events to all subscribed handlers
-    - Asynchronous event handling
-    - Basic error handling and logging
-    
-    Future enhancements will include Redis/Kafka integration.
+    An event bus for decoupled asynchronous communication between components.
+
+    Handles subscription, unsubscription, and publication of events.
+    Errors in event handlers are logged without interrupting other handlers.
     """
-    
+
     def __init__(self):
-        """Initialize the EventBus with an empty subscribers dictionary."""
-        self._subscribers: Dict[str, List[EventHandler]] = {}
-        self._lock = asyncio.Lock()
-    
-    async def subscribe(self, event_type: str, handler: EventHandler) -> None:
         """
-        Subscribe a handler to a specific event type.
-        
+        Initializes the EventBus.
+        Subscriptions are stored in a defaultdict of lists.
+        """
+        self.subscriptions: DefaultDict[str, List[Callable[..., Coroutine[Any, Any, Any]]]] = defaultdict(list)
+        logger.info("EventBus initialized.")
+
+    async def subscribe(self, event_type: str, handler: Callable[..., Coroutine[Any, Any, Any]]):
+        """
+        Subscribes an asynchronous handler to a specific event type.
+
         Args:
-            event_type: The type of event to subscribe to (string identifier)
-            handler: Callable that will be invoked when the event is published
+            event_type: The type of event to subscribe to.
+            handler: The asynchronous function (coroutine) to call when the event is published.
         """
-        async with self._lock:
-            if event_type not in self._subscribers:
-                self._subscribers[event_type] = []
-            
-            # Avoid duplicate subscriptions
-            if handler not in self._subscribers[event_type]:
-                self._subscribers[event_type].append(handler)
-                logger.info(f"Handler subscribed to event type: {event_type}")
-    
-    async def unsubscribe(self, event_type: str, handler: EventHandler) -> bool:
+        self.subscriptions[event_type].append(handler)
+        logger.info(f"Handler '{getattr(handler, '__name__', 'unknown_handler')}' subscribed to event '{event_type}'.")
+
+    async def unsubscribe(self, event_type: str, handler: Callable[..., Coroutine[Any, Any, Any]]):
         """
-        Unsubscribe a handler from a specific event type.
-        
+        Unsubscribes an asynchronous handler from a specific event type.
+
         Args:
-            event_type: The type of event to unsubscribe from
-            handler: The handler to remove from subscribers
-            
-        Returns:
-            bool: True if handler was removed, False otherwise
+            event_type: The type of event to unsubscribe from.
+            handler: The handler to remove.
         """
-        async with self._lock:
-            if event_type in self._subscribers and handler in self._subscribers[event_type]:
-                self._subscribers[event_type].remove(handler)
-                logger.info(f"Handler unsubscribed from event type: {event_type}")
-                return True
-            return False
-    
-    async def publish(self, event_type: str, data: Any = None) -> None:
+        if event_type in self.subscriptions:
+            try:
+                self.subscriptions[event_type].remove(handler)
+                logger.info(f"Handler '{getattr(handler, '__name__', 'unknown_handler')}' unsubscribed from event '{event_type}'.")
+                if not self.subscriptions[event_type]:
+                    # Optional: remove event type from dict if no handlers left
+                    del self.subscriptions[event_type]
+                    logger.debug(f"Event type '{event_type}' removed as no handlers are left.")
+            except ValueError:
+                logger.warning(
+                    f"Handler '{getattr(handler, '__name__', 'unknown_handler')}' not found for event '{event_type}' during unsubscribe."
+                )
+        else:
+            logger.warning(f"No subscribers for event type '{event_type}' during unsubscribe attempt.")
+
+    async def publish(self, event_type: str, data: Any = None):
         """
-        Publish an event to all subscribed handlers.
-        
+        Publishes an event to all subscribed asynchronous handlers.
+
+        Handlers are called sequentially. If a handler raises an exception,
+        the error is logged, and the EventBus continues to call other handlers.
+
         Args:
-            event_type: The type of event being published
-            data: The event data to be passed to handlers
+            event_type: The type of event to publish.
+            data: The data to pass to the event handlers. The data is passed as keyword arguments
+                  if it's a dictionary, otherwise as a positional argument.
         """
-        if event_type not in self._subscribers:
-            logger.debug(f"No subscribers found for event type: {event_type}")
-            return
-        
-        # Get handlers while holding the lock, then release for execution
-        handlers = []
-        async with self._lock:
-            handlers = self._subscribers[event_type].copy()
-        
-        # Create tasks for all handlers
-        tasks = []
-        for handler in handlers:
-            task = asyncio.create_task(self._call_handler(handler, data))
-            tasks.append(task)
-        
-        # Wait for all handlers to complete
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
-            logger.debug(f"Published event {event_type} to {len(tasks)} handlers")
-    
-    async def _call_handler(self, handler: EventHandler, data: Any) -> None:
-        """
-        Call a handler with the given data, handling async and sync functions appropriately.
-        
-        Args:
-            handler: The handler function to call
-            data: The data to pass to the handler
-        """
-        try:
-            if inspect.iscoroutinefunction(handler):
-                # Handler is async, await it
-                await handler(data)
-            else:
-                # Handler is sync, run in thread pool
-                loop = asyncio.get_running_loop()
-                await loop.run_in_executor(None, lambda: handler(data))
-        except Exception as e:
-            logger.error(f"Error in event handler: {str(e)}", exc_info=True)
+        handler_name = 'unknown_handler'
+        # Truncate data for logging if it's too long
+        log_data = str(data)
+        if len(log_data) > 200:
+            log_data = log_data[:200] + "..."
 
+        logger.info(f"Publishing event '{event_type}' with data (preview): {log_data}")
 
-# Singleton instance for application-wide use
-event_bus = EventBus()
-
-
-# Example usage
-async def example_usage():
-    """Example demonstrating how to use the EventBus."""
-    # Example handler functions
-    async def async_handler(data):
-        print(f"Async handler received: {data}")
-    
-    def sync_handler(data):
-        print(f"Sync handler received: {data}")
-    
-    # Subscribe handlers to events
-    await event_bus.subscribe("maintenance.alert", async_handler)
-    await event_bus.subscribe("maintenance.alert", sync_handler)
-    await event_bus.subscribe("sensor.data", sync_handler)
-    
-    # Publish events
-    await event_bus.publish("maintenance.alert", {"machine_id": "M123", "severity": "high"})
-    await event_bus.publish("sensor.data", {"machine_id": "M123", "temperature": 85.6})
-    
-    # Unsubscribe a handler
-    await event_bus.unsubscribe("maintenance.alert", sync_handler)
-
-
-if __name__ == "__main__":
-    # Run the example
-    asyncio.run(example_usage())
+        if event_type in self.subscriptions:
+            # Create a copy of the list of handlers in case of modification during iteration (e.g., unsubscribe within a handler)
+            handlers_to_call = list(self.subscriptions[event_type])
+            for handler in handlers_to_call:
+                handler_name = getattr(handler, '__name__', 'unknown_handler')
+                try:
+                    logger.debug(f"Calling handler '{handler_name}' for event '{event_type}'.")
+                    if isinstance(data, dict):
+                        await handler(**data)
+                    else:
+                        await handler(data)
+                except Exception as e:
+                    logger.error(
+                        f"Error in event handler '{handler_name}' for event '{event_type}' with data (preview): {log_data}.\n"
+                        f"Error: {e}\n"
+                        f"Traceback: {traceback.format_exc()}"
+                    )
+        else:
+            logger.debug(f"No subscribers for event '{event_type}'.")
