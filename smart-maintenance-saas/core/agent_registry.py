@@ -1,6 +1,9 @@
+import logging
 from typing import Dict, Optional
 
 from apps.agents.base_agent import BaseAgent
+
+logger = logging.getLogger(__name__)
 
 
 class AgentRegistry:
@@ -30,7 +33,7 @@ class AgentRegistry:
             return
         self.agents: Dict[str, BaseAgent] = {}
         AgentRegistry._initialized = True
-        print("AgentRegistry initialized.")
+        logger.info("AgentRegistry initialized.")
 
     def register_agent(self, agent_id: str, agent_instance: BaseAgent) -> None:
         """
@@ -44,9 +47,10 @@ class AgentRegistry:
             ValueError: If an agent with the same ID is already registered.
         """
         if agent_id in self.agents:
+            logger.error(f"Agent with ID '{agent_id}' is already registered.")
             raise ValueError(f"Agent with ID '{agent_id}' is already registered.")
         self.agents[agent_id] = agent_instance
-        print(f"Agent '{agent_id}' registered.")
+        logger.info(f"Agent '{agent_id}' registered.")
 
     def unregister_agent(self, agent_id: str) -> None:
         """
@@ -59,9 +63,10 @@ class AgentRegistry:
             ValueError: If no agent with the given ID is found.
         """
         if agent_id not in self.agents:
+            logger.error(f"Agent with ID '{agent_id}' not found for unregistration.")
             raise ValueError(f"Agent with ID '{agent_id}' not found for unregistration.")
         del self.agents[agent_id]
-        print(f"Agent '{agent_id}' unregistered.")
+        logger.info(f"Agent '{agent_id}' unregistered.")
 
     def get_agent(self, agent_id: str) -> Optional[BaseAgent]:
         """
@@ -75,9 +80,9 @@ class AgentRegistry:
         """
         agent = self.agents.get(agent_id)
         if agent:
-            print(f"Agent '{agent_id}' retrieved.")
+            logger.info(f"Agent '{agent_id}' retrieved.")
         else:
-            print(f"Agent '{agent_id}' not found.")
+            logger.warning(f"Agent '{agent_id}' not found.")
         return agent
 
     def list_agents(self) -> Dict[str, BaseAgent]:
@@ -87,7 +92,7 @@ class AgentRegistry:
         Returns:
             A dictionary mapping agent IDs to agent instances.
         """
-        print(f"Listing all {len(self.agents)} registered agents.")
+        logger.info(f"Listing all {len(self.agents)} registered agents.")
         return self.agents.copy()
 
 # Example of how to get the singleton instance:
