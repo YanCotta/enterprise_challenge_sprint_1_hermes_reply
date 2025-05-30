@@ -97,6 +97,24 @@ class AgentStatusUpdateEvent(BaseEventModel):
         description="Agent's capabilities, represented as a list of dictionaries."
     )
 
+
+class DataProcessingFailedEvent(BaseEventModel):
+    """
+    Event indicating that an error occurred during data processing.
+
+    Attributes:
+        agent_id: The identifier of the agent that was attempting to process the data.
+        error_message: A message describing the error that occurred.
+        original_event_payload: The payload of the event that the agent was trying to process.
+                                This can be useful for debugging.
+    """
+    agent_id: str = Field(..., description="Identifier of the agent that encountered the error.")
+    error_message: str = Field(..., description="Details of the error that occurred during processing.")
+    original_event_payload: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="The original event payload that led to the processing failure."
+    )
+
 # Example of how to use these models (for testing purposes, can be removed or commented out):
 # if __name__ == "__main__":
 #     sensor_event = SensorDataReceivedEvent(
