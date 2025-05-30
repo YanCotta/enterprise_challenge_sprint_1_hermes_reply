@@ -10,16 +10,8 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field, validator, AnyUrl
 from pydantic_settings import BaseSettings
-
-
-class PostgresDsn(AnyUrl):
-    allowed_schemes = {"postgresql", "postgresql+psycopg2", "postgres"}
-    host_required = True
-
-
-class RedisDsn(AnyUrl):
-    allowed_schemes = {"redis"}
-    host_required = True
+# Import Pydantic DSN types
+from pydantic import PostgresDsn, RedisDsn
 
 
 class KafkaDsn(AnyUrl):
@@ -35,9 +27,11 @@ class Settings(BaseSettings):
     application. Default values are provided but can be overridden via environment
     variables or a .env file.
     """
+    PROJECT_NAME: str = "Smart Maintenance SaaS"
+    API_VERSION: str = "0.1.0"
     
     # Database
-    database_url: str = "postgresql://smart_user:strong_password@localhost:5432/smart_maintenance_db"
+    database_url: PostgresDsn = "postgresql://smart_user:strong_password@localhost:5432/smart_maintenance_db"  # type: ignore
     db_host: str = "localhost"
     db_port: int = 5432
     db_user: str = "smart_user"
@@ -45,10 +39,10 @@ class Settings(BaseSettings):
     db_name: str = "smart_maintenance_db"
     
     # Test Database
-    test_database_url: str = "postgresql://smart_user:strong_password@localhost:5432/smart_maintenance_db_test"
+    test_database_url: PostgresDsn = "postgresql://smart_user:strong_password@localhost:5432/smart_maintenance_db_test"  # type: ignore
     
     # Redis (for future use)
-    redis_url: str = "redis://localhost:6379"
+    redis_url: RedisDsn = "redis://localhost:6379"  # type: ignore
     
     # Kafka (for future use)
     kafka_bootstrap_servers: str = "localhost:9092"
@@ -77,20 +71,6 @@ class Settings(BaseSettings):
     
     # Logging
     log_level: str = "INFO"
-    
-    @validator("database_url")
-    def validate_database_url(cls, v: str) -> str:
-        """Validate that the database URL is properly formatted."""
-        if not v.startswith(("postgresql://", "postgresql+psycopg2://", "postgres://")):
-            raise ValueError("Database URL must start with postgresql:// or postgresql+psycopg2://")
-        return v
-        
-    @validator("redis_url")
-    def validate_redis_url(cls, v: str) -> str:
-        """Validate that the Redis URL is properly formatted."""
-        if not v.startswith("redis://"):
-            raise ValueError("Redis URL must start with redis://")
-        return v
     
     class Config:
         """Pydantic config for settings."""
