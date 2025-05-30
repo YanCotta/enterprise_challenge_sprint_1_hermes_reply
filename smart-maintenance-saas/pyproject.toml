@@ -4,7 +4,15 @@ version = "0.1.0"
 description = "A sophisticated SaaS platform for intelligent maintenance management using AI/ML capabilities"
 authors = ["Your Organization <your.email@example.com>"]
 readme = "README.md"
-packages = [{include = "smart_maintenance_saas"}]
+packages = [
+    {include = "apps"},
+    {include = "core"},
+    {include = "data"},
+    {include = "examples"},
+    {include = "infrastructure"},
+    {include = "scripts"},
+    {include = "tests"}
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"
