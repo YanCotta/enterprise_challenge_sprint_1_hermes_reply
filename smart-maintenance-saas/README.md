@@ -94,78 +94,76 @@ The system is composed of several specialized agents communicating via an event 
 poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The API will be available at http://localhost:8000.
-API documentation (Swagger UI): http://localhost:8000/docs
+The API will be available at http://localhost:8000.  
+API documentation (Swagger UI): http://localhost:8000/docs  
 Alternative API documentation (ReDoc): http://localhost:8000/redoc
 
-6. Running Tests
+## 6. Running Tests
+
 Ensure test dependencies and any test-specific setup (like a test database container if using testcontainers) are configured.
 
-Bash
-
+```bash
 poetry run pytest
+```
+
 To run with coverage:
 
-Bash
-
+```bash
 poetry run pytest --cov=apps --cov=core
-7. API Endpoints
+```
+
+## 7. API Endpoints
+
 (This section will be populated as API endpoints are defined, starting around Day 11)
 
-POST /api/v1/ingestion/sensor-reading/: Ingests new sensor data.
+* `POST /api/v1/ingestion/sensor-reading/`: Ingests new sensor data.
 ...
-8. Implemented Agents
+
+## 8. Implemented Agents
+
 (This section will list agents as they are implemented, starting Day 2/4)
 
-BaseAgent: Foundation class for all agents. (Day 2)
-DataAcquisitionAgent: Handles raw data ingestion, validation, and enrichment. (Day 4)
+* **BaseAgent:** Foundation class for all agents. Defines common lifecycle, event handling, and health check methods. (Day 2)
+* **AgentRegistry:** Singleton class for discovering and managing agent instances. (Day 2)
+* **DataAcquisitionAgent:** Handles raw data ingestion, validation, and enrichment. (Day 4)
 ...
-9. Event Catalog
+
+## 9. Event Catalog
+
 (This section will list Pydantic event models defined in core/events/event_models.py as they are created)
 
-DataProcessedEvent: Published after data is validated and enriched. (Day 4)
+* **BaseEventModel:** Base model for all events, providing common fields like event_id and timestamp.
+* **SensorDataReceivedEvent:** Published when new sensor data is ingested into the system.
+* **DataProcessedEvent:** Published after data is validated, cleaned, and enriched.
+* **AnomalyDetectedEvent:** Published when an anomaly detection agent identifies a potential anomaly.
+* **AgentStatusUpdateEvent:** Published by agents to report their current status or health.
 ...
-10. Daily Progress Log
+
+## 10. Daily Progress Log
+
 (This is where you'll add brief notes each day)
 
-Day 1 (2025-05-28):
+* **Day 1 (2025-05-28):**
+  * **Environment & Architecture Setup:** Project structure, Poetry, Git, pre-commit hooks.
+  * **Core Infrastructure:** Dockerized TimescaleDB, basic async EventBus, Pydantic settings, structured JSON logging.
+  * **Testing Foundation:** Pytest setup, test database strategy using `testcontainers`.
+* **Day 2 (2025-05-29):**
+  * Implemented `AgentCapability` dataclass and `BaseAgent` abstract class (`apps/agents/base_agent.py`) with core lifecycle, event handling, and capability registration methods.
+  * Implemented singleton `AgentRegistry` (`core/agent_registry.py`) for agent discovery.
+  * Refined `EventBus` (`core/events/event_bus.py`) with enhanced error handling, unsubscribe method, and switched to structured logging.
+  * Defined core Pydantic event models (`BaseEventModel`, `SensorDataReceivedEvent`, `DataProcessedEvent`, `AnomalyDetectedEvent`, `AgentStatusUpdateEvent`) in `core/events/event_models.py`.
+  * Added unit tests for `EventBus` and `BaseAgent`.
+  * Addressed review feedback: refined logging in AgentRegistry and EventBus.
+* **Day 3 (2025-05-30):**
+  * Finalized Pydantic schemas (`SensorType`, `SensorReading`, `SensorReadingCreate`, `AnomalyAlert`, `MaintenanceTask`) in `data/schemas.py`.
+  * Updated `sensor_data_generator.py` to use centralized schemas.
+  * Implemented SQLAlchemy ORM models (`SensorReadingORM` with TimescaleDB hypertable setup, `AnomalyAlertORM`, `MaintenanceTaskORM`) in `core/database/orm_models.py`.
+  * Configured async database session management in `core/database/session.py`.
+  * Completed Alembic setup (`alembic.ini`, `env.py` for async) and successfully generated and applied the initial migration to create tables and TimescaleDB hypertable.
+  * Implemented `CRUDSensorReading` class in `core/database/crud/crud_sensor_reading.py`.
+  * Set up main FastAPI application (`apps/api/main.py`) with logging integration and `/health`, `/health/db` endpoints.
+  * Addressed review feedback: updated Pydantic DSN usage in `settings.py`, removed unused `caller_info` in `logging_config.py`, removed print from `schemas.py`, refined DB URL transformation in `session.py` and `env.py`.
 
-**Day 1 Plan Tasks:**
-
-1.  **Environment & Architecture Setup (Morning):**
-    * **Task 1: Project Structure:**
-        * Create enhanced folder structure.
-        * **Status:** DONE. 
-    * **Task 2: Python Environment & Dependencies:**
-        * Setup virtual environment (Poetry).
-        * Install core and dev dependencies via `pyproject.toml`.
-        * **Status:** DONE. `pyproject.toml` configured and dependencies installed.
-    * **Task 3: Git Setup & Pre-commit Hooks:**
-        * Initialize Git, `.gitignore`.
-        * Setup pre-commit hooks (black, isort, flake8, mypy).
-        * **Status:** DONE.  `.gitignore` created, pre-commit hooks configured and passing.
-2.  **Core Infrastructure (Afternoon):**
-    * **Task 4: Database Setup (PostgreSQL + TimescaleDB via Docker):**
-        * `docker-compose.yml` with TimescaleDB service.
-        * Environment variables, data persistence, TimescaleDB extension enabled.
-        * **Status:** DONE.  `docker-compose.yml` created, init script for extension, connectivity verified.
-    * **Task 5: Event System (Basic In-memory EventBus):**
-        * `core/events/event_bus.py` with subscribe/publish.
-        * Async handling, error handling for handlers.
-        * **Status:** DONE. `EventBus` class implemented with async support and error handling.
-    * **Task 6: Configuration Management (Pydantic BaseSettings):**
-        * `core/config/settings.py` using Pydantic.
-        * Load from `.env`, example `.env.example`.
-        * **Status:** DONE.  `Settings` class implemented, `.env` and `.env.example` created.
-    * **Task 7: Logging Setup (Structured JSON Logging):**
-        * `core/logging_config.py` (or similar).
-        * JSON formatter (e.g., `python-json-logger`).
-        * `setup_logging()` function.
-        * **Status:** DONE.  Structured JSON logging implemented with examples and FastAPI integration.
-3.  **Testing Foundation (Evening):**
-    * **Task 8: Pytest & Test DB Strategy:**
-        * `pytest.ini` configuration.
-        * Strategy for separate test DB (Docker with `testcontainers` was implemented).
-        * **Status:** DONE.  `pytest.ini` created, `testcontainers` approach implemented.
+## 11. Key Configuration
 
 
