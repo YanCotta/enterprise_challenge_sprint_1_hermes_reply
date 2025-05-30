@@ -72,24 +72,6 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         log_record['thread_name'] = record.threadName
 
 
-def caller_info() -> Dict[str, Any]:
-    """
-    Get information about the caller function.
-    
-    Returns:
-        Dict containing file, function, and line number of the caller
-    """
-    # Get the frame of the caller (depth=2 because this function is called by another function)
-    caller_frame = inspect.currentframe().f_back.f_back
-    info = inspect.getframeinfo(caller_frame)
-    
-    return {
-        'file': os.path.basename(info.filename),
-        'function': info.function,
-        'line': info.lineno,
-    }
-
-
 def setup_logging(log_level: Optional[str] = None) -> None:
     """
     Configure the logging system to use JSON formatting.
