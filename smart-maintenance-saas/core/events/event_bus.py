@@ -8,12 +8,6 @@ import traceback
 logger = logging.getLogger(__name__)
 # Configure logging (e.g., to console with a specific format)
 # This basic configuration can be done here for simplicity, or managed globally in the application
-if not logger.handlers: # Avoid adding multiple handlers if this module is reloaded
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO) # Default level, can be configured as needed
 
 
 class EventBus:
