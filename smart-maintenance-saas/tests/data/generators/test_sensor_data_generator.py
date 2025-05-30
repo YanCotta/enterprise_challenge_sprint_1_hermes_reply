@@ -49,11 +49,7 @@ def test_generate_anomaly_spike():
     # Lower bound: 25 * (1 + 0.5 * 2.0) = 25 * 2 = 50
     # Upper bound: 25 * (1 + 1.0 * 2.0) = 25 * 3 = 75
     # Adding some buffer for noise around baseline before spike
-
-    assert not (5 <= reading.value <= 45) # Check if it's a significant spike
-=======
     assert reading.value > 45 or reading.value < 5 # Check if it's a significant spike
-
     assert 0.6 <= reading.quality <= 0.85
     assert reading.metadata["generation_mode"] == "anomaly_spike"
 
