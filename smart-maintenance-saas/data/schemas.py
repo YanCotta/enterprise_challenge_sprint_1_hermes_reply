@@ -25,7 +25,7 @@ class SensorReading(BaseModel):
     unit: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     quality: float = Field(default=1.0, ge=0, le=1, description="Data quality score")
-    metadata: dict = Field(default_factory=dict)
+    sensor_metadata: dict = Field(default_factory=dict) # Renamed from 'metadata' to match ORM model
 
     class Config:
         orm_mode = True # or from_attributes = True for Pydantic v2
@@ -48,7 +48,7 @@ class SensorReadingBase(BaseModel):
     unit: Optional[str] = Field(None, description="Unit of measurement for the sensor value (e.g., °C, %, mm/s).")
     
     quality: DataQuality = Field(DataQuality.GOOD, description="Quality of the sensor reading.")
-    metadata: Optional[Dict[str, any]] = Field(default_factory=dict, description="Additional metadata for the reading.")
+    sensor_metadata: Optional[Dict[str, any]] = Field(default_factory=dict, description="Additional metadata for the reading.") # Renamed from 'metadata' to match ORM model
 
     @validator('timestamp', pre=True, always=True)
     def ensure_utc_timestamp(cls, v):
@@ -68,7 +68,7 @@ class SensorReadingCreate(BaseModel):
     unit: str
     timestamp: Optional[datetime] = None # Can be optional, server might set it if None
     quality: Optional[float] = Field(default=1.0, ge=0, le=1)
-    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    sensor_metadata: Optional[Dict[str, Any]] = Field(default_factory=dict) # Renamed from 'metadata' to match ORM model
 
     class Config:
         orm_mode = True # or from_attributes = True for Pydantic v2
