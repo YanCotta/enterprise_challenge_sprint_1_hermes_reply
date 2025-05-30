@@ -1,121 +1,144 @@
 """Base agent module providing core functionality for all AI agents in the system."""
 
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
-from uuid import UUID, uuid4
+from datetime import datetime
+import logging # Ensure logging is imported
 
-# Assuming event_models.py and other necessary modules are accessible
-# from core.events.event_models import Event, AgentEvent
-# from core.config.settings import settings
-
+# Get a logger for this module
+logger = logging.getLogger(__name__)
 
 @dataclass
 class AgentCapability:
-    """
-    Represents a specific capability of an agent, including its description,
-    required parameters, and an optional method name to call for this capability.
-    """
+    """Defines the structure for an agent's capability."""
     name: str
     description: str
-    parameters: Dict[str, Any] = field(default_factory=dict)
-    method_name: Optional[str] = None
-
-    def __post_init__(self):
-        if self.method_name is None:
-            self.method_name = f"execute_{self.name.lower().replace(' ', '_')}"
-
+    input_types: List[str] = field(default_factory=list)  # e.g., event types or data model names
+    output_types: List[str] = field(default_factory=list) # e.g., event types or data model names
 
 class BaseAgent(ABC):
     """
-    Abstract base class for all AI agents in the Smart Maintenance SaaS platform.
-
-    This class defines the common interface and core functionalities that all agents
-    must implement. It includes lifecycle management, event handling, and capability
-    registration.
+    Abstract base class for all agents in the Smart Maintenance SaaS system.
+    Provides common lifecycle methods, event handling, capability registration,
+    and health check functionalities.
     """
-
-    def __init__(self, agent_id: Optional[UUID] = None, name: Optional[str] = None, description: Optional[str] = None):
-        self.agent_id: UUID = agent_id or uuid4()
-        self.name: str = name or self.__class__.__name__
-        self.description: str = description or self.__doc__ or "No description available."
-        self.is_active: bool = False
-        self.capabilities: List[AgentCapability] = self._register_capabilities()
-        # self.event_bus = None # Will be set by the AgentRegistry or system
-
-    def _register_capabilities(self) -> List[AgentCapability]:
+    def __init__(self, agent_id: str, event_bus: Any): # event_bus is an instance of our EventBus
         """
-        Registers the capabilities of the agent.
-        This method should be overridden by subclasses to define their specific capabilities.
-        """
-        return []
+        Initializes the BaseAgent.
 
-    def get_capability(self, name: str) -> Optional[AgentCapability]:
-        """Retrieves a capability by its name."""
-        for cap in self.capabilities:
-            if cap.name == name:
-                return cap
-        return None
+        Args:
+            agent_id (str): A unique identifier for the agent.
+            event_bus (Any): An instance of the system's EventBus for inter-agent communication.
+        """
+        self.agent_id: str = agent_id
+        self.event_bus: Any = event_bus
+        self.capabilities: List[AgentCapability] = []
+        self.status: str = "initializing"
+        logger.info(f"Agent {self.agent_id} initialized. Status: {self.status}")
 
     @abstractmethod
-    async def initialize(self) -> None:
+    async def process(self, data: Any) -> Any:
         """
-        Initializes the agent, setting up any necessary resources or connections.
-        This method is called once when the agent is first started.
-        """
-        self.is_active = True
-        # Example: await self.event_bus.subscribe(f"agent.{self.agent_id}.command", self.handle_command)
-        print(f"Agent {self.name} (ID: {self.agent_id}) initialized.")
+        Main processing logic for the agent. This method MUST be implemented by subclasses.
+        It's typically called by handle_event or other internal agent logic.
 
-    @abstractmethod
-    async def execute_task(self, task_name: str, params: Dict[str, Any]) -> Any:
-        """
-        Executes a specific task based on the task name and parameters.
-        This method allows agents to perform actions based on their capabilities.
-        """
-        capability = self.get_capability(task_name)
-        if capability and hasattr(self, capability.method_name):
-            method_to_call = getattr(self, capability.method_name)
-            # Potentially validate params against capability.parameters schema here
-            return await method_to_call(**params)
-        else:
-            raise NotImplementedError(f"Task '{task_name}' not implemented or capability method missing for agent {self.name}.")
+        Args:
+            data (Any): The data to be processed by the agent.
 
-    @abstractmethod
-    async def process_event(self, event: Any) -> None: # Changed from Event to Any for now
+        Returns:
+            Any: The result of the processing, if applicable.
         """
-        Processes an incoming event from the event bus.
-        Agents should implement this method to react to system events or messages from other agents.
-        """
-        print(f"Agent {self.name} (ID: {self.agent_id}) received event: {event}")
+        pass
 
-    @abstractmethod
-    async def shutdown(self) -> None:
+    async def start(self) -> None:
         """
-        Shuts down the agent, releasing any resources.
-        This method is called when the agent is being stopped.
+        Starts the agent, registers its capabilities, subscribes to relevant events,
+        and sets its status to "running". Subclasses can override this to add
+        specific startup logic (e.g., event subscriptions) but should call super().start().
         """
-        self.is_active = False
-        # Example: await self.event_bus.unsubscribe_all(self.handle_command)
-        print(f"Agent {self.name} (ID: {self.agent_id}) shut down.")
+        logger.info(f"Agent {self.agent_id} starting...")
+        await self.register_capabilities()
+        # Subclasses should call self.event_bus.subscribe() here for events they need to listen to.
+        self.status = "running"
+        logger.info(f"Agent {self.agent_id} started successfully. Status: {self.status}")
 
-    async def get_status(self) -> Dict[str, Any]:
+    async def stop(self) -> None:
         """
-        Returns the current status of the agent.
+        Stops the agent and sets its status to "stopped". Subclasses can override
+        this to add specific shutdown logic (e.g., releasing resources, unsubscribing
+        from events) but should call super().stop().
+        """
+        logger.info(f"Agent {self.agent_id} stopping...")
+        # Subclasses might unsubscribe from events here.
+        self.status = "stopped"
+        logger.info(f"Agent {self.agent_id} stopped. Status: {self.status}")
+
+    async def register_capabilities(self) -> None:
+        """
+        Placeholder method for subclasses to register their specific capabilities.
+        This method should be overridden by agent implementations to populate
+        the `self.capabilities` list with `AgentCapability` objects.
+        """
+        # Example for a subclass:
+        # self.capabilities.append(
+        #     AgentCapability(
+        #         name="data_validation",
+        #         description="Validates incoming sensor data against predefined schemas.",
+        #         input_types=["SensorDataReceivedEvent"],
+        #         output_types=["DataProcessedEvent"]
+        #     )
+        # )
+        logger.debug(f"Agent {self.agent_id}: No specific capabilities registered in BaseAgent.register_capabilities.")
+        pass
+
+    async def handle_event(self, event_type: str, data: Any) -> None:
+        """
+        Default event handler. When an agent subscribes to an event using this
+        method as the handler, this method will be called.
+        By default, it logs the event and calls the agent's main `process` method.
+        Subclasses can override this for more specific event routing if needed.
+
+        Args:
+            event_type (str): The type of the event received.
+            data (Any): The payload of the event.
+        """
+        logger.info(f"Agent {self.agent_id} received event '{event_type}' with data: {str(data)[:200]}...") # Log first 200 chars
+        try:
+            await self.process(data)
+        except Exception as e:
+            logger.error(f"Agent {self.agent_id}: Error processing event '{event_type}': {e}", exc_info=True)
+            # Optionally, publish an error event
+            # await self._publish_event("agent_processing_error", {"agent_id": self.agent_id, "event_type": event_type, "error": str(e)})
+
+
+    async def get_health(self) -> Dict[str, Any]:
+        """
+        Returns the current health status of the agent.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the agent's ID, status, and current timestamp.
         """
         return {
-            "agent_id": str(self.agent_id),
-            "name": self.name,
-            "description": self.description,
-            "is_active": self.is_active,
-            "capabilities": [cap.__dict__ for cap in self.capabilities]
+            "agent_id": self.agent_id,
+            "status": self.status,
+            "timestamp": datetime.utcnow().isoformat()
         }
 
-    # Example of how a capability method might be defined:
-    # async def execute_sample_capability(self, parameter1: str, parameter2: int) -> str:
-    #     """Executes the sample capability."""
-    #     print(f"Agent {self.name} executing sample_capability with {parameter1=}, {parameter2=}")
-    #     return f"Sample capability executed with {parameter1} and {parameter2}"
+    async def _publish_event(self, event_type: str, data: Any) -> None:
+        """
+        Helper method to publish an event via the configured event bus.
 
-    def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}(id={self.agent_id}, name='{self.name}', active={self.is_active})>"
+        Args:
+            event_type (str): The type of the event to publish.
+            data (Any): The payload of the event.
+        """
+        if self.event_bus:
+            logger.debug(f"Agent {self.agent_id} publishing event '{event_type}'...")
+            try:
+                await self.event_bus.publish(event_type, data)
+                logger.info(f"Agent {self.agent_id} successfully published event '{event_type}'.")
+            except Exception as e:
+                logger.error(f"Agent {self.agent_id}: Failed to publish event '{event_type}': {e}", exc_info=True)
+        else:
+            logger.warning(f"Agent {self.agent_id}: Event bus not available. Cannot publish event '{event_type}'.")
