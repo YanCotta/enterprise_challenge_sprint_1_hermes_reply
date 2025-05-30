@@ -4,25 +4,7 @@ import time
 from datetime import datetime, timedelta
 from enum import Enum
 
-
 from smart_maintenance_saas.data.schemas import SensorReading, SensorType
-=======
-class SensorType(str, Enum):
-    TEMPERATURE = "temperature"
-    VIBRATION = "vibration"
-    PRESSURE = "pressure"
-
-from pydantic import BaseModel, Field
-
-class SensorReading(BaseModel):
-    sensor_id: str = Field(..., description="Unique sensor identifier")
-    sensor_type: SensorType
-    value: float
-    unit: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-    quality: float = Field(ge=0, le=1, description="Data quality score", default=1.0)
-    metadata: dict = Field(default_factory=dict)
-
 
 import numpy as np
 from typing import List
