@@ -1,4 +1,12 @@
 import asyncio
+import os
+import sys
+
+# Add the project root directory to the Python path
+# This allows Alembic to find your 'smart_maintenance_saas' package
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, PROJECT_ROOT)
+
 from logging.config import fileConfig
 
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -17,15 +25,21 @@ if config.config_file_name is not None:
 
 # Import your Base and your application settings
 # Adjust the import path as per your project structure
-from smart_maintenance_saas.core.database.orm_models import Base
-from smart_maintenance_saas.core.config.settings import settings
+from core.database.orm_models import Base
+from core.config.settings import settings
 
 # Set the target metadata for autogenerate support
 target_metadata = Base.metadata
 
 # Get the database URL from your application settings
-# Ensure this URL is for an async driver (e.g., postgresql+asyncpg://)
+# Always use PostgreSQL with asyncpg driver for all Alembic operations
 db_url = settings.database_url
+
+# Convert the URL to use asyncpg driver if it's not already configured
+if 'postgresql+asyncpg://' not in db_url:
+    db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://')
+    if 'postgresql+psycopg2' in db_url:
+        db_url = db_url.replace('postgresql+psycopg2', 'postgresql+asyncpg')
 
 # You can override the sqlalchemy.url from alembic.ini if needed,
 # or simply rely on this db_url. For simplicity, we'll use db_url directly.

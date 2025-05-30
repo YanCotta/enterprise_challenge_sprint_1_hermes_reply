@@ -9,6 +9,7 @@ from sqlalchemy import (
     String,
     Text,
     ForeignKey,
+    PrimaryKeyConstraint,
     func # for server_default=func.now()
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
@@ -20,30 +21,36 @@ Base = declarative_base()
 class SensorReadingORM(Base):
     __tablename__ = "sensor_readings"
 
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    # For TimescaleDB hypertables, include the partitioning column (timestamp) in the primary key
+    id = Column(Integer, autoincrement=True, nullable=False, index=True)
     # Alternatively, for UUID PK:
-    # id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    # id = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False, index=True)
     
     sensor_id = Column(String(255), index=True, nullable=False)
     sensor_type = Column(String(50), nullable=False) # Consider Enum type if DB supports / desired
     value = Column(Float, nullable=False)
     unit = Column(String(50))
-    timestamp = Column(DateTime(timezone=True), index=True, nullable=False)
+    timestamp = Column(DateTime(timezone=True), primary_key=True, nullable=False, index=True)
     quality = Column(Float, default=1.0)
-    metadata = Column(JSONB, nullable=True) # Changed to nullable=True for flexibility
+    sensor_metadata = Column(JSONB, nullable=True) # Renamed from 'metadata' to avoid conflicts
+    
+    # Composite primary key with id and timestamp (required for TimescaleDB hypertables)
+    __table_args__ = (
+        # The id is included to ensure each row has a unique identifier
+        # timestamp is included because it's the partitioning column for the hypertable
+        PrimaryKeyConstraint('id', 'timestamp'),
+    )
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    # For TimescaleDB - this assumes sqlalchemy-timescaledb is available or similar utility
-    # If not, this will be a standard SQLAlchemy __table_args__ and TimescaleDB needs to be setup manually or via Alembic.
-    __table_args__ = (
-        {"timescaledb_hypertable": {'time_column_name': 'timestamp'}},
-        # Example of a composite index (if needed):
-        # Index('ix_sensor_readings_sensor_id_timestamp', 'sensor_id', 'timestamp', unique=False),
-    )
-    # If sqlalchemy-timescaledb is not used, comment out the timescaledb_hypertable part
-    # and add a comment: # Manual TimescaleDB: Run `SELECT create_hypertable('sensor_readings', 'timestamp');`
+    # We'll handle creating the hypertable in Alembic migrations instead of using SQLAlchemy
+    # Manual TimescaleDB: Run `SELECT create_hypertable('sensor_readings', 'timestamp');`
+    # 
+    # Example of composite index (uncomment if needed):
+    # __table_args__ = (
+    #     Index('ix_sensor_readings_sensor_id_timestamp', 'sensor_id', 'timestamp', unique=False),
+    # )
 
 class AnomalyAlertORM(Base):
     __tablename__ = "anomaly_alerts"
