@@ -4,8 +4,8 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from smart_maintenance_saas.core.database.orm_models import SensorReadingORM
-from smart_maintenance_saas.data.schemas import SensorReadingCreate # Assuming SensorReadingCreate is in schemas.py
+from core.database.orm_models import SensorReadingORM
+from data.schemas import SensorReadingCreate # Assuming SensorReadingCreate is in schemas.py
 
 
 class CRUDSensorReading:

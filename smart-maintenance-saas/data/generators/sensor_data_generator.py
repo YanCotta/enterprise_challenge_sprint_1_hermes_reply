@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 from enum import Enum
 
-from smart_maintenance_saas.data.schemas import SensorReading, SensorType
+from data.schemas import SensorReading, SensorType
 
 import numpy as np
 from typing import List

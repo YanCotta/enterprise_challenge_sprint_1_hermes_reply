@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from smart_maintenance_saas.data.generators.sensor_data_generator import SensorDataGenerator, SensorType, SensorReading
+from data.generators.sensor_data_generator import SensorDataGenerator, SensorType, SensorReading
 
 # Test normal data generation
 def test_generate_normal_reading_temperature():

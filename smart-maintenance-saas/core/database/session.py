@@ -51,7 +51,7 @@ async def get_async_db() -> AsyncGenerator[AsyncSession, None]: # Corrected retu
 # Example utility function (optional, Alembic is preferred for schema management)
 # async def init_db():
 #     # Import Base from your orm_models.py where it's defined
-#     from smart_maintenance_saas.core.database.orm_models import Base
+#     from core.database.orm_models import Base
 #     async with engine.begin() as conn:
 #         await conn.run_sync(Base.metadata.drop_all) # Use with caution
 #         await conn.run_sync(Base.metadata.create_all)

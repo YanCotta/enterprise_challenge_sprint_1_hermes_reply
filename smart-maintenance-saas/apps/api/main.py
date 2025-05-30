@@ -4,9 +4,8 @@ from sqlalchemy import select # Import select
 import logging # For basic logging if setup_logging is not yet fully integrated
 
 # Import setup_logging from your logging configuration
-# Assuming it's in smart_maintenance_saas.core.logging_config
 try:
-    from smart_maintenance_saas.core.logging_config import setup_logging
+    from core.logging_config import setup_logging
     setup_logging() # Call it to configure logging
 except ImportError:
     logging.basicConfig(level=logging.INFO) # Basic fallback logging
@@ -14,8 +13,8 @@ except ImportError:
 
 
 # Import the get_async_db dependency and settings
-from smart_maintenance_saas.core.database.session import get_async_db, engine as async_engine # Import engine if needed for lifespan
-from smart_maintenance_saas.core.config.settings import settings
+from core.database.session import get_async_db, engine as async_engine # Import engine if needed for lifespan
+from core.config.settings import settings
 
 # Optional: Import routers if you have them (e.g., for Task 7)
 # from .routers import sensor_readings_router
