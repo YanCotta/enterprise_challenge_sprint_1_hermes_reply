@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from typing import AsyncGenerator # Import AsyncGenerator
 # declarative_base is usually in orm_models.py now, so not typically needed here directly
 # from sqlalchemy.ext.declarative import declarative_base 
 
-from smart_maintenance_saas.core.config.settings import settings
+from core.config.settings import settings # Corrected import path
 # If Base is defined in orm_models.py and truly needed here (e.g., for a utility script part of this file)
-# from smart_maintenance_saas.core.database.orm_models import Base 
+# from core.database.orm_models import Base # Corrected import path
 
 # Construct the asynchronous database URL.
 # It's assumed that settings.database_url is compatible with asyncpg (e.g., "postgresql+asyncpg://...").
@@ -13,7 +14,13 @@ from smart_maintenance_saas.core.config.settings import settings
 # async_db_url = settings.database_url.replace("postgresql://", "postgresql+asyncpg://", 1) # if settings.database_url.startswith("postgresql://") else settings.database_url
 # We will proceed assuming settings.database_url is already correctly formatted for asyncpg.
 
-SQLALCHEMY_DATABASE_URL = settings.database_url
+SQLALCHEMY_DATABASE_URL = str(settings.database_url) # Ensure it's a string for manipulation
+
+if SQLALCHEMY_DATABASE_URL.startswith("postgresql://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif SQLALCHEMY_DATABASE_URL.startswith("postgresql+psycopg2://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+# else: SQLALCHEMY_DATABASE_URL remains as is, assuming it's correct or a different DB type
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -31,7 +38,7 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 # Async dependency for FastAPI to get a database session
-async def get_async_db() -> AsyncSession:
+async def get_async_db() -> AsyncGenerator[AsyncSession, None]: # Corrected return type
     async with AsyncSessionLocal() as session:
         try:
             yield session
