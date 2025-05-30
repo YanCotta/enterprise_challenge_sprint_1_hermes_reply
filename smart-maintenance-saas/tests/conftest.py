@@ -18,8 +18,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from testcontainers.postgres import PostgresContainer
 
-from core.config import settings
-from core.database.base import Base
+from smart_maintenance_saas.core.config import settings
+from smart_maintenance_saas.core.database.base import Base
 
 
 @pytest.fixture(scope="session")
