@@ -33,13 +33,15 @@ target_metadata = Base.metadata
 
 # Get the database URL from your application settings
 # Always use PostgreSQL with asyncpg driver for all Alembic operations
-db_url = settings.database_url
+db_url_str = str(settings.database_url) # Ensure string type
 
 # Convert the URL to use asyncpg driver if it's not already configured
-if 'postgresql+asyncpg://' not in db_url:
-    db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://')
-    if 'postgresql+psycopg2' in db_url:
-        db_url = db_url.replace('postgresql+psycopg2', 'postgresql+asyncpg')
+if db_url_str.startswith("postgresql+psycopg2://"):
+    db_url = db_url_str.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+elif db_url_str.startswith("postgresql://"):
+    db_url = db_url_str.replace("postgresql://", "postgresql+asyncpg://", 1)
+else:
+    db_url = db_url_str # Assume it's already asyncpg or other
 
 # You can override the sqlalchemy.url from alembic.ini if needed,
 # or simply rely on this db_url. For simplicity, we'll use db_url directly.
