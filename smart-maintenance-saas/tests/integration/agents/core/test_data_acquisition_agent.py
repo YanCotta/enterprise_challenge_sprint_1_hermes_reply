@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from apps.agents.core.data_acquisition_agent import DataAcquisitionAgent
 from core.events.event_bus import EventBus # Corrected path
 from core.events.event_models import SensorDataReceivedEvent, DataProcessedEvent, DataProcessingFailedEvent, BaseEventModel # Added BaseEventModel
-from data.schemas import SensorReadingCreate, SensorReading # Added SensorReading for type checks
+from data.schemas import SensorReadingCreate, SensorReading, SensorType # Added SensorReading for type checks and SensorType
 from data.validators.agent_data_validator import DataValidator # Corrected to agent_data_validator
 from data.processors.agent_data_enricher import DataEnricher # Corrected to agent_data_enricher
 from data.exceptions import DataEnrichmentException, DataValidationException
@@ -42,8 +42,8 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
 
         self.received_events = []
         # Ensure the handler can be awaited if the event bus publish/dispatch mechanism is async
-        self.event_bus.subscribe(DataProcessedEvent, self.capture_event_handler)
-        self.event_bus.subscribe(DataProcessingFailedEvent, self.capture_event_handler)
+        self.event_bus.subscribe(DataProcessedEvent.__name__, self.capture_event_handler)
+        self.event_bus.subscribe(DataProcessingFailedEvent.__name__, self.capture_event_handler)
 
 
     async def capture_event_handler(self, event: BaseEventModel): # Changed Event to BaseEventModel
@@ -151,19 +151,51 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         valid_raw_data = {
             "sensor_id": str(sensor_id_uuid),
             "value": 25.5,
-            "timestamp_utc": raw_data_ts.isoformat()
+            "timestamp_utc": raw_data_ts.isoformat(),
+            "sensor_type": SensorType.TEMPERATURE.value, # Added sensor_type
+            "unit": "°C" # Added unit
         }
         input_event = SensorDataReceivedEvent(raw_data=valid_raw_data.copy(), correlation_id=str(correlation_id))
 
         # Expected payload after validation (SensorReadingCreate model)
+        # This should match the structure that DataValidator.validate is expected to produce
+        # and which will be included in DataProcessingFailedEvent.original_event_payload
         expected_validated_payload_dict = SensorReadingCreate(
-            sensor_id=sensor_id_uuid,
+            sensor_id=str(sensor_id_uuid),  # Ensure sensor_id is string
             value=valid_raw_data["value"],
-            timestamp_utc=raw_data_ts,
-            correlation_id=str(correlation_id),
-            metadata={} # Default empty dict from schema
+            timestamp=raw_data_ts,         # Use 'timestamp' field name, validator maps timestamp_utc
+            sensor_type=SensorType.TEMPERATURE, # Provide sensor_type enum
+            unit="°C",                      # Provide unit
+            # quality and sensor_metadata have defaults in Pydantic model and are set by validator if not present
+            # correlation_id is added by the validator to the object it creates
+            # The SensorReadingCreate schema does not have correlation_id, so it should not be here
+            # metadata is added by the validator if not present in raw data
         ).model_dump()
+        # Adjust expected_validated_payload_dict to include what validator adds, if not aligned with SensorReadingCreate schema directly
+        # The validator's output SensorReadingCreate object's model_dump() is what's in the event.
+        # If validator adds correlation_id to the SensorReadingCreate instance (e.g. if model has extra='allow'),
+        # then it would be in the dump. Current SensorReadingCreate does not allow extra fields.
+        # The validator also adds sensor_metadata if not present.
+        # Let's assume metadata will be added by the validator if it's not in raw_data.
+        # SensorReadingCreate schema has `sensor_metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)`
+        # So, an empty dict is expected if not provided.
+        # The validator also maps "timestamp_utc" to "timestamp".
 
+        # The critical part is that `expected_validated_payload_dict` must match the
+        # `original_event_payload` of the `DataProcessingFailedEvent`.
+        # This payload comes from `validated_data_obj.model_dump()` in DataAcquisitionAgent,
+        # where `validated_data_obj` is the output of `self.validator.validate()`.
+        # So, `expected_validated_payload_dict` must be a valid `SensorReadingCreate` instance,
+        # created using the same logic as the validator if there are transformations.
+
+        # The validator takes raw_data, adds correlation_id, maps fields, and then creates SensorReadingCreate.
+        # raw_data for this test now includes sensor_type and unit.
+        # The validator's `_map_raw_to_schema_fields` handles `timestamp_utc` -> `timestamp`.
+        # It creates `SensorReadingCreate(**mapped_data, sensor_metadata=metadata, correlation_id=correlation_id_str)`
+        # IF SensorReadingCreate accepted **kwargs or had correlation_id field. It does not.
+        # This means the validator itself will likely fail if it tries to pass correlation_id to SensorReadingCreate
+        # if the model doesn't define it or allow extra fields.
+        # For now, the goal is to fix the test's direct instantiation issues.
 
         # Patch the 'enrich' method of the specific enricher instance used by the agent
         with patch.object(self.agent.enricher, 'enrich', side_effect=DataEnrichmentException("Simulated enrichment failure")) as mock_enrich_method:

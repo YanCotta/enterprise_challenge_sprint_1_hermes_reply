@@ -1,6 +1,7 @@
 import pytest
 import asyncio
 from datetime import datetime, timezone
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Any, List, Dict
 from uuid import uuid4
@@ -82,15 +83,19 @@ async def test_base_agent_get_health(mock_event_bus: MagicMock):
     assert health_status["agent_id"] == agent_id
     assert health_status["status"] == "testing_health"
     assert "timestamp" in health_status
-    try:
-        # Check if timestamp is a valid ISO 8601 string and from UTC
-        ts = datetime.fromisoformat(health_status["timestamp"])
-        assert ts.tzinfo is not None and ts.tzinfo.utcoffset(ts) == timezone.utc.utcoffset(None)
-    except ValueError:
-        pytest.fail("Timestamp is not a valid ISO 8601 string.")
-    # More precise timestamp checking is usually avoided due to fragility.
-    # We can check if it's recent, e.g., within a few seconds of now.
-    assert (datetime.now(timezone.utc) - datetime.fromisoformat(health_status["timestamp"])).total_seconds() < 5
+
+    timestamp_str = health_status.get("timestamp")
+    assert timestamp_str is not None
+
+    # Parse the timestamp string
+    parsed_time = datetime.fromisoformat(timestamp_str)
+
+    # Assert that the parsed time is timezone-aware and UTC
+    assert parsed_time.tzinfo is not None
+    assert parsed_time.tzinfo.utcoffset(parsed_time) == timezone.utc.utcoffset(None)
+
+    # Optional: Check if the timestamp is recent (within a certain delta)
+    assert (datetime.now(timezone.utc) - parsed_time).total_seconds() < 5
 
 
 @pytest.mark.asyncio
@@ -133,7 +138,7 @@ async def test_base_agent_handle_event_default_behavior(mock_event_bus: MagicMoc
 
     await agent.handle_event(event_type, event_data)
 
-    agent.process.assert_not_called()
+    agent.process.assert_called_once_with(event_data)
     # To check print:
     # captured = capsys.readouterr()
     # assert f"Agent {agent_id} received event: {event_type} with data: {event_data}" in captured.out

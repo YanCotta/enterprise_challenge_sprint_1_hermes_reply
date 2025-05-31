@@ -55,13 +55,6 @@ def postgres_container():
     # Set environment variables for tests to use
     os.environ["DATABASE_URL"] = postgres.get_connection_url()
     
-    # Wait for container to be ready
-    postgres.driver.exec("psql", [
-        "-U", settings.db_user,
-        "-d", settings.db_name,
-        "-c", "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;"
-    ])
-    
     yield postgres
     
     postgres.stop()
