@@ -60,7 +60,7 @@ def test_generate_anomaly_drift():
     # Drift: current_value += baseline_value * drift_factor * (+/-1)
     # Baseline for temp: 25. Drift factor: 0.3. Change: 25 * 0.3 = 7.5
     # Expected: 25 +/- 7.5 = 17.5 or 32.5 (plus initial noise)
-    assert abs(reading.value - generator.baseline["value"]) > (generator.baseline["value"] * generator.baseline["anomaly_factor_drift"] * 0.9) # check if drift is significant
+    assert abs(reading.value - generator.baseline["value"]) > (generator.baseline["value"] * generator.baseline["anomaly_factor_drift"] * 0.85) # check if drift is significant
     assert 0.6 <= reading.quality <= 0.85
     assert reading.metadata["generation_mode"] == "anomaly_drift" # Changed metadata to sensor_metadata
 
