@@ -65,21 +65,46 @@ def test_db_url(postgres_container) -> str:
     """
     Get the database URL for tests.
     
-    If using a test container, this will be the container's URL.
-    Otherwise, it will use the DATABASE_TEST_URL from settings.
+    Args:
+        postgres_container: A running PostgreSQL container fixture, if being used
+
+    Returns:
+        str: A database URL string configured for asyncpg
+
+    Raises:
+        ValueError: If the database URL scheme is not supported for async operations
     """
+    # Get the raw URL based on the test configuration
+    raw_url = None
     if postgres_container:
-        return postgres_container.get_connection_url().replace("postgresql://", "postgresql+asyncpg://")
+        raw_url = postgres_container.get_connection_url()
     elif "PYTEST_DIRECT_DB" in os.environ:
-        # Use a direct connection to an existing test database
-        return os.environ.get("DATABASE_TEST_URL", settings.database_url.replace(
-            settings.db_name, f"{settings.db_name}_test"
-        )).replace("postgresql://", "postgresql+asyncpg://")
+        # Use explicit test database URL from environment or settings
+        raw_url = os.environ.get("DATABASE_TEST_URL", 
+                               getattr(settings, 'test_database_url', 
+                                     str(settings.database_url).replace(
+                                         settings.db_name, f"{settings.db_name}_test")))
     else:
         # Default to a test database on the development server
-        return settings.database_url.replace(
-            settings.db_name, f"{settings.db_name}_test"
-        ).replace("postgresql://", "postgresql+asyncpg://")
+        raw_url = str(settings.database_url).replace(
+            settings.db_name, f"{settings.db_name}_test")
+
+    # Convert raw_url to string if it's not already
+    raw_url = str(raw_url)
+
+    # Handle different URL schemes to ensure asyncpg is used
+    if raw_url.startswith("postgresql+asyncpg://"):
+        return raw_url
+    elif raw_url.startswith("postgresql://"):
+        return raw_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif raw_url.startswith("postgresql+psycopg2://"):
+        return raw_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+    else:
+        raise ValueError(
+            f"Unsupported database URL scheme for async operations: {raw_url}. "
+            "URL must start with 'postgresql://' or 'postgresql+psycopg2://' "
+            "to be converted to asyncpg, or already be 'postgresql+asyncpg://'."
+        )
 
 
 @pytest.fixture(scope="session")
@@ -125,7 +150,7 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
 
 
 @pytest.fixture
-def test_settings() -> Dict:
+def test_settings() -> Generator[Dict, None, None]:
     """
     Override settings for tests.
     
