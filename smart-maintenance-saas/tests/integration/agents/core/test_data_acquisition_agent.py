@@ -38,7 +38,7 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
             logger=self.logger # Pass the MagicMock logger
         )
         # The agent's start method subscribes it to SensorDataReceivedEvent
-        self.agent.start() # Changed from await self.agent.start() as agent's start() is not async
+        await self.agent.start()
 
         self.received_events = []
         # Ensure the handler can be awaited if the event bus publish/dispatch mechanism is async
@@ -51,7 +51,7 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         if self.agent:
-            self.agent.stop() # Changed from await self.agent.stop() as agent's stop() is not async
+            await self.agent.stop()
 
     async def test_integration_success_path(self):
         correlation_id = uuid.uuid4()

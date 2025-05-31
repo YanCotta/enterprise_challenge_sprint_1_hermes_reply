@@ -74,12 +74,12 @@ def test_db_url(postgres_container) -> str:
         # Use a direct connection to an existing test database
         return os.environ.get("DATABASE_TEST_URL", settings.database_url.replace(
             settings.db_name, f"{settings.db_name}_test"
-        ))
+        )).replace("postgresql://", "postgresql+asyncpg://")
     else:
         # Default to a test database on the development server
         return settings.database_url.replace(
             settings.db_name, f"{settings.db_name}_test"
-        )
+        ).replace("postgresql://", "postgresql+asyncpg://")
 
 
 @pytest.fixture(scope="session")

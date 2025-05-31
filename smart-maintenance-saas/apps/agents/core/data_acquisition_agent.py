@@ -34,18 +34,20 @@ class DataAcquisitionAgent(BaseAgent):
         self.logger = logger if logger else logging.getLogger(f"{__name__}.{self.agent_id}")
         self.logger.info(f"DataAcquisitionAgent {self.agent_id} initialized.")
 
-    def start(self):
+    async def start(self) -> None:
         """
         Subscribes the agent to relevant events.
         """
-        self.event_bus.subscribe(SensorDataReceivedEvent, self.process)
+        await super().start()
+        await self.event_bus.subscribe(SensorDataReceivedEvent.__name__, self.process)
         self.logger.info(f"DataAcquisitionAgent {self.agent_id} started and subscribed to SensorDataReceivedEvent.")
 
-    def stop(self):
+    async def stop(self) -> None:
         """
         Unsubscribes the agent from events.
         """
-        self.event_bus.unsubscribe(SensorDataReceivedEvent, self.process)
+        await super().stop()
+        await self.event_bus.unsubscribe(SensorDataReceivedEvent.__name__, self.process)
         self.logger.info(f"DataAcquisitionAgent {self.agent_id} stopped and unsubscribed from SensorDataReceivedEvent.")
 
     async def process(self, event: SensorDataReceivedEvent):

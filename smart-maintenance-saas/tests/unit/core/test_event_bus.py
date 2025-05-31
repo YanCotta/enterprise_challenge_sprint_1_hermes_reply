@@ -83,7 +83,7 @@ async def test_publish_no_subscribers(caplog):
     await event_bus.publish(event_type, event_data)
     # No assertion needed for handler calls, just that no error occurs
     # Check for the specific debug log message
-    assert f"No subscribers for event '{event_type}'" in caplog.text
+    assert f"No subscribers for event type {event_type}" in caplog.text
     logger.info("test_publish_no_subscribers: PASSED (verified via log)")
 
 
