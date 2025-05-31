@@ -26,7 +26,7 @@ class TestDataValidator:
         assert result.unit == raw_data["unit"]
         assert result.quality == 1.0 # Default value
         assert result.timestamp is None # Default if not provided
-        assert result.sensor_metadata == {} # Default value
+        assert result.metadata == {} # Default value
 
     def test_validate_success_all_fields(self):
         now = datetime.utcnow()
@@ -37,7 +37,7 @@ class TestDataValidator:
             "unit": "mm/s",
             "timestamp": now.isoformat(),
             "quality": 0.95,
-            "sensor_metadata": {"location": "pump-A"}
+            "metadata": {"location": "pump-A"}
         }
         result = self.validator.validate(raw_data)
         assert isinstance(result, SensorReadingCreate)
@@ -54,7 +54,7 @@ class TestDataValidator:
         assert result.timestamp.minute == now.minute
 
         assert result.quality == raw_data["quality"]
-        assert result.sensor_metadata == raw_data["sensor_metadata"]
+        assert result.metadata == raw_data["metadata"]
 
     def test_validate_success_quality_boundaries(self):
         raw_data_min_quality = {
