@@ -30,11 +30,11 @@ class SensorDataGenerator:
         noise = np.random.normal(0, self.baseline["noise_std"])
         current_value = base_value + noise
         quality_score = random.uniform(0.95, 1.0)
-        metadata = {"generation_mode": "normal"}
+        current_sensor_metadata = {"generation_mode": "normal"}
 
         if anomaly:
             quality_score = random.uniform(0.6, 0.85)
-            metadata["generation_mode"] = f"anomaly_{anomaly_type}"
+            current_sensor_metadata = {"generation_mode": f"anomaly_{anomaly_type}"}
             if anomaly_type == "spike":
                 current_value *= (1 + random.uniform(0.5, 1.0) * self.baseline["anomaly_factor_spike"]) # More pronounced spike
             elif anomaly_type == "drift":
@@ -52,7 +52,7 @@ class SensorDataGenerator:
             unit=self.baseline["unit"],
             timestamp=datetime.utcnow(),
             quality=round(quality_score, 2),
-            metadata=metadata
+            sensor_metadata=current_sensor_metadata if anomaly else {"generation_mode": "normal"}
         )
 
 # Configuration
