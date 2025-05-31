@@ -29,7 +29,7 @@ class DataEnricher:
             # Let's simplify: the enricher just passes through correlation_id from SensorReadingCreate.
             # The DAQ agent is responsible for ensuring SensorReadingCreate has one if the event had one.
             # The SensorReading schema itself allows correlation_id to be None.
-            pass # correlation_id_to_use is already data_to_enrich.correlation_id
+            correlation_id_to_use = uuid4() # Generate a new UUID if correlation_id is None
 
         return SensorReading(
             sensor_id=data_to_enrich.sensor_id,
