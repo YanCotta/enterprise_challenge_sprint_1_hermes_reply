@@ -2,9 +2,6 @@
 
 This document outlines the backend system for the Smart Maintenance SaaS project, developed as part of the FIAP SP x Hermes Reply challenge. The backend is a multi-agent system designed for predictive maintenance in industrial settings.
 
-**Version:** 0.1.0 (Backend Sprint - In Progress)  
-**Last Updated:** May 28, 2025
-
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)
@@ -22,68 +19,97 @@ This document outlines the backend system for the Smart Maintenance SaaS project
 
 ## 1. Project Overview
 
-The Smart Maintenance SaaS backend leverages a multi-agent architecture to ingest sensor data, detect anomalies, predict failures, schedule maintenance, and manage human-in-the-loop decision processes. It's built using Python with FastAPI for APIs and an event-driven approach for inter-agent communication.
+The Smart Maintenance SaaS backend is a multi-agent system that ingests sensor data, detects anomalies, predicts failures, schedules maintenance, and manages human-in-the-loop decision processes. It utilizes Python, FastAPI for APIs, and an event-driven architecture for communication between agents.
 
 ## 2. Tech Stack
 
 * **Programming Language:** Python 3.11+
 * **Framework:** FastAPI
-* **Data Validation:** Pydantic
-* **Database:** PostgreSQL with TimescaleDB extension (for time-series data)
-* **ORM:** SQLAlchemy with Alembic for migrations
-* **Inter-Agent Communication:** Custom EventBus (initially in-memory, planned for Kafka/Redis)
+* **Data Validation:** Pydantic (v2)
+* **Database:** PostgreSQL with TimescaleDB extension, using `asyncpg` driver
+* **ORM:** SQLAlchemy 2.0 (async) with Alembic for migrations
+* **Inter-Agent Communication:** Custom EventBus (in-memory for development, Kafka/Redis for production)
 * **Agent Core:** Custom `BaseAgent` class
-* **Machine Learning (Planned/In-Progress):**
-  * Anomaly Detection: Scikit-learn (Isolation Forest, statistical models)
-  * Prediction: Prophet
-  * RAG/Knowledge: ChromaDB, SentenceTransformers
-* **Scheduling:** Google OR-Tools (CP-SAT Solver)
 * **Containerization:** Docker, Docker Compose
-* **Orchestration (Planned):** Kubernetes
-* **Testing:** Pytest, pytest-asyncio, `unittest.mock`
+* **Testing:** Pytest, pytest-asyncio, `unittest.mock`, `testcontainers`, `httpx`, `factory-boy`
 * **Dependency Management:** Poetry
 * **Logging:** `python-json-logger`
-* **CI/CD (Planned):** GitHub Actions
 * **Code Quality:** Black, Flake8, iSort, MyPy, pre-commit
 
 ## 3. Architecture
 
-The system is composed of several specialized agents communicating via an event bus. Key components include:
+This section outlines the structure of the `smart-maintenance-saas` backend project.
 
-* **API Layer:** FastAPI endpoints for external interaction
-* **Event Streaming Layer:** Manages the flow of events
-* **Multi-Agent Orchestration Layer:** Coordinates agent activities
-* **Data & ML Layer:** Handles data storage, processing, and machine learning
+### Project Structure
+
+The Python project root is `smart-maintenance-saas/`. The codebase is organized into several key directories, promoting modularity and separation of concerns.
+
+#### Key Directories
+
+*   **`apps/`**: Contains the application-specific logic.
+    *   API endpoints are defined in `apps/api/main.py`.
+    *   Agent implementations reside in `apps/agents/`, including the `base_agent.py` and specific agents like `apps/agents/core/data_acquisition_agent.py`.
+    *   Placeholders for future workflow implementations.
+*   **`core/`**: Houses shared, core functionalities used across the application.
+    *   `core/config/`: Pydantic settings for application configuration.
+    *   `core/database/`: SQLAlchemy ORM models (`orm_models.py`), asynchronous database session management (`session.py`), CRUD operations (e.g., `crud_sensor_reading.py`), and the declarative base for models.
+    *   `core/events/`: Pydantic models for defining event structures (`event_models.py`) and the central `EventBus` for inter-agent communication.
+    *   `core/logging_config.py`: Configuration for structured JSON logging.
+    *   `core/agent_registry.py`: Manages agent discovery and lifecycle.
+*   **`data/`**: Includes all data-related definitions and utilities.
+    *   `data/schemas.py`: Pydantic schemas, serving as the single source of truth for data structures.
+    *   `data/sensor_data_generator.py`: Scripts for generating sample sensor data.
+    *   `data/agent_data_enricher.py`: Utilities for enriching data within agents.
+    *   `data/agent_data_validator.py`: Utilities for validating data within agents.
+    *   `data/exceptions.py`: Custom data-related exceptions.
+*   **`tests/`**: Contains all Pytest tests.
+    *   Includes unit and integration tests.
+    *   `conftest.py` provides shared fixtures and test setup.
+*   **`alembic_migrations/`**: Stores Alembic database migration scripts.
+    *   Includes the `env.py` configured for asynchronous migrations.
+*   **`scripts/`**: Utility shell scripts for development and operational tasks (e.g., `run_tests.sh`).
+*   **`infrastructure/`**: Contains infrastructure-as-code files.
+    *   `docker/`: Dockerfiles and related scripts (e.g., `init-scripts/` for database initialization).
+*   **`docs/`**: Project documentation in Markdown format (e.g., `architecture.md`).
+*   **`examples/`**: Example scripts demonstrating usage of components or the system.
+
+#### Root Files
+
+The following important files are located at the `smart-maintenance-saas/` project root:
+
+*   `README.md`: This file, providing an overview of the project.
+*   `pyproject.toml`: Poetry project file, managing dependencies and build settings.
+*   `poetry.lock`: Poetry lock file, ensuring deterministic builds.
+*   `docker-compose.yml`: Docker Compose file for orchestrating development and production services.
+*   `alembic.ini`: Alembic configuration file.
+*   `pytest.ini`: Pytest configuration file.
+*   `.pre-commit-config.yaml`: Configuration for pre-commit hooks.
+*   `.env.example`: Example environment variables file.
+*   `.gitignore`: Specifies intentionally untracked files that Git should ignore.
 
 ## 4. Setup and Installation
 
-1. **Prerequisites:**
-   * Python 3.11+
-   * Poetry (Python dependency manager)
-   * Docker and Docker Compose
-   * Git
-
-2. **Clone the repository:**
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YanCotta/enterprise_challenge_sprint_1_hermes_reply
+   git clone https://github.com/YanCotta/enterprise_challenge_sprint_1_hermes_reply # Replace with the actual URL if different
    cd smart-maintenance-saas
    ```
 
-3. **Set up Python Environment & Install Dependencies:**
+2. **Install Dependencies:**
    ```bash
    poetry install
    ```
 
-4. **Environment Variables:**
-   * Copy `.env.example` to `.env`
-   * Update variables in `.env` as needed (e.g., database credentials if not using defaults for Docker)
+3. **Environment Variables (Optional but Recommended):**
+   - Copy `.env.example` to `.env`.
+   - Update variables in `.env` if necessary (e.g., for non-default database credentials or custom configurations).
 
-5. **Start Docker Services (Database, etc.):**
+4. **Start Database Service:**
    ```bash
-   docker-compose up -d db # Add other services like redis, kafka if defined
+   docker-compose up -d db
    ```
 
-6. **Run Database Migrations:**
+5. **Run Database Migrations:**
    ```bash
    poetry run alembic upgrade head
    ```
@@ -91,53 +117,46 @@ The system is composed of several specialized agents communicating via an event 
 ## 5. Running the Application
 
 ```bash
-poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
+poetry run uvicorn apps.api.main:app --reload
 ```
 
 The API will be available at http://localhost:8000.  
-API documentation (Swagger UI): http://localhost:8000/docs  
-Alternative API documentation (ReDoc): http://localhost:8000/redoc
+API documentation (Swagger UI): http://localhost:8000/docs
 
 ## 6. Running Tests
 
-Ensure test dependencies and any test-specific setup (like a test database container if using testcontainers) are configured.
+To run the automated tests, use the following command:
 
 ```bash
 poetry run pytest
 ```
 
-To run with coverage:
-
-```bash
-poetry run pytest --cov=apps --cov=core
-```
-
 ## 7. API Endpoints
 
-(This section will be populated as API endpoints are defined, starting around Day 11)
+The following API endpoints are currently implemented:
 
-* `POST /api/v1/ingestion/sensor-reading/`: Ingests new sensor data.
-...
+*   `GET /health`: Returns the health status of the application.
+*   `GET /health/db`: Returns the health status of the database connection.
 
 ## 8. Implemented Agents
 
-(This section will list agents as they are implemented, starting Day 2/4)
+The system currently includes the following core agents:
 
-* **BaseAgent:** Foundation class for all agents. Defines common lifecycle, event handling, and health check methods. (Day 2)
-* **AgentRegistry:** Singleton class for discovering and managing agent instances. (Day 2)
-* **DataAcquisitionAgent:** Handles raw data ingestion, validation, and enrichment. (Day 4)
-...
+*   **`BaseAgent`** (`apps/agents/base_agent.py`): An abstract base class defining the common interface and core functionalities for all agents in the system. This includes aspects like event handling, lifecycle management, and capability registration.
+*   **`DataAcquisitionAgent`** (`apps/agents/core/data_acquisition_agent.py`): Responsible for ingesting raw sensor data from external sources. It performs initial validation and enrichment on the incoming data. Upon processing, it publishes a `DataProcessedEvent` if successful, or a `DataProcessingFailedEvent` if issues are encountered. This agent subscribes to `SensorDataReceivedEvent` to trigger its workflow.
 
 ## 9. Event Catalog
 
-(This section will list Pydantic event models defined in core/events/event_models.py as they are created)
+The system uses an event-driven architecture. Key events include:
 
-* **BaseEventModel:** Base model for all events, providing common fields like event_id and timestamp.
-* **SensorDataReceivedEvent:** Published when new sensor data is ingested into the system.
-* **DataProcessedEvent:** Published after data is validated, cleaned, and enriched.
-* **AnomalyDetectedEvent:** Published when an anomaly detection agent identifies a potential anomaly.
-* **AgentStatusUpdateEvent:** Published by agents to report their current status or health.
-...
+*   **`BaseEventModel`**: The base model for all events, providing common fields like `event_id`, `timestamp`, `version`, and `source_service`.
+*   **`SensorDataReceivedEvent`**: Published when new sensor data is initially received by the system, typically before extensive processing.
+*   **`DataProcessedEvent`**: Published by an agent (e.g., DataAcquisitionAgent) after successfully validating, cleaning, and enriching sensor data.
+*   **`DataProcessingFailedEvent`**: Published if an error occurs during data processing, validation, or enrichment.
+*   **`AnomalyDetectedEvent`**: Published when an anomaly detection agent identifies a potential anomaly in the data. (Note: Anomaly detection agent is planned but not yet fully implemented).
+*   **`AgentStatusUpdateEvent`**: Published by agents to report their current operational status, health, or significant state changes.
+
+All event models are defined in `core/events/event_models.py`.
 
 ## 10. Daily Progress Log
 
