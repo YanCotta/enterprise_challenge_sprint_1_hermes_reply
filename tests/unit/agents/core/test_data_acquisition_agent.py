@@ -79,7 +79,7 @@ class TestDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         # Assert
         self.mock_validator.validate.assert_called_once_with(self.raw_data, self.correlation_id)
         self.mock_enricher.enrich.assert_called_once_with(self.validated_data_mock)
-        self.mock_event_bus.publish.assert_awaited_once() # Use assert_awaited_once for AsyncMock
+        self.mock_event_bus.publish.assert_called_once() # Use assert_called_once for AsyncMock
 
         published_event = self.mock_event_bus.publish.call_args[0][0]
         self.assertIsInstance(published_event, DataProcessedEvent)
