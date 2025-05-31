@@ -24,7 +24,7 @@ class SensorReadingCreate(BaseModel):
     """
     sensor_id: str = Field(..., description="Unique sensor identifier")
     value: float = Field(..., description="The sensor reading value")
-    timestamp: datetime = Field(..., description="UTC timestamp of the reading")
+    timestamp: Optional[datetime] = Field(None, description="UTC timestamp of the reading")
     sensor_type: Optional[SensorType] = Field(None, description="Type of the sensor")
     unit: Optional[str] = Field(None, description="Unit of measurement")
     quality: float = Field(default=1.0, ge=0, le=1, description="Data quality score")
