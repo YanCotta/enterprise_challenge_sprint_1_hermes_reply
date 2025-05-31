@@ -3,10 +3,9 @@ from pydantic import ValidationError
 from datetime import datetime
 from typing import Dict, Any
 
-# Adjust the import path based on the actual location of DataValidator
-# Assuming 'smart-maintenance-saas' is the root for Python's perspective in tests
-from data.processors.data_validator import DataValidator
-from data.schemas import SensorReadingCreate, SensorType # Make sure SensorType is imported
+# Import validator from the consolidated location
+from data.validators.agent_data_validator import DataValidator
+from data.schemas import SensorReadingCreate, SensorType, uuid
 
 class TestDataValidator:
     def setup_method(self):
