@@ -167,9 +167,9 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
             sensor_type=SensorType.TEMPERATURE, # Provide sensor_type enum
             unit="°C",                      # Provide unit
             # quality and sensor_metadata have defaults in Pydantic model and are set by validator if not present
-            # correlation_id is added by the validator to the object it creates
-            # The SensorReadingCreate schema does not have correlation_id, so it should not be here
-            # metadata is added by the validator if not present in raw data
+            # The SensorReadingCreate schema does not include correlation_id.
+            # correlation_id is used internally by the validator but is not part of the schema or the validated payload.
+            # metadata is added by the validator if not present in raw data, as per the schema's default behavior.
         ).model_dump()
         # Adjust expected_validated_payload_dict to include what validator adds, if not aligned with SensorReadingCreate schema directly
         # The validator's output SensorReadingCreate object's model_dump() is what's in the event.
