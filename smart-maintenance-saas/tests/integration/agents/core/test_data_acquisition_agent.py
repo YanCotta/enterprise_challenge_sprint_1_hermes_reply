@@ -88,7 +88,9 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         raw_data = {
             "sensor_id": str(sensor_id_uuid),
             "value": 123.45,
-            "timestamp": raw_data_ts.isoformat()
+            "timestamp": raw_data_ts.isoformat(),
+            "sensor_type": SensorType.TEMPERATURE,
+            "unit": "°C"
             # "correlation_id" is not in raw_data, will be passed by event
         }
         input_event = SensorDataReceivedEvent(raw_data=raw_data.copy(), correlation_id=str(correlation_id))
@@ -145,7 +147,7 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.received_events), 1)
         failed_event = self.received_events[0]
         self.assertIsInstance(failed_event, DataProcessingFailedEvent)
-        self.assertEqual(failed_event.failed_agent_id, self.agent_id)
+        self.assertEqual(failed_event.agent_id, self.agent_id)
         self.assertEqual(failed_event.correlation_id, str(correlation_id))
         self.assertEqual(failed_event.original_event_payload, invalid_raw_data)
         self.assertTrue(len(failed_event.error_message) > 0, "Error message should not be empty for Pydantic failure")
@@ -183,7 +185,7 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.received_events), 1)
         failed_event = self.received_events[0]
         self.assertIsInstance(failed_event, DataProcessingFailedEvent)
-        self.assertEqual(failed_event.failed_agent_id, self.agent_id)
+        self.assertEqual(failed_event.agent_id, self.agent_id)
         self.assertEqual(failed_event.correlation_id, str(correlation_id))
         self.assertEqual(failed_event.original_event_payload, custom_invalid_raw_data)
         self.assertIn("Sensor value cannot be negative: -50.0", failed_event.error_message)
@@ -263,7 +265,7 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.received_events), 1, f"Should receive one event, got {len(self.received_events)}")
         failed_event = self.received_events[0]
         self.assertIsInstance(failed_event, DataProcessingFailedEvent)
-        self.assertEqual(failed_event.failed_agent_id, self.agent_id)
+        self.assertEqual(failed_event.agent_id, self.agent_id)
         self.assertEqual(failed_event.correlation_id, str(correlation_id))
 
         # The original_event_payload in DataProcessingFailedEvent for enrichment failure
