@@ -22,7 +22,7 @@ class SensorReadingCreate(BaseModel):
     Schema for creating a new sensor reading. Used for initial validation of incoming data.
     All datetime fields are UTC.
     """
-    sensor_id: uuid.UUID = Field(..., description="Unique sensor identifier")
+    sensor_id: str = Field(..., description="Unique sensor identifier")
     value: float = Field(..., description="The sensor reading value")
     timestamp: datetime = Field(..., description="UTC timestamp of the reading")
     sensor_type: Optional[SensorType] = Field(None, description="Type of the sensor")
