@@ -1,180 +1,246 @@
 import logging
-from typing import Any, Dict
+import traceback
+from typing import Optional, Dict, Any
+from uuid import UUID
 
-from smart_maintenance_saas.apps.agents.base_agent import BaseAgent, AgentCapability
-from smart_maintenance_saas.core.events.event_models import SensorDataReceivedEvent, DataProcessedEvent
-from smart_maintenance_saas.data.processors.data_validator import DataValidator
-from smart_maintenance_saas.data.processors.data_enricher import DataEnricher
-# Assuming EventBus is passed during initialization as per BaseAgent
-# from smart_maintenance_saas.core.events.event_bus import EventBus
+import pydantic # For pydantic.ValidationError
 
-logger = logging.getLogger(__name__)
+# Direct imports assuming 'smart-maintenance-saas' is the project root for Python
+from apps.agents.base_agent import BaseAgent
+from core.events.event_bus import EventBus # Corrected path
+from core.events.event_models import (
+    SensorDataReceivedEvent,
+    DataProcessedEvent,
+    DataProcessingFailedEvent,
+)
+from data.validators.agent_data_validator import DataValidator
+from data.processors.agent_data_enricher import DataEnricher
+from data.agent_schemas import SensorReadingCreate # For type hinting
+from data.exceptions import DataValidationException, DataEnrichmentException
+
 
 class DataAcquisitionAgent(BaseAgent):
-    """
-    Agent responsible for acquiring raw sensor data, validating it,
-    enriching it, and then publishing it as processed data.
-    """
+    def __init__(
+        self,
+        agent_id: str,
+        event_bus: EventBus,
+        validator: DataValidator,
+        enricher: DataEnricher,
+        logger: Optional[logging.Logger] = None,
+    ):
+        super().__init__(agent_id, event_bus)
+        self.validator = validator
+        self.enricher = enricher
+        self.logger = logger if logger else logging.getLogger(f"{__name__}.{self.agent_id}")
+        self.logger.info(f"DataAcquisitionAgent {self.agent_id} initialized.")
 
-    AGENT_ID = "data_acquisition_agent_001" # Class level ID for convenience
+    def start(self):
+        """
+        Subscribes the agent to relevant events.
+        """
+        self.event_bus.subscribe(SensorDataReceivedEvent, self.process)
+        self.logger.info(f"DataAcquisitionAgent {self.agent_id} started and subscribed to SensorDataReceivedEvent.")
 
-    def __init__(self, event_bus: Any, agent_id: str = None):
+    def stop(self):
         """
-        Initializes the DataAcquisitionAgent.
+        Unsubscribes the agent from events.
+        """
+        self.event_bus.unsubscribe(SensorDataReceivedEvent, self.process)
+        self.logger.info(f"DataAcquisitionAgent {self.agent_id} stopped and unsubscribed from SensorDataReceivedEvent.")
 
-        Args:
-            event_bus (Any): An instance of the system's EventBus.
-            agent_id (str, optional): A unique identifier for the agent.
-                                      Defaults to DataAcquisitionAgent.AGENT_ID.
+    async def process(self, event: SensorDataReceivedEvent):
         """
-        super().__init__(agent_id=agent_id or DataAcquisitionAgent.AGENT_ID, event_bus=event_bus)
-        self.validator = DataValidator()
-        self.enricher = DataEnricher()
-        logger.info(f"DataAcquisitionAgent '{self.agent_id}' initialized with DataValidator and DataEnricher.")
+        Processes incoming sensor data events.
+        Validates and enriches the data, then publishes further events.
+        """
+        raw_data: Dict[str, Any] = event.raw_data
+        correlation_id: Optional[UUID] = event.correlation_id
+        event_type: str = type(event).__name__ # Or event.event_type if it exists
 
-    async def register_capabilities(self) -> None:
-        """
-        Registers the capabilities of this agent.
-        """
-        capability = AgentCapability(
-            name="data_acquisition_and_processing",
-            description="Acquires raw sensor data, validates, enriches, and publishes DataProcessedEvent.",
-            input_types=[SensorDataReceivedEvent.__name__], # Use class name string
-            output_types=[DataProcessedEvent.__name__]  # Use class name string
-        )
-        self.capabilities.append(capability)
-        logger.info(f"Agent '{self.agent_id}': Registered capability '{capability.name}'.")
+        self.logger.debug(f"[{correlation_id}] Received event {event_type} for processing.")
 
-    async def start(self) -> None:
-        """
-        Starts the agent: registers capabilities and subscribes to SensorDataReceivedEvent.
-        """
-        await super().start() # Important to call parent's start
-        # Subscribe to the raw data event.
-        # The BaseAgent's handle_event will call self.process with the event object.
-        await self.event_bus.subscribe(SensorDataReceivedEvent.__name__, self.handle_event)
-        logger.info(f"Agent '{self.agent_id}' subscribed to '{SensorDataReceivedEvent.__name__}'.")
+        validated_data: Optional[SensorReadingCreate] = None # Initialize
 
-    async def stop(self) -> None:
-        """
-        Stops the agent: unsubscribes from events.
-        """
-        logger.info(f"Agent '{self.agent_id}' stopping...")
+        # 1. Validation Step
         try:
-            await self.event_bus.unsubscribe(SensorDataReceivedEvent.__name__, self.handle_event)
-            logger.info(f"Agent '{self.agent_id}' unsubscribed from '{SensorDataReceivedEvent.__name__}'.")
-        except Exception as e:
-            # Log error if unsubscription fails but don't prevent stopping
-            logger.error(f"Agent '{self.agent_id}': Error during unsubscription from '{SensorDataReceivedEvent.__name__}': {e}", exc_info=True)
-        await super().stop() # Important to call parent's stop
+            # Assume validator.validate returns a SensorReadingCreate instance or raises an exception
+            validated_data = self.validator.validate(raw_data, correlation_id)
+            self.logger.debug(f"[{correlation_id}] Data validation successful.")
+        except (DataValidationException, pydantic.ValidationError) as e:
+            error_message = f"Validation failed for data with correlation_id {correlation_id}: {e}"
+            self.logger.error(error_message, exc_info=True)
 
-    async def process(self, event_data: SensorDataReceivedEvent) -> None:
-        """
-        Processes incoming SensorDataReceivedEvent.
-        Validates and enriches the raw data, then publishes a DataProcessedEvent.
+            failure_payload = {
+                "failed_agent_id": self.agent_id,
+                "error_message": str(e),
+                "traceback_str": traceback.format_exc(),
+                "original_event_type": event_type,
+                "original_event_payload": raw_data, # Send the original raw data
+                "correlation_id": correlation_id,
+            }
+            await self.event_bus.publish(DataProcessingFailedEvent(**failure_payload))
+            return # Stop processing
 
-        Args:
-            event_data (SensorDataReceivedEvent): The event object containing raw sensor data.
-        """
-        if not isinstance(event_data, SensorDataReceivedEvent):
-            logger.warning(f"Agent '{self.agent_id}': Received unexpected data type in process: {type(event_data)}. Expected SensorDataReceivedEvent.")
-            # Optionally publish an error/warning event
-            # await self._publish_event("agent_processing_error", {"error": "Unexpected data type", "received_type": str(type(event_data))})
-            return
-
-        logger.info(f"Agent '{self.agent_id}': Processing SensorDataReceivedEvent (ID: {event_data.event_id}, Sensor: {event_data.sensor_id}).")
-        raw_data = event_data.raw_data
-
+        # 2. Enrichment Step
         try:
-            # 1. Validate data
-            self.validator.validate(raw_data) # This will raise ValueError if invalid
-            logger.debug(f"Agent '{self.agent_id}': Data validation successful for event {event_data.event_id}.")
+            # enricher.enrich expects SensorReadingCreate and returns SensorReading
+            enriched_reading = self.enricher.enrich(validated_data) # type: ignore
+            self.logger.debug(f"[{correlation_id}] Data enrichment successful.")
+        except DataEnrichmentException as e: # Catch specific enrichment errors first
+            error_message = f"Enrichment failed for data with correlation_id {correlation_id}: {e}"
+            self.logger.error(error_message, exc_info=True)
 
-            # 2. Enrich data
-            enriched_data = self.enricher.enrich(raw_data) # Pass the raw_data dict
-            logger.debug(f"Agent '{self.agent_id}': Data enrichment successful for event {event_data.event_id}.")
+            failure_payload = {
+                "failed_agent_id": self.agent_id,
+                "error_message": str(e),
+                "traceback_str": traceback.format_exc(),
+                "original_event_type": event_type,
+                "original_event_payload": validated_data.model_dump() if validated_data else raw_data, # type: ignore
+                "correlation_id": correlation_id,
+            }
+            await self.event_bus.publish(DataProcessingFailedEvent(**failure_payload))
+            return # Stop processing
+        except Exception as e: # Catch any other unexpected errors during enrichment
+            error_message = f"An unexpected error occurred during enrichment for correlation_id {correlation_id}: {e}"
+            self.logger.error(error_message, exc_info=True)
 
-            # 3. Create DataProcessedEvent
-            processed_event = DataProcessedEvent(
-                processed_data=enriched_data,
-                original_event_id=event_data.event_id,
-                source_sensor_id=event_data.sensor_id,
-                correlation_id=event_data.correlation_id # Carry over correlation ID
+            failure_payload = {
+                "failed_agent_id": self.agent_id,
+                "error_message": str(e),
+                "traceback_str": traceback.format_exc(),
+                "original_event_type": event_type,
+                "original_event_payload": validated_data.model_dump() if validated_data else raw_data, # type: ignore
+                "correlation_id": correlation_id,
+            }
+            await self.event_bus.publish(DataProcessingFailedEvent(**failure_payload))
+            return # Stop processing
+
+        # 3. Success Path: Publish DataProcessedEvent
+        try:
+            processed_payload = {
+                "processed_data": enriched_reading.model_dump(), # SensorReading to dict
+                "agent_id": self.agent_id,
+                "correlation_id": enriched_reading.correlation_id, # Ensure this is correctly propagated
+            }
+            await self.event_bus.publish(DataProcessedEvent(**processed_payload))
+            self.logger.info(
+                f"[{correlation_id}] Successfully processed data and published DataProcessedEvent."
             )
-            logger.debug(f"Agent '{self.agent_id}': Created DataProcessedEvent (ID: {processed_event.event_id}) for original event {event_data.event_id}.")
-
-            # 4. Publish DataProcessedEvent
-            await self._publish_event(DataProcessedEvent.__name__, processed_event)
-            logger.info(f"Agent '{self.agent_id}': Successfully published '{DataProcessedEvent.__name__}' (ID: {processed_event.event_id}) for original event {event_data.event_id}.")
-
-        except ValueError as ve:
-            logger.error(f"Agent '{self.agent_id}': Validation error for data from sensor '{event_data.sensor_id}' (Event ID: {event_data.event_id}): {ve}", exc_info=True)
-            # Optionally, publish a specific "data_validation_failed" event
-            # await self._publish_event(
-            #     "data_validation_failed_event",
-            #     {
-            #         "sensor_id": event_data.sensor_id,
-            #         "raw_data": raw_data, # Be careful with PII or large data
-            #         "error": str(ve),
-            #         "original_event_id": event_data.event_id
-            #     }
-            # )
         except Exception as e:
-            logger.error(f"Agent '{self.agent_id}': Unexpected error processing data from sensor '{event_data.sensor_id}' (Event ID: {event_data.event_id}): {e}", exc_info=True)
-            # Optionally, publish a generic agent error event
-            # await self._publish_event(
-            #     "agent_processing_error",
-            #     {
-            #         "agent_id": self.agent_id,
-            #         "error": str(e),
-            #         "original_event_id": event_data.event_id,
-            #         "stage": "processing"
-            #     }
-            # )
+            error_message = f"Failed to publish DataProcessedEvent for correlation_id {correlation_id} after successful processing: {e}"
+            self.logger.critical(error_message, exc_info=True)
+            failure_payload = {
+                "failed_agent_id": self.agent_id,
+                "error_message": f"Failed to publish DataProcessedEvent: {str(e)}",
+                "traceback_str": traceback.format_exc(),
+                "original_event_type": event_type,
+                "original_event_payload": enriched_reading.model_dump(), # The data that was successfully processed but not announced
+                "correlation_id": correlation_id,
+                "is_publish_failure": True 
+            }
+            await self.event_bus.publish(DataProcessingFailedEvent(**failure_payload))
 
-# Example of how this agent might be instantiated and used (for conceptual understanding)
-# This would typically be done in a main application script or agent management service.
+
+    async def example_usage(self):
+        # This is an example and would not typically be part of the agent's core logic
+        pass
+
+# Example (for illustration, not part of the core file usually):
 if __name__ == '__main__':
+    # This section is for example and testing purposes.
+    # In a real application, agents are managed by an agent runner or similar system.
+
+    # Mockups
+    class MockEventBus(EventBus):
+        async def publish(self, event):
+            print(f"MockEventBus: Published event {type(event).__name__} with data: {event.model_dump(exclude_none=True)}")
+        def subscribe(self, event_type, handler):
+            print(f"MockEventBus: Subscribed {handler.__name__} to {event_type.__name__}")
+        def unsubscribe(self, event_type, handler):
+            print(f"MockEventBus: Unsubscribed {handler.__name__} from {event_type.__name__}")
+
+    # Direct imports for __main__ block, assuming smart-maintenance-saas is in PYTHONPATH
+    from data.exceptions import DataValidationException, DataEnrichmentException 
+    from data.agent_schemas import SensorReadingCreate, SensorReading
+
+    class MockDataValidator(DataValidator):
+        def __init__(self): pass 
+        def validate(self, data: Dict[str, Any], correlation_id: Optional[UUID] = None) -> SensorReadingCreate:
+            print(f"MockDataValidator: Validating data for {correlation_id}")
+            if "invalid_key" in data:
+                raise DataValidationException("Contains invalid_key", errors=["invalid_key found"])
+            if not data.get("sensor_id"):
+                # Pydantic v2 errors are dicts, not Pydantic models
+                raise pydantic.ValidationError.from_exception_data(title='SensorReadingCreate', line_errors=[{'input': data, 'loc': ('sensor_id',), 'msg': 'Field required', 'type': 'missing'}])
+
+
+            try:
+                return SensorReadingCreate(**data)
+            except pydantic.ValidationError as e:
+                # Extract errors for DataValidationException
+                errors_list = []
+                for error in e.errors():
+                    errors_list.append(f"{'.'.join(map(str, error['loc']))}: {error['msg']}")
+                raise DataValidationException(f"Pydantic validation failed during mock validation: {str(e)}", errors=errors_list)
+
+
+    class MockDataEnricher(DataEnricher):
+        def __init__(self):
+            super().__init__(default_data_source_system="mock_enricher_default")
+
+        def enrich(self, data_to_enrich: SensorReadingCreate, data_source_system_override: Optional[str] = None) -> SensorReading: 
+            print(f"MockDataEnricher: Enriching data for {data_to_enrich.correlation_id}")
+            if data_to_enrich.value == -999.0: 
+                raise DataEnrichmentException("Value -999.0 indicates an error during enrichment mock.")
+
+            enriched = super().enrich(data_to_enrich, data_source_system_override)
+            if enriched.metadata is None: # Should not happen with default_factory
+                enriched.metadata = {}
+            enriched.metadata["mock_enricher_applied"] = True
+            return enriched
+
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger("DAQAgentExample")
 
-    # Mock EventBus for local testing
-    class MockEventBus:
-        async def subscribe(self, event_type, handler):
-            logger.info(f"[MockEventBus] Handler '{handler.__name__}' subscribed to '{event_type}'.")
+    event_bus = MockEventBus()
+    validator = MockDataValidator()
+    enricher = MockDataEnricher() 
 
-        async def publish(self, event_type, data):
-            logger.info(f"[MockEventBus] Publishing event '{event_type}' with data: {str(data)}")
-
-        async def unsubscribe(self, event_type, handler):
-            logger.info(f"[MockEventBus] Handler '{handler.__name__}' unsubscribed from '{event_type}'.")
-
-    async def main_test():
-        mock_bus = MockEventBus()
-        agent = DataAcquisitionAgent(event_bus=mock_bus)
-
-        await agent.start() # Registers capabilities and subscribes
-
-        # Simulate receiving a SensorDataReceivedEvent
-        # Valid data
-        valid_raw_data = {"sensor_id": "temp-sim-01", "timestamp": 1678886400, "value": 22.5, "unit": "C"}
-        valid_event = SensorDataReceivedEvent(raw_data=valid_raw_data, sensor_id="temp-sim-01")
-
-        logger.info("\n--- Simulating valid event ---")
-        # In a real system, the event bus would call agent.handle_event, which calls agent.process
-        await agent.handle_event(SensorDataReceivedEvent.__name__, valid_event)
-
-        # Simulate receiving invalid data
-        invalid_raw_data = {"sensor_id": "temp-sim-02", "value": "high"} # Missing timestamp
-        invalid_event = SensorDataReceivedEvent(raw_data=invalid_raw_data, sensor_id="temp-sim-02")
-
-        logger.info("\n--- Simulating invalid event (validation error) ---")
-        await agent.handle_event(SensorDataReceivedEvent.__name__, invalid_event)
-
-        # Simulate non-event data (edge case, if handler called directly)
-        # logger.info("\n--- Simulating direct call to process with non-event data ---")
-        # await agent.process({"malformed_data": True}) # type: ignore
-
-        await agent.stop()
+    agent = DataAcquisitionAgent("daq_agent_001", event_bus, validator, enricher, logger)
+    agent.start()
 
     import asyncio
-    asyncio.run(main_test())
+    from uuid import uuid4
+    from datetime import datetime as dt, timezone # Ensure datetime is imported as dt for the example
+
+    async def run_simulations():
+        # Scenario 1: Successful processing
+        good_data = {
+            "sensor_id": uuid4(), "value": 25.5, "timestamp_utc": dt.now(timezone.utc).isoformat()
+        }
+        good_event = SensorDataReceivedEvent(raw_data=good_data, correlation_id=uuid4())
+        await agent.process(good_event)
+        print("-" * 20)
+
+        # Scenario 2: Validation failure (custom DataValidationException)
+        invalid_data_custom = {"invalid_key": "some_value", "sensor_id": uuid4()}
+        fail_event_custom_validation = SensorDataReceivedEvent(raw_data=invalid_data_custom, correlation_id=uuid4())
+        await agent.process(fail_event_custom_validation)
+        print("-" * 20)
+
+        # Scenario 3: Validation failure (Pydantic ValidationError)
+        invalid_data_pydantic = {"value": 10.0, "timestamp_utc": dt.now(timezone.utc).isoformat()} # Missing sensor_id 
+        fail_event_pydantic = SensorDataReceivedEvent(raw_data=invalid_data_pydantic, correlation_id=uuid4())
+        await agent.process(fail_event_pydantic)
+        print("-" * 20)
+
+        # Scenario 4: Enrichment failure
+        enrich_fail_data = {
+            "sensor_id": uuid4(), "value": -999.0, "timestamp_utc": dt.now(timezone.utc).isoformat()
+        }
+        fail_event_enrich = SensorDataReceivedEvent(raw_data=enrich_fail_data, correlation_id=uuid4())
+        await agent.process(fail_event_enrich)
+        print("-" * 20)
+
+    asyncio.run(run_simulations())
+    agent.stop()
