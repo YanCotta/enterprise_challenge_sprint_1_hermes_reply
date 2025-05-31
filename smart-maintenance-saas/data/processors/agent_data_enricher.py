@@ -39,10 +39,13 @@ class DataEnricher:
                 else self.default_data_source_system
             )
             
+            # Update the metadata in enriched_data
+            enriched_data['metadata'] = metadata
+            
             # Create enriched reading with all required fields
+            # Remove metadata from enriched_data to avoid duplication since SensorReading inherits it
             return SensorReading(
                 **enriched_data,
-                metadata=metadata,
                 ingestion_timestamp=datetime.now(timezone.utc)
             )
             
