@@ -17,19 +17,45 @@ class SensorType(str, Enum):
     # Add more as needed
 
 # SensorReading Pydantic Model (already in sensor_data_generator.py, ensure it's here and updated)
-class SensorReading(BaseModel):
-    # id: uuid.UUID = Field(default_factory=uuid.uuid4, description="Unique reading identifier, will be primary key in DB") # Optional: if each reading gets a UUID
-    sensor_id: str = Field(..., description="Unique sensor identifier")
-    sensor_type: SensorType
-    value: float
-    unit: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+class SensorReadingCreate(BaseModel):
+    """
+    Schema for creating a new sensor reading. Used for initial validation of incoming data.
+    All datetime fields are UTC.
+    """
+    sensor_id: uuid.UUID = Field(..., description="Unique sensor identifier")
+    value: float = Field(..., description="The sensor reading value")
+    timestamp: datetime = Field(..., description="UTC timestamp of the reading")
+    sensor_type: Optional[SensorType] = Field(None, description="Type of the sensor")
+    unit: Optional[str] = Field(None, description="Unit of measurement")
     quality: float = Field(default=1.0, ge=0, le=1, description="Data quality score")
-    sensor_metadata: Dict[str, Any] = Field(default_factory=dict) # Changed from dict to Dict[str, Any] to match ORM and be more specific
+    correlation_id: Optional[uuid.UUID] = Field(None, description="Correlation ID for tracking")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     class Config:
-        orm_mode = True # or from_attributes = True for Pydantic v2
-        use_enum_values = True # Ensure enum values are used
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat(),
+            uuid.UUID: str
+        }
+
+class SensorReading(SensorReadingCreate):
+    """
+    Schema for a complete sensor reading, including all enriched fields.
+    Inherits from SensorReadingCreate and adds required fields that must be present
+    after processing/enrichment.
+    """
+    sensor_type: SensorType  # Make required in final form
+    unit: str  # Make required in final form
+    ingestion_timestamp: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="UTC timestamp when the reading was ingested"
+    )
+
+    class Config:
+        from_attributes = True  # For Pydantic v2 ORM mode
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat(),
+            uuid.UUID: str
+        }
 
 
 class DataQuality(str, Enum):
