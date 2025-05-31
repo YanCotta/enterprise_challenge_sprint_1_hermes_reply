@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone # Add timezone
 import logging # Ensure logging is imported
 
 # Get a logger for this module
@@ -122,7 +122,7 @@ class BaseAgent(ABC):
         return {
             "agent_id": self.agent_id,
             "status": self.status,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
     async def _publish_event(self, event_type: str, data: Any) -> None:

@@ -125,7 +125,7 @@ async def test_unsubscribe_nonexistent_handler_or_event(caplog):
 
     # Attempt to unsubscribe handler not subscribed to any event
     await event_bus.unsubscribe(actual_event_type, mock_handler)
-    assert f"Handler '{mock_handler._extract_mock_name()}' not found for event '{actual_event_type}' during unsubscribe." in caplog.text
+    assert f"Handler '{mock_handler.name}' not found for event '{actual_event_type}' during unsubscribe." in caplog.text
     caplog.clear()
 
     # Attempt to unsubscribe handler from a non-existent event type
@@ -156,7 +156,7 @@ async def test_publish_handler_exception_graceful_handling(caplog):
     handler1_raising_exception.assert_called_once_with(**event_data)
     handler2_normal.assert_called_once_with(**event_data) # Crucial: handler2 should still be called
 
-    assert "Error in event handler 'handler1_raiser'" in caplog.text
+    assert f"Error in event handler '{handler1_raising_exception.name}'" in caplog.text
     assert "Test Exception from Handler 1" in caplog.text
     assert "Traceback" in caplog.text # Check for traceback presence
     logger.info("test_publish_handler_exception_graceful_handling: PASSED (verified via log and handler calls)")
