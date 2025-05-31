@@ -73,12 +73,12 @@ class DataAcquisitionAgent(BaseAgent):
             self.logger.error(error_message, exc_info=True)
 
             failure_payload = {
-                "failed_agent_id": self.agent_id,
+                "agent_id": self.agent_id,
                 "error_message": str(e),
                 "traceback_str": traceback.format_exc(),
                 "original_event_type": event_type,
                 "original_event_payload": raw_data, # Send the original raw data
-                "correlation_id": correlation_id,
+                "correlation_id": str(correlation_id) if correlation_id else None,
             }
             await self.event_bus.publish(DataProcessingFailedEvent(**failure_payload))
             return # Stop processing
@@ -93,12 +93,12 @@ class DataAcquisitionAgent(BaseAgent):
             self.logger.error(error_message, exc_info=True)
 
             failure_payload = {
-                "failed_agent_id": self.agent_id,
+                "agent_id": self.agent_id,
                 "error_message": str(e),
                 "traceback_str": traceback.format_exc(),
                 "original_event_type": event_type,
                 "original_event_payload": validated_data.model_dump() if validated_data else raw_data, # type: ignore
-                "correlation_id": correlation_id,
+                "correlation_id": str(correlation_id) if correlation_id else None,
             }
             await self.event_bus.publish(DataProcessingFailedEvent(**failure_payload))
             return # Stop processing
@@ -107,12 +107,12 @@ class DataAcquisitionAgent(BaseAgent):
             self.logger.error(error_message, exc_info=True)
 
             failure_payload = {
-                "failed_agent_id": self.agent_id,
+                "agent_id": self.agent_id,
                 "error_message": str(e),
                 "traceback_str": traceback.format_exc(),
                 "original_event_type": event_type,
                 "original_event_payload": validated_data.model_dump() if validated_data else raw_data, # type: ignore
-                "correlation_id": correlation_id,
+                "correlation_id": str(correlation_id) if correlation_id else None,
             }
             await self.event_bus.publish(DataProcessingFailedEvent(**failure_payload))
             return # Stop processing
@@ -132,12 +132,12 @@ class DataAcquisitionAgent(BaseAgent):
             error_message = f"Failed to publish DataProcessedEvent for correlation_id {correlation_id} after successful processing: {e}"
             self.logger.critical(error_message, exc_info=True)
             failure_payload = {
-                "failed_agent_id": self.agent_id,
+                "agent_id": self.agent_id,
                 "error_message": f"Failed to publish DataProcessedEvent: {str(e)}",
                 "traceback_str": traceback.format_exc(),
                 "original_event_type": event_type,
                 "original_event_payload": enriched_reading.model_dump(), # The data that was successfully processed but not announced
-                "correlation_id": correlation_id,
+                "correlation_id": str(correlation_id) if correlation_id else None,
                 "is_publish_failure": True 
             }
             await self.event_bus.publish(DataProcessingFailedEvent(**failure_payload))
