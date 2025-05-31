@@ -2,7 +2,7 @@ import logging
 from typing import Dict, Any # Keep this for raw_data type hint
 
 from pydantic import ValidationError
-from smart_maintenance_saas.data.schemas import SensorReadingCreate
+from data.schemas import SensorReadingCreate # Corrected import path
 
 
 logger = logging.getLogger(__name__)
