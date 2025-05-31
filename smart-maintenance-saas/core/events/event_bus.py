@@ -60,7 +60,7 @@ class EventBus:
         else:
             logger.warning(f"No subscribers for event type '{event_type}' during unsubscribe attempt.")
 
-    async def publish(self, event_type: str, data: Any = None):
+    async def publish(self, event: Any, data: Any = None):  # Changed event_type to event
         """
         Publishes an event to all subscribed asynchronous handlers.
 
@@ -68,34 +68,42 @@ class EventBus:
         the error is logged, and the EventBus continues to call other handlers.
 
         Args:
-            event_type: The type of event to publish.
-            data: The data to pass to the event handlers. The data is passed as keyword arguments
+            event: The event object to publish. The type of this object (event.__class__)
+                   is used to find subscribed handlers.
+            data: The data to pass to the event handlers. If None, the event object itself
+                  is passed. If data is provided, it's passed as keyword arguments
                   if it's a dictionary, otherwise as a positional argument.
+                  Typically, the event object itself contains all necessary data.
         """
+        event_type_key = event.__class__ # Use the class of the event object as the key
         handler_name = 'unknown_handler'
+        
+        # Determine what to pass to the handler
+        payload_to_pass = data if data is not None else event
+
         # Truncate data for logging if it's too long
-        log_data = str(data)
-        if len(log_data) > 200:
-            log_data = log_data[:200] + "..."
+        log_payload = str(payload_to_pass)
+        if len(log_payload) > 200:
+            log_payload = log_payload[:200] + "..."
 
-        logger.info(f"Publishing event '{event_type}' with data (preview): {log_data}")
+        logger.info(f"Publishing event of type '{event_type_key.__name__}' with payload (preview): {log_payload}")
 
-        if event_type in self.subscriptions:
-            # Create a copy of the list of handlers in case of modification during iteration (e.g., unsubscribe within a handler)
-            handlers_to_call = list(self.subscriptions[event_type])
+        if event_type_key in self.subscriptions:
+            # Create a copy of the list of handlers in case of modification during iteration
+            handlers_to_call = list(self.subscriptions[event_type_key])
             for handler in handlers_to_call:
                 handler_name = getattr(handler, '__name__', 'unknown_handler')
                 try:
-                    logger.debug(f"Calling handler '{handler_name}' for event '{event_type}'.")
-                    if isinstance(data, dict):
-                        await handler(**data)
+                    logger.debug(f"Calling handler '{handler_name}' for event type '{event_type_key.__name__}'.")
+                    if isinstance(payload_to_pass, dict) and data is not None: # Only unpack if data was explicitly provided as a dict
+                        await handler(**payload_to_pass)
                     else:
-                        await handler(data)
+                        await handler(payload_to_pass) # Pass the event object or explicit non-dict data
                 except Exception as e:
                     logger.error(
-                        f"Error in event handler '{handler_name}' for event '{event_type}' with data (preview): {log_data}.\n"
-                        f"Error: {e}\n"
+                        f"Error in event handler '{handler_name}' for event type '{event_type_key.__name__}' with payload (preview): {log_payload}.\\n"
+                        f"Error: {e}\\n"
                         f"Traceback: {traceback.format_exc()}"
                     )
         else:
-            logger.debug(f"No subscribers for event '{event_type}'.")
+            logger.debug(f"No subscribers for event type '{event_type_key.__name__}'.") # Corrected event_type to event_type_key.__name__
