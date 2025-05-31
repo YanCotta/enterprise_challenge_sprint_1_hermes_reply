@@ -59,7 +59,8 @@ class DataAcquisitionAgent(BaseAgent):
         correlation_id: Optional[UUID] = event.correlation_id
         event_type: str = type(event).__name__ # Or event.event_type if it exists
 
-        self.logger.debug(f"[{correlation_id}] Received event {event_type} for processing.")
+        self.logger.info(f"[{correlation_id}] Processing started for event {event_type}")
+        self.logger.debug(f"[{correlation_id}] Raw data: {raw_data}")
 
         validated_data: Optional[SensorReadingCreate] = None # Initialize
 
