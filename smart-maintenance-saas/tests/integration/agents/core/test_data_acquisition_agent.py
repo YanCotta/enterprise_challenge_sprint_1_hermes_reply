@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from apps.agents.core.data_acquisition_agent import DataAcquisitionAgent
 from core.events.event_bus import EventBus # Corrected path
 from core.events.event_models import SensorDataReceivedEvent, DataProcessedEvent, DataProcessingFailedEvent, BaseEventModel # Added BaseEventModel
-from data.schemas import SensorReadingCreate, SensorReading, SensorType # Added SensorReading for type checks and SensorType
+from data.schemas import SensorReadingCreate, SensorReading, SensorType
 from data.validators.agent_data_validator import DataValidator # Corrected to agent_data_validator
 from data.processors.agent_data_enricher import DataEnricher # Corrected to agent_data_enricher
 from data.exceptions import DataEnrichmentException, DataValidationException
