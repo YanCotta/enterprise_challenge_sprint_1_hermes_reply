@@ -1,14 +1,23 @@
+import logging
 import uuid
 from typing import Optional, Dict, Any
 from pydantic import ValidationError
 from data.schemas import SensorReadingCreate 
 from data.exceptions import DataValidationException
 
+logger = logging.getLogger(__name__)
+
 class DataValidator:
     """
     Validates sensor reading data against the SensorReadingCreate schema
     and performs additional business rule validations.
     """
+    def __init__(self):
+        """
+        Initializes the DataValidator.
+        """
+        logger.info("DataValidator initialized, using SensorReadingCreate schema for validation.")
+
     def validate(self, raw_data: Dict[str, Any], correlation_id: Optional[uuid.UUID] = None) -> SensorReadingCreate:
         """
         Validates raw sensor data against the SensorReadingCreate schema.
@@ -27,8 +36,8 @@ class DataValidator:
         # Create a copy to avoid modifying the input
         data_for_model = raw_data.copy()
         
-        # correlation_id is not part of SensorReadingCreate schema
-        # It will be passed separately in event processing
+        # correlation_id is tracked separately, not part of the schema validation
+        logger.debug(f"Validating data with correlation_id: {correlation_id}")
 
         try:
             validated_data = SensorReadingCreate(**data_for_model)
