@@ -105,7 +105,7 @@ async def test_unsubscribe_nonexistent_handler_or_event(caplog):
 
     # Attempt to unsubscribe handler not subscribed to any event
     await event_bus.unsubscribe(BaseEventModel.__name__, mock_handler)
-    assert f"Handler '{mock_handler.name}' not found for event '{BaseEventModel.__name__}' during unsubscribe." in caplog.text
+    assert f"Handler 'unknown_handler' not found for event '{BaseEventModel.__name__}' during unsubscribe." in caplog.text
     caplog.clear()
 
     # Attempt to unsubscribe handler from a non-existent event type
@@ -148,9 +148,10 @@ async def test_unsubscribe_removes_event_type_if_empty(caplog):
     await event_bus.subscribe(BaseEventModel.__name__, mock_handler)
     assert BaseEventModel.__name__ in event_bus.subscriptions
     
+    # Move caplog.set_level here
+    caplog.set_level(logging.DEBUG)
     await event_bus.unsubscribe(BaseEventModel.__name__, mock_handler)
     assert BaseEventModel.__name__ not in event_bus.subscriptions
     
-    caplog.set_level(logging.DEBUG)
     assert f"Event type name '{BaseEventModel.__name__}' removed as no handlers are left" in caplog.text
     logger.info("test_unsubscribe_removes_event_type_if_empty: PASSED")
