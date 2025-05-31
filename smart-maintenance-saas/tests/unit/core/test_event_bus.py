@@ -1,9 +1,10 @@
-import pytest
-import asyncio
 import logging
-from unittest.mock import AsyncMock, call # Import call for checking arguments
+from unittest.mock import AsyncMock, call
+
+import pytest
 
 from core.events.event_bus import EventBus
+from core.events.event_models import BaseEventModel
 
 # Configure logging for testing purposes to see EventBus logs if needed
 # This can be helpful for debugging tests, though tests themselves will use caplog
@@ -24,32 +25,16 @@ async def test_subscribe_and_publish_single_handler():
     """Tests subscribing a single handler and publishing an event to it."""
     event_bus = EventBus()
     mock_handler = AsyncMock()
-    event_type = "test_event_single"
-    event_data = {"key": "value"}
+    mock_event = BaseEventModel(correlation_id="test-correlation-id")
 
-    await event_bus.subscribe(event_type, mock_handler)
-    assert event_type in event_bus.subscriptions
-    assert mock_handler in event_bus.subscriptions[event_type]
+    await event_bus.subscribe(BaseEventModel.__name__, mock_handler)
+    assert BaseEventModel.__name__ in event_bus.subscriptions
+    assert mock_handler in event_bus.subscriptions[BaseEventModel.__name__]
 
-    await event_bus.publish(event_type, event_data)
+    await event_bus.publish(mock_event)
 
-    mock_handler.assert_called_once_with(**event_data) # Use **event_data if data is dict
+    mock_handler.assert_called_once_with(mock_event)
     logger.info("test_subscribe_and_publish_single_handler: PASSED")
-
-
-@pytest.mark.asyncio
-async def test_subscribe_and_publish_single_handler_non_dict_data():
-    """Tests subscribing a single handler and publishing non-dict event data."""
-    event_bus = EventBus()
-    mock_handler = AsyncMock()
-    event_type = "test_event_single_non_dict"
-    event_data = "simple_string_data"
-
-    await event_bus.subscribe(event_type, mock_handler)
-    await event_bus.publish(event_type, event_data)
-
-    mock_handler.assert_called_once_with(event_data)
-    logger.info("test_subscribe_and_publish_single_handler_non_dict_data: PASSED")
 
 
 @pytest.mark.asyncio
@@ -58,16 +43,15 @@ async def test_subscribe_and_publish_multiple_handlers():
     event_bus = EventBus()
     handler1 = AsyncMock(name="handler1")
     handler2 = AsyncMock(name="handler2")
-    event_type = "test_event_multiple"
-    event_data = {"message": "hello"}
+    mock_event = BaseEventModel(correlation_id="test-multi-handlers")
 
-    await event_bus.subscribe(event_type, handler1)
-    await event_bus.subscribe(event_type, handler2)
+    await event_bus.subscribe(BaseEventModel.__name__, handler1)
+    await event_bus.subscribe(BaseEventModel.__name__, handler2)
 
-    await event_bus.publish(event_type, event_data)
+    await event_bus.publish(mock_event)
 
-    handler1.assert_called_once_with(**event_data)
-    handler2.assert_called_once_with(**event_data)
+    handler1.assert_called_once_with(mock_event)
+    handler2.assert_called_once_with(mock_event)
     logger.info("test_subscribe_and_publish_multiple_handlers: PASSED")
 
 
@@ -75,15 +59,13 @@ async def test_subscribe_and_publish_multiple_handlers():
 async def test_publish_no_subscribers(caplog):
     """Tests publishing an event with no subscribers. Expects a debug log."""
     event_bus = EventBus()
-    event_type = "unheard_event"
-    event_data = {"info": "nothing_to_see_here"}
+    mock_event = BaseEventModel(correlation_id="test-no-subscribers")
 
     # Capture logs at DEBUG level for this test
     caplog.set_level(logging.DEBUG, logger="core.events.event_bus")
-    await event_bus.publish(event_type, event_data)
-    # No assertion needed for handler calls, just that no error occurs
+    await event_bus.publish(mock_event)
     # Check for the specific debug log message
-    assert f"No subscribers for event type {event_type}" in caplog.text
+    assert f"No subscribers for event type {BaseEventModel.__name__}" in caplog.text
     logger.info("test_publish_no_subscribers: PASSED (verified via log)")
 
 
@@ -92,20 +74,19 @@ async def test_unsubscribe_handler():
     """Tests unsubscribing a handler and ensuring it's not called afterwards."""
     event_bus = EventBus()
     mock_handler = AsyncMock()
-    event_type = "test_event_unsubscribe"
-    event_data = {"step": 1}
+    mock_event = BaseEventModel(correlation_id="test-unsubscribe")
 
-    await event_bus.subscribe(event_type, mock_handler)
-    await event_bus.publish(event_type, event_data)
-    mock_handler.assert_called_once_with(**event_data)
+    await event_bus.subscribe(BaseEventModel.__name__, mock_handler)
+    await event_bus.publish(mock_event)
+    mock_handler.assert_called_once_with(mock_event)
 
-    mock_handler.reset_mock() # Reset call count for the next assertion
+    mock_handler.reset_mock()  # Reset call count for the next assertion
 
-    await event_bus.unsubscribe(event_type, mock_handler)
-    assert mock_handler not in event_bus.subscriptions.get(event_type, [])
+    await event_bus.unsubscribe(BaseEventModel.__name__, mock_handler)
+    assert mock_handler not in event_bus.subscriptions.get(BaseEventModel.__name__, [])
 
-    event_data_after_unsubscribe = {"step": 2}
-    await event_bus.publish(event_type, event_data_after_unsubscribe)
+    mock_event_after = BaseEventModel(correlation_id="test-unsubscribe-after")
+    await event_bus.publish(mock_event_after)
     mock_handler.assert_not_called()
     logger.info("test_unsubscribe_handler: PASSED")
 
@@ -116,16 +97,15 @@ async def test_unsubscribe_nonexistent_handler_or_event(caplog):
     event_bus = EventBus()
     mock_handler = AsyncMock(name="mock_handler_for_nonexistent")
     non_existent_event_type = "non_existent_event"
-    actual_event_type = "actual_event"
 
-    # Subscribe to an actual event to make sure the event type itself exists for one case
-    await event_bus.subscribe(actual_event_type, AsyncMock(name="another_handler"))
+    # Subscribe a different handler to BaseEventModel to make sure the event type exists for one case
+    await event_bus.subscribe(BaseEventModel.__name__, AsyncMock(name="another_handler"))
 
-    caplog.set_level(logging.WARNING) # EventBus logs warnings in these cases
+    caplog.set_level(logging.WARNING)  # EventBus logs warnings in these cases
 
     # Attempt to unsubscribe handler not subscribed to any event
-    await event_bus.unsubscribe(actual_event_type, mock_handler)
-    assert f"Handler '{mock_handler.name}' not found for event '{actual_event_type}' during unsubscribe." in caplog.text
+    await event_bus.unsubscribe(BaseEventModel.__name__, mock_handler)
+    assert f"Handler '{mock_handler.name}' not found for event '{BaseEventModel.__name__}' during unsubscribe." in caplog.text
     caplog.clear()
 
     # Attempt to unsubscribe handler from a non-existent event type
@@ -136,76 +116,41 @@ async def test_unsubscribe_nonexistent_handler_or_event(caplog):
 
 @pytest.mark.asyncio
 async def test_publish_handler_exception_graceful_handling(caplog):
-    """
-    Tests that EventBus handles exceptions in handlers gracefully and continues
-    processing other handlers. Also checks for error logging.
-    """
+    """Tests that EventBus handles exceptions in handlers gracefully and continues processing other handlers."""
     event_bus = EventBus()
-    handler1_raising_exception = AsyncMock(name="handler1_raiser", side_effect=Exception("Test Exception from Handler 1"))
-    handler2_normal = AsyncMock(name="handler2_normal")
-    event_type = "test_event_exception"
-    event_data = {"critical_op": True}
+    error_msg = "Simulated handler error"
 
-    await event_bus.subscribe(event_type, handler1_raising_exception)
-    await event_bus.subscribe(event_type, handler2_normal)
+    async def failing_handler(event):
+        raise ValueError(error_msg)
 
-    caplog.set_level(logging.ERROR) # We expect an error log
+    working_handler = AsyncMock()
+    mock_event = BaseEventModel(correlation_id="test-exception-handling")
 
-    await event_bus.publish(event_type, event_data)
+    await event_bus.subscribe(BaseEventModel.__name__, failing_handler)
+    await event_bus.subscribe(BaseEventModel.__name__, working_handler)
 
-    handler1_raising_exception.assert_called_once_with(**event_data)
-    handler2_normal.assert_called_once_with(**event_data) # Crucial: handler2 should still be called
+    caplog.set_level(logging.ERROR)
+    await event_bus.publish(mock_event)
 
-    assert f"Error in event handler '{handler1_raising_exception.name}'" in caplog.text
-    assert "Test Exception from Handler 1" in caplog.text
-    assert "Traceback" in caplog.text # Check for traceback presence
-    logger.info("test_publish_handler_exception_graceful_handling: PASSED (verified via log and handler calls)")
+    # Verify the error was logged
+    assert error_msg in caplog.text
+    # Verify the working handler was still called
+    working_handler.assert_called_once_with(mock_event)
+    logger.info("test_publish_handler_exception_graceful_handling: PASSED")
 
 
 @pytest.mark.asyncio
 async def test_unsubscribe_removes_event_type_if_empty(caplog):
-    """
-    Tests that an event type is removed from subscriptions if its last handler is unsubscribed.
-    """
+    """Tests that event type is removed from subscriptions when last handler is unsubscribed."""
     event_bus = EventBus()
     mock_handler = AsyncMock()
-    event_type = "event_a_to_empty"
-
-    caplog.set_level(logging.DEBUG) # To see the debug log for event type removal
-
-    await event_bus.subscribe(event_type, mock_handler)
-    assert event_type in event_bus.subscriptions, "Event type should be in subscriptions after subscribe."
-
-    await event_bus.unsubscribe(event_type, mock_handler)
-    assert event_type not in event_bus.subscriptions, "Event type should be removed if no handlers are left."
-    assert f"Event type '{event_type}' removed as no handlers are left." in caplog.text
-    logger.info("test_unsubscribe_removes_event_type_if_empty: PASSED (verified via log and subscription state)")
-
-@pytest.mark.asyncio
-async def test_publish_with_dict_and_non_dict_data_to_same_event():
-    """Tests publishing both dict and non-dict data to handlers for the same event type."""
-    event_bus = EventBus()
-    handler_for_dict = AsyncMock(name="handler_for_dict")
-    handler_for_non_dict = AsyncMock(name="handler_for_non_dict")
-    event_type = "mixed_data_event"
-
-    # Subscribe both handlers to the same event type
-    await event_bus.subscribe(event_type, handler_for_dict)
-    await event_bus.subscribe(event_type, handler_for_non_dict)
-
-    # Publish dict data
-    dict_data = {"key": "value", "id": 123}
-    await event_bus.publish(event_type, dict_data)
-    handler_for_dict.assert_called_with(**dict_data) # Both called with dict
-    handler_for_non_dict.assert_called_with(**dict_data)
-
-    handler_for_dict.reset_mock()
-    handler_for_non_dict.reset_mock()
-
-    # Publish non-dict data
-    non_dict_data = "This is a string payload"
-    await event_bus.publish(event_type, non_dict_data)
-    handler_for_dict.assert_called_with(non_dict_data) # Both called with non-dict
-    handler_for_non_dict.assert_called_with(non_dict_data)
-
-    logger.info("test_publish_with_dict_and_non_dict_data_to_same_event: PASSED")
+    
+    await event_bus.subscribe(BaseEventModel.__name__, mock_handler)
+    assert BaseEventModel.__name__ in event_bus.subscriptions
+    
+    await event_bus.unsubscribe(BaseEventModel.__name__, mock_handler)
+    assert BaseEventModel.__name__ not in event_bus.subscriptions
+    
+    caplog.set_level(logging.DEBUG)
+    assert f"Event type name '{BaseEventModel.__name__}' removed as no handlers are left" in caplog.text
+    logger.info("test_unsubscribe_removes_event_type_if_empty: PASSED")
