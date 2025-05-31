@@ -90,4 +90,4 @@ class EventBus:
                         f"Traceback: {traceback.format_exc()}"
                     )
         else:
-            logger.debug(f"No subscribers for event type name '{event_type_name}'.")
+            logger.debug(f"No subscribers for event type {event_type_name}")
