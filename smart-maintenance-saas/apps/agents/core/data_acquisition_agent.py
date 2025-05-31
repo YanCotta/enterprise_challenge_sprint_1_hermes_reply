@@ -123,7 +123,7 @@ class DataAcquisitionAgent(BaseAgent):
             processed_payload = {
                 "processed_data": enriched_reading.model_dump(),  # SensorReading to dict
                 "original_event_id": event.event_id,  # From the input SensorDataReceivedEvent
-                "source_sensor_id": str(enriched_reading.sensor_id),  # From the enriched reading
+                "source_sensor_id": enriched_reading.sensor_id,  # Already a string from schema
                 "correlation_id": str(correlation_id) if correlation_id else None  # From original event
             }
             await self.event_bus.publish(DataProcessedEvent(**processed_payload))
@@ -220,27 +220,27 @@ if __name__ == '__main__':
     async def run_simulations():
         # Scenario 1: Successful processing
         good_data = {
-            "sensor_id": uuid4(), "value": 25.5, "timestamp_utc": dt.now(timezone.utc).isoformat()
+            "sensor_id": str(uuid4()), "value": 25.5, "timestamp": dt.now(timezone.utc).isoformat()
         }
         good_event = SensorDataReceivedEvent(raw_data=good_data, correlation_id=uuid4())
         await agent.process(good_event)
         print("-" * 20)
 
         # Scenario 2: Validation failure (custom DataValidationException)
-        invalid_data_custom = {"invalid_key": "some_value", "sensor_id": uuid4()}
+        invalid_data_custom = {"invalid_key": "some_value", "sensor_id": str(uuid4())}
         fail_event_custom_validation = SensorDataReceivedEvent(raw_data=invalid_data_custom, correlation_id=uuid4())
         await agent.process(fail_event_custom_validation)
         print("-" * 20)
 
         # Scenario 3: Validation failure (Pydantic ValidationError)
-        invalid_data_pydantic = {"value": 10.0, "timestamp_utc": dt.now(timezone.utc).isoformat()} # Missing sensor_id 
+        invalid_data_pydantic = {"value": 10.0, "timestamp": dt.now(timezone.utc).isoformat()} # Missing sensor_id 
         fail_event_pydantic = SensorDataReceivedEvent(raw_data=invalid_data_pydantic, correlation_id=uuid4())
         await agent.process(fail_event_pydantic)
         print("-" * 20)
 
         # Scenario 4: Enrichment failure
         enrich_fail_data = {
-            "sensor_id": uuid4(), "value": -999.0, "timestamp_utc": dt.now(timezone.utc).isoformat()
+            "sensor_id": str(uuid4()), "value": -999.0, "timestamp": dt.now(timezone.utc).isoformat()
         }
         fail_event_enrich = SensorDataReceivedEvent(raw_data=enrich_fail_data, correlation_id=uuid4())
         await agent.process(fail_event_enrich)
