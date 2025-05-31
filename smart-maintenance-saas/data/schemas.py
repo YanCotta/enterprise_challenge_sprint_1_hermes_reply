@@ -3,8 +3,8 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Union, Any # Ensure all are imported
-import uuid # Import uuid
+from typing import Dict, List, Optional, Union, Any # Ensure Any is imported
+import uuid
 
 from pydantic import BaseModel, Field, validator
 
@@ -25,7 +25,7 @@ class SensorReading(BaseModel):
     unit: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     quality: float = Field(default=1.0, ge=0, le=1, description="Data quality score")
-    sensor_metadata: dict = Field(default_factory=dict) # Renamed from 'metadata' to match ORM model
+    sensor_metadata: Dict[str, Any] = Field(default_factory=dict) # Changed from dict to Dict[str, Any] to match ORM and be more specific
 
     class Config:
         orm_mode = True # or from_attributes = True for Pydantic v2
@@ -48,7 +48,7 @@ class SensorReadingBase(BaseModel):
     unit: Optional[str] = Field(None, description="Unit of measurement for the sensor value (e.g., °C, %, mm/s).")
     
     quality: DataQuality = Field(DataQuality.GOOD, description="Quality of the sensor reading.")
-    sensor_metadata: Optional[Dict[str, any]] = Field(default_factory=dict, description="Additional metadata for the reading.") # Renamed from 'metadata' to match ORM model
+    sensor_metadata: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Additional metadata for the reading.") # Changed 'any' to 'Any'
 
     @validator('timestamp', pre=True, always=True)
     def ensure_utc_timestamp(cls, v):
@@ -84,7 +84,7 @@ class AnomalyDetectionParameters(BaseModel):
     """Parameters for configuring anomaly detection for a sensor."""
     sensor_id: str
     method: str # e.g., "threshold", "z_score", "ewma"
-    parameters: Dict[str, any] # e.g., {"upper_bound": 100, "lower_bound": 0} or {"window_size": 10, "sigma": 3}
+    parameters: Dict[str, Any] # Changed 'any' to 'Any'
 
 
 class AnomalyAlert(BaseModel):
@@ -151,7 +151,7 @@ class AssetInformation(BaseModel):
     installation_date: Optional[datetime] = None
     last_maintenance_date: Optional[datetime] = None
     operational_status: str = Field("active", description="Operational status (e.g., 'active', 'inactive', 'under_maintenance').")
-    specifications: Optional[Dict[str, any]] = Field(default_factory=dict, description="Technical specifications.")
+    specifications: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Technical specifications.") # Changed 'any' to 'Any'
     
     class Config:
         orm_mode = True
