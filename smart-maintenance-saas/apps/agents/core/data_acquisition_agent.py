@@ -15,7 +15,7 @@ from core.events.event_models import (
 )
 from data.validators.agent_data_validator import DataValidator
 from data.processors.agent_data_enricher import DataEnricher
-from data.agent_schemas import SensorReadingCreate # For type hinting
+from data.schemas import SensorReadingCreate, SensorReading  # For type hinting
 from data.exceptions import DataValidationException, DataEnrichmentException
 
 
@@ -121,9 +121,10 @@ class DataAcquisitionAgent(BaseAgent):
         # 3. Success Path: Publish DataProcessedEvent
         try:
             processed_payload = {
-                "processed_data": enriched_reading.model_dump(), # SensorReading to dict
-                "agent_id": self.agent_id,
-                "correlation_id": enriched_reading.correlation_id, # Ensure this is correctly propagated
+                "processed_data": enriched_reading.model_dump(),  # SensorReading to dict
+                "original_event_id": event.event_id,  # From the input SensorDataReceivedEvent
+                "source_sensor_id": str(enriched_reading.sensor_id),  # From the enriched reading
+                "correlation_id": str(correlation_id) if correlation_id else None  # From original event
             }
             await self.event_bus.publish(DataProcessedEvent(**processed_payload))
             self.logger.info(
@@ -164,7 +165,7 @@ if __name__ == '__main__':
 
     # Direct imports for __main__ block, assuming smart-maintenance-saas is in PYTHONPATH
     from data.exceptions import DataValidationException, DataEnrichmentException 
-    from data.agent_schemas import SensorReadingCreate, SensorReading
+    from data.schemas import SensorReadingCreate, SensorReading
 
     class MockDataValidator(DataValidator):
         def __init__(self): pass 
