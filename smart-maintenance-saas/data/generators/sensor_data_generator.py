@@ -52,7 +52,7 @@ class SensorDataGenerator:
             unit=self.baseline["unit"],
             timestamp=datetime.utcnow(),
             quality=round(quality_score, 2),
-            sensor_metadata=current_sensor_metadata if anomaly else {"generation_mode": "normal"}
+            metadata=current_sensor_metadata if anomaly else {"generation_mode": "normal"}
         )
 
 # Configuration
