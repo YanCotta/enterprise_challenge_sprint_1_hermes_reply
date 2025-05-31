@@ -88,7 +88,7 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         raw_data = {
             "sensor_id": str(sensor_id_uuid),
             "value": 123.45,
-            "timestamp_utc": raw_data_ts.isoformat()
+            "timestamp": raw_data_ts.isoformat()
             # "correlation_id" is not in raw_data, will be passed by event
         }
         input_event = SensorDataReceivedEvent(raw_data=raw_data.copy(), correlation_id=str(correlation_id))
@@ -114,15 +114,17 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         # Check processed_data content
         pd = processed_event.processed_data
         self.assertIsInstance(pd, dict)
-        self.assertEqual(pd["sensor_id"], sensor_id_uuid) # Compare with original UUID object
+        self.assertEqual(pd["sensor_id"], str(sensor_id_uuid)) # Compare with string representation
         self.assertEqual(pd["value"], raw_data["value"])
-        self.assertTrue(is_isoformat(pd["timestamp_utc"]))
-        self.assertEqual(datetime.fromisoformat(pd["timestamp_utc"]), raw_data_ts)
-        self.assertEqual(pd["correlation_id"], str(correlation_id)) # Check correlation_id within processed_data
+        self.assertTrue(is_isoformat(pd["timestamp"]))
+        self.assertEqual(datetime.fromisoformat(pd["timestamp"]), raw_data_ts)
+        # Check correlation_id is present in the model's metadata
+        self.assertIn("correlation_id", pd)
+        self.assertEqual(pd["correlation_id"], str(correlation_id))
 
-        # Check metadata
-        self.assertIn("ingestion_timestamp_utc", pd["metadata"])
-        self.assertTrue(is_isoformat(pd["metadata"]["ingestion_timestamp_utc"]))
+        # Check for ingestion_timestamp directly in the model
+        self.assertIn("ingestion_timestamp", pd)
+        self.assertTrue(is_isoformat(pd["ingestion_timestamp"]))
         self.assertEqual(pd["metadata"]["data_source_system"], "integration_test_source")
 
         self.logger.info.assert_called()
@@ -131,9 +133,9 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
     async def test_integration_pydantic_validation_failure(self):
         correlation_id = uuid.uuid4()
         invalid_raw_data = {
-            "sensor_id": "not-a-uuid-string", # Invalid UUID
+            "sensor_id": "not-a-uuid-string", # Invalid sensor_id format
             "value": "not-a-float",      # Invalid float
-            "timestamp_utc": "invalid-date-format" # Invalid datetime
+            "timestamp": "invalid-date-format" # Invalid datetime
         }
         input_event = SensorDataReceivedEvent(raw_data=invalid_raw_data.copy(), correlation_id=str(correlation_id))
 
