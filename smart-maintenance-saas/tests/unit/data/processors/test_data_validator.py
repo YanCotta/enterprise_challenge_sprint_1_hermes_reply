@@ -5,8 +5,8 @@ from typing import Dict, Any
 
 # Adjust the import path based on the actual location of DataValidator
 # Assuming 'smart-maintenance-saas' is the root for Python's perspective in tests
-from smart_maintenance_saas.data.processors.data_validator import DataValidator
-from smart_maintenance_saas.data.schemas import SensorReadingCreate, SensorType # Make sure SensorType is imported
+from data.processors.data_validator import DataValidator
+from data.schemas import SensorReadingCreate, SensorType # Make sure SensorType is imported
 
 class TestDataValidator:
     def setup_method(self):

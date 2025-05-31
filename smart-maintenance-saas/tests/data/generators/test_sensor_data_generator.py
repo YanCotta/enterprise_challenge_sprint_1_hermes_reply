@@ -12,7 +12,7 @@ def test_generate_normal_reading_temperature():
     assert reading.unit == "°C"
     assert 20 < reading.value < 30  # Assuming baseline is 25 +/- noise and variation
     assert 0.95 <= reading.quality <= 1.0
-    assert reading.metadata["generation_mode"] == "normal"
+    assert reading.sensor_metadata["generation_mode"] == "normal" # Changed metadata to sensor_metadata
     assert isinstance(reading.timestamp, datetime)
 
 def test_generate_normal_reading_vibration():
@@ -24,7 +24,7 @@ def test_generate_normal_reading_vibration():
     assert reading.unit == "g"
     assert 0.0 < reading.value < 0.2 # Assuming baseline is 0.1 +/- noise and variation
     assert 0.95 <= reading.quality <= 1.0
-    assert reading.metadata["generation_mode"] == "normal"
+    assert reading.sensor_metadata["generation_mode"] == "normal" # Changed metadata to sensor_metadata
 
 def test_generate_normal_reading_pressure():
     generator = SensorDataGenerator(sensor_id="pressure_sensor_1", sensor_type=SensorType.PRESSURE)
@@ -35,7 +35,7 @@ def test_generate_normal_reading_pressure():
     assert reading.unit == "hPa"
     assert 1000 < reading.value < 1020 # Assuming baseline is 1012 +/- noise and variation
     assert 0.95 <= reading.quality <= 1.0
-    assert reading.metadata["generation_mode"] == "normal"
+    assert reading.sensor_metadata["generation_mode"] == "normal" # Changed metadata to sensor_metadata
 
 # Test anomalous data generation
 def test_generate_anomaly_spike():
@@ -51,7 +51,7 @@ def test_generate_anomaly_spike():
     # Adding some buffer for noise around baseline before spike
     assert reading.value > 45 or reading.value < 5 # Check if it's a significant spike
     assert 0.6 <= reading.quality <= 0.85
-    assert reading.metadata["generation_mode"] == "anomaly_spike"
+    assert reading.sensor_metadata["generation_mode"] == "anomaly_spike" # Changed metadata to sensor_metadata
 
 def test_generate_anomaly_drift():
     generator = SensorDataGenerator(sensor_id="temp_sensor_drift", sensor_type=SensorType.TEMPERATURE)
@@ -62,7 +62,7 @@ def test_generate_anomaly_drift():
     # Expected: 25 +/- 7.5 = 17.5 or 32.5 (plus initial noise)
     assert abs(reading.value - generator.baseline["value"]) > (generator.baseline["value"] * generator.baseline["anomaly_factor_drift"] * 0.9) # check if drift is significant
     assert 0.6 <= reading.quality <= 0.85
-    assert reading.metadata["generation_mode"] == "anomaly_drift"
+    assert reading.sensor_metadata["generation_mode"] == "anomaly_drift" # Changed metadata to sensor_metadata
 
 def test_generate_anomaly_stuck_at_value():
     generator = SensorDataGenerator(sensor_id="vib_sensor_stuck", sensor_type=SensorType.VIBRATION)
@@ -72,9 +72,9 @@ def test_generate_anomaly_stuck_at_value():
     # For vibration (0.1g), stuck value should be between 0.08g and 0.12g
     assert base_value * 0.7 < reading1.value < base_value * 1.3
     assert 0.6 <= reading1.quality <= 0.85
-    assert reading1.metadata["generation_mode"] == "anomaly_stuck_at_value"
+    assert reading1.sensor_metadata["generation_mode"] == "anomaly_stuck_at_value" # Changed metadata to sensor_metadata
     
-    # Generate another reading to ensure it's stuck near the *same* kind of value (though not identical due to randomization in stuck logic)
+    # Generate a few more readings to confirm it's stuck
     reading2 = generator.generate_reading(anomaly=True, anomaly_type="stuck_at_value")
     assert base_value * 0.7 < reading2.value < base_value * 1.3
 
@@ -85,7 +85,7 @@ def test_generate_anomaly_stuck_at_zero():
     assert isinstance(reading, SensorReading)
     assert reading.value == 0.0
     assert 0.6 <= reading.quality <= 0.85
-    assert reading.metadata["generation_mode"] == "anomaly_stuck_at_zero"
+    assert reading.sensor_metadata["generation_mode"] == "anomaly_stuck_at_zero" # Changed metadata to sensor_metadata
 
 # Test rounding
 def test_rounding():
