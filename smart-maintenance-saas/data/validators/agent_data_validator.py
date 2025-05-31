@@ -1,16 +1,34 @@
 import uuid
 from typing import Optional, Dict, Any
 from pydantic import ValidationError
-from data.agent_schemas import SensorReadingCreate 
+from data.schemas import SensorReadingCreate 
 from data.exceptions import DataValidationException
 
 class DataValidator:
+    """
+    Validates sensor reading data against the SensorReadingCreate schema
+    and performs additional business rule validations.
+    """
     def validate(self, raw_data: Dict[str, Any], correlation_id: Optional[uuid.UUID] = None) -> SensorReadingCreate:
+        """
+        Validates raw sensor data against the SensorReadingCreate schema.
+        
+        Args:
+            raw_data: Raw sensor data to validate
+            correlation_id: Optional correlation ID for tracking (not part of validation)
+        
+        Returns:
+            SensorReadingCreate: Validated sensor reading data
+            
+        Raises:
+            ValidationError: If the data fails Pydantic validation
+            DataValidationException: If the data fails business rule validation
+        """
+        # Create a copy to avoid modifying the input
         data_for_model = raw_data.copy()
-        if 'correlation_id' not in data_for_model and correlation_id is not None:
-            data_for_model['correlation_id'] = correlation_id
-        elif 'correlation_id' in data_for_model and data_for_model['correlation_id'] is None and correlation_id is not None:
-            data_for_model['correlation_id'] = correlation_id
+        
+        # correlation_id is not part of SensorReadingCreate schema
+        # It will be passed separately in event processing
 
         try:
             validated_data = SensorReadingCreate(**data_for_model)
