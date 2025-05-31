@@ -24,34 +24,61 @@ def is_isoformat(s: str) -> bool:
 class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
+        # Set up logging for tests
+        self.test_logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.test_logger.setLevel(logging.DEBUG)
+
         self.event_bus = EventBus()
         self.validator = DataValidator()
         self.enricher = DataEnricher(default_data_source_system="integration_test_source")
         self.agent_id = "integration_daq_agent_" + str(uuid.uuid4())[:8]
         self.logger = MagicMock(spec=logging.Logger)
 
+        # Configure the mock logger to actually log through our test logger
+        def log_through_test_logger(msg, *args, **kwargs):
+            self.test_logger.debug(f"Agent logged: {msg}")
+        self.logger.debug.side_effect = log_through_test_logger
+        self.logger.info.side_effect = log_through_test_logger
+
         self.agent = DataAcquisitionAgent(
             agent_id=self.agent_id,
             event_bus=self.event_bus,
             validator=self.validator,
             enricher=self.enricher,
-            logger=self.logger # Pass the MagicMock logger
+            logger=self.logger
         )
-        # The agent's start method subscribes it to SensorDataReceivedEvent
-        await self.agent.start()
 
+        # Event synchronization objects
+        self.event_processed = asyncio.Event()
         self.received_events = []
-        # Ensure the handler can be awaited if the event bus publish/dispatch mechanism is async
-        self.event_bus.subscribe(DataProcessedEvent.__name__, self.capture_event_handler)
-        self.event_bus.subscribe(DataProcessingFailedEvent.__name__, self.capture_event_handler)
 
+        # Subscribe to events
+        await self.event_bus.subscribe(DataProcessedEvent.__name__, self.capture_event_handler)
+        await self.event_bus.subscribe(DataProcessingFailedEvent.__name__, self.capture_event_handler)
+        
+        # Start the agent last, after all subscriptions are set up
+        await self.agent.start()
+        self.test_logger.info(f"Test setup completed for agent {self.agent_id}")
 
-    async def capture_event_handler(self, event: BaseEventModel): # Changed Event to BaseEventModel
+    async def capture_event_handler(self, event: BaseEventModel):
+        """Captures events and signals completion through an asyncio.Event"""
+        self.test_logger.debug(f"Captured event: {type(event).__name__}")
         self.received_events.append(event)
+        self.event_processed.set()  # Signal that we received an event
 
     async def asyncTearDown(self):
+        """Clean up after each test"""
+        self.test_logger.info("Starting test teardown")
         if self.agent:
             await self.agent.stop()
+            self.test_logger.debug("Agent stopped")
+        
+        # Clear event state
+        self.event_processed.clear()
+        self.received_events.clear()
+        
+        # Log final state
+        self.test_logger.info("Test teardown completed")
 
     async def test_integration_success_path(self):
         correlation_id = uuid.uuid4()
@@ -66,8 +93,17 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         }
         input_event = SensorDataReceivedEvent(raw_data=raw_data.copy(), correlation_id=str(correlation_id))
 
+        # Clear any previous event signals
+        self.event_processed.clear()
+        
+        # Publish the event and wait for processing
         await self.event_bus.publish(input_event)
-        await asyncio.sleep(0.1) # Allow time for event processing
+        
+        # Wait for the event to be processed with a timeout
+        try:
+            await asyncio.wait_for(self.event_processed.wait(), timeout=2.0)
+        except asyncio.TimeoutError:
+            self.fail("Timeout waiting for event processing")
 
         self.assertEqual(len(self.received_events), 1, f"Should receive one event, got {len(self.received_events)}")
         processed_event = self.received_events[0]
@@ -130,8 +166,17 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
         }
         input_event = SensorDataReceivedEvent(raw_data=custom_invalid_raw_data.copy(), correlation_id=str(correlation_id))
 
+        # Clear any previous event signals
+        self.event_processed.clear()
+        
+        # Publish the event and wait for processing
         await self.event_bus.publish(input_event)
-        await asyncio.sleep(0.1)
+        
+        # Wait for the event to be processed with a timeout
+        try:
+            await asyncio.wait_for(self.event_processed.wait(), timeout=2.0)
+        except asyncio.TimeoutError:
+            self.fail("Timeout waiting for event processing")
 
         self.assertEqual(len(self.received_events), 1)
         failed_event = self.received_events[0]
@@ -199,8 +244,17 @@ class TestIntegrationDataAcquisitionAgent(unittest.IsolatedAsyncioTestCase):
 
         # Patch the 'enrich' method of the specific enricher instance used by the agent
         with patch.object(self.agent.enricher, 'enrich', side_effect=DataEnrichmentException("Simulated enrichment failure")) as mock_enrich_method:
+            # Clear any previous event signals
+            self.event_processed.clear()
+            
+            # Publish the event and wait for processing
             await self.event_bus.publish(input_event)
-            await asyncio.sleep(0.1) # Allow event processing
+            
+            # Wait for the event to be processed with a timeout
+            try:
+                await asyncio.wait_for(self.event_processed.wait(), timeout=2.0)
+            except asyncio.TimeoutError:
+                self.fail("Timeout waiting for event processing")
 
             mock_enrich_method.assert_called_once() # Ensure enrich was actually called
 
