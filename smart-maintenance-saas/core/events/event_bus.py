@@ -21,110 +21,73 @@ class EventBus:
     def __init__(self):
         """
         Initializes the EventBus.
-        Subscriptions are stored in a defaultdict of lists.
+        Subscriptions are stored in a defaultdict of lists, keyed by event type name (string).
         """
         self.subscriptions: DefaultDict[str, List[Callable[..., Coroutine[Any, Any, Any]]]] = defaultdict(list)
         logger.info("EventBus initialized.")
 
-    async def subscribe(self, event_type: str, handler: Callable[..., Coroutine[Any, Any, Any]]):
+    async def subscribe(self, event_type_name: str, handler: Callable[..., Coroutine[Any, Any, Any]]):
         """
-        Subscribes an asynchronous handler to a specific event type.
+        Subscribes an asynchronous handler to a specific event type name.
 
         Args:
-            event_type: The type of event to subscribe to.
+            event_type_name: The string name of the event type to subscribe to (e.g., "SensorDataReceivedEvent").
             handler: The asynchronous function (coroutine) to call when the event is published.
         """
-        self.subscriptions[event_type].append(handler)
-        logger.info(f"Handler '{getattr(handler, 'name', getattr(handler, '__name__', 'unknown_handler'))}' subscribed to event '{event_type}'.")
+        self.subscriptions[event_type_name].append(handler)
+        logger.info(f"Handler '{getattr(handler, '__name__', 'unknown_handler')}' subscribed to event '{event_type_name}'.")
 
-    async def unsubscribe(self, event_type: str, handler: Callable[..., Coroutine[Any, Any, Any]]):
+    async def unsubscribe(self, event_type_name: str, handler: Callable[..., Coroutine[Any, Any, Any]]):
         """
-        Unsubscribes an asynchronous handler from a specific event type.
+        Unsubscribes an asynchronous handler from a specific event type name.
 
         Args:
-            event_type: The type of event to unsubscribe from.
+            event_type_name: The string name of the event type to unsubscribe from.
             handler: The handler to remove.
         """
-        if event_type in self.subscriptions:
+        if event_type_name in self.subscriptions:
             try:
-                self.subscriptions[event_type].remove(handler)
-                logger.info(f"Handler '{getattr(handler, 'name', getattr(handler, '__name__', 'unknown_handler'))}' unsubscribed from event '{event_type}'.")
-                if not self.subscriptions[event_type]:
-                    # Optional: remove event type from dict if no handlers left
-                    del self.subscriptions[event_type]
-                    logger.debug(f"Event type '{event_type}' removed as no handlers are left.")
+                self.subscriptions[event_type_name].remove(handler)
+                logger.info(f"Handler '{getattr(handler, '__name__', 'unknown_handler')}' unsubscribed from event '{event_type_name}'.")
+                if not self.subscriptions[event_type_name]:
+                    del self.subscriptions[event_type_name]
+                    logger.debug(f"Event type name '{event_type_name}' removed as no handlers are left.")
             except ValueError:
                 logger.warning(
-                    f"Handler '{getattr(handler, 'name', getattr(handler, '__name__', 'unknown_handler'))}' not found for event '{event_type}' during unsubscribe."
+                    f"Handler '{getattr(handler, '__name__', 'unknown_handler')}' not found for event '{event_type_name}' during unsubscribe."
                 )
         else:
-            logger.warning(f"No subscribers for event type '{event_type}' during unsubscribe attempt.")
+            logger.warning(f"No subscribers for event type name '{event_type_name}' during unsubscribe attempt.")
 
-    async def publish(self, event_type_or_object: Any, data: Any = None):
+    async def publish(self, event: Any): # Removed 'data' param, event object should contain all data
         """
-        Publishes an event to all subscribed asynchronous handlers.
-
-        Handlers are called sequentially. If a handler raises an exception,
-        the error is logged, and the EventBus continues to call other handlers.
+        Publishes an event object to all subscribed asynchronous handlers.
+        The event's class name is used to find appropriate handlers.
 
         Args:
-            event_type_or_object: The event object to publish or its type name (string).
-                                  If an object, its class name is used as the event type key.
-                                  If a string, it's used directly as the event type key.
-            data: Optional data payload. If event_type_or_object is a string, this is the payload.
-                  If event_type_or_object is an object, this parameter is typically ignored,
-                  and the object itself is the payload.
+            event: The event object to publish. This object is passed directly to the handlers.
         """
-        handler_name = 'unknown_handler' # This line will be updated by the next change
-
-        if isinstance(event_type_or_object, str):
-            event_type_key_str = event_type_or_object
-            # If data is None, it implies the event_type_or_object was intended to be the event object itself.
-            # This case should ideally not happen if following new publish(event_object) or publish("event_name", data_dict)
-            # For robustness, we might log a warning or handle as per specific design if data is also None here.
-            # For now, assume 'data' holds the payload if event_type_or_object is a string.
-            payload_to_pass = data
-        elif hasattr(event_type_or_object, '__class__'):
-            event_type_key_str = event_type_or_object.__class__.__name__
-            payload_to_pass = event_type_or_object # The object itself is the payload
-        else:
-            # Fallback or error for unexpected type
-            logger.error(f"Cannot determine event type from {event_type_or_object}")
-            return
-
-        # Truncate data for logging if it's too long
-        log_payload = str(payload_to_pass)
+        event_type_name = event.__class__.__name__  # Use the class name string as the key
+        handler_name = 'unknown_handler'
+        
+        log_payload = str(event) # Log the event object itself
         if len(log_payload) > 200:
             log_payload = log_payload[:200] + "..."
 
-        logger.info(f"Publishing event: {event_type_key_str} with payload (preview): {log_payload}")
+        logger.info(f"Publishing event of type '{event_type_name}' with payload (preview): {log_payload}")
 
-        if event_type_key_str in self.subscriptions:
-            # Create a copy of the list of handlers in case of modification during iteration
-            handlers_to_call = list(self.subscriptions[event_type_key_str])
+        if event_type_name in self.subscriptions:
+            handlers_to_call = list(self.subscriptions[event_type_name])
             for handler in handlers_to_call:
-                handler_name = getattr(handler, 'name', getattr(handler, '__name__', 'unknown_handler'))
+                handler_name = getattr(handler, '__name__', 'unknown_handler')
                 try:
-                    logger.debug(f"Calling handler '{handler_name}' for event type '{event_type_key_str}'.")
-                    if data is not None and isinstance(event_type_or_object, str):
-                        # This case means publish("EventTypeString", actual_data_payload)
-                        # If actual_data_payload is a dict, unpack it.
-                        if isinstance(data, dict):
-                            await handler(**data)
-                        else:
-                            await handler(data)
-                    else:
-                        # This case means publish(MyEventObject) or publish("EventTypeString", None)
-                        # In both these scenarios, payload_to_pass holds the correct thing (the event object, or None)
-                        if isinstance(payload_to_pass, dict): # If the event object itself is a dict (e.g. Pydantic model's dict())
-                             await handler(**payload_to_pass)
-                        else:
-                             await handler(payload_to_pass)
+                    logger.debug(f"Calling handler '{handler_name}' for event type '{event_type_name}'.")
+                    await handler(event) # Pass the event object directly
                 except Exception as e:
                     logger.error(
-                        f"Error in event handler '{handler_name}' for event type '{event_type_key_str}' with payload (preview): {log_payload}.\\n"
-                        f"Error: {e}\\n"
+                        f"Error in event handler '{handler_name}' for event type '{event_type_name}' with payload (preview): {log_payload}.\\\\n"
+                        f"Error: {e}\\\\n"
                         f"Traceback: {traceback.format_exc()}"
                     )
         else:
-            logger.debug(f"No subscribers for event type {event_type_key_str}")
+            logger.debug(f"No subscribers for event type name '{event_type_name}'.")
