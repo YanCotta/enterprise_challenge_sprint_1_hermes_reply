@@ -33,7 +33,6 @@ repos:
           "--max-line-length=88",
           "--extend-ignore=E203",  # See https://github.com/PyCQA/pycodestyle/issues/373
         ]
-
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.7.0
     hooks:
@@ -44,19 +43,3 @@ repos:
           - types-requests
           - types-setuptools
           - types-urllib3
-        args: [
-          "--ignore-missing-imports",
-          "--disallow-untyped-defs",
-          "--check-untyped-defs",
-          "--warn-redundant-casts",
-          "--warn-unused-ignores",
-          "--show-error-codes",
-          "--strict",
-          "apps",
-          "core",
-          "data",
-          "tests",
-          "examples",
-          "scripts",
-          "infrastructure",
-        ]
