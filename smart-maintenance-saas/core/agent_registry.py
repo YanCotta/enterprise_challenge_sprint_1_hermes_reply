@@ -13,10 +13,11 @@ class AgentRegistry:
     This class provides a centralized way to register, unregister,
     and retrieve agent instances within the application.
     """
-    _instance: Optional['AgentRegistry'] = None
+
+    _instance: Optional["AgentRegistry"] = None
     _initialized: bool = False
 
-    def __new__(cls, *args, **kwargs) -> 'AgentRegistry':
+    def __new__(cls, *args, **kwargs) -> "AgentRegistry":
         """
         Ensures that only one instance of AgentRegistry is created.
         """
@@ -64,7 +65,9 @@ class AgentRegistry:
         """
         if agent_id not in self.agents:
             logger.error(f"Agent with ID '{agent_id}' not found for unregistration.")
-            raise ValueError(f"Agent with ID '{agent_id}' not found for unregistration.")
+            raise ValueError(
+                f"Agent with ID '{agent_id}' not found for unregistration."
+            )
         del self.agents[agent_id]
         logger.info(f"Agent '{agent_id}' unregistered.")
 
@@ -94,6 +97,7 @@ class AgentRegistry:
         """
         logger.info(f"Listing all {len(self.agents)} registered agents.")
         return self.agents.copy()
+
 
 # Example of how to get the singleton instance:
 # registry = AgentRegistry()

@@ -147,4 +147,3 @@ Para informações detalhadas sobre a arquitetura e implementação técnica, co
 <div align="center">
 
 **Data de Entrega:** `08 de Maio de 2025` | **Versão:** `1.3`
-

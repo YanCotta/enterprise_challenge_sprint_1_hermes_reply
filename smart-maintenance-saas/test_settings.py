@@ -6,6 +6,7 @@ This script imports and prints out the settings to verify they're loading correc
 
 from core.config.settings import settings
 
+
 def main():
     """Print out the current settings."""
     print("Smart Maintenance SaaS - Current Settings")

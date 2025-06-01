@@ -1,21 +1,28 @@
 """Base agent module providing core functionality for all AI agents in the system."""
 
+import logging  # Ensure logging is imported
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
 from dataclasses import dataclass, field
-from datetime import datetime, timezone # Add timezone
-import logging # Ensure logging is imported
+from datetime import datetime, timezone  # Add timezone
+from typing import Any, Dict, List
 
 # Get a logger for this module
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class AgentCapability:
     """Defines the structure for an agent's capability."""
+
     name: str
     description: str
-    input_types: List[str] = field(default_factory=list)  # e.g., event types or data model names
-    output_types: List[str] = field(default_factory=list) # e.g., event types or data model names
+    input_types: List[str] = field(
+        default_factory=list
+    )  # e.g., event types or data model names
+    output_types: List[str] = field(
+        default_factory=list
+    )  # e.g., event types or data model names
+
 
 class BaseAgent(ABC):
     """
@@ -23,7 +30,10 @@ class BaseAgent(ABC):
     Provides common lifecycle methods, event handling, capability registration,
     and health check functionalities.
     """
-    def __init__(self, agent_id: str, event_bus: Any): # event_bus is an instance of our EventBus
+
+    def __init__(
+        self, agent_id: str, event_bus: Any
+    ):  # event_bus is an instance of our EventBus
         """
         Initializes the BaseAgent.
 
@@ -61,7 +71,9 @@ class BaseAgent(ABC):
         await self.register_capabilities()
         # Subclasses should call self.event_bus.subscribe() here for events they need to listen to.
         self.status = "running"
-        logger.info(f"Agent {self.agent_id} started successfully. Status: {self.status}")
+        logger.info(
+            f"Agent {self.agent_id} started successfully. Status: {self.status}"
+        )
 
     async def stop(self) -> None:
         """
@@ -89,7 +101,9 @@ class BaseAgent(ABC):
         #         output_types=["DataProcessedEvent"]
         #     )
         # )
-        logger.debug(f"Agent {self.agent_id}: No specific capabilities registered in BaseAgent.register_capabilities.")
+        logger.debug(
+            f"Agent {self.agent_id}: No specific capabilities registered in BaseAgent.register_capabilities."
+        )
         pass
 
     async def handle_event(self, event_type: str, data: Any) -> None:
@@ -103,14 +117,18 @@ class BaseAgent(ABC):
             event_type (str): The type of the event received.
             data (Any): The payload of the event.
         """
-        logger.info(f"Agent {self.agent_id} received event '{event_type}' with data: {str(data)[:200]}...") # Log first 200 chars
+        logger.info(
+            f"Agent {self.agent_id} received event '{event_type}' with data: {str(data)[:200]}..."
+        )  # Log first 200 chars
         try:
             await self.process(data)
         except Exception as e:
-            logger.error(f"Agent {self.agent_id}: Error processing event '{event_type}': {e}", exc_info=True)
+            logger.error(
+                f"Agent {self.agent_id}: Error processing event '{event_type}': {e}",
+                exc_info=True,
+            )
             # Optionally, publish an error event
             # await self._publish_event("agent_processing_error", {"agent_id": self.agent_id, "event_type": event_type, "error": str(e)})
-
 
     async def get_health(self) -> Dict[str, Any]:
         """
@@ -122,7 +140,7 @@ class BaseAgent(ABC):
         return {
             "agent_id": self.agent_id,
             "status": self.status,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     async def _publish_event(self, event_type: str, data: Any) -> None:
@@ -137,8 +155,15 @@ class BaseAgent(ABC):
             logger.debug(f"Agent {self.agent_id} publishing event '{event_type}'...")
             try:
                 await self.event_bus.publish(event_type, data)
-                logger.info(f"Agent {self.agent_id} successfully published event '{event_type}'.")
+                logger.info(
+                    f"Agent {self.agent_id} successfully published event '{event_type}'."
+                )
             except Exception as e:
-                logger.error(f"Agent {self.agent_id}: Failed to publish event '{event_type}': {e}", exc_info=True)
+                logger.error(
+                    f"Agent {self.agent_id}: Failed to publish event '{event_type}': {e}",
+                    exc_info=True,
+                )
         else:
-            logger.warning(f"Agent {self.agent_id}: Event bus not available. Cannot publish event '{event_type}'.")
+            logger.warning(
+                f"Agent {self.agent_id}: Event bus not available. Cannot publish event '{event_type}'."
+            )

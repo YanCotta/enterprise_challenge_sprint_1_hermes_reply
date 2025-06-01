@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 async def test_event_bus_initialization():
     """Tests that EventBus initializes with an empty subscriptions dictionary."""
     event_bus = EventBus()
-    assert not event_bus.subscriptions, "EventBus subscriptions should be empty on initialization."
+    assert (
+        not event_bus.subscriptions
+    ), "EventBus subscriptions should be empty on initialization."
     logger.info("test_event_bus_initialization: PASSED")
 
 
@@ -99,19 +101,29 @@ async def test_unsubscribe_nonexistent_handler_or_event(caplog):
     non_existent_event_type = "non_existent_event"
 
     # Subscribe a different handler to BaseEventModel to make sure the event type exists for one case
-    await event_bus.subscribe(BaseEventModel.__name__, AsyncMock(name="another_handler"))
+    await event_bus.subscribe(
+        BaseEventModel.__name__, AsyncMock(name="another_handler")
+    )
 
     caplog.set_level(logging.WARNING)  # EventBus logs warnings in these cases
 
     # Attempt to unsubscribe handler not subscribed to any event
     await event_bus.unsubscribe(BaseEventModel.__name__, mock_handler)
-    assert f"Handler 'AsyncMock' not found for event '{BaseEventModel.__name__}' during unsubscribe." in caplog.text
+    assert (
+        f"Handler 'AsyncMock' not found for event '{BaseEventModel.__name__}' during unsubscribe."
+        in caplog.text
+    )
     caplog.clear()
 
     # Attempt to unsubscribe handler from a non-existent event type
     await event_bus.unsubscribe(non_existent_event_type, mock_handler)
-    assert f"No subscribers for event type name '{non_existent_event_type}' during unsubscribe attempt." in caplog.text
-    logger.info("test_unsubscribe_nonexistent_handler_or_event: PASSED (verified via log)")
+    assert (
+        f"No subscribers for event type name '{non_existent_event_type}' during unsubscribe attempt."
+        in caplog.text
+    )
+    logger.info(
+        "test_unsubscribe_nonexistent_handler_or_event: PASSED (verified via log)"
+    )
 
 
 @pytest.mark.asyncio
@@ -144,14 +156,17 @@ async def test_unsubscribe_removes_event_type_if_empty(caplog):
     """Tests that event type is removed from subscriptions when last handler is unsubscribed."""
     event_bus = EventBus()
     mock_handler = AsyncMock()
-    
+
     await event_bus.subscribe(BaseEventModel.__name__, mock_handler)
     assert BaseEventModel.__name__ in event_bus.subscriptions
-    
+
     # Move caplog.set_level here
     caplog.set_level(logging.DEBUG)
     await event_bus.unsubscribe(BaseEventModel.__name__, mock_handler)
     assert BaseEventModel.__name__ not in event_bus.subscriptions
-    
-    assert f"Event type name '{BaseEventModel.__name__}' removed as no handlers are left" in caplog.text
+
+    assert (
+        f"Event type name '{BaseEventModel.__name__}' removed as no handlers are left"
+        in caplog.text
+    )
     logger.info("test_unsubscribe_removes_event_type_if_empty: PASSED")

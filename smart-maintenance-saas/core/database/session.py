@@ -1,9 +1,13 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from typing import AsyncGenerator # Import AsyncGenerator
-# declarative_base is usually in orm_models.py now, so not typically needed here directly
-# from sqlalchemy.ext.declarative import declarative_base 
+from typing import AsyncGenerator  # Import AsyncGenerator
 
-from core.config.settings import settings # Corrected import path
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from core.config.settings import settings  # Corrected import path
+
+# declarative_base is usually in orm_models.py now, so not typically needed here directly
+# from sqlalchemy.ext.declarative import declarative_base
+
+
 # If Base is defined in orm_models.py and truly needed here (e.g., for a utility script part of this file)
 # from core.database.orm_models import Base # Corrected import path
 
@@ -14,18 +18,24 @@ from core.config.settings import settings # Corrected import path
 # async_db_url = settings.database_url.replace("postgresql://", "postgresql+asyncpg://", 1) # if settings.database_url.startswith("postgresql://") else settings.database_url
 # We will proceed assuming settings.database_url is already correctly formatted for asyncpg.
 
-SQLALCHEMY_DATABASE_URL = str(settings.database_url) # Ensure it's a string for manipulation
+SQLALCHEMY_DATABASE_URL = str(
+    settings.database_url
+)  # Ensure it's a string for manipulation
 
 if SQLALCHEMY_DATABASE_URL.startswith("postgresql://"):
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace(
+        "postgresql://", "postgresql+asyncpg://", 1
+    )
 elif SQLALCHEMY_DATABASE_URL.startswith("postgresql+psycopg2://"):
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace(
+        "postgresql+psycopg2://", "postgresql+asyncpg://", 1
+    )
 # else: SQLALCHEMY_DATABASE_URL remains as is, assuming it's correct or a different DB type
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
     echo=settings.debug,  # Log SQL statements if debug mode is on
-    future=True          # Use SQLAlchemy 2.0 style execution
+    future=True,  # Use SQLAlchemy 2.0 style execution
 )
 
 # Configure an async session factory
@@ -37,8 +47,9 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
+
 # Async dependency for FastAPI to get a database session
-async def get_async_db() -> AsyncGenerator[AsyncSession, None]: # Corrected return type
+async def get_async_db() -> AsyncGenerator[AsyncSession, None]:  # Corrected return type
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -47,6 +58,7 @@ async def get_async_db() -> AsyncGenerator[AsyncSession, None]: # Corrected retu
             raise
         finally:
             await session.close()
+
 
 # Example utility function (optional, Alembic is preferred for schema management)
 # async def init_db():

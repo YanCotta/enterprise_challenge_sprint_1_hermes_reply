@@ -52,4 +52,11 @@ repos:
           "--warn-unused-ignores",
           "--show-error-codes",
           "--strict",
+          "apps",
+          "core",
+          "data",
+          "tests",
+          "examples",
+          "scripts",
+          "infrastructure",
         ]

@@ -40,18 +40,18 @@ def logging_with_extra_fields(user_id: int, action: str):
 # Example 3: Logging in a class
 class UserService:
     """Example service class with logging."""
-    
+
     def __init__(self):
         """Initialize with a class-specific logger."""
         self.logger = get_logger(f"{__name__}.UserService")
-    
+
     def authenticate(self, username: str) -> Dict:
         """Simulate user authentication with logging."""
         self.logger.info(f"Authenticating user", extra={"username": username})
-        
+
         # Simulate some work
         time.sleep(0.1)
-        
+
         # Log success with extra fields
         self.logger.info(
             "User authenticated successfully",
@@ -61,7 +61,7 @@ class UserService:
                 "auth_method": "password",
             },
         )
-        
+
         return {"username": username, "authenticated": True}
 
 
@@ -84,10 +84,10 @@ def exception_example():
 def performance_logging_example():
     """Demonstrate logging performance metrics."""
     start_time = time.time()
-    
+
     # Simulate some work
     time.sleep(0.5)
-    
+
     elapsed_ms = (time.time() - start_time) * 1000
     logger.info(
         "Operation completed",
@@ -103,19 +103,19 @@ def main():
     """Run all the examples."""
     # Initialize logging
     setup_logging()
-    
+
     logger.info("Starting logging examples")
-    
+
     # Run all examples
     basic_logging_example()
     logging_with_extra_fields(user_id=123, action="login")
-    
+
     user_service = UserService()
     user_service.authenticate("john.doe")
-    
+
     exception_example()
     performance_logging_example()
-    
+
     logger.info("Logging examples completed")
 
 
