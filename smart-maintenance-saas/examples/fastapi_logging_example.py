@@ -34,7 +34,7 @@ app = FastAPI(
 async def log_request_middleware(request: Request, call_next):
     """
     Middleware to add request context to all logs during a request.
-    
+
     This middleware:
     1. Extracts or generates a request ID
     2. Adds a filter to the logger for this request context
@@ -45,14 +45,14 @@ async def log_request_middleware(request: Request, call_next):
     """
     # Extract request ID from headers or generate a new one
     request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
-    
+
     # Create a request-specific logger filter
     request_filter = RequestContextFilter(request_id)
     logger.addFilter(request_filter)
-    
+
     # Add request ID to response headers
     response = None
-    
+
     # Log the incoming request
     logger.info(
         f"Request received: {request.method} {request.url.path}",
@@ -64,11 +64,11 @@ async def log_request_middleware(request: Request, call_next):
             "client_port": request.client.port if request.client else None,
         },
     )
-    
+
     try:
         # Process the request
         response = await call_next(request)
-        
+
         # Log the response
         logger.info(
             f"Request completed: {response.status_code}",
@@ -77,11 +77,11 @@ async def log_request_middleware(request: Request, call_next):
                 "processing_time_ms": None,  # Could add timing logic here
             },
         )
-        
+
         # Add request ID to response headers
         response.headers["X-Request-ID"] = request_id
         return response
-    
+
     except Exception as e:
         # Log any unhandled exceptions
         logger.exception(
@@ -90,7 +90,7 @@ async def log_request_middleware(request: Request, call_next):
                 "error_type": type(e).__name__,
             },
         )
-        
+
         # Return a 500 error
         error_response = JSONResponse(
             status_code=500,
@@ -98,7 +98,7 @@ async def log_request_middleware(request: Request, call_next):
         )
         error_response.headers["X-Request-ID"] = request_id
         return error_response
-    
+
     finally:
         # Always remove the filter to avoid memory leaks
         logger.removeFilter(request_filter)
@@ -115,7 +115,7 @@ async def root():
 async def read_item(item_id: int, q: Optional[str] = None):
     """
     Example endpoint that demonstrates logging with context.
-    
+
     Args:
         item_id: The ID of the item to retrieve
         q: An optional query parameter
@@ -127,7 +127,7 @@ async def read_item(item_id: int, q: Optional[str] = None):
             "query_param": q,
         },
     )
-    
+
     return {"item_id": item_id, "query": q}
 
 
@@ -135,7 +135,7 @@ async def read_item(item_id: int, q: Optional[str] = None):
 async def create_alert(alert_data: dict):
     """
     Example endpoint for creating a maintenance alert.
-    
+
     Args:
         alert_data: Alert details
     """
@@ -147,7 +147,7 @@ async def create_alert(alert_data: dict):
             "alert_type": alert_data.get("type"),
         },
     )
-    
+
     return {"status": "alert_created", "id": str(uuid.uuid4())}
 
 
@@ -161,7 +161,7 @@ if __name__ == "__main__":
             "debug": settings.debug,
         },
     )
-    
+
     # Start Uvicorn server
     uvicorn.run(
         "examples.fastapi_logging_example:app",

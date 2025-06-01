@@ -49,7 +49,7 @@ logger.info(
 class UserService:
     def __init__(self):
         self.logger = get_logger(f"{__name__}.UserService")
-    
+
     def authenticate(self, username):
         self.logger.info("Authenticating user", extra={"username": username})
         # ...
@@ -80,7 +80,7 @@ async def log_request_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
     request_filter = RequestContextFilter(request_id)
     logger.addFilter(request_filter)
-    
+
     try:
         # Process request
         response = await call_next(request)

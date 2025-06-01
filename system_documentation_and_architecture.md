@@ -519,19 +519,19 @@ graph TD
         C -->|A2A| E[Reporter Agent]
         C -->|A2A| F[Learning Agent]
     end
-    
+
     subgraph "External"
         H[External APIs]
     end
-    
+
     subgraph "Human Control"
         G[Human-in-Loop]
     end
-    
+
     C <--> G
     D -->|Calendar| H
     E -->|Email/SMS| H
-    
+
     style A fill:#ff9900,stroke:#fff,stroke-width:2px
     style B fill:#00aa41,stroke:#fff,stroke-width:2px
     style C fill:#232f3e,stroke:#fff,stroke-width:2px
@@ -554,15 +554,15 @@ sequenceDiagram
     participant P as Processing
     participant D as Database
     participant U as UI/Dashboard
-    
+
     Note over S,U: Fluxo de Dados End-to-End
-    
+
     S->>M: 1. Coleta de Dados
     M->>K: 2. Stream de Eventos
     K->>P: 3. Processamento
     P->>D: 4. Persistência
     P-->>U: 5. Visualização
-    
+
     Note over P,D: Análise & ML
     Note over P,U: Alertas & Reports
 ```
@@ -674,7 +674,7 @@ Aguardamos o feedback da **Hermes Reply** e tutores da **FIAP** para:
 
 ---
 
-**Projeto desenvolvido por:**  
+**Projeto desenvolvido por:**
 Yan Pimentel Cotta (RM: 562836)
 
 FIAP x Hermes Reply Challenge | Maio 2025

@@ -1,11 +1,14 @@
+from datetime import datetime
+from typing import Any, Dict
+
 import pytest
 from pydantic import ValidationError
-from datetime import datetime
-from typing import Dict, Any
+
+from data.schemas import SensorReadingCreate, SensorType, uuid
 
 # Import validator from the consolidated location
 from data.validators.agent_data_validator import DataValidator
-from data.schemas import SensorReadingCreate, SensorType, uuid
+
 
 class TestDataValidator:
     def setup_method(self):
@@ -16,7 +19,7 @@ class TestDataValidator:
             "sensor_id": "sensor-001",
             "sensor_type": "temperature",
             "value": 25.5,
-            "unit": "C"
+            "unit": "C",
         }
         result = self.validator.validate(raw_data)
         assert isinstance(result, SensorReadingCreate)
@@ -24,9 +27,9 @@ class TestDataValidator:
         assert result.value == raw_data["value"]
         assert result.sensor_type == SensorType.TEMPERATURE
         assert result.unit == raw_data["unit"]
-        assert result.quality == 1.0 # Default value
-        assert result.timestamp is None # Default if not provided
-        assert result.metadata == {} # Default value
+        assert result.quality == 1.0  # Default value
+        assert result.timestamp is None  # Default if not provided
+        assert result.metadata == {}  # Default value
 
     def test_validate_success_all_fields(self):
         now = datetime.utcnow()
@@ -37,7 +40,7 @@ class TestDataValidator:
             "unit": "mm/s",
             "timestamp": now.isoformat(),
             "quality": 0.95,
-            "metadata": {"location": "pump-A"}
+            "metadata": {"location": "pump-A"},
         }
         result = self.validator.validate(raw_data)
         assert isinstance(result, SensorReadingCreate)
@@ -62,7 +65,7 @@ class TestDataValidator:
             "sensor_type": "temperature",
             "value": 20.0,
             "unit": "C",
-            "quality": 0.0
+            "quality": 0.0,
         }
         result_min = self.validator.validate(raw_data_min_quality)
         assert result_min.quality == 0.0
@@ -72,29 +75,27 @@ class TestDataValidator:
             "sensor_type": "temperature",
             "value": 21.0,
             "unit": "C",
-            "quality": 1.0
+            "quality": 1.0,
         }
         result_max = self.validator.validate(raw_data_max_quality)
         assert result_max.quality == 1.0
 
     def test_validate_failure_missing_required_field(self):
-        raw_data = {
-            "sensor_type": "temperature",
-            "value": 25.5,
-            "unit": "C"
-        }
+        raw_data = {"sensor_type": "temperature", "value": 25.5, "unit": "C"}
         with pytest.raises(ValidationError) as exc_info:
             self.validator.validate(raw_data)
         assert "sensor_id" in str(exc_info.value).lower()
-        assert "field required" in str(exc_info.value).lower() or "missing" in str(exc_info.value).lower()
-
+        assert (
+            "field required" in str(exc_info.value).lower()
+            or "missing" in str(exc_info.value).lower()
+        )
 
     def test_validate_failure_incorrect_type_for_value(self):
         raw_data = {
             "sensor_id": "sensor-003",
             "sensor_type": "pressure",
             "value": "not-a-float",
-            "unit": "Pa"
+            "unit": "Pa",
         }
         with pytest.raises(ValidationError) as exc_info:
             self.validator.validate(raw_data)
@@ -105,7 +106,7 @@ class TestDataValidator:
             "sensor_id": 12345,
             "sensor_type": "pressure",
             "value": 10.0,
-            "unit": "Pa"
+            "unit": "Pa",
         }
         with pytest.raises(ValidationError) as exc_info:
             self.validator.validate(raw_data)
@@ -116,7 +117,7 @@ class TestDataValidator:
             "sensor_id": "sensor-004",
             "sensor_type": "unknown_type",
             "value": 10.0,
-            "unit": "X"
+            "unit": "X",
         }
         with pytest.raises(ValidationError) as exc_info:
             self.validator.validate(raw_data)
@@ -128,7 +129,7 @@ class TestDataValidator:
             "sensor_type": "temperature",
             "value": 30.0,
             "unit": "C",
-            "quality": 1.5
+            "quality": 1.5,
         }
         with pytest.raises(ValidationError) as exc_info:
             self.validator.validate(raw_data)
@@ -140,7 +141,7 @@ class TestDataValidator:
             "sensor_type": "temperature",
             "value": 30.0,
             "unit": "C",
-            "quality": -0.5
+            "quality": -0.5,
         }
         with pytest.raises(ValidationError) as exc_info:
             self.validator.validate(raw_data)

@@ -34,7 +34,7 @@ def event_loop():
 def postgres_container():
     """
     Start a PostgreSQL container with TimescaleDB for testing.
-    
+
     This fixture is used for integration tests that require a real database.
     The container is started once per test session and is stopped after all tests.
     """
@@ -54,9 +54,9 @@ def postgres_container():
 
     # Set environment variables for tests to use
     os.environ["DATABASE_URL"] = postgres.get_connection_url()
-    
+
     yield postgres
-    
+
     postgres.stop()
 
 
@@ -64,7 +64,7 @@ def postgres_container():
 def test_db_url(postgres_container) -> str:
     """
     Get the database URL for tests.
-    
+
     Args:
         postgres_container: A running PostgreSQL container fixture, if being used
 
@@ -80,14 +80,21 @@ def test_db_url(postgres_container) -> str:
         raw_url = postgres_container.get_connection_url()
     elif "PYTEST_DIRECT_DB" in os.environ:
         # Use explicit test database URL from environment or settings
-        raw_url = os.environ.get("DATABASE_TEST_URL", 
-                               getattr(settings, 'test_database_url', 
-                                     str(settings.database_url).replace(
-                                         settings.db_name, f"{settings.db_name}_test")))
+        raw_url = os.environ.get(
+            "DATABASE_TEST_URL",
+            getattr(
+                settings,
+                "test_database_url",
+                str(settings.database_url).replace(
+                    settings.db_name, f"{settings.db_name}_test"
+                ),
+            ),
+        )
     else:
         # Default to a test database on the development server
         raw_url = str(settings.database_url).replace(
-            settings.db_name, f"{settings.db_name}_test")
+            settings.db_name, f"{settings.db_name}_test"
+        )
 
     # Convert raw_url to string if it's not already
     raw_url = str(raw_url)
@@ -111,18 +118,18 @@ def test_db_url(postgres_container) -> str:
 async def db_engine(test_db_url) -> AsyncGenerator[AsyncEngine, None]:
     """Create a test database engine."""
     engine = create_async_engine(test_db_url, echo=False)
-    
+
     # Create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
-    
+
     # Cleanup - drop all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    
+
     await engine.dispose()
 
 
@@ -130,17 +137,17 @@ async def db_engine(test_db_url) -> AsyncGenerator[AsyncEngine, None]:
 async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
     """
     Create a test database session for each test.
-    
+
     This fixture uses nested transactions for test isolation.
     """
     connection = await db_engine.connect()
     transaction = await connection.begin()
-    
+
     session_maker = async_sessionmaker(
         connection, expire_on_commit=False, autoflush=False
     )
     session = session_maker()
-    
+
     try:
         yield session
     finally:
@@ -153,12 +160,12 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
 def test_settings() -> Generator[Dict, None, None]:
     """
     Override settings for tests.
-    
+
     This fixture lets tests override specific settings temporarily.
     """
     # Store original values
     original_values = {}
-    
+
     def _override_settings(**kwargs):
         for key, value in kwargs.items():
             if hasattr(settings, key):
@@ -167,9 +174,9 @@ def test_settings() -> Generator[Dict, None, None]:
             else:
                 raise ValueError(f"Setting {key} does not exist")
         return settings
-    
+
     yield _override_settings
-    
+
     # Restore original values
     for key, value in original_values.items():
         setattr(settings, key, value)

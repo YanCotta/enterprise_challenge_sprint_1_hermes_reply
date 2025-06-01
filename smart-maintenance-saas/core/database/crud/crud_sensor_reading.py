@@ -1,11 +1,13 @@
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database.orm_models import SensorReadingORM
-from data.schemas import SensorReadingCreate # Assuming SensorReadingCreate is in schemas.py
+from data.schemas import (  # Assuming SensorReadingCreate is in schemas.py
+    SensorReadingCreate,
+)
 
 
 class CRUDSensorReading:
@@ -20,7 +22,7 @@ class CRUDSensorReading:
         # exclude_unset=True helps in not setting fields that were not provided,
         # allowing database defaults to take effect if any.
         orm_data = obj_in.model_dump(exclude_unset=True)
-        
+
         # If timestamp is not provided in obj_in and your ORM model expects it,
         # or if you want to ensure it's set if None was passed, handle it here.
         # SensorReadingCreate has timestamp as Optional[datetime]=None
@@ -32,7 +34,7 @@ class CRUDSensorReading:
         # Let's ensure timestamp is set if not provided.
         if orm_data.get("timestamp") is None:
             orm_data["timestamp"] = datetime.utcnow()
-            
+
         db_obj = SensorReadingORM(**orm_data)
         db.add(db_obj)
         await db.commit()
@@ -59,8 +61,10 @@ class CRUDSensorReading:
         if end_time:
             stmt = stmt.where(SensorReadingORM.timestamp <= end_time)
 
-        stmt = stmt.order_by(SensorReadingORM.timestamp.desc()).offset(skip).limit(limit)
-        
+        stmt = (
+            stmt.order_by(SensorReadingORM.timestamp.desc()).offset(skip).limit(limit)
+        )
+
         result = await db.execute(stmt)
         return result.scalars().all()
 
@@ -73,6 +77,7 @@ class CRUDSensorReading:
         stmt = select(SensorReadingORM).where(SensorReadingORM.id == reading_id)
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+
 
 # Create an instance of the CRUD class for easy import and use elsewhere
 crud_sensor_reading = CRUDSensorReading()

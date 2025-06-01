@@ -3,11 +3,12 @@ import random
 import time
 from datetime import datetime, timedelta
 from enum import Enum
+from typing import List
+
+import numpy as np
 
 from data.schemas import SensorReading, SensorType
 
-import numpy as np
-from typing import List
 
 class SensorDataGenerator:
     def __init__(self, sensor_id: str, sensor_type: SensorType):
@@ -17,15 +18,41 @@ class SensorDataGenerator:
 
     def _get_baseline_values_for_type(self) -> dict:
         if self.sensor_type == SensorType.TEMPERATURE:
-            return {"value": 25.0, "unit": "°C", "noise_std": 0.5, "anomaly_factor_spike": 2.0, "anomaly_factor_drift": 0.3}
+            return {
+                "value": 25.0,
+                "unit": "°C",
+                "noise_std": 0.5,
+                "anomaly_factor_spike": 2.0,
+                "anomaly_factor_drift": 0.3,
+            }
         elif self.sensor_type == SensorType.VIBRATION:
-            return {"value": 0.1, "unit": "g", "noise_std": 0.02, "anomaly_factor_spike": 5.0, "anomaly_factor_drift": 0.5}
+            return {
+                "value": 0.1,
+                "unit": "g",
+                "noise_std": 0.02,
+                "anomaly_factor_spike": 5.0,
+                "anomaly_factor_drift": 0.5,
+            }
         elif self.sensor_type == SensorType.PRESSURE:
-            return {"value": 1012.0, "unit": "hPa", "noise_std": 2.0, "anomaly_factor_spike": 1.5, "anomaly_factor_drift": 0.1}
+            return {
+                "value": 1012.0,
+                "unit": "hPa",
+                "noise_std": 2.0,
+                "anomaly_factor_spike": 1.5,
+                "anomaly_factor_drift": 0.1,
+            }
         # Add other sensor types
-        return {"value": 10.0, "unit": "units", "noise_std": 0.1, "anomaly_factor_spike": 3.0, "anomaly_factor_drift": 0.4}
+        return {
+            "value": 10.0,
+            "unit": "units",
+            "noise_std": 0.1,
+            "anomaly_factor_spike": 3.0,
+            "anomaly_factor_drift": 0.4,
+        }
 
-    def generate_reading(self, anomaly: bool = False, anomaly_type: str = "spike") -> SensorReading:
+    def generate_reading(
+        self, anomaly: bool = False, anomaly_type: str = "spike"
+    ) -> SensorReading:
         base_value = self.baseline["value"]
         noise = np.random.normal(0, self.baseline["noise_std"])
         current_value = base_value + noise
@@ -36,11 +63,19 @@ class SensorDataGenerator:
             quality_score = random.uniform(0.6, 0.85)
             current_sensor_metadata = {"generation_mode": f"anomaly_{anomaly_type}"}
             if anomaly_type == "spike":
-                current_value *= (1 + random.uniform(0.5, 1.0) * self.baseline["anomaly_factor_spike"]) # More pronounced spike
+                current_value *= (
+                    1 + random.uniform(0.5, 1.0) * self.baseline["anomaly_factor_spike"]
+                )  # More pronounced spike
             elif anomaly_type == "drift":
-                current_value += self.baseline["value"] * self.baseline["anomaly_factor_drift"] * (1 if random.random() > 0.5 else -1)
+                current_value += (
+                    self.baseline["value"]
+                    * self.baseline["anomaly_factor_drift"]
+                    * (1 if random.random() > 0.5 else -1)
+                )
             elif anomaly_type == "stuck_at_value":
-                current_value = base_value * random.uniform(0.8, 1.2) # Stuck near baseline
+                current_value = base_value * random.uniform(
+                    0.8, 1.2
+                )  # Stuck near baseline
             elif anomaly_type == "stuck_at_zero":
                 current_value = 0.0
             # Add more anomaly types
@@ -52,8 +87,11 @@ class SensorDataGenerator:
             unit=self.baseline["unit"],
             timestamp=datetime.utcnow(),
             quality=round(quality_score, 2),
-            metadata=current_sensor_metadata if anomaly else {"generation_mode": "normal"}
+            metadata=current_sensor_metadata
+            if anomaly
+            else {"generation_mode": "normal"},
         )
+
 
 # Configuration
 NUM_SENSORS = 5
@@ -66,8 +104,9 @@ SENSOR_CONFIG = {
     "vibration": {"min": 0, "max": 5, "unit": "mm/s"},
     "pressure": {"min": 100, "max": 120, "unit": "PSI"},
     "humidity": {"min": 40, "max": 60, "unit": "%"},
-    "voltage": {"min": 220, "max": 240, "unit": "V"}
+    "voltage": {"min": 220, "max": 240, "unit": "V"},
 }
+
 
 def generate_sensor_data(sensor_id, sensor_type, timestamp):
     """Generates a single sensor data point."""
@@ -82,8 +121,9 @@ def generate_sensor_data(sensor_id, sensor_type, timestamp):
         "timestamp": timestamp.isoformat(),
         "sensor_id": f"{sensor_type}-{sensor_id}",
         "value": round(value, 2),
-        "unit": config["unit"]
+        "unit": config["unit"],
     }
+
 
 def main():
     """Main function to generate and print sensor data."""
@@ -106,6 +146,7 @@ def main():
         print("\nData generation stopped by user.")
     finally:
         print("Sensor data generation finished.")
+
 
 if __name__ == "__main__":
     main()

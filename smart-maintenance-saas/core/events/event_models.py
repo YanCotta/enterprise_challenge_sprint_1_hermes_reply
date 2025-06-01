@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, Any, Dict
+from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -14,13 +14,22 @@ class BaseEventModel(BaseModel):
         event_id: A unique identifier for the event. Defaults to a new UUID4.
         correlation_id: An optional ID to correlate related events.
     """
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Timestamp of when the event was created.")
-    event_id: UUID = Field(default_factory=uuid4, description="Unique identifier for the event.")
-    correlation_id: Optional[str] = Field(default=None, description="Optional ID to correlate related events.")
+
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="Timestamp of when the event was created.",
+    )
+    event_id: UUID = Field(
+        default_factory=uuid4, description="Unique identifier for the event."
+    )
+    correlation_id: Optional[str] = Field(
+        default=None, description="Optional ID to correlate related events."
+    )
 
     class Config:
         """Pydantic configuration options."""
-        arbitrary_types_allowed = True # Allows for types like UUID.
+
+        arbitrary_types_allowed = True  # Allows for types like UUID.
         json_encoders = {
             # Handles UUID serialization to string for JSON
             UUID: lambda v: str(v),
@@ -38,9 +47,17 @@ class SensorDataReceivedEvent(BaseEventModel):
         source_topic: The topic or channel from which the data was received (e.g., MQTT topic).
         sensor_id: An identifier for the sensor that produced the data.
     """
-    raw_data: Dict[str, Any] = Field(..., description="The raw data payload from the sensor.")
-    source_topic: Optional[str] = Field(default=None, description="The topic or channel from which the data was received.")
-    sensor_id: Optional[str] = Field(default=None, description="Identifier for the sensor that produced the data.")
+
+    raw_data: Dict[str, Any] = Field(
+        ..., description="The raw data payload from the sensor."
+    )
+    source_topic: Optional[str] = Field(
+        default=None,
+        description="The topic or channel from which the data was received.",
+    )
+    sensor_id: Optional[str] = Field(
+        default=None, description="Identifier for the sensor that produced the data."
+    )
 
 
 class DataProcessedEvent(BaseEventModel):
@@ -53,10 +70,18 @@ class DataProcessedEvent(BaseEventModel):
         original_event_id: The ID of the event that triggered this processing (e.g., SensorDataReceivedEvent).
         source_sensor_id: The identifier of the sensor whose data was processed.
     """
-    processed_data: Any = Field(..., description="The processed data. Placeholder for a specific model like SensorReading.")
+
+    processed_data: Any = Field(
+        ...,
+        description="The processed data. Placeholder for a specific model like SensorReading.",
+    )
     # Future type: from core.database.models import SensorReading
-    original_event_id: Optional[UUID] = Field(default=None, description="ID of the event that triggered this processing.")
-    source_sensor_id: Optional[str] = Field(default=None, description="Identifier of the sensor whose data was processed.")
+    original_event_id: Optional[UUID] = Field(
+        default=None, description="ID of the event that triggered this processing."
+    )
+    source_sensor_id: Optional[str] = Field(
+        default=None, description="Identifier of the sensor whose data was processed."
+    )
 
 
 class AnomalyDetectedEvent(BaseEventModel):
@@ -70,11 +95,21 @@ class AnomalyDetectedEvent(BaseEventModel):
                          (Future: from core.database.models import SensorReading)
         severity: The severity of the detected anomaly (e.g., "low", "medium", "high").
     """
-    anomaly_details: Any = Field(..., description="Details about the detected anomaly. Placeholder for AnomalyAlert model.")
+
+    anomaly_details: Any = Field(
+        ...,
+        description="Details about the detected anomaly. Placeholder for AnomalyAlert model.",
+    )
     # Future type: from core.database.models import AnomalyAlert
-    triggering_data: Any = Field(..., description="The data that triggered the anomaly. Placeholder for SensorReading model.")
+    triggering_data: Any = Field(
+        ...,
+        description="The data that triggered the anomaly. Placeholder for SensorReading model.",
+    )
     # Future type: from core.database.models import SensorReading
-    severity: str = Field(default="medium", description="Severity of the anomaly (e.g., 'low', 'medium', 'high').")
+    severity: str = Field(
+        default="medium",
+        description="Severity of the anomaly (e.g., 'low', 'medium', 'high').",
+    )
 
 
 class AgentStatusUpdateEvent(BaseEventModel):
@@ -89,12 +124,16 @@ class AgentStatusUpdateEvent(BaseEventModel):
                       This is a simplified representation for serialization.
                       (Corresponds to List[AgentCapability] from apps.agents.base_agent)
     """
+
     agent_id: str = Field(..., description="Unique identifier of the agent.")
     status: str = Field(..., description="Current status of the agent.")
-    message: Optional[str] = Field(default=None, description="Optional message providing more details about the status.")
+    message: Optional[str] = Field(
+        default=None,
+        description="Optional message providing more details about the status.",
+    )
     capabilities: Optional[List[Dict[str, Any]]] = Field(
         default=None,
-        description="Agent's capabilities, represented as a list of dictionaries."
+        description="Agent's capabilities, represented as a list of dictionaries.",
     )
 
 
@@ -108,12 +147,18 @@ class DataProcessingFailedEvent(BaseEventModel):
         original_event_payload: The payload of the event that the agent was trying to process.
                                 This can be useful for debugging.
     """
-    agent_id: str = Field(..., description="Identifier of the agent that encountered the error.")
-    error_message: str = Field(..., description="Details of the error that occurred during processing.")
+
+    agent_id: str = Field(
+        ..., description="Identifier of the agent that encountered the error."
+    )
+    error_message: str = Field(
+        ..., description="Details of the error that occurred during processing."
+    )
     original_event_payload: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="The original event payload that led to the processing failure."
+        description="The original event payload that led to the processing failure.",
     )
+
 
 # Example of how to use these models (for testing purposes, can be removed or commented out):
 # if __name__ == "__main__":

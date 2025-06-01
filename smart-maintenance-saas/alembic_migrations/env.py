@@ -4,15 +4,14 @@ import sys
 
 # Add the project root directory to the Python path
 # This allows Alembic to find your 'smart_maintenance_saas' package
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, PROJECT_ROOT)
 
 from logging.config import fileConfig
 
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import create_async_engine
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -23,17 +22,18 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+from core.config.settings import settings
+
 # Import your Base and your application settings
 # Adjust the import path as per your project structure
 from core.database.orm_models import Base
-from core.config.settings import settings
 
 # Set the target metadata for autogenerate support
 target_metadata = Base.metadata
 
 # Get the database URL from your application settings
 # Always use PostgreSQL with asyncpg driver for all Alembic operations
-db_url_str = str(settings.database_url) # Ensure string type
+db_url_str = str(settings.database_url)  # Ensure string type
 
 # Convert the URL to use asyncpg driver if it's not already configured
 if db_url_str.startswith("postgresql+psycopg2://"):
@@ -41,7 +41,7 @@ if db_url_str.startswith("postgresql+psycopg2://"):
 elif db_url_str.startswith("postgresql://"):
     db_url = db_url_str.replace("postgresql://", "postgresql+asyncpg://", 1)
 else:
-    db_url = db_url_str # Assume it's already asyncpg or other
+    db_url = db_url_str  # Assume it's already asyncpg or other
 
 # You can override the sqlalchemy.url from alembic.ini if needed,
 # or simply rely on this db_url. For simplicity, we'll use db_url directly.
@@ -93,8 +93,8 @@ async def run_migrations_online() -> None:
     # Create an async engine from the URL in settings
     connectable = create_async_engine(
         db_url,
-        poolclass=pool.NullPool, # Recommended for Alembic async
-        future=True # Use SQLAlchemy 2.0 features
+        poolclass=pool.NullPool,  # Recommended for Alembic async
+        future=True,  # Use SQLAlchemy 2.0 features
     )
 
     async with connectable.connect() as connection:
