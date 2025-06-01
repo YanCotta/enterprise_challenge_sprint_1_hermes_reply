@@ -71,12 +71,14 @@ class StatisticalAnomalyDetector:
                 anomaly_type_description = "statistical_threshold_breach"
                 logger.info(
                     f"Anomaly: val={reading_value}, mean={historical_mean}, "
-                    f"std={historical_std}, dev={deviation:.2f}, threshold={threshold:.2f}"
+                    f"std={historical_std}, dev={deviation:.2f}, "
+                    f"threshold={threshold:.2f}"
                 )
             else:
                 logger.info(
                     f"Normal: val={reading_value}, mean={historical_mean}, "
-                    f"std={historical_std}, dev={deviation:.2f}, threshold={threshold:.2f}"
+                    f"std={historical_std}, dev={deviation:.2f}, "
+                    f"threshold={threshold:.2f}"
                 )
 
         return is_anomaly, confidence_score, anomaly_type_description
