@@ -14,7 +14,7 @@ async def test_statistical_anomaly_detector_normal_reading():
     historical_mean = 100.0
     historical_std = 5.0  # 3-sigma threshold is 15 (100 +/- 15)
 
-    is_anomaly, confidence_score, anomaly_type = await detector.detect(
+    is_anomaly, confidence_score, anomaly_type = detector.detect(
         reading_value, historical_mean, historical_std
     )
 
@@ -31,7 +31,7 @@ async def test_statistical_anomaly_detector_anomalous_reading_above():
     historical_mean = 100.0
     historical_std = 5.0
 
-    is_anomaly, confidence_score, anomaly_type = await detector.detect(
+    is_anomaly, confidence_score, anomaly_type = detector.detect(
         reading_value, historical_mean, historical_std
     )
 
@@ -49,7 +49,7 @@ async def test_statistical_anomaly_detector_anomalous_reading_far_above():
     historical_mean = 100.0
     historical_std = 5.0
 
-    is_anomaly, confidence_score, anomaly_type = await detector.detect(
+    is_anomaly, confidence_score, anomaly_type = detector.detect(
         reading_value, historical_mean, historical_std
     )
 
@@ -67,7 +67,7 @@ async def test_statistical_anomaly_detector_anomalous_reading_below():
     historical_mean = 100.0
     historical_std = 5.0
 
-    is_anomaly, confidence_score, anomaly_type = await detector.detect(
+    is_anomaly, confidence_score, anomaly_type = detector.detect(
         reading_value, historical_mean, historical_std
     )
 
@@ -85,7 +85,7 @@ async def test_statistical_anomaly_detector_edge_case_std_zero_normal():
     historical_mean = 100.0
     historical_std = 0.0
 
-    is_anomaly, confidence_score, anomaly_type = await detector.detect(
+    is_anomaly, confidence_score, anomaly_type = detector.detect(
         reading_value, historical_mean, historical_std
     )
 
@@ -102,7 +102,7 @@ async def test_statistical_anomaly_detector_edge_case_std_zero_anomaly():
     historical_mean = 100.0
     historical_std = 0.0
 
-    is_anomaly, confidence_score, anomaly_type = await detector.detect(
+    is_anomaly, confidence_score, anomaly_type = detector.detect(
         reading_value, historical_mean, historical_std
     )
 
@@ -120,7 +120,7 @@ async def test_statistical_anomaly_detector_reading_at_threshold():
     reading_value = 115.0  # Exactly at 3*std threshold (100 + 3*5 = 115)
 
     # Value at threshold is not considered an anomaly (deviation > threshold)
-    is_anomaly, confidence_score, anomaly_type = await detector.detect(
+    is_anomaly, confidence_score, anomaly_type = detector.detect(
         reading_value, historical_mean, historical_std
     )
 
@@ -137,7 +137,7 @@ async def test_statistical_anomaly_detector_reading_just_above_threshold():
     historical_std = 5.0
     reading_value = 115.001
 
-    is_anomaly, confidence_score, anomaly_type = await detector.detect(
+    is_anomaly, confidence_score, anomaly_type = detector.detect(
         reading_value, historical_mean, historical_std
     )
 
