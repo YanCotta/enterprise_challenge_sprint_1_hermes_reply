@@ -18,7 +18,7 @@ class StatisticalAnomalyDetector:
         # Example: self.sigma_threshold = self.config.get("sigma_threshold", 3)
         self.sigma_threshold = 3  # Defaulting to 3-sigma
 
-    async def detect(
+    def detect(
         self, reading_value: float, historical_mean: float, historical_std: float
     ) -> tuple[bool, float, str]:
         """
