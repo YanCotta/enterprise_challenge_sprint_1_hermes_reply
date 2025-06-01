@@ -60,6 +60,24 @@ multi_line_output = 3
 line_length = 88
 
 [tool.mypy]
+# This tells mypy to consider the directory containing pyproject.toml 
+# (i.e., smart-maintenance-saas/) as a base for modules.
+mypy_path = "."
+
+# Explicitly list your top-level source directories/packages
+# These are located directly within smart-maintenance-saas/
+packages = [
+    "apps",
+    "core",
+    "data",
+    "tests"
+]
+
 python_version = "3.11"
-strict = true
 ignore_missing_imports = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+strict = true
