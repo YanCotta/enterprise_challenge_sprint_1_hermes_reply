@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import numpy as np
 import pytest
 
 from apps.agents.core.anomaly_detection_agent import AnomalyDetectionAgent
@@ -154,3 +155,211 @@ class TestAnomalyDetectionAgentIntegration:
         assert "std" in temp_data
         assert isinstance(temp_data["mean"], (int, float))
         assert isinstance(temp_data["std"], (int, float))
+
+    async def test_process_full_pipeline_with_known_sensor(self, agent, event_bus):
+        """Test that the full processing pipeline works with a known sensor."""
+        # Create event with a sensor that exists in historical data
+        known_sensor_reading = SensorReading(
+            sensor_id="sensor_temp_001",  # This exists in historical_data_store
+            value=20.0,  # Slightly below historical mean of 22.5
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={"location": "room_A"}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=known_sensor_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=known_sensor_reading.sensor_id
+        )
+        
+        # Mock methods to verify they're called
+        with patch.object(agent, '_extract_features', wraps=agent._extract_features) as mock_extract, \
+             patch.object(agent.isolation_forest, 'fit') as mock_fit, \
+             patch.object(agent.isolation_forest, 'predict', return_value=np.array([1])) as mock_predict, \
+             patch.object(agent.isolation_forest, 'decision_function', return_value=np.array([0.1])) as mock_decision, \
+             patch.object(agent.statistical_detector, 'detect', return_value=(False, 0.2, "normal")) as mock_stat_detect, \
+             patch.object(agent.logger, 'info') as mock_info:
+            
+            await agent.process(event)
+            
+            # Verify pipeline steps were called
+            mock_extract.assert_called_once()
+            mock_fit.assert_called_once()  # First time fitting
+            mock_predict.assert_called_once()
+            mock_decision.assert_called_once()
+            mock_stat_detect.assert_called_once()
+            
+            # Verify statistical detector was called with correct parameters
+            stat_call_args = mock_stat_detect.call_args[0]
+            assert stat_call_args[0] == 20.0  # reading value
+            assert stat_call_args[1] == 22.5  # historical mean
+            assert stat_call_args[2] == 2.1   # historical std
+            
+            # Verify logging includes prediction results
+            info_calls = [call[0][0] for call in mock_info.call_args_list]
+            assert any("Isolation Forest prediction" in call for call in info_calls)
+            assert any("Statistical detection" in call for call in info_calls)
+
+    async def test_process_full_pipeline_with_unknown_sensor(self, agent):
+        """Test that the full processing pipeline works with an unknown sensor."""
+        # Create event with a sensor that doesn't exist in historical data
+        unknown_sensor_reading = SensorReading(
+            sensor_id="unknown_sensor_999",
+            value=50.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.VIBRATION,
+            unit="m/s2",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={"location": "room_Z"}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=unknown_sensor_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=unknown_sensor_reading.sensor_id
+        )
+        
+        # Mock methods to verify they're called with default values
+        with patch.object(agent.statistical_detector, 'detect', return_value=(True, 0.8, "threshold_breach")) as mock_stat_detect, \
+             patch.object(agent.logger, 'warning') as mock_warning, \
+             patch.object(agent.logger, 'info') as mock_info:
+            
+            await agent.process(event)
+            
+            # Verify warning was logged for unknown sensor
+            mock_warning.assert_called()
+            warning_message = mock_warning.call_args[0][0]
+            assert "No historical data found for sensor unknown_sensor_999" in warning_message
+            
+            # Verify statistical detector was called with default values
+            mock_stat_detect.assert_called_once()
+            stat_call_args = mock_stat_detect.call_args[0]
+            assert stat_call_args[0] == 50.0  # reading value
+            assert stat_call_args[1] == 50.0  # default mean (same as reading value)
+            assert stat_call_args[2] == 0.1   # default std
+
+    async def test_process_feature_extraction_failure(self, agent):
+        """Test handling when feature extraction returns empty array."""
+        sample_reading = SensorReading(
+            sensor_id="test_sensor",
+            value=25.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=sample_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=sample_reading.sensor_id
+        )
+        
+        # Mock _extract_features to return empty array
+        with patch.object(agent, '_extract_features', return_value=np.array([])) as mock_extract, \
+             patch.object(agent.logger, 'warning') as mock_warning:
+            
+            await agent.process(event)
+            
+            mock_extract.assert_called_once()
+            mock_warning.assert_called_once()
+            warning_message = mock_warning.call_args[0][0]
+            assert "No features extracted" in warning_message
+            assert "skipping processing" in warning_message
+
+    async def test_process_isolation_forest_fitting_and_prediction(self, agent):
+        """Test that Isolation Forest is fitted on first call and reused afterward."""
+        sample_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=22.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=sample_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=sample_reading.sensor_id
+        )
+        
+        # Ensure isolation forest is not fitted initially
+        agent.isolation_forest_fitted = False
+        
+        with patch.object(agent.isolation_forest, 'fit') as mock_fit, \
+             patch.object(agent.isolation_forest, 'predict', return_value=np.array([1])) as mock_predict, \
+             patch.object(agent.isolation_forest, 'decision_function', return_value=np.array([0.05])) as mock_decision, \
+             patch.object(agent.logger, 'info') as mock_info:
+            
+            # First call should fit the model
+            await agent.process(event)
+            
+            assert agent.isolation_forest_fitted is True
+            mock_fit.assert_called_once()
+            mock_predict.assert_called_once()
+            mock_decision.assert_called_once()
+            
+            # Reset mocks for second call
+            mock_fit.reset_mock()
+            mock_predict.reset_mock()
+            mock_decision.reset_mock()
+            
+            # Second call should not fit again but should predict
+            await agent.process(event)
+            
+            mock_fit.assert_not_called()  # Should not fit again
+            mock_predict.assert_called_once()
+            mock_decision.assert_called_once()
+
+    async def test_process_logs_detailed_predictions(self, agent):
+        """Test that detailed prediction information is logged."""
+        sample_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=30.0,  # Above historical mean
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=sample_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=sample_reading.sensor_id
+        )
+        
+        # Mock ML predictions
+        with patch.object(agent.isolation_forest, 'predict', return_value=np.array([-1])) as mock_predict, \
+             patch.object(agent.isolation_forest, 'decision_function', return_value=np.array([-0.15])) as mock_decision, \
+             patch.object(agent.statistical_detector, 'detect', return_value=(True, 0.9, "statistical_threshold_breach")) as mock_stat, \
+             patch.object(agent.logger, 'info') as mock_info, \
+             patch.object(agent.logger, 'debug') as mock_debug:
+            
+            await agent.process(event)
+            
+            # Check that isolation forest results are logged
+            info_calls = [call[0][0] for call in mock_info.call_args_list]
+            isolation_log = next((call for call in info_calls if "Isolation Forest prediction" in call), None)
+            assert isolation_log is not None
+            assert "prediction=-1" in isolation_log
+            assert "anomaly" in isolation_log
+            assert "score=-0.1500" in isolation_log
+            
+            # Check that statistical results are logged
+            statistical_log = next((call for call in info_calls if "Statistical detection" in call), None)
+            assert statistical_log is not None
+            assert "is_anomaly=True" in statistical_log
+            assert "confidence=0.9000" in statistical_log
+            assert "statistical_threshold_breach" in statistical_log
