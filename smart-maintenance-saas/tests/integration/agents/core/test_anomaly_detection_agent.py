@@ -11,7 +11,7 @@ import pytest
 
 from apps.agents.core.anomaly_detection_agent import AnomalyDetectionAgent
 from core.events.event_bus import EventBus
-from core.events.event_models import DataProcessedEvent
+from core.events.event_models import AnomalyDetectedEvent, DataProcessedEvent
 from data.schemas import SensorReading, SensorType
 
 
@@ -363,3 +363,222 @@ class TestAnomalyDetectionAgentIntegration:
             assert "is_anomaly=True" in statistical_log
             assert "confidence=0.9000" in statistical_log
             assert "statistical_threshold_breach" in statistical_log
+
+    async def test_anomaly_detection_and_event_publishing(self, agent, event_bus):
+        """Test that anomalies are detected and AnomalyDetectedEvent is published."""
+        # Create a sensor reading that should trigger an anomaly
+        anomalous_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=35.0,  # Well above historical mean of 22.5 (should trigger statistical anomaly)
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={"location": "room_A"}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=anomalous_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=anomalous_reading.sensor_id,
+            correlation_id="test-correlation-123"
+        )
+        
+        # Mock event bus publish method
+        event_bus.publish = AsyncMock()
+        
+        # Mock ML predictions to ensure anomaly detection
+        with patch.object(agent.isolation_forest, 'predict', return_value=np.array([-1])) as mock_predict, \
+             patch.object(agent.isolation_forest, 'decision_function', return_value=np.array([-0.3])) as mock_decision, \
+             patch.object(agent.statistical_detector, 'detect', return_value=(True, 0.85, "statistical_threshold_breach")) as mock_stat_detect:
+            
+            await agent.process(event)
+            
+            # Verify that publish was called
+            event_bus.publish.assert_called_once()
+            
+            # Verify the event type and content
+            call_args = event_bus.publish.call_args
+            event_type = call_args[0][0]
+            published_event = call_args[0][1]
+            
+            assert event_type == "AnomalyDetectedEvent"
+            assert isinstance(published_event, AnomalyDetectedEvent)
+            
+            # Verify anomaly details
+            anomaly_details = published_event.anomaly_details
+            assert anomaly_details["sensor_id"] == "sensor_temp_001"
+            assert anomaly_details["severity"] == 5  # High confidence should map to severity 5
+            assert anomaly_details["confidence"] == 0.85
+            assert "Anomaly detected for sensor sensor_temp_001" in anomaly_details["description"]
+            
+            # Verify triggering data
+            triggering_data = published_event.triggering_data
+            assert triggering_data["sensor_id"] == "sensor_temp_001"
+            assert triggering_data["value"] == 35.0
+            
+            # Verify event properties
+            assert published_event.severity == "critical"  # Mapped from severity 5
+            assert published_event.correlation_id == "test-correlation-123"
+
+    async def test_no_anomaly_no_event_publishing(self, agent, event_bus):
+        """Test that no event is published when no anomaly is detected."""
+        # Create a normal sensor reading
+        normal_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=22.5,  # Exactly at historical mean
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={"location": "room_A"}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=normal_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=normal_reading.sensor_id
+        )
+        
+        # Mock event bus publish method
+        event_bus.publish = AsyncMock()
+        
+        # Mock ML predictions to indicate no anomaly
+        with patch.object(agent.isolation_forest, 'predict', return_value=np.array([1])) as mock_predict, \
+             patch.object(agent.isolation_forest, 'decision_function', return_value=np.array([0.1])) as mock_decision, \
+             patch.object(agent.statistical_detector, 'detect', return_value=(False, 0.0, "normal")) as mock_stat_detect:
+            
+            await agent.process(event)
+            
+            # Verify that publish was NOT called
+            event_bus.publish.assert_not_called()
+
+    async def test_anomaly_alert_severity_mapping(self, agent, event_bus):
+        """Test that confidence scores are correctly mapped to severity levels."""
+        test_cases = [
+            (0.9, 5, "critical"),    # Very high confidence
+            (0.7, 4, "high"),        # High confidence  
+            (0.5, 3, "medium"),      # Medium confidence
+            (0.3, 2, "low"),         # Low confidence
+            (0.1, 1, "very_low"),    # Very low confidence
+        ]
+        
+        event_bus.publish = AsyncMock()
+        
+        for confidence, expected_severity, expected_severity_str in test_cases:
+            # Reset the mock for each test case
+            event_bus.publish.reset_mock()
+            
+            reading = SensorReading(
+                sensor_id="test_sensor",
+                value=100.0,
+                timestamp=datetime.utcnow(),
+                sensor_type=SensorType.TEMPERATURE,
+                unit="celsius",
+                quality=1.0,
+                correlation_id=uuid.uuid4(),
+                metadata={}
+            )
+            
+            event = DataProcessedEvent(
+                processed_data=reading.dict(),
+                original_event_id=uuid.uuid4(),
+                source_sensor_id=reading.sensor_id
+            )
+            
+            # Mock ensemble decision to return specific confidence
+            with patch.object(agent, '_ensemble_decision', return_value=(True, confidence, "test_anomaly")):
+                await agent.process(event)
+                
+                # Verify severity mapping
+                event_bus.publish.assert_called_once()
+                published_event = event_bus.publish.call_args[0][1]
+                
+                assert published_event.anomaly_details["severity"] == expected_severity
+                assert published_event.severity == expected_severity_str
+
+    async def test_event_publishing_error_handling(self, agent, event_bus):
+        """Test that event publishing errors are handled gracefully."""
+        anomalous_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=50.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=anomalous_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=anomalous_reading.sensor_id
+        )
+        
+        # Mock event bus to raise an exception
+        event_bus.publish = AsyncMock(side_effect=Exception("Event bus error"))
+        
+        # Mock to ensure anomaly is detected
+        with patch.object(agent, '_ensemble_decision', return_value=(True, 0.8, "test_anomaly")), \
+             patch.object(agent.logger, 'error') as mock_error:
+            
+            # This should not raise an exception
+            await agent.process(event)
+            
+            # Verify error was logged
+            mock_error.assert_called()
+            error_message = mock_error.call_args[0][0]
+            assert "Error creating or publishing anomaly alert" in error_message
+
+    async def test_anomaly_alert_evidence_structure(self, agent, event_bus):
+        """Test that anomaly alert evidence contains correct structure and types."""
+        reading = SensorReading(
+            sensor_id="sensor_vibr_001",
+            value=0.15,  # Above historical mean
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.VIBRATION,
+            unit="m/s2",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=reading.sensor_id
+        )
+        
+        event_bus.publish = AsyncMock()
+        
+        # Mock predictions with specific values
+        with patch.object(agent.isolation_forest, 'predict', return_value=np.array([-1])), \
+             patch.object(agent.isolation_forest, 'decision_function', return_value=np.array([-0.25])), \
+             patch.object(agent.statistical_detector, 'detect', return_value=(True, 0.75, "vibration_spike")):
+            
+            await agent.process(event)
+            
+            # Verify evidence structure
+            published_event = event_bus.publish.call_args[0][1]
+            evidence = published_event.anomaly_details["evidence"]
+            
+            # Check evidence keys and types
+            assert "raw_value" in evidence
+            assert "if_score" in evidence
+            assert "stat_is_anomaly" in evidence
+            assert "stat_confidence" in evidence
+            
+            # Verify types are JSON serializable
+            assert isinstance(evidence["raw_value"], float)
+            assert isinstance(evidence["if_score"], float)
+            assert isinstance(evidence["stat_is_anomaly"], bool)
+            assert isinstance(evidence["stat_confidence"], float)
+            
+            # Verify values
+            assert evidence["raw_value"] == 0.15
+            assert evidence["if_score"] == -0.25
+            assert evidence["stat_is_anomaly"] is True
+            assert evidence["stat_confidence"] == 0.75
