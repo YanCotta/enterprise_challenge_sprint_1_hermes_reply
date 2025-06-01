@@ -179,6 +179,74 @@ class AnomalyDetectionAgent(BaseAgent):
                 f"is_anomaly={stat_is_anomaly}, confidence={stat_confidence:.4f}, "
                 f"description='{stat_desc}'"
             )
+              # Ensemble Decision
+            overall_is_anomaly, overall_confidence, overall_description = self._ensemble_decision(
+                if_prediction, if_score, stat_is_anomaly, stat_confidence, stat_desc
+            )
+            
+            self.logger.info(
+                f"Ensemble decision for {reading.sensor_id}: "
+                f"is_anomaly={overall_is_anomaly}, confidence={overall_confidence:.4f}, "
+                f"description='{overall_description}'"
+            )
+            
+            # If anomaly detected, create alert and publish event
+            if overall_is_anomaly:
+                try:
+                    # Map confidence to severity (1-5)
+                    if overall_confidence > 0.8:
+                        severity = 5  # Critical
+                    elif overall_confidence > 0.6:
+                        severity = 4  # High
+                    elif overall_confidence > 0.4:
+                        severity = 3  # Medium
+                    elif overall_confidence > 0.2:
+                        severity = 2  # Low
+                    else:
+                        severity = 1  # Very Low
+                    
+                    # Create AnomalyAlert
+                    anomaly_alert = AnomalyAlert(
+                        sensor_id=reading.sensor_id,
+                        anomaly_type=overall_description,
+                        severity=severity,
+                        confidence=overall_confidence,
+                        description=(
+                            f"Anomaly detected for sensor {reading.sensor_id}. "
+                            f"Value: {reading.value}. IF score: {if_score:.2f}."
+                        ),
+                        evidence={
+                            "raw_value": float(reading.value),
+                            "if_score": float(if_score),
+                            "stat_is_anomaly": stat_is_anomaly,
+                            "stat_confidence": float(stat_confidence)
+                        },
+                        created_at=datetime.utcnow()
+                    )
+                    
+                    # Map severity integer back to string for event
+                    severity_map = {5: "critical", 4: "high", 3: "medium", 2: "low", 1: "very_low"}
+                    severity_str = severity_map.get(severity, "medium")
+                    
+                    # Create AnomalyDetectedEvent
+                    anomaly_detected_event = AnomalyDetectedEvent(
+                        anomaly_details=anomaly_alert.model_dump(),
+                        triggering_data=reading.model_dump(),
+                        severity=severity_str,
+                        correlation_id=event.correlation_id
+                    )
+                    
+                    # Publish the event
+                    self.logger.info(f"Publishing AnomalyDetectedEvent: {anomaly_detected_event}")
+                    await self.event_bus.publish(AnomalyDetectedEvent.__name__, anomaly_detected_event)
+                    
+                except Exception as e:
+                    self.logger.error(
+                        f"Error creating or publishing anomaly alert for {reading.sensor_id}: {e}",
+                        exc_info=True
+                    )
+            else:
+                self.logger.debug(f"No anomaly detected for sensor {reading.sensor_id}")
             
             # Simulate some async work
             await asyncio.sleep(0.01)
@@ -188,3 +256,58 @@ class AnomalyDetectionAgent(BaseAgent):
                 f"Error processing DataProcessedEvent: {e}", 
                 exc_info=True
             )
+
+    def _ensemble_decision(
+        self, 
+        if_prediction: int, 
+        if_score: float, 
+        stat_is_anomaly: bool, 
+        stat_confidence: float, 
+        stat_desc: str
+    ) -> Tuple[bool, float, str]:
+        """
+        Make ensemble decision based on Isolation Forest and statistical predictions.
+        
+        Args:
+            if_prediction: Isolation Forest prediction (-1 for anomaly, 1 for normal)
+            if_score: Isolation Forest decision function score (lower = more anomalous)
+            stat_is_anomaly: Statistical method anomaly flag
+            stat_confidence: Statistical method confidence score
+            stat_desc: Statistical method anomaly description
+            
+        Returns:
+            Tuple of (is_anomaly, final_confidence_score, final_anomaly_description)
+        """
+        # Determine overall anomaly status using OR logic
+        is_anomaly = (if_prediction == -1) or stat_is_anomaly
+        
+        # Map Isolation Forest score to confidence (0.0 to 1.0)
+        # Lower IF scores indicate higher anomaly confidence
+        # Normalize score to 0-1 range where 1.0 = high confidence anomaly
+        if if_prediction == -1:
+            # Anomaly detected by IF - map negative scores to higher confidence
+            if_confidence = min(1.0, max(0.5, 1.0 - (if_score + 0.5)))
+        else:
+            # Normal prediction by IF - low confidence for anomaly
+            if_confidence = 0.0
+        
+        # Combine confidences - use maximum of individual confidences
+        final_confidence_score = max(if_confidence, stat_confidence if stat_is_anomaly else 0.0)
+        
+        # Determine final anomaly description
+        if if_prediction == -1 and stat_is_anomaly:
+            final_anomaly_description = f"IF_Statistical_Anomaly_{stat_desc}"
+        elif if_prediction == -1:
+            final_anomaly_description = "IsolationForest_Anomaly"
+        elif stat_is_anomaly:
+            final_anomaly_description = f"Statistical_{stat_desc}"
+        else:
+            final_anomaly_description = "normal"
+        
+        self.logger.debug(
+            f"Ensemble decision: is_anomaly={is_anomaly}, "
+            f"confidence={final_confidence_score:.4f}, "
+            f"description='{final_anomaly_description}'"
+        )
+        
+        return is_anomaly, final_confidence_score, final_anomaly_description
