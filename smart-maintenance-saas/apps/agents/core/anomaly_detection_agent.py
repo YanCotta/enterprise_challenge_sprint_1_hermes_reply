@@ -85,6 +85,8 @@ class AnomalyDetectionAgent(BaseAgent):
         if self.default_historical_std <= 0:
             raise ValueError("default_historical_std must be positive")
         
+        self.unknown_sensor_baselines: Dict[str, Dict[str, float]] = {} # For caching first reading of unknown sensors
+
         # Enhanced historical data store with validation
         self.historical_data_store: Dict[str, Dict[str, float]] = {
             "sensor_temp_001": {"mean": 22.5, "std": 2.1},
@@ -346,16 +348,24 @@ class AnomalyDetectionAgent(BaseAgent):
                 hist_std = hist_data["std"]
                 
                 self.logger.debug(
-                    f"Using stored historical data for {sensor_id}: "
+                    f"Using historical_data_store for {sensor_id}: "
+                    f"mean={hist_mean:.4f}, std={hist_std:.4f}"
+                )
+            elif sensor_id in self.unknown_sensor_baselines:
+                baseline_data = self.unknown_sensor_baselines[sensor_id]
+                hist_mean = baseline_data["mean"]
+                hist_std = baseline_data["std"]
+                self.logger.debug(
+                    f"Using cached unknown_sensor_baseline for {sensor_id}: "
                     f"mean={hist_mean:.4f}, std={hist_std:.4f}"
                 )
             else:
-                # Improved default handling for unknown sensors
-                hist_mean = reading.value  # Use current value as baseline
+                # First encounter for this unknown sensor
+                hist_mean = reading.value  # Use current value as baseline for the first time
                 hist_std = self.default_historical_std
-                
-                self.logger.warning(
-                    f"No historical data for sensor {sensor_id}, using defaults: "
+                self.unknown_sensor_baselines[sensor_id] = {"mean": hist_mean, "std": hist_std}
+                self.logger.info( # Changed from warning to info for first encounter
+                    f"First encounter for unknown sensor {sensor_id}, establishing baseline: "
                     f"mean={hist_mean:.4f}, std={hist_std:.4f}"
                 )
             
@@ -470,7 +480,7 @@ class AnomalyDetectionAgent(BaseAgent):
         for attempt in range(max_retries):
             try:
                 self.logger.info(f"Publishing AnomalyDetectedEvent (attempt {attempt + 1}): {event.event_id}")
-                await self.event_bus.publish(AnomalyDetectedEvent.__name__, event)
+                await self.event_bus.publish(event) # Corrected call
                 self.logger.debug(f"Successfully published AnomalyDetectedEvent: {event.event_id}")
                 return
             except Exception as e:

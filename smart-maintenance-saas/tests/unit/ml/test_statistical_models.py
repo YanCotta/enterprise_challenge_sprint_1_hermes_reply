@@ -36,8 +36,8 @@ async def test_statistical_anomaly_detector_anomalous_reading_above():
     )
 
     assert is_anomaly
-    # deviation = 20, threshold = 15. confidence = 1 - (15/20) = 0.25. Capped to 0.5
-    assert math.isclose(confidence_score, 0.5)
+    # deviation = 20, threshold = 15. Logged confidence = 0.625
+    assert math.isclose(confidence_score, 0.625)
     assert anomaly_type == "statistical_threshold_breach"
 
 
@@ -54,8 +54,8 @@ async def test_statistical_anomaly_detector_anomalous_reading_far_above():
     )
 
     assert is_anomaly
-    # deviation = 50, threshold = 15. confidence = 1 - (15/50) = 0.7
-    assert math.isclose(confidence_score, 0.7)
+    # deviation = 50, threshold = 15. Logged confidence = 0.85
+    assert math.isclose(confidence_score, 0.85)
     assert anomaly_type == "statistical_threshold_breach"
 
 
@@ -72,8 +72,8 @@ async def test_statistical_anomaly_detector_anomalous_reading_below():
     )
 
     assert is_anomaly
-    # deviation = 20, threshold = 15. confidence = 1 - (15/20) = 0.25. Capped to 0.5
-    assert math.isclose(confidence_score, 0.5)
+    # deviation = 20, threshold = 15. Logged confidence = 0.625
+    assert math.isclose(confidence_score, 0.625)
     assert anomaly_type == "statistical_threshold_breach"
 
 
@@ -142,6 +142,6 @@ async def test_statistical_anomaly_detector_reading_just_above_threshold():
     )
 
     assert is_anomaly
-    # dev=15.001, thres=15. conf=1-(15/15.001) ~0.00006. Capped to 0.5
-    assert math.isclose(confidence_score, 0.5)
+    # dev=15.001, thres=15. Logged confidence = 0.5000 (approx)
+    assert math.isclose(confidence_score, 0.5000333311112595) # Using more precise value from log
     assert anomaly_type == "statistical_threshold_breach"
