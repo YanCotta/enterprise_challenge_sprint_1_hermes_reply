@@ -161,12 +161,119 @@ sequenceDiagram
     ADA-->>-EventBus: (Done)
 ```
 
-## 5. Scalability and Resilience
+## 5. Machine Learning Considerations
+
+### 5.1. Model Lifecycle and Training Strategy
+
+#### Current Implementation Limitations
+
+The current implementation of the `AnomalyDetectionAgent` includes simplifications suitable for initial development and testing, but with known limitations for production use:
+
+**StandardScaler Fitting:**
+
+* Currently re-fits (`fit_transform`) on individual incoming `DataProcessedEvent` features
+* For single data points, this normalizes only to that specific point (mean=0, std=1)
+* Lacks stable baseline for "normal" data distribution needed for effective scaling
+
+**IsolationForest Training:**
+
+* Trained (`fit`) using scaled features from the very first `DataProcessedEvent`
+* Model's definition of "normal" behavior based on single, potentially unrepresentative data point
+* Results in poor generalization and unreliable anomaly detection
+
+#### Why Current Simplifications Are Not Ideal for Production
+
+1. **Lack of Representativeness:** Models trained on isolated or first-encountered data points cannot learn the true underlying distribution of normal operational data. This leads to poor generalization and unreliable anomaly detection.
+
+2. **No Baseline for Normality:** The StandardScaler needs to be fitted on a dataset representing normal behavior to learn its mean and standard deviation. These learned parameters are then used to transform new data, comparing it against that established baseline.
+
+3. **Model Instability:** The IsolationForest model will be highly unstable and biased if trained on insufficient or non-representative data.
+
+4. **Ignoring Sensor Specificity:** Different sensors, even of the same type, can have unique operating profiles. A model trained on data from one sensor (or the first encountered data from any sensor) may not be appropriate for others.
+
+5. **Inefficiency:** While not a major concern with single data points, repeatedly fitting models is computationally more expensive than fitting once and then predicting many times.
+
+#### A More Robust Approach for Production
+
+**Offline Training Phase:**
+
+1. **Data Collection:** Curate a substantial historical dataset that accurately represents normal operating conditions for various sensors or equipment types. This dataset should be large enough to capture typical variations.
+
+2. **Data Labeling (Optional but Recommended):** If possible, label periods of known anomalies in your historical data. This is crucial for evaluation but not strictly for unsupervised models like Isolation Forest (which learns from unlabelled, assumed-normal data).
+
+3. **Preprocessing:** Clean the data (handle missing values, outliers if they are not the target anomalies for this specific model).
+
+4. **Model Fitting:**
+
+   * **StandardScaler:** Fit the scaler on the entire normal training dataset for each sensor type (or group) to learn its characteristic mean and variance.
+   * **IsolationForest:** Train the IsolationForest model on the scaled normal training dataset.
+
+5. **Model Serialization & Registry:** Save (serialize) the fitted scalers and trained models (e.g., using joblib or pickle). Store these in a model registry (like MLflow, or a structured file storage like S3) versioned and accessible by the AnomalyDetectionAgent.
+
+**Online Prediction Phase (in AnomalyDetectionAgent):**
+
+1. **Model Loading:** On startup, or when processing data for a specific sensor type for the first time, the agent should load the appropriate pre-trained scaler and Isolation Forest model from the registry.
+
+2. **Transform:** Use the loaded (and already fitted) StandardScaler to transform (not fit_transform) the features of new incoming sensor data.
+
+3. **Predict:** Feed the scaled features to the loaded (and already trained) IsolationForest model to get predict() and decision_function() outputs.
+
+**Sensor-Specific Models:**
+
+* Maintain separate scalers and models for different sensor types (e.g., temperature_scaler.joblib, temperature_iforest.joblib).
+* The AnomalyDetectionAgent would select the correct model files based on the sensor_type (or even sensor_id for highly critical/unique sensors) of the incoming SensorReading.
+* The historical_data_store approach for the statistical model is a good parallel for managing parameters/models per sensor.
+
+**Periodic Retraining and Monitoring (MLOps):**
+
+* Implement a strategy for periodically retraining models using fresh data to adapt to evolving equipment behavior (concept drift).
+* Monitor model performance in production (using metrics like Precision, Recall, F1-score if feedback/labels are available) to identify when retraining is necessary.
+
+### 5.2. Performance Metrics: Precision, Recall, and F1-score
+
+To evaluate the effectiveness of the AnomalyDetectionAgent, especially once it's more mature or if you have labeled data (knowing actual past anomalies), you can use standard classification metrics:
+
+**Classification Framework:**
+
+* **True Positive (TP):** An actual anomaly that the agent correctly flagged as an anomaly.
+* **False Positive (FP):** A normal data point that the agent incorrectly flagged as an anomaly (a false alarm).
+* **True Negative (TN):** A normal data point that the agent correctly identified as normal.
+* **False Negative (FN):** An actual anomaly that the agent failed to detect and flagged as normal (a missed detection).
+
+Based on these, the key metrics are:
+
+#### Precision
+
+* **Formula:** TP / (TP + FP)
+* **In Context:** "Of all the alerts our AnomalyDetectionAgent generated, what percentage were actual equipment problems?"
+* **Significance:** High precision minimizes wasted resources spent investigating false alarms and builds trust in the system.
+
+#### Recall (or Sensitivity)
+
+* **Formula:** TP / (TP + FN)
+* **In Context:** "Of all the actual equipment problems that occurred, what percentage did our AnomalyDetectionAgent successfully detect?"
+* **Significance:** High recall is crucial for a predictive maintenance system, as the primary goal is to catch impending failures. Missed detections (FN) can lead to unexpected downtime and higher costs.
+
+#### F1-score
+
+* **Formula:** 2 × (Precision × Recall) / (Precision + Recall)
+* **In Context:** A single metric that provides a balance between Precision and Recall.
+* **Significance:** Useful when there's a trade-off. For instance, being extremely sensitive to catch all anomalies (high recall) might lead to more false alarms (lower precision). The F1-score helps find a good compromise.
+
+#### How These Metrics Would Be Used
+
+**Model Selection & Tuning:** When experimenting with different anomaly detection algorithms or tuning parameters (like the contamination factor in Isolation Forest or the sigma value in the statistical model), these metrics, calculated on a labeled validation dataset, would guide decisions.
+
+**Performance Monitoring:** If a feedback mechanism is in place (e.g., maintenance logs confirming if an alert corresponded to a real issue), these metrics can be tracked over time to monitor the agent's performance in production and signal when models might need retraining or adjustment.
+
+**Business Value Justification:** Correlating these metrics with operational costs (e.g., cost of a missed failure vs. cost of investigating a false alarm) can help in optimizing the system for business objectives.
+
+## 6. Scalability and Resilience
 
 * **Scalability:** Agents can be scaled independently. The Event Bus can be scaled out (e.g., using Kafka).
 * **Resilience:** Decoupling via the Event Bus means failure in one agent doesn't necessarily bring down the entire system. Retry mechanisms and dead-letter queues can be implemented.
 
-## 6. Future Considerations
+## 7. Future Considerations
 
 * Persistent Event Bus (Kafka, Redis Streams).
 * Service Discovery (Consul, etcd) if moving beyond a single-node deployment for agents.
