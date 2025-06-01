@@ -154,3 +154,117 @@ class TestAnomalyDetectionAgent:
         
         # Should be numeric type compatible with sklearn
         assert np.issubdtype(features.dtype, np.number)
+
+    def test_ensemble_decision_both_anomaly(self, agent):
+        """Test ensemble decision when both methods detect anomaly."""
+        is_anomaly, confidence, description = agent._ensemble_decision(
+            if_prediction=-1,      # IF detects anomaly
+            if_score=-0.2,         # Negative score indicates anomaly
+            stat_is_anomaly=True,  # Statistical method detects anomaly
+            stat_confidence=0.8,   # High statistical confidence
+            stat_desc="threshold_breach"
+        )
+        
+        assert is_anomaly is True
+        assert confidence > 0.5  # Should have reasonable confidence
+        assert "IF_Statistical_Anomaly_threshold_breach" in description
+
+    def test_ensemble_decision_only_isolation_forest(self, agent):
+        """Test ensemble decision when only Isolation Forest detects anomaly."""
+        is_anomaly, confidence, description = agent._ensemble_decision(
+            if_prediction=-1,      # IF detects anomaly
+            if_score=-0.3,         # Strong anomaly signal
+            stat_is_anomaly=False, # Statistical method says normal
+            stat_confidence=0.1,   # Low statistical confidence
+            stat_desc="normal"
+        )
+        
+        assert is_anomaly is True
+        assert confidence > 0.0
+        assert description == "IsolationForest_Anomaly"
+
+    def test_ensemble_decision_only_statistical(self, agent):
+        """Test ensemble decision when only statistical method detects anomaly."""
+        is_anomaly, confidence, description = agent._ensemble_decision(
+            if_prediction=1,       # IF says normal
+            if_score=0.1,          # Positive score indicates normal
+            stat_is_anomaly=True,  # Statistical method detects anomaly
+            stat_confidence=0.9,   # High statistical confidence
+            stat_desc="spike_detected"
+        )
+        
+        assert is_anomaly is True
+        assert confidence == 0.9  # Should use statistical confidence
+        assert description == "Statistical_spike_detected"
+
+    def test_ensemble_decision_no_anomaly(self, agent):
+        """Test ensemble decision when neither method detects anomaly."""
+        is_anomaly, confidence, description = agent._ensemble_decision(
+            if_prediction=1,       # IF says normal
+            if_score=0.2,          # Positive score indicates normal
+            stat_is_anomaly=False, # Statistical method says normal
+            stat_confidence=0.0,   # No statistical confidence
+            stat_desc="normal"
+        )
+        
+        assert is_anomaly is False
+        assert confidence == 0.0
+        assert description == "normal"
+
+    def test_ensemble_decision_confidence_mapping(self, agent):
+        """Test that Isolation Forest scores are properly mapped to confidence."""
+        # Test high anomaly score
+        is_anomaly, confidence, description = agent._ensemble_decision(
+            if_prediction=-1,
+            if_score=-0.5,         # Very negative score
+            stat_is_anomaly=False,
+            stat_confidence=0.0,
+            stat_desc="normal"
+        )
+        
+        assert is_anomaly is True
+        assert confidence >= 0.5  # Should have at least minimum confidence
+        
+        # Test moderate anomaly score
+        is_anomaly2, confidence2, description2 = agent._ensemble_decision(
+            if_prediction=-1,
+            if_score=-0.1,         # Less negative score
+            stat_is_anomaly=False,
+            stat_confidence=0.0,
+            stat_desc="normal"
+        )
+        
+        assert is_anomaly2 is True
+        assert confidence2 >= 0.5  # Should still have minimum confidence
+
+    def test_ensemble_decision_max_confidence(self, agent):
+        """Test that ensemble takes maximum of individual confidences."""
+        # Statistical confidence higher
+        is_anomaly, confidence, description = agent._ensemble_decision(
+            if_prediction=-1,
+            if_score=-0.1,         # Moderate IF confidence
+            stat_is_anomaly=True,
+            stat_confidence=0.95,  # Very high statistical confidence
+            stat_desc="outlier"
+        )
+        
+        assert is_anomaly is True
+        assert confidence == 0.95  # Should use higher statistical confidence
+
+    def test_ensemble_decision_logging(self, agent):
+        """Test that ensemble decision logs debug information."""
+        with patch.object(agent.logger, 'debug') as mock_debug:
+            agent._ensemble_decision(
+                if_prediction=-1,
+                if_score=-0.2,
+                stat_is_anomaly=True,
+                stat_confidence=0.7,
+                stat_desc="test_anomaly"
+            )
+            
+            # Verify debug logging was called
+            mock_debug.assert_called_once()
+            log_message = mock_debug.call_args[0][0]
+            assert "Ensemble decision" in log_message
+            assert "is_anomaly=True" in log_message
+            assert "confidence=" in log_message
