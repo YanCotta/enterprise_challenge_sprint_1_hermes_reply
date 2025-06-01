@@ -83,6 +83,25 @@ class AnomalyDetectionAgent(BaseAgent):
         )
         self.logger.info(f"Agent {self.agent_id} subscribed to {DataProcessedEvent.__name__}.")
 
+    def _extract_features(self, reading: SensorReading) -> np.ndarray:
+        """
+        Extract features from a sensor reading for ML model input.
+        
+        Args:
+            reading: SensorReading object to extract features from
+            
+        Returns:
+            2D NumPy array suitable for scikit-learn models
+        """
+        # For now, just use the reading value as a single feature
+        features = np.array([[reading.value]])
+        
+        self.logger.debug(
+            f"Extracted features for sensor {reading.sensor_id}: {features.flatten()}"
+        )
+        
+        return features
+
     async def process(self, event: DataProcessedEvent) -> None:
         """
         Process a DataProcessedEvent to detect anomalies.
@@ -101,16 +120,68 @@ class AnomalyDetectionAgent(BaseAgent):
                 f"Processing sensor reading for {reading.sensor_id} with value {reading.value}"
             )
             
+            # Extract features for ML models
+            features = self._extract_features(reading)
+            
+            # Check if features extraction was successful
+            if features.size == 0:
+                self.logger.warning(
+                    f"No features extracted for sensor {reading.sensor_id}, skipping processing"
+                )
+                return
+            
+            # Scale the features
+            scaled_features = self.scaler.fit_transform(features)
+            self.logger.debug(f"Scaled features: {scaled_features.flatten()}")
+            
+            # Isolation Forest Prediction
+            if not self.isolation_forest_fitted:
+                self.logger.info("Fitting Isolation Forest model on initial data")
+                self.isolation_forest.fit(scaled_features)
+                self.isolation_forest_fitted = True
+                self.logger.debug("Isolation Forest model fitted successfully")
+            
+            # Make predictions with Isolation Forest
+            if_prediction = self.isolation_forest.predict(scaled_features)[0]
+            if_score = self.isolation_forest.decision_function(scaled_features)[0]
+            
+            self.logger.info(
+                f"Isolation Forest prediction for {reading.sensor_id}: "
+                f"prediction={if_prediction} ({'anomaly' if if_prediction == -1 else 'normal'}), "
+                f"score={if_score:.4f}"
+            )
+            
+            # Statistical Method Prediction
+            sensor_id = reading.sensor_id
+            if sensor_id in self.historical_data_store:
+                hist_mean = self.historical_data_store[sensor_id]["mean"]
+                hist_std = self.historical_data_store[sensor_id]["std"]
+                
+                self.logger.debug(
+                    f"Using historical data for {sensor_id}: mean={hist_mean}, std={hist_std}"
+                )
+            else:
+                # Use default values if sensor not in historical data
+                hist_mean = reading.value
+                hist_std = 0.1  # Small default standard deviation
+                
+                self.logger.warning(
+                    f"No historical data found for sensor {sensor_id}, "
+                    f"using defaults: mean={hist_mean}, std={hist_std}"
+                )
+              # Call statistical detector
+            stat_is_anomaly, stat_confidence, stat_desc = self.statistical_detector.detect(
+                reading.value, hist_mean, hist_std
+            )
+            
+            self.logger.info(
+                f"Statistical detection for {reading.sensor_id}: "
+                f"is_anomaly={stat_is_anomaly}, confidence={stat_confidence:.4f}, "
+                f"description='{stat_desc}'"
+            )
+            
             # Simulate some async work
             await asyncio.sleep(0.01)
-            
-            # TODO: In the next step, we'll add actual anomaly detection logic here
-            # For now, just log that we received and parsed the data successfully
-            self.logger.debug(
-                f"Successfully parsed sensor reading: "
-                f"ID={reading.sensor_id}, Value={reading.value}, "
-                f"Type={reading.sensor_type}, Timestamp={reading.timestamp}"
-            )
             
         except Exception as e:
             self.logger.error(
