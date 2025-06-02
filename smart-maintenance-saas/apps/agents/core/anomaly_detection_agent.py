@@ -50,6 +50,9 @@ class AnomalyDetectionAgent(BaseAgent):
             
         super().__init__(agent_id, event_bus)
         
+        # Initialize logger early so it's available for error handling
+        self.logger = logging.getLogger(f"{__name__}.{self.agent_id}")
+        
         # Process specific settings
         settings = specific_settings or {}
         
@@ -100,8 +103,7 @@ class AnomalyDetectionAgent(BaseAgent):
         # Validate historical data
         self._validate_historical_data()
         
-        # Initialize logger with structured context
-        self.logger = logging.getLogger(f"{__name__}.{self.agent_id}")
+        # Log agent initialization success
         self.logger.info(
             f"AnomalyDetectionAgent initialized with ID: {self.agent_id}, "
             f"IF params: {final_if_params}, "
@@ -223,26 +225,38 @@ class AnomalyDetectionAgent(BaseAgent):
                 return
             
             # ML Model Processing with enhanced error handling
+            ml_results = None
+            if_prediction, if_score = None, None
             try:
                 ml_results = await self._process_ml_models(features, reading)
-                if ml_results is None:
-                    return
-                    
-                if_prediction, if_score = ml_results
+                if ml_results is not None:
+                    if_prediction, if_score = ml_results
+                else:
+                    self.logger.warning(f"ML model processing failed for {reading.sensor_id}, using statistical method only")
+                    # Set default values for failed ML processing
+                    if_prediction, if_score = 1, 0.0  # Normal prediction, neutral score
             except Exception as e:
                 self.logger.error(f"ML model processing failed for {reading.sensor_id}: {e}", exc_info=True)
-                return
+                self.logger.warning(f"Falling back to statistical method only for {reading.sensor_id}")
+                # Set default values for failed ML processing
+                if_prediction, if_score = 1, 0.0  # Normal prediction, neutral score
             
             # Statistical Method Processing
+            stat_results = None
+            stat_is_anomaly, stat_confidence, stat_desc = None, None, None
             try:
                 stat_results = self._process_statistical_method(reading)
-                if stat_results is None:
-                    return
-                    
-                stat_is_anomaly, stat_confidence, stat_desc = stat_results
+                if stat_results is not None:
+                    stat_is_anomaly, stat_confidence, stat_desc = stat_results
+                else:
+                    self.logger.warning(f"Statistical processing failed for {reading.sensor_id}, using ML method only")
+                    # Set default values for failed statistical processing
+                    stat_is_anomaly, stat_confidence, stat_desc = False, 0.0, "normal"
             except Exception as e:
                 self.logger.error(f"Statistical processing failed for {reading.sensor_id}: {e}", exc_info=True)
-                return
+                self.logger.warning(f"Falling back to Isolation Forest only for {reading.sensor_id}")
+                # Set default values for failed statistical processing
+                stat_is_anomaly, stat_confidence, stat_desc = False, 0.0, "normal"
             
             # Ensemble Decision
             try:

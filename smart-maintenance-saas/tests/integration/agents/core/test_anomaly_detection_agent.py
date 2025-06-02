@@ -232,10 +232,11 @@ class TestAnomalyDetectionAgentIntegration:
             
             await agent.process(event)
             
-            # Verify warning was logged for unknown sensor
-            mock_warning.assert_called()
-            warning_message = mock_warning.call_args[0][0]
-            assert "No historical data for sensor unknown_sensor_999, using defaults" in warning_message
+            # Verify info was logged for unknown sensor (changed from warning to info for first encounter)
+            mock_info.assert_called()
+            # Check that one of the info calls contains the expected message about first encounter
+            info_calls = [str(call) for call in mock_info.call_args_list]
+            assert any("First encounter for unknown sensor unknown_sensor_999" in call_str for call_str in info_calls)
             
             # Verify statistical detector was called with default values
             mock_stat_detect.assert_called_once()
@@ -582,3 +583,383 @@ class TestAnomalyDetectionAgentIntegration:
             assert evidence["if_score"] == -0.25
             assert evidence["stat_is_anomaly"] is True
             assert evidence["stat_confidence"] == 0.75
+
+
+    async def test_unknown_sensor_baseline_caching(self, agent):
+        """Test that unknown sensor baselines are cached and reused."""
+        unknown_sensor_id = "unknown_sensor_cache_test"
+        
+        # First reading for unknown sensor
+        reading1 = SensorReading(
+            sensor_id=unknown_sensor_id,
+            value=42.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event1 = DataProcessedEvent(
+            processed_data=reading1.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=reading1.sensor_id
+        )
+        
+        # Verify baseline cache is empty initially
+        assert unknown_sensor_id not in agent.unknown_sensor_baselines
+        
+        with patch.object(agent.logger, 'info') as mock_info:
+            await agent.process(event1)
+            
+            # Check that baseline was cached
+            assert unknown_sensor_id in agent.unknown_sensor_baselines
+            cached_baseline = agent.unknown_sensor_baselines[unknown_sensor_id]
+            assert cached_baseline["mean"] == 42.0
+            assert cached_baseline["std"] == 0.1  # Default std
+            
+            # Verify first encounter was logged
+            info_calls = [str(call) for call in mock_info.call_args_list]
+            assert any(f"First encounter for unknown sensor {unknown_sensor_id}" in call_str for call_str in info_calls)
+        
+        # Second reading for same unknown sensor
+        reading2 = SensorReading(
+            sensor_id=unknown_sensor_id,
+            value=45.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event2 = DataProcessedEvent(
+            processed_data=reading2.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=reading2.sensor_id
+        )
+        
+        with patch.object(agent.statistical_detector, 'detect') as mock_detect, \
+             patch.object(agent.logger, 'info') as mock_info:
+            
+            await agent.process(event2)
+            
+            # Verify cached baseline was used
+            mock_detect.assert_called_once()
+            stat_call_args = mock_detect.call_args[0]
+            assert stat_call_args[0] == 45.0  # reading value
+            assert stat_call_args[1] == 42.0  # cached mean
+            assert stat_call_args[2] == 0.1   # cached std
+            
+            # Verify no "first encounter" message this time
+            info_calls = [str(call) for call in mock_info.call_args_list]
+            assert not any(f"First encounter for unknown sensor {unknown_sensor_id}" in call_str for call_str in info_calls)
+
+
+    async def test_agent_initialization_parameter_validation(self):
+        """Test that agent initialization validates parameters correctly."""
+        from core.events.event_bus import EventBus
+        
+        event_bus = EventBus()
+        
+        # Test with valid parameters
+        agent = AnomalyDetectionAgent(
+            agent_id="test_agent",
+            event_bus=event_bus,
+            specific_settings={
+                "statistical_detector_config": {
+                    "sigma_threshold": 2.5,
+                    "min_confidence": 0.2,
+                    "tolerance": 1e-8
+                }
+            }
+        )
+        
+        # Verify parameters were passed to statistical detector
+        assert agent.statistical_detector.sigma_threshold == 2.5
+        assert agent.statistical_detector.min_confidence == 0.2
+        assert agent.statistical_detector.tolerance == 1e-8
+        
+        # Test with invalid parameters should raise errors
+        with pytest.raises(ValueError, match="sigma_threshold must be positive"):
+            AnomalyDetectionAgent(
+                agent_id="test_agent",
+                event_bus=event_bus,
+                specific_settings={
+                    "statistical_detector_config": {
+                        "sigma_threshold": 0.0
+                    }
+                }
+            )
+        
+        with pytest.raises(ValueError, match="min_confidence must be between 0 and 1"):
+            AnomalyDetectionAgent(
+                agent_id="test_agent",
+                event_bus=event_bus,
+                specific_settings={
+                    "statistical_detector_config": {
+                        "min_confidence": 1.5
+                    }
+                }
+            )
+        
+        # Test basic parameter validation
+        with pytest.raises(ValueError, match="agent_id cannot be empty"):
+            AnomalyDetectionAgent(
+                agent_id="",
+                event_bus=event_bus
+            )
+        
+        with pytest.raises(ValueError, match="event_bus cannot be None"):
+            AnomalyDetectionAgent(
+                agent_id="test_agent",
+                event_bus=None
+            )
+
+
+    async def test_retry_logic_with_event_publishing_failures(self, agent, event_bus):
+        """Test retry logic when event publishing fails multiple times."""
+        anomalous_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=50.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=anomalous_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=anomalous_reading.sensor_id
+        )
+        
+        # Mock event bus to fail first 2 attempts, succeed on 3rd
+        publish_call_count = 0
+        def publish_side_effect(*args, **kwargs):
+            nonlocal publish_call_count
+            publish_call_count += 1
+            if publish_call_count <= 2:
+                raise Exception("Temporary failure")
+            return None
+        
+        event_bus.publish = AsyncMock(side_effect=publish_side_effect)
+        
+        with patch.object(agent, '_ensemble_decision', return_value=(True, 0.8, "test_anomaly")), \
+             patch.object(agent.logger, 'warning') as mock_warning, \
+             patch.object(agent.logger, 'info') as mock_info:
+            
+            await agent.process(event)
+            
+            # Verify retry attempts were made (should be called 3 times total)
+            assert event_bus.publish.call_count == 3
+        # Verify retry warnings were logged for first 2 failures
+        warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+        retry_warnings = [call for call in warning_calls if "Publish attempt" in call and "failed" in call]
+        assert len(retry_warnings) == 2
+        
+        # Verify info logs for publish attempts (should be 3 total)
+        info_calls = [call[0][0] for call in mock_info.call_args_list]
+        publish_attempt_logs = [call for call in info_calls if "Publishing AnomalyDetectedEvent (attempt" in call]
+        assert len(publish_attempt_logs) == 3
+
+
+    async def test_retry_logic_exhausted_retries(self, agent, event_bus):
+        """Test behavior when all retry attempts are exhausted."""
+        anomalous_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=50.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=anomalous_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=anomalous_reading.sensor_id
+        )
+        
+        # Mock event bus to always fail
+        event_bus.publish = AsyncMock(side_effect=Exception("Persistent failure"))
+        
+        with patch.object(agent, '_ensemble_decision', return_value=(True, 0.8, "test_anomaly")), \
+             patch.object(agent.logger, 'warning') as mock_warning, \
+             patch.object(agent.logger, 'error') as mock_error:
+            
+            await agent.process(event)
+            
+            # Verify all retry attempts were made (3 attempts total)
+            assert event_bus.publish.call_count == 3
+                 # Verify retry warnings were logged
+        warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+        retry_warnings = [call for call in warning_calls if "Publish attempt" in call and "failed" in call]
+        assert len(retry_warnings) == 3  # All 3 attempts should log warnings
+        
+        # Verify final error was logged
+        error_calls = [call[0][0] for call in mock_error.call_args_list]
+        final_error = [call for call in error_calls if "Failed to publish after 3 attempts" in call]
+        assert len(final_error) == 1
+
+
+    async def test_graceful_degradation_with_isolation_forest_failure(self, agent):
+        """Test graceful degradation when Isolation Forest fails."""
+        reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=25.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=reading.sensor_id
+        )
+        
+        # Mock Isolation Forest to raise exception
+        with patch.object(agent.isolation_forest, 'predict', side_effect=Exception("IF failure")), \
+             patch.object(agent.statistical_detector, 'detect', return_value=(True, 0.7, "statistical_anomaly")) as mock_stat, \
+             patch.object(agent.logger, 'error') as mock_error, \
+             patch.object(agent.logger, 'warning') as mock_warning:
+            
+            await agent.process(event)
+            
+            # Verify error was logged for IF failure
+            error_calls = [call[0][0] for call in mock_error.call_args_list]
+            if_errors = [call for call in error_calls if "Isolation Forest prediction failed" in call]
+            assert len(if_errors) == 1
+            
+            # Verify statistical detector was still called
+            mock_stat.assert_called_once()
+            
+            # Verify degradation warning was logged
+            warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+            degradation_warnings = [call for call in warning_calls if "using statistical method only" in call]
+            assert len(degradation_warnings) == 1
+
+
+    async def test_graceful_degradation_with_statistical_detector_failure(self, agent):
+        """Test graceful degradation when Statistical Detector fails."""
+        reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=25.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=reading.sensor_id
+        )
+        
+        # Mock Statistical Detector to raise exception
+        with patch.object(agent.statistical_detector, 'detect', side_effect=Exception("Stat failure")), \
+             patch.object(agent.isolation_forest, 'predict', return_value=np.array([-1])) as mock_if, \
+             patch.object(agent.isolation_forest, 'decision_function', return_value=np.array([-0.2])), \
+             patch.object(agent.logger, 'error') as mock_error, \
+             patch.object(agent.logger, 'warning') as mock_warning:
+            
+            await agent.process(event)
+            
+            # Verify error was logged for statistical detector failure
+            error_calls = [call[0][0] for call in mock_error.call_args_list]
+            stat_errors = [call for call in error_calls if "Statistical detection failed" in call]
+            assert len(stat_errors) == 1
+            
+            # Verify IF was still called
+            mock_if.assert_called_once()
+            
+            # Verify degradation warning was logged
+            warning_calls = [call[0][0] for call in mock_warning.call_args_list]
+            degradation_warnings = [call for call in warning_calls if "using ML method only" in call]
+            assert len(degradation_warnings) == 1
+
+
+    async def test_correlation_id_passthrough(self, agent, event_bus):
+        """Test that correlation_id is properly passed through to published events."""
+        test_correlation_id = "test-correlation-12345"
+        
+        anomalous_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=50.0,
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        event = DataProcessedEvent(
+            processed_data=anomalous_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=anomalous_reading.sensor_id,
+            correlation_id=test_correlation_id
+        )
+        
+        event_bus.publish = AsyncMock()
+        
+        with patch.object(agent, '_ensemble_decision', return_value=(True, 0.8, "test_anomaly")):
+            await agent.process(event)
+            
+            # Verify event was published with correct correlation_id
+            event_bus.publish.assert_called_once()
+            published_event = event_bus.publish.call_args[0][0]
+            assert published_event.correlation_id == test_correlation_id
+
+
+    async def test_isolation_forest_fitting_occurs_once_per_instance(self, agent):
+        """Test that Isolation Forest fitting occurs only once per agent instance."""
+        readings = []
+        events = []
+        
+        # Create multiple sensor readings
+        for i in range(5):
+            reading = SensorReading(
+                sensor_id="sensor_temp_001",
+                value=20.0 + i,
+                timestamp=datetime.utcnow(),
+                sensor_type=SensorType.TEMPERATURE,
+                unit="celsius",
+                quality=1.0,
+                correlation_id=uuid.uuid4(),
+                metadata={}
+            )
+            readings.append(reading)
+            events.append(DataProcessedEvent(
+                processed_data=reading.dict(),
+                original_event_id=uuid.uuid4(),
+                source_sensor_id=reading.sensor_id
+            ))
+        
+        # Ensure isolation forest is not fitted initially
+        agent.isolation_forest_fitted = False
+        
+        with patch.object(agent.isolation_forest, 'fit') as mock_fit, \
+             patch.object(agent.isolation_forest, 'predict', return_value=np.array([1])), \
+             patch.object(agent.isolation_forest, 'decision_function', return_value=np.array([0.1])):
+            
+            # Process all events
+            for event in events:
+                await agent.process(event)
+            
+            # Verify fit was called only once
+            assert mock_fit.call_count == 1
+            assert agent.isolation_forest_fitted is True
