@@ -160,6 +160,44 @@ class DataProcessingFailedEvent(BaseEventModel):
     )
 
 
+class AnomalyValidatedEvent(BaseEventModel):
+    """
+    Event indicating that an anomaly has been validated by the ValidationAgent.
+
+    Attributes:
+        original_anomaly_alert_payload: The original anomaly alert data.
+        triggering_reading_payload: The sensor reading data that triggered the anomaly.
+        validation_status: Status of validation ("CONFIRMED", "FALSE_POSITIVE", "UNCERTAIN").
+        final_confidence: Final confidence score after validation (0.0 to 1.0).
+        validation_reasons: List of reasons explaining the validation decision.
+        validated_at: Timestamp when validation was performed.
+        agent_id: ID of the validation agent that processed this event.
+    """
+
+    original_anomaly_alert_payload: Dict[str, Any] = Field(
+        ..., description="Original anomaly alert data that was validated."
+    )
+    triggering_reading_payload: Dict[str, Any] = Field(
+        ..., description="Sensor reading data that triggered the anomaly detection."
+    )
+    validation_status: str = Field(
+        ..., description="Validation status: CONFIRMED, FALSE_POSITIVE, or UNCERTAIN."
+    )
+    final_confidence: float = Field(
+        ..., description="Final confidence score after validation (0.0 to 1.0)."
+    )
+    validation_reasons: List[str] = Field(
+        default_factory=list, description="List of reasons for the validation decision."
+    )
+    validated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="Timestamp when the validation was performed.",
+    )
+    agent_id: str = Field(
+        ..., description="ID of the validation agent that processed this event."
+    )
+
+
 # Example of how to use these models (for testing purposes, can be removed or commented out):
 # if __name__ == "__main__":
 #     sensor_event = SensorDataReceivedEvent(
