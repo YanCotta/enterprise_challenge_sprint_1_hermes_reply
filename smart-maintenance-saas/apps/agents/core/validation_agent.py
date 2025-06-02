@@ -105,7 +105,7 @@ class ValidationAgent(BaseAgent):
             self.logger.info(f"Fetched {len(historical_readings)} historical readings for sensor {sensor_id}.")
             return historical_readings, None
         except Exception as e:
-            error_msg = f"Failed to fetch historical readings: {e}"
+            error_msg = "Historical data fetch failed."
             self.logger.error(f"Error fetching historical data for sensor {sensor_id}: {e}", exc_info=True)
             return [], error_msg
         finally:
@@ -176,33 +176,37 @@ class ValidationAgent(BaseAgent):
                 self.logger.warning(f"Cannot apply historical stability rule: reading value '{current_value}' is not numeric.")
 
         # Rule 2: Recurring Anomaly Type (Simplified)
-        recurring_anomaly_diff_factor = self.settings.get("recurring_anomaly_diff_factor", 0.5)
+        recurring_anomaly_diff_factor = self.settings.get("recurring_anomaly_diff_factor", 0.2)
         recurring_anomaly_threshold_pct = self.settings.get("recurring_anomaly_threshold_pct", 0.25)
         recurring_anomaly_penalty = self.settings.get("recurring_anomaly_penalty", -0.05)
         
         if len(historical_readings) >= 2:
-            significant_changes = 0
-            total_comparisons = 0
+            anomalous_historical_jumps = 0
+            total_historical_readings = len(historical_readings)
             
+            # Compare each reading to its immediately preceding reading in the historical sequence
             for i in range(len(historical_readings) - 1):
                 current_val = historical_readings[i].value
                 previous_val = historical_readings[i + 1].value
                 
-                if isinstance(current_val, (int, float)) and isinstance(previous_val, (int, float)) and previous_val != 0:
-                    percentage_diff = abs(current_val - previous_val) / abs(previous_val)
-                    if percentage_diff >= recurring_anomaly_diff_factor:
-                        significant_changes += 1
-                    total_comparisons += 1
+                if isinstance(current_val, (int, float)) and isinstance(previous_val, (int, float)):
+                    # Add epsilon to prevent division by zero if predecessor's value is 0
+                    denominator = abs(previous_val) + 1e-6
+                    percentage_diff = abs(current_val - previous_val) / denominator
+                    if percentage_diff > recurring_anomaly_diff_factor:
+                        anomalous_historical_jumps += 1
             
-            if total_comparisons > 0:
-                recurring_anomaly_proportion = significant_changes / total_comparisons
-                if recurring_anomaly_proportion >= recurring_anomaly_threshold_pct:
+            # Calculate ratio of anomalous jumps to total comparisons possible
+            if total_historical_readings > 1:
+                anomaly_ratio = anomalous_historical_jumps / (total_historical_readings - 1)
+                if anomaly_ratio > recurring_anomaly_threshold_pct:
                     historical_confidence_adjustment += recurring_anomaly_penalty
-                    reason = f"Recurring anomaly pattern detected: {significant_changes}/{total_comparisons} ({recurring_anomaly_proportion:.2%}) readings show significant changes (≥{recurring_anomaly_diff_factor:.0%}), exceeding threshold of {recurring_anomaly_threshold_pct:.0%}."
+                    reason = f"Recurring anomaly pattern detected in historical data."
                     historical_reasons.append(reason)
-                    self.logger.debug(f"Historical Rule (Recurring Anomaly Pattern) triggered: {reason}")
+                    self.logger.debug(f"Historical Rule (Recurring Anomaly Pattern) triggered: {anomalous_historical_jumps}/{total_historical_readings - 1} ({anomaly_ratio:.2%}) anomalous jumps exceed threshold of {recurring_anomaly_threshold_pct:.0%}")
 
-        if not historical_reasons:
+        # Only add generic message if no specific historical rules triggered and we have historical data
+        if not historical_reasons and not error_message and historical_readings:
             historical_reasons.append("No significant historical patterns affected confidence based on implemented rules.")
         
         self.logger.debug(f"Historical validation complete. Adjustment: {historical_confidence_adjustment}, Reasons: {historical_reasons}")
@@ -281,6 +285,12 @@ class ValidationAgent(BaseAgent):
                 "No historical readings available for comparison."
                 ]
             ]
+            
+            # Avoid duplicate error messages when historical data fetch fails
+            if fetch_error and "No historical readings available for context." in hist_reasons and "Historical data fetch failed." in hist_reasons:
+                # Remove the generic "No historical readings available" when we have a specific fetch error
+                all_reasons = [r for r in all_reasons if r != "No historical readings available for context."]
+            
             if not all_reasons: # If all reasons were generic, provide a default summary
                 all_reasons = ["Standard validation checks completed; no specific rules or historical patterns significantly altered confidence."]
 
