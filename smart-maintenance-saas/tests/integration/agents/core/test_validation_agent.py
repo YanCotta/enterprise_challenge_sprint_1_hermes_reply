@@ -153,7 +153,7 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
         validated_event = self.received_events[0]
 
         self.assertIsInstance(validated_event, AnomalyValidatedEvent)
-        self.assertEqual(validated_event.validation_status, "CONFIRMED_CREDIBLE")
+        self.assertEqual(validated_event.validation_status, "credible_anomaly")
         # Expected: 0.85 (initial) + 0 (no rules by default) + 0 (no strong historical) = 0.85
         self.assertAlmostEqual(validated_event.final_confidence, 0.85, places=2)
         self.assertEqual(validated_event.agent_id, self.agent.agent_id)
@@ -190,7 +190,7 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.received_events), 1)
         validated_event = self.received_events[0]
 
-        self.assertEqual(validated_event.validation_status, "POTENTIAL_FALSE_POSITIVE")
+        self.assertEqual(validated_event.validation_status, "false_positive_suspected")
         self.assertAlmostEqual(
             validated_event.final_confidence, 0.0, places=2
         )  # Clamped
@@ -251,7 +251,7 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
         triggering_data = self._get_default_triggering_data(
             sensor_id=sensor_id, value=current_value
         )
-        # Expected: 0.45 (initial) - 0.1 (historical stability) = 0.35. Status: POTENTIAL_FALSE_POSITIVE
+        # Expected: 0.45 (initial) - 0.1 (historical stability) = 0.35. Status: false_positive_suspected
 
         detected_event = self._create_anomaly_detected_event(
             anomaly_details, triggering_data, correlation_id="hist_fp_corr_01"
@@ -263,7 +263,7 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.received_events), 1)
         validated_event = self.received_events[0]
 
-        self.assertEqual(validated_event.validation_status, "POTENTIAL_FALSE_POSITIVE")
+        self.assertEqual(validated_event.validation_status, "false_positive_suspected")
         self.assertAlmostEqual(validated_event.final_confidence, 0.35, places=2)
         self.assertIn(
             "Recent value stability", "".join(validated_event.validation_reasons)
