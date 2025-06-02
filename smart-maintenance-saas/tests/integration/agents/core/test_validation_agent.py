@@ -8,6 +8,7 @@ from typing import Optional, List  # Added Optional, List
 
 from apps.agents.core.validation_agent import ValidationAgent
 from core.events.event_models import AnomalyDetectedEvent, AnomalyValidatedEvent
+from core.events.event_bus import EventBus
 
 # AnomalyAlert F401 was previously noted. While _get_default_anomaly_details returns a dict,
 # it's structured like an AnomalyAlert. If tests ever directly instantiate AnomalyAlert,
@@ -18,31 +19,42 @@ from data.schemas import (
 )  # SensorReading is used for historical data
 from apps.rules.validation_rules import RuleEngine
 
-# Using the MockEventBus from BaseAgent for this integration test.
-# In a real project, you'd import your actual EventBus implementation.
-from apps.agents.base_agent import MockEventBus
+# Mock EventBus for integration testing
+class MockEventBus(EventBus):
+    def __init__(self):
+        super().__init__()
+        self.published_events = []
+    
+    async def publish(self, event):
+        """Override to capture published events for testing."""
+        self.published_events.append(event)
+        # Call the parent's publish method to ensure handlers are invoked
+        return await super().publish(event)
 
 # Disable logging for tests to keep output clean
-logging.disable(logging.CRITICAL)
+# logging.disable(logging.CRITICAL)  # Temporarily enable for debugging
 
 
 class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
-        self.event_bus = (
-            MockEventBus()
-        )  # Using the mock bus from base_agent for testing
+        self.event_bus = MockEventBus()  # Use the custom MockEventBus
         self.mock_crud_sensor_reading = AsyncMock()
         self.rule_engine = RuleEngine()  # Real RuleEngine
 
         # Default return values for mocks
         self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
 
+        # Create a mock session factory that returns a mock session
+        def mock_session_factory():
+            return AsyncMock()  # Return a mock session
+
         self.agent = ValidationAgent(
             agent_id="integration_validator",
             event_bus=self.event_bus,
             crud_sensor_reading=self.mock_crud_sensor_reading,
             rule_engine=self.rule_engine,
+            db_session_factory=mock_session_factory,  # Provide the mock session factory
             specific_settings={
                 "credible_threshold": 0.7,
                 "false_positive_threshold": 0.4,
@@ -59,7 +71,7 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
         await self.agent.start()
 
     async def asyncTearDown(self):
-        if self.agent and self.agent.is_running():
+        if self.agent and self.agent.status == "running":
             await self.agent.stop()
         # Clear subscriptions from the mock bus if necessary (MockEventBus clears on init)
         self.event_bus.subscriptions = {}
@@ -97,7 +109,7 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
         sensor_id="sensor_INT",
         value=100.0,
         quality=0.9,
-        sensor_type="TEMPERATURE",
+        sensor_type="temperature",  # Use lowercase enum value
     ) -> dict:
         return {
             "sensor_id": sensor_id,
@@ -132,14 +144,16 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
                 sensor_id=anomaly_details["sensor_id"],
                 value=98.0,
                 timestamp=self.default_ts - timedelta(hours=1),  # timedelta is imported
-                sensor_type="TEMPERATURE",
+                sensor_type="temperature",  # Use lowercase enum value
+                unit="C",  # Add required unit field
                 quality=1.0,
             ),
             SensorReading(  # SensorReading is imported
                 sensor_id=anomaly_details["sensor_id"],
                 value=99.0,
                 timestamp=self.default_ts - timedelta(hours=2),  # timedelta is imported
-                sensor_type="TEMPERATURE",
+                sensor_type="temperature",  # Use lowercase enum value
+                unit="C",  # Add required unit field
                 quality=1.0,
             ),
         ]
@@ -172,9 +186,9 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
         # Low initial confidence, poor data quality
         anomaly_details = self._get_default_anomaly_details(
             confidence=0.25
-        )  # Rule: -0.2
-        triggering_data = self._get_default_triggering_data(quality=0.5)  # Rule: -0.15
-        # Total from rules: -0.35. Initial: 0.25. Final: -0.1 -> clamped to 0.0
+        )  # Rule 1: -0.1 (confidence < 0.3)
+        triggering_data = self._get_default_triggering_data(quality=0.4)  # Rule 2: -0.2 (quality < 0.5)
+        # Total from rules: -0.3. Initial: 0.25. Final: -0.05 -> clamped to 0.0
 
         detected_event = self._create_anomaly_detected_event(
             anomaly_details, triggering_data, correlation_id="fp_corr_01"
@@ -197,11 +211,11 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(validated_event.agent_id, self.agent.agent_id)
         self.assertEqual(validated_event.correlation_id, "fp_corr_01")
         self.assertIn(
-            "Low original alert confidence (0.25). Adjusted by -0.20.",
+            "Initial alert confidence (0.25) is below threshold (0.3).",
             validated_event.validation_reasons,
         )
         self.assertIn(
-            "Poor sensor data quality (0.50). Adjusted by -0.15.",
+            "Triggering sensor reading quality (0.40) is low (below 0.5).",
             validated_event.validation_reasons,
         )
 
@@ -222,21 +236,24 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
                 sensor_id=sensor_id,
                 value=20.0,
                 timestamp=self.default_ts - timedelta(hours=1),  # timedelta is imported
-                sensor_type="TEMPERATURE",
+                sensor_type="temperature",  # Use lowercase enum value
+                unit="C",  # Add required unit field
                 quality=1.0,
             ),
             SensorReading(  # SensorReading is imported
                 sensor_id=sensor_id,
                 value=21.0,
                 timestamp=self.default_ts - timedelta(hours=2),  # timedelta is imported
-                sensor_type="TEMPERATURE",
+                sensor_type="temperature",  # Use lowercase enum value
+                unit="C",  # Add required unit field
                 quality=1.0,
             ),
             SensorReading(  # SensorReading is imported
                 sensor_id=sensor_id,
                 value=19.5,
                 timestamp=self.default_ts - timedelta(hours=3),  # timedelta is imported
-                sensor_type="TEMPERATURE",
+                sensor_type="temperature",  # Use lowercase enum value
+                unit="C",  # Add required unit field
                 quality=1.0,
             ),
         ]
