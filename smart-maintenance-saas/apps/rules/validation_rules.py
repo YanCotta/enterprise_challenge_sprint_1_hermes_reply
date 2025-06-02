@@ -1,6 +1,6 @@
 import logging
 from typing import Tuple, List, Any
-from smart_maintenance_saas.data.schemas import AnomalyAlert, SensorReading # Ensure these are the correct Pydantic models
+from data.schemas import AnomalyAlert, SensorReading # Ensure these are the correct Pydantic models
 
 class RuleEngine:
     def __init__(self):
