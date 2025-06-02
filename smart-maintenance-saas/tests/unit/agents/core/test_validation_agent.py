@@ -56,7 +56,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
                 "recent_stability_jump_adjustment": 0.10,
                 "recent_stability_minor_deviation_adjustment": -0.05,
                 "volatile_baseline_adjustment": 0.05,
-                "recurring_anomaly_diff_factor": 0.5,
+                "recurring_anomaly_diff_factor": 0.2,  # Updated to match new default
                 "recurring_anomaly_threshold_pct": 0.25,
                 "recurring_anomaly_penalty": -0.05,
             },
@@ -431,17 +431,24 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
             anomaly_details, triggering_data
         )
         
-        # Default rule engine adjustment (0.0, [])
+        # The mock rule engine returns (0.0, [])
         self.mock_rule_engine.evaluate_rules.return_value = (0.0, [])
 
-
-        await self.agent.process(event)
+        with self.assertLogs(self.agent.logger.name, level="ERROR") as log_watcher:
+            await self.agent.process(event)
+            
+        # Verify that the specific "DB connection failed!" error was logged
+        self.assertTrue(
+            any("DB connection failed!" in msg for msg in log_watcher.output)
+        )
 
         self.mock_event_bus.publish.assert_called_once()  # Should still publish
         published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        
+        # After New Prompt A changes, the agent should return "Historical data fetch failed." in reasons
         self.assertIn(
-            "Failed to fetch historical readings: DB connection failed!",
-            "".join(published_event.validation_reasons), # Use join if it's a list
+            "Historical data fetch failed.",
+            published_event.validation_reasons
         )
         self.assertAlmostEqual(
             published_event.final_confidence, initial_confidence 
@@ -465,7 +472,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(published_event.validation_status, expected_status)
 
 
-    async def test_start_method(self):
+    async def test_process_parsing_failure_malformed_anomaly_details(self):
         malformed_details = {
             "sensor_id": "test_sensor"
         }  # Missing confidence, type, severity, timestamp
@@ -623,7 +630,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         # Final confidence = 0.8 + 0.05 + 0 = 0.85
         self.assertAlmostEqual(published_event.final_confidence, initial_confidence + 0.05)
         self.assertIn(
-            "No historical readings available for context.", "".join(published_event.validation_reasons)
+            "No historical readings available for context.", published_event.validation_reasons
         )
         self.assertEqual(published_event.validation_status, "credible_anomaly") # Corrected, Example, depends on thresholds
         self.assertEqual(published_event.agent_id, self.agent.agent_id)
@@ -705,13 +712,13 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
 
     async def test_historical_recurring_anomaly_type_triggered(self):
         sensor_id = "temp_oscillating"
-        # Agent specific_settings: historical_check_limit=10, recurring_anomaly_threshold_pct=0.25, recurring_anomaly_diff_factor=0.5
-        # Need > 10 * 0.25 = 2.5 (i.e., 3) historical points to be "anomalous" (50% diff from previous)
+        # Agent specific_settings: historical_check_limit=10, recurring_anomaly_threshold_pct=0.25, recurring_anomaly_diff_factor=0.2
+        # Need > 10 * 0.25 = 2.5 (i.e., 3) historical points to be "anomalous" (20% diff from previous)
         historical_data = []
         base_val = 10
         historical_check_limit = 10  # From our settings
         for i in range(1, historical_check_limit + 1):  # Create 10 historical readings
-            val = base_val + (i % 2) * base_val * 0.6  # Alternates: 10, 16, 10, 16 ... (60% diff)
+            val = base_val + (i % 2) * base_val * 0.3  # Alternates: 10, 13, 10, 13 ... (30% diff > 20% threshold)
             historical_data.append(
                 SensorReading(
                     sensor_id=sensor_id,
@@ -722,7 +729,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
                     unit="C" # Ensure unit is provided
                 )
             )
-        # This sequence (16,10,16,10,16,10,16,10,16,10) has 9 comparisons. All show 60% diff. So 9/9 = 100% > 25%.
+        # This sequence (13,10,13,10,13,10,13,10,13,10) has 9 comparisons. All show 30% diff > 20%. So 9/9 = 100% > 25%.
         self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = (
             historical_data
         )
@@ -740,11 +747,12 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
 
         published_event = self.mock_event_bus.publish.call_args.kwargs['event']
         self.assertIn(
-            "Recurring anomaly pattern", "".join(published_event.validation_reasons)
+            "Recurring anomaly pattern detected in historical data.", published_event.validation_reasons
         )
+        # Expected calculation: 0.8 initial + 0 rule_adj + 0.05 volatile + (-0.05) recurring = 0.8
         self.assertAlmostEqual(
             published_event.final_confidence, 0.8 + 0.05 - 0.05
-        )  # Initial + volatile adjustment + recurring penalty (0.8 initial, 0 rule_adj, +0.05 volatile, -0.05 recurring)
+        )  # Initial + volatile adjustment + recurring penalty
         self.assertEqual(published_event.validation_status, "credible_anomaly")
         self.assertEqual(published_event.agent_id, self.agent.agent_id)
         self.assertEqual(published_event.correlation_id, event.correlation_id)
