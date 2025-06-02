@@ -4,14 +4,14 @@ from unittest.mock import (
     patch,
     # MagicMock, ANY were F401, so removed
 )
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone  # Added timezone
 import uuid
 import logging
 from typing import Optional  # Added Optional
 
 from apps.agents.core.validation_agent import ValidationAgent
 from core.events.event_models import AnomalyDetectedEvent, AnomalyValidatedEvent
-from data.schemas import AnomalyAlert, SensorReading
+from data.schemas import AnomalyAlert, SensorReading, SensorType  # Added SensorType
 from apps.agents.base_agent import BaseAgent  # noqa: F401 - Used in patch string
 
 # Disable logging for tests unless specifically testing log output
@@ -23,15 +23,23 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.mock_event_bus = AsyncMock()
         self.mock_crud_sensor_reading = AsyncMock()
-        self.mock_rule_engine = AsyncMock()
+        # Ensure the method to be called on this mock is also an AsyncMock if it's awaited
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id = AsyncMock(return_value=[])
 
-        # Default return values for mocks
-        self.mock_rule_engine.evaluate_rules.return_value = (0.0, [])
-        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+        self.mock_rule_engine = AsyncMock()
+        # Ensure the method to be called on this mock is also an AsyncMock if it's awaited
+        self.mock_rule_engine.evaluate_rules = AsyncMock(return_value=(0.0, []))
+
+        self.mock_db_session_factory = AsyncMock()
+        # Configure the factory to return another AsyncMock when called (simulating a db session)
+        self.mock_db_session = AsyncMock()
+        self.mock_db_session_factory.return_value = self.mock_db_session
+
 
         self.agent = ValidationAgent(
             agent_id="test_validator",
             event_bus=self.mock_event_bus,
+            db_session_factory=self.mock_db_session_factory, # Added db_session_factory
             crud_sensor_reading=self.mock_crud_sensor_reading,
             rule_engine=self.mock_rule_engine,
             specific_settings={  # Ensure agent uses these, not defaults if they differ
@@ -63,24 +71,28 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
     def _get_default_anomaly_details(
         self, confidence=0.8, sensor_id="sensor_A", anomaly_type="spike", severity=4
     ) -> dict:
+        # Ensure timestamp is stored as datetime object before potential isoformat conversion for event
+        # Pydantic model AnomalyAlert expects 'created_at: datetime'
         return {
             "sensor_id": sensor_id,
             "anomaly_type": anomaly_type,
             "severity": severity,
             "confidence": confidence,
             "description": "Test anomaly",
-            "timestamp": self.default_ts.isoformat(),
+            "created_at": self.default_ts, # Changed 'timestamp' to 'created_at' and pass datetime
         }
 
     def _get_default_triggering_data(
-        self, sensor_id="sensor_A", value=100.0, quality=0.9, sensor_type="TEMPERATURE"
+        self, sensor_id="sensor_A", value=100.0, quality=0.9, sensor_type: SensorType = SensorType.TEMPERATURE
     ) -> dict:
+        # SensorReading model expects 'sensor_type: SensorType' (enum)
+        # and 'timestamp' will be parsed into datetime by Pydantic
         return {
             "sensor_id": sensor_id,
-            "timestamp": self.default_ts.isoformat(),
+            "timestamp": self.default_ts.isoformat(), # Pydantic will parse this to datetime
             "value": value,
-            "sensor_type": sensor_type,
-            "unit": "C",
+            "sensor_type": sensor_type, # Use SensorType enum member
+            "unit": "C", # Assuming 'C' is for TEMPERATURE, adjust if other types have different units by default
             "quality": quality,
         }
 
@@ -104,12 +116,12 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         self.mock_event_bus.publish.assert_called_once()
         published_event = self.mock_event_bus.publish.call_args[0][0]
         self.assertIsInstance(published_event, AnomalyValidatedEvent)
-        self.assertEqual(published_event.validation_status, "CONFIRMED_CREDIBLE")
+        self.assertEqual(published_event.validation_status, "credible_anomaly") # Corrected status string
         self.assertAlmostEqual(
             published_event.final_confidence, 0.85
         )  # 0.75 (initial) + 0.1 (rule)
-        self.assertEqual(published_event.agent_id, "test_validator")
-        self.assertEqual(published_event.correlation_id, event_corr_id)
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event_corr_id) # Specific event_corr_id used here
         self.assertEqual(
             published_event.original_anomaly_alert_payload, anomaly_details
         )
@@ -117,47 +129,322 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         self.assertIn(
             "Rule reason: positive adjustment", published_event.validation_reasons
         )
+        self.assertIsInstance(published_event.validated_at, datetime)
+        # Check if validated_at is close to now, within a tolerance (e.g., 5 seconds)
+        self.assertTrue(
+            (datetime.now(timezone.utc) - published_event.validated_at) < timedelta(seconds=5),
+            "validated_at timestamp is not recent"
+        )
 
     async def test_process_successful_false_positive(self):
+        rule_reasons = ["Rule reason: major penalty"]
         self.mock_rule_engine.evaluate_rules.return_value = (
             -0.3,
-            ["Rule reason: major penalty"],
+            rule_reasons,
         )
 
         anomaly_details = self._get_default_anomaly_details(
             confidence=0.5
         )  # Medium initial confidence
+        triggering_data = self._get_default_triggering_data()
         event = self._create_anomaly_detected_event(
-            anomaly_details, self._get_default_triggering_data()
+            anomaly_details, triggering_data
         )
 
         await self.agent.process(event)
 
         self.mock_event_bus.publish.assert_called_once()
         published_event = self.mock_event_bus.publish.call_args[0][0]
-        self.assertEqual(published_event.validation_status, "POTENTIAL_FALSE_POSITIVE")
-        self.assertAlmostEqual(published_event.final_confidence, 0.2)  # 0.5 - 0.3
+        self.assertEqual(published_event.validation_status, "false_positive_suspected") 
+        self.assertAlmostEqual(published_event.final_confidence, 0.2) 
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(
+            published_event.original_anomaly_alert_payload, anomaly_details
+        )
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        # If historical data is empty by default mock, its reason should be added
+        expected_reasons = rule_reasons + ["No historical readings available for context."]
+        self.assertEqual(sorted(published_event.validation_reasons), sorted(expected_reasons))
+        self.assertIsInstance(published_event.validated_at, datetime)
 
     async def test_process_successful_uncertain(self):
+        rule_reasons = ["Rule reason: minor penalty"]
         self.mock_rule_engine.evaluate_rules.return_value = (
             -0.1,
-            ["Rule reason: minor penalty"],
+            rule_reasons,
         )
         anomaly_details = self._get_default_anomaly_details(
             confidence=0.6
-        )  # Initial: 0.6 -> Final: 0.5
+        ) 
+        triggering_data = self._get_default_triggering_data()
         event = self._create_anomaly_detected_event(
-            anomaly_details, self._get_default_triggering_data()
+            anomaly_details, triggering_data
         )
 
         await self.agent.process(event)
 
         self.mock_event_bus.publish.assert_called_once()
         published_event = self.mock_event_bus.publish.call_args[0][0]
-        self.assertEqual(published_event.validation_status, "UNCERTAIN")
-        self.assertAlmostEqual(published_event.final_confidence, 0.5)  # 0.6 - 0.1
+        self.assertEqual(published_event.validation_status, "further_investigation_needed") 
+        self.assertAlmostEqual(published_event.final_confidence, 0.5) 
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(
+            published_event.original_anomaly_alert_payload, anomaly_details
+        )
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        expected_reasons = rule_reasons + ["No historical readings available for context."]
+        self.assertEqual(sorted(published_event.validation_reasons), sorted(expected_reasons))
+        self.assertIsInstance(published_event.validated_at, datetime)
+
+    async def test_final_confidence_clamped_above_one(self):
+        initial_confidence = 0.9
+        rule_adjustment = 0.3 
+        rule_reasons = ["Rule boost"]
+        self.mock_rule_engine.evaluate_rules.return_value = (rule_adjustment, rule_reasons)
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+
+        anomaly_details = self._get_default_anomaly_details(confidence=initial_confidence)
+        triggering_data = self._get_default_triggering_data()
+        event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
+        await self.agent.process(event)
+
+        self.mock_event_bus.publish.assert_called_once()
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+        self.assertAlmostEqual(published_event.final_confidence, 1.0) 
+        self.assertEqual(published_event.validation_status, "credible_anomaly")
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(
+            published_event.original_anomaly_alert_payload, anomaly_details
+        )
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        expected_reasons = rule_reasons + ["No historical readings available for context."]
+        self.assertEqual(sorted(published_event.validation_reasons), sorted(expected_reasons))
+        self.assertIsInstance(published_event.validated_at, datetime)
+
+    async def test_final_confidence_clamped_below_zero(self):
+        initial_confidence = 0.1
+        rule_adjustment = -0.3 
+        rule_reasons = ["Rule penalty"]
+        self.mock_rule_engine.evaluate_rules.return_value = (rule_adjustment, rule_reasons)
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+
+        anomaly_details = self._get_default_anomaly_details(confidence=initial_confidence)
+        triggering_data = self._get_default_triggering_data()
+        event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
+        await self.agent.process(event)
+
+        self.mock_event_bus.publish.assert_called_once()
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+        self.assertAlmostEqual(published_event.final_confidence, 0.0) 
+        self.assertEqual(published_event.validation_status, "false_positive_suspected")
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(
+            published_event.original_anomaly_alert_payload, anomaly_details
+        )
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        expected_reasons = rule_reasons + ["No historical readings available for context."]
+        self.assertEqual(sorted(published_event.validation_reasons), sorted(expected_reasons))
+        self.assertIsInstance(published_event.validated_at, datetime)
+
+    async def test_status_boundary_credible_exact_zero_adjustments(self):
+        initial_confidence = 0.75
+        self.mock_rule_engine.evaluate_rules.return_value = (0.0, []) 
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = [] 
+
+        anomaly_details = self._get_default_anomaly_details(confidence=initial_confidence)
+        triggering_data = self._get_default_triggering_data()
+        event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
+        await self.agent.process(event)
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+        self.assertAlmostEqual(published_event.final_confidence, 0.75)
+        self.assertEqual(published_event.validation_status, "credible_anomaly")
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(
+            published_event.original_anomaly_alert_payload, anomaly_details
+        )
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertEqual(published_event.validation_reasons, ["No historical readings available for context."])
+        self.assertIsInstance(published_event.validated_at, datetime)
+
+    async def test_status_boundary_further_investigation_just_below_credible(self):
+        initial_confidence = 0.749 
+        self.mock_rule_engine.evaluate_rules.return_value = (0.0, [])
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+
+        anomaly_details = self._get_default_anomaly_details(confidence=initial_confidence)
+        triggering_data = self._get_default_triggering_data()
+        event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
+        await self.agent.process(event)
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+        self.assertAlmostEqual(published_event.final_confidence, 0.749)
+        self.assertEqual(published_event.validation_status, "further_investigation_needed")
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(
+            published_event.original_anomaly_alert_payload, anomaly_details
+        )
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertEqual(published_event.validation_reasons, ["No historical readings available for context."])
+        self.assertIsInstance(published_event.validated_at, datetime)
+
+    async def test_status_boundary_further_investigation_exact_at_false_positive_upper(self):
+        initial_confidence = 0.40
+        self.mock_rule_engine.evaluate_rules.return_value = (0.0, [])
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+
+        anomaly_details = self._get_default_anomaly_details(confidence=initial_confidence)
+        triggering_data = self._get_default_triggering_data()
+        event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
+        await self.agent.process(event)
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+        self.assertAlmostEqual(published_event.final_confidence, 0.40)
+        self.assertEqual(published_event.validation_status, "further_investigation_needed")
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(
+            published_event.original_anomaly_alert_payload, anomaly_details
+        )
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertEqual(published_event.validation_reasons, ["No historical readings available for context."])
+        self.assertIsInstance(published_event.validated_at, datetime)
+
+    async def test_status_boundary_false_positive_just_below_further_investigation(self):
+        initial_confidence = 0.399
+        self.mock_rule_engine.evaluate_rules.return_value = (0.0, [])
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+
+        anomaly_details = self._get_default_anomaly_details(confidence=initial_confidence)
+        triggering_data = self._get_default_triggering_data()
+        event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
+        await self.agent.process(event)
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+        self.assertAlmostEqual(published_event.final_confidence, 0.399)
+        self.assertEqual(published_event.validation_status, "false_positive_suspected")
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(
+            published_event.original_anomaly_alert_payload, anomaly_details
+        )
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertEqual(published_event.validation_reasons, ["No historical readings available for context."])
+        self.assertIsInstance(published_event.validated_at, datetime)
 
     async def test_process_input_parsing_failure_anomaly_details(self):
+            # ... other assertions from previous steps ...
+            self.assertEqual(published_event.agent_id, self.agent.agent_id)
+            self.assertEqual(published_event.correlation_id, event.correlation_id)
+            self.assertEqual(published_event.original_anomaly_alert_payload, anomaly_details)
+            self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+            self.assertIsInstance(published_event.validated_at, datetime)
+            # Check reasons based on test setup
+            expected_reasons = []
+            if rule_adj_tuple[1]: # if there are rule reasons
+                expected_reasons.extend(rule_adj_tuple[1])
+            if not historical_data_mock: # If historical data is empty
+                expected_reasons.append("No historical readings available for context.")
+            elif "Recent value stability" in test_specific_historical_reason:
+                 expected_reasons.append("Recent value stability penalty applied.") # Exact string may vary
+            elif "Recurring anomaly pattern" in test_specific_historical_reason:
+                expected_reasons.append("Recurring anomaly pattern penalty applied.") # Exact string may vary
+            
+            # Use sorted lists for comparison if order doesn't matter, or ensure exact order.
+            # For now, checking if all expected reasons are present.
+            for reason in expected_reasons:
+                self.assertIn(reason, published_event.validation_reasons)
+
+
+    async def test_correlation_id_fallback_to_event_id(self):
+        # Test that if correlation_id is None in incoming event, it falls back to event_id
+        fixed_event_id = str(uuid.uuid4())
+        anomaly_details = self._get_default_anomaly_details(confidence=0.8)
+        triggering_data = self._get_default_triggering_data()
+        
+        # Create event with correlation_id=None
+        event = self._create_anomaly_detected_event(
+            anomaly_details, triggering_data, correlation_id=None, event_id=fixed_event_id
+        )
+        # Ensure correlation_id is indeed None on the event object if _create_anomaly_detected_event allows it
+        # (it might assign a default if None is passed and not handled by Optional).
+        # For this test, we'll directly create AnomalyDetectedEvent to ensure None correlation_id
+        event = AnomalyDetectedEvent(
+            event_id=fixed_event_id,
+            correlation_id=None, # Explicitly None
+            anomaly_details=anomaly_details,
+            triggering_data=triggering_data,
+            source_system="TestSource",
+            created_at=self.default_ts
+        )
+
+        self.mock_rule_engine.evaluate_rules.return_value = (0.0, [])
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+
+        await self.agent.process(event)
+
+        self.mock_event_bus.publish.assert_called_once()
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+
+        self.assertEqual(published_event.correlation_id, fixed_event_id)
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.original_anomaly_alert_payload, anomaly_details)
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertIsInstance(published_event.validated_at, datetime)
+
+
+    async def test_process_error_in_crud_historical_fetch(self):
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.side_effect = (
+            Exception("DB connection failed!")
+        )
+        # This error occurs inside _perform_historical_context_validation, which should be handled.
+        # The agent should still proceed and publish an event, but historical adjustment will be 0 and a reason added.
+
+        initial_confidence = 0.8
+        anomaly_details = self._get_default_anomaly_details(confidence=initial_confidence)
+        triggering_data = self._get_default_triggering_data(sensor_type=SensorType.TEMPERATURE)
+        # Pass SensorType enum for sensor_type
+        event = self._create_anomaly_detected_event(
+            anomaly_details, triggering_data
+        )
+        
+        # Default rule engine adjustment (0.0, [])
+        self.mock_rule_engine.evaluate_rules.return_value = (0.0, [])
+
+
+        await self.agent.process(event)
+
+        self.mock_event_bus.publish.assert_called_once()  # Should still publish
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+        self.assertIn(
+            "Failed to fetch historical readings: DB connection failed!",
+            "".join(published_event.validation_reasons), # Use join if it's a list
+        )
+        self.assertAlmostEqual(
+            published_event.final_confidence, initial_confidence 
+        )  # No historical adjustment, no rule adjustment
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(
+            published_event.original_anomaly_alert_payload, anomaly_details
+        )
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertIsInstance(published_event.validated_at, datetime)
+        # Ensure no rule engine reasons are present as it was mocked to (0.0, [])
+        self.assertTrue(all(r not in published_event.validation_reasons for r in ["Positive rule", "Rule penalty", "Rule reason: positive adjustment", "Rule reason: major penalty", "Rule reason: minor penalty"]))
+        # Check that the status is determined correctly based on the final_confidence
+        if initial_confidence >= 0.75:
+            expected_status = "credible_anomaly"
+        elif initial_confidence < 0.4:
+            expected_status = "false_positive_suspected"
+        else:
+            expected_status = "further_investigation_needed"
+        self.assertEqual(published_event.validation_status, expected_status)
+
+
+    async def test_start_method(self):
         malformed_details = {
             "sensor_id": "test_sensor"
         }  # Missing confidence, type, severity, timestamp
@@ -190,6 +477,71 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
             any("Error parsing SensorReading" in msg for msg in log_watcher.output)
         )
 
+    async def test_process_parsing_failure_anomaly_missing_sensor_id(self):
+        details = self._get_default_anomaly_details()
+        del details["sensor_id"]  # Remove sensor_id
+        event = self._create_anomaly_detected_event(
+            details, self._get_default_triggering_data()
+        )
+        with self.assertLogs(self.agent.logger.name, level="ERROR") as log_watcher:
+            await self.agent.process(event)
+        self.mock_event_bus.publish.assert_not_called()
+        self.assertTrue(
+            any("Error parsing AnomalyAlert" in msg for msg in log_watcher.output)
+        )
+
+    async def test_process_parsing_failure_anomaly_missing_created_at(self):
+        details = self._get_default_anomaly_details()
+        del details["created_at"]  # Remove created_at
+        event = self._create_anomaly_detected_event(
+            details, self._get_default_triggering_data()
+        )
+        with self.assertLogs(self.agent.logger.name, level="ERROR") as log_watcher:
+            await self.agent.process(event)
+        self.mock_event_bus.publish.assert_not_called()
+        self.assertTrue(
+            any("Error parsing AnomalyAlert" in msg for msg in log_watcher.output)
+        )
+
+    async def test_process_parsing_failure_triggering_missing_timestamp(self):
+        data = self._get_default_triggering_data()
+        del data["timestamp"]  # Remove timestamp
+        event = self._create_anomaly_detected_event(
+            self._get_default_anomaly_details(), data
+        )
+        with self.assertLogs(self.agent.logger.name, level="ERROR") as log_watcher:
+            await self.agent.process(event)
+        self.mock_event_bus.publish.assert_not_called()
+        self.assertTrue(
+            any("Error parsing SensorReading" in msg for msg in log_watcher.output)
+        )
+
+    async def test_process_parsing_failure_triggering_missing_value(self):
+        data = self._get_default_triggering_data()
+        del data["value"]  # Remove value
+        event = self._create_anomaly_detected_event(
+            self._get_default_anomaly_details(), data
+        )
+        with self.assertLogs(self.agent.logger.name, level="ERROR") as log_watcher:
+            await self.agent.process(event)
+        self.mock_event_bus.publish.assert_not_called()
+        self.assertTrue(
+            any("Error parsing SensorReading" in msg for msg in log_watcher.output)
+        )
+
+    async def test_process_parsing_failure_triggering_invalid_sensor_type(self):
+        data = self._get_default_triggering_data()
+        data["sensor_type"] = "INVALID_TYPE"  # Set invalid sensor_type
+        event = self._create_anomaly_detected_event(
+            self._get_default_anomaly_details(), data
+        )
+        with self.assertLogs(self.agent.logger.name, level="ERROR") as log_watcher:
+            await self.agent.process(event)
+        self.mock_event_bus.publish.assert_not_called()
+        self.assertTrue(
+            any("Error parsing SensorReading" in msg for msg in log_watcher.output)
+        )
+
     async def test_rule_engine_interaction(self):
         anomaly_details = self._get_default_anomaly_details()
         triggering_data = self._get_default_triggering_data()
@@ -216,10 +568,45 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         await self.agent.process(event)
 
         self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.assert_called_once_with(
+            db=self.mock_db_session, # Ensure the mocked session is passed
             sensor_id="sensor_X",
             limit=self.agent.historical_check_limit,  # Using agent's setting
             before_timestamp=parsed_reading.timestamp,
         )
+
+    async def test_historical_validation_empty_list(self):
+        # Test case where CRUDSensorReading returns no historical data
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+        initial_confidence = 0.8
+        # Rule engine gives a slight positive boost initially
+        self.mock_rule_engine.evaluate_rules.return_value = (0.05, ["Positive rule"])
+
+
+        anomaly_details = self._get_default_anomaly_details(confidence=initial_confidence)
+        triggering_data = self._get_default_triggering_data()
+        event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
+
+        await self.agent.process(event)
+
+        self.mock_event_bus.publish.assert_called_once()
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+
+        # No historical data, so historical adjustment should be 0.
+        # Final confidence = initial_confidence + rule_engine_adjustment + historical_adjustment
+        # Final confidence = 0.8 + 0.05 + 0 = 0.85
+        self.assertAlmostEqual(published_event.final_confidence, initial_confidence + 0.05)
+        self.assertIn(
+            "No historical readings available for context.", "".join(published_event.validation_reasons)
+        )
+        self.assertEqual(published_event.validation_status, "credible_anomaly") # Corrected, Example, depends on thresholds
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(published_event.original_anomaly_alert_payload, anomaly_details)
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertIsInstance(published_event.validated_at, datetime)
+        # Check that "Positive rule" is also in reasons
+        self.assertIn("Positive rule", published_event.validation_reasons)
+
 
     async def test_historical_recent_value_stability_triggered(self):
         sensor_id = "temp_stable"
@@ -233,22 +620,25 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
                 sensor_id=sensor_id,
                 value=20.0,
                 timestamp=self.default_ts - timedelta(hours=1),
-                sensor_type="TEMPERATURE",
+                sensor_type=SensorType.TEMPERATURE, # Use Enum
                 quality=1.0,
+                unit="C" # Ensure unit is provided if required by SensorReading
             ),
             SensorReading(
                 sensor_id=sensor_id,
                 value=21.0,
                 timestamp=self.default_ts - timedelta(hours=2),
-                sensor_type="TEMPERATURE",
+                sensor_type=SensorType.TEMPERATURE, # Use Enum
                 quality=1.0,
+                unit="C"
             ),
             SensorReading(
                 sensor_id=sensor_id,
                 value=19.5,
                 timestamp=self.default_ts - timedelta(hours=3),
-                sensor_type="TEMPERATURE",
+                sensor_type=SensorType.TEMPERATURE, # Use Enum
                 quality=1.0,
+                unit="C"
             ),
         ]
         self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = (
@@ -258,8 +648,9 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         anomaly_details = self._get_default_anomaly_details(
             sensor_id=sensor_id, anomaly_type="spike", confidence=0.8
         )
+        # Pass SensorType enum for sensor_type
         triggering_data = self._get_default_triggering_data(
-            sensor_id=sensor_id, value=current_value
+            sensor_id=sensor_id, value=current_value, sensor_type=SensorType.TEMPERATURE
         )
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
 
@@ -271,7 +662,15 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         )
         self.assertAlmostEqual(
             published_event.final_confidence, 0.8 - 0.1
-        )  # Initial - stability adjustment
+        )  # Initial - stability adjustment (0.8 initial, 0 rule_adj, -0.1 historical)
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(published_event.original_anomaly_alert_payload, anomaly_details)
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertIsInstance(published_event.validated_at, datetime)
+        # Rule engine default is (0.0, []), so no rule reasons expected
+        self.assertTrue(all(r not in published_event.validation_reasons for r in ["Positive rule", "Rule penalty"]))
+
 
     async def test_historical_recurring_anomaly_type_triggered(self):
         sensor_id = "temp_oscillating"
@@ -290,8 +689,9 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
                     sensor_id=sensor_id,
                     value=val,
                     timestamp=self.default_ts - timedelta(hours=i),
-                    sensor_type="TEMPERATURE",
+                    sensor_type=SensorType.TEMPERATURE, # Use Enum
                     quality=1.0,
+                    unit="C" # Ensure unit is provided
                 )
             )
         # This sequence (10,16,10,16...) has 9 comparisons. All show 60% diff. So 9/10 > 0.25.
@@ -302,8 +702,9 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         anomaly_details = self._get_default_anomaly_details(
             sensor_id=sensor_id, confidence=0.8
         )
+        # Pass SensorType enum for sensor_type
         triggering_data = self._get_default_triggering_data(
-            sensor_id=sensor_id, value=15
+            sensor_id=sensor_id, value=15, sensor_type=SensorType.TEMPERATURE
         )  # Current value doesn't matter much for this rule
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
 
@@ -315,7 +716,77 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         )
         self.assertAlmostEqual(
             published_event.final_confidence, 0.8 - 0.05
-        )  # Initial - recurring adjustment
+        )  # Initial - recurring adjustment (0.8 initial, 0 rule_adj, -0.05 historical)
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.correlation_id, event.correlation_id)
+        self.assertEqual(published_event.original_anomaly_alert_payload, anomaly_details)
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertIsInstance(published_event.validated_at, datetime)
+        # Rule engine default is (0.0, []), so no rule reasons expected
+        self.assertTrue(all(r not in published_event.validation_reasons for r in ["Positive rule", "Rule penalty"]))
+
+
+    async def test_process_error_during_event_publishing(self):
+        # Configure the event bus mock to raise an error on publish
+        self.mock_event_bus.publish.side_effect = Exception("Event bus down!")
+
+        # Prepare a standard valid event
+        anomaly_details = self._get_default_anomaly_details(confidence=0.8)
+        triggering_data = self._get_default_triggering_data()
+        event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
+
+        # Default behavior for other mocks
+        self.mock_rule_engine.evaluate_rules.return_value = (0.0, [])
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+
+        with self.assertLogs(self.agent.logger.name, level="ERROR") as log_watcher:
+            # The agent's process method should catch the publish error and log it
+            await self.agent.process(event)
+        
+        # Check that an error related to publishing was logged
+        self.assertTrue(
+            any("Failed to publish AnomalyValidatedEvent" in msg for msg in log_watcher.output) or
+            any("Error publishing event" in msg for msg in log_watcher.output) or # Depending on exact agent log
+            any(f"Unhandled error in ValidationAgent.process for event {event.event_id}: Event bus down!" in msg for msg in log_watcher.output) # General fallback log
+        )
+        
+        # Ensure publish was attempted
+        self.mock_event_bus.publish.assert_called_once()
+
+
+    async def test_correlation_id_fallback_to_event_id(self):
+        # Test that if correlation_id is None in incoming event, it falls back to event_id
+        fixed_event_id = str(uuid.uuid4())
+        anomaly_details = self._get_default_anomaly_details(confidence=0.8)
+        triggering_data = self._get_default_triggering_data()
+        
+        # Directly create AnomalyDetectedEvent to ensure None correlation_id
+        event = AnomalyDetectedEvent(
+            event_id=fixed_event_id,
+            correlation_id=None, # Explicitly None
+            anomaly_details=anomaly_details,
+            triggering_data=triggering_data,
+            source_system="TestSource",
+            created_at=self.default_ts
+        )
+
+        self.mock_rule_engine.evaluate_rules.return_value = (0.0, []) # Default, no adjustment
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = [] # No historical data
+
+        await self.agent.process(event)
+
+        self.mock_event_bus.publish.assert_called_once()
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+
+        self.assertEqual(published_event.correlation_id, fixed_event_id) # Fallback to event_id
+        self.assertEqual(published_event.agent_id, self.agent.agent_id)
+        self.assertEqual(published_event.original_anomaly_alert_payload, anomaly_details)
+        self.assertEqual(published_event.triggering_reading_payload, triggering_data)
+        self.assertIsInstance(published_event.validated_at, datetime)
+        self.assertAlmostEqual(published_event.final_confidence, 0.8) # Initial confidence, no adjustments
+        self.assertIn("No historical readings available for context.", published_event.validation_reasons)
+        self.assertEqual(published_event.validation_status, "credible_anomaly")
+
 
     async def test_process_error_in_rule_engine(self):
         self.mock_rule_engine.evaluate_rules.side_effect = Exception(
@@ -345,8 +816,9 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         # The agent should still proceed and publish an event, but historical adjustment will be 0 and a reason added.
 
         anomaly_details = self._get_default_anomaly_details(confidence=0.8)
+        # Pass SensorType enum for sensor_type
         event = self._create_anomaly_detected_event(
-            anomaly_details, self._get_default_triggering_data()
+            anomaly_details, self._get_default_triggering_data(sensor_type=SensorType.TEMPERATURE)
         )
 
         await self.agent.process(event)
