@@ -130,7 +130,8 @@ async def test_historical_validation():
     # Recurring: 2 out of 4 historical diffs are > 0.5 (50%), which is > threshold_pct (25%)
     expected_total_adjustment_test2 = agent.settings.get('volatile_baseline_adjustment', 0.05) + agent.settings.get('recurring_anomaly_penalty', -0.05)
     assert abs(adjustment2 - expected_total_adjustment_test2) < 0.001, f"Expected total adjustment {expected_total_adjustment_test2}, got {adjustment2}. Reasons: {reasons2}"
-    assert any("volatile readings" in reason.lower() for reason in reasons2), "Expected volatile baseline reason"
+    expected_reason = "volatile readings"
+    assert any(reason.strip().lower() == expected_reason.lower() for reason in reasons2), "Expected volatile baseline reason"
     assert any("Recurring anomaly pattern" in reason for reason in reasons2), "Expected recurring pattern reason"
     print("   ✅ Recurring anomaly pattern with volatile baseline test passed")
     
