@@ -117,7 +117,7 @@ class ValidationAgent(BaseAgent):
                 self.logger.debug("Database session closed after fetching historical data.")
 
 
-    async def _perform_historical_validation(
+    def _perform_historical_validation(
         self, alert: AnomalyAlert, reading: SensorReading, historical_readings: List[SensorReading], error_message: Optional[str] = None
     ) -> Tuple[float, List[str]]:
         '''Performs validation based on historical context.'''
@@ -261,7 +261,7 @@ class ValidationAgent(BaseAgent):
                 limit=historical_check_limit
             )
             
-            hist_adj, hist_reasons = await self._perform_historical_validation(
+            hist_adj, hist_reasons = self._perform_historical_validation(
                 alert=parsed_alert, reading=parsed_reading, historical_readings=historical_readings, error_message=fetch_error
             )
             self.logger.debug(f"Historical validation (Corr ID: {log_correlation_id}): Adjustment={hist_adj}, Reasons='{'; '.join(hist_reasons)}'")
