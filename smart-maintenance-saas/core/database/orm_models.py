@@ -23,7 +23,7 @@ class SensorReadingORM(Base):
     __tablename__ = "sensor_readings"
 
     # For TimescaleDB hypertables, include the partitioning column (timestamp) in the primary key
-    id = Column(Integer, autoincrement=True, nullable=False, index=True)
+    id = Column(Integer, autoincrement=True, primary_key=True, nullable=False, index=True)
     # Alternatively, for UUID PK:
     # id = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False, index=True)
 
@@ -40,13 +40,6 @@ class SensorReadingORM(Base):
     sensor_metadata = Column(
         JSONB, nullable=True
     )  # Renamed from 'metadata' to avoid conflicts
-
-    # Composite primary key with id and timestamp (required for TimescaleDB hypertables)
-    __table_args__ = (
-        # The id is included to ensure each row has a unique identifier
-        # timestamp is included because it's the partitioning column for the hypertable
-        PrimaryKeyConstraint("id", "timestamp"),
-    )
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
