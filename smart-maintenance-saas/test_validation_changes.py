@@ -123,7 +123,10 @@ async def test_historical_validation():
     
     # Should trigger volatile baseline adjustment (+0.05) and recurring anomaly penalty (-0.05)
     # Net effect: 0.0
-    # Volatile: std_dev of [16,10,16] is ~2.83, avg is 14. 2.83 is not < 0.1*14 (1.4) and not < 0.05. So, volatile.
+    # Volatile: std_dev of [16,10,16] is dynamically computed (~2.83), avg is dynamically computed (~14). 
+    # Thresholds are derived from settings: stability factor = {agent.settings.get('recent_stability_factor', 0.1)}, 
+    # min std_dev = {agent.settings.get('recent_stability_min_std_dev', 0.05)}. 
+    # Volatile if std_dev is not < stability factor * avg and not < min std_dev. So, volatile.
     # Recurring: 2 out of 4 historical diffs are > 0.5 (50%), which is > threshold_pct (25%)
     expected_total_adjustment_test2 = agent.settings.get('volatile_baseline_adjustment', 0.05) + agent.settings.get('recurring_anomaly_penalty', -0.05)
     assert abs(adjustment2 - expected_total_adjustment_test2) < 0.001, f"Expected total adjustment {expected_total_adjustment_test2}, got {adjustment2}. Reasons: {reasons2}"
