@@ -366,14 +366,9 @@ async def test_statistical_anomaly_detector_nan_reading_value():
     historical_mean = 100.0
     historical_std = 5.0
 
-    is_anomaly, confidence_score, anomaly_type = detector.detect(
-        reading_value, historical_mean, historical_std
-    )
-
-    # Should treat NaN as anomaly with high confidence
-    assert is_anomaly
-    assert confidence_score == 1.0
-    assert anomaly_type == "invalid_data"
+    # Should raise ValueError for invalid input
+    with pytest.raises(ValueError, match="All input values must be finite"):
+        detector.detect(reading_value, historical_mean, historical_std)
 
 
 @pytest.mark.asyncio
@@ -383,21 +378,13 @@ async def test_statistical_anomaly_detector_inf_reading_value():
     historical_mean = 100.0
     historical_std = 5.0
 
-    # Test positive infinity
-    is_anomaly, confidence_score, anomaly_type = detector.detect(
-        float('inf'), historical_mean, historical_std
-    )
-    assert is_anomaly
-    assert confidence_score == 1.0
-    assert anomaly_type == "invalid_data"
+    # Test positive infinity - should raise ValueError
+    with pytest.raises(ValueError, match="All input values must be finite"):
+        detector.detect(float('inf'), historical_mean, historical_std)
 
-    # Test negative infinity
-    is_anomaly, confidence_score, anomaly_type = detector.detect(
-        float('-inf'), historical_mean, historical_std
-    )
-    assert is_anomaly
-    assert confidence_score == 1.0
-    assert anomaly_type == "invalid_data"
+    # Test negative infinity - should raise ValueError
+    with pytest.raises(ValueError, match="All input values must be finite"):
+        detector.detect(float('-inf'), historical_mean, historical_std)
 
 
 @pytest.mark.asyncio
@@ -406,21 +393,13 @@ async def test_statistical_anomaly_detector_nan_historical_values():
     detector = StatisticalAnomalyDetector()
     reading_value = 100.0
 
-    # Test NaN mean
-    is_anomaly, confidence_score, anomaly_type = detector.detect(
-        reading_value, float('nan'), 5.0
-    )
-    assert is_anomaly
-    assert confidence_score == 1.0
-    assert anomaly_type == "invalid_data"
+    # Test NaN mean - should raise ValueError
+    with pytest.raises(ValueError, match="All input values must be finite"):
+        detector.detect(reading_value, float('nan'), 5.0)
 
-    # Test NaN std
-    is_anomaly, confidence_score, anomaly_type = detector.detect(
-        reading_value, 100.0, float('nan')
-    )
-    assert is_anomaly
-    assert confidence_score == 1.0
-    assert anomaly_type == "invalid_data"
+    # Test NaN std - should raise ValueError
+    with pytest.raises(ValueError, match="All input values must be finite"):
+        detector.detect(reading_value, 100.0, float('nan'))
 
 
 @pytest.mark.asyncio
@@ -429,21 +408,13 @@ async def test_statistical_anomaly_detector_inf_historical_values():
     detector = StatisticalAnomalyDetector()
     reading_value = 100.0
 
-    # Test infinite mean
-    is_anomaly, confidence_score, anomaly_type = detector.detect(
-        reading_value, float('inf'), 5.0
-    )
-    assert is_anomaly
-    assert confidence_score == 1.0
-    assert anomaly_type == "invalid_data"
+    # Test infinite mean - should raise ValueError
+    with pytest.raises(ValueError, match="All input values must be finite"):
+        detector.detect(reading_value, float('inf'), 5.0)
 
-    # Test infinite std
-    is_anomaly, confidence_score, anomaly_type = detector.detect(
-        reading_value, 100.0, float('inf')
-    )
-    assert is_anomaly
-    assert confidence_score == 1.0
-    assert anomaly_type == "invalid_data"
+    # Test infinite std - should raise ValueError
+    with pytest.raises(ValueError, match="All input values must be finite"):
+        detector.detect(reading_value, 100.0, float('inf'))
 
 
 @pytest.mark.asyncio
@@ -454,14 +425,9 @@ async def test_statistical_anomaly_detector_negative_std_dev():
     historical_mean = 100.0
     historical_std = -5.0  # Invalid negative std
 
-    is_anomaly, confidence_score, anomaly_type = detector.detect(
-        reading_value, historical_mean, historical_std
-    )
-
-    # Should treat negative std as invalid data
-    assert is_anomaly
-    assert confidence_score == 1.0
-    assert anomaly_type == "invalid_data"
+    # Should raise ValueError for negative std
+    with pytest.raises(ValueError, match="historical_std must be non-negative"):
+        detector.detect(reading_value, historical_mean, historical_std)
 
 
 @pytest.mark.asyncio
