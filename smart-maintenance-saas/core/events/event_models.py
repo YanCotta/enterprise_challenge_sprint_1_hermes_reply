@@ -184,7 +184,7 @@ class AnomalyValidatedEvent(BaseEventModel):
         ..., description="Validation status: CONFIRMED, FALSE_POSITIVE, or UNCERTAIN."
     )
     final_confidence: float = Field(
-        ..., description="Final confidence score after validation (0.0 to 1.0)."
+        ..., ge=0.0, le=1.0, description="Final confidence score after validation (0.0 to 1.0)."
     )
     validation_reasons: List[str] = Field(
         default_factory=list, description="List of reasons for the validation decision."
