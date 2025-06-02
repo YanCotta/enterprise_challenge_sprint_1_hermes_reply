@@ -133,7 +133,7 @@ class AnomalyAlert(BaseModel):
     status: str = "open"  # e.g., "open", "acknowledged", "resolved"
 
     class Config:
-        orm_mode = True  # or from_attributes = True for Pydantic v2
+        from_attributes = True  # For Pydantic v2 ORM mode
         use_enum_values = True
 
 
@@ -177,7 +177,7 @@ class MaintenanceTask(BaseModel):
     updated_at: Optional[datetime] = None  # To be updated by the application logic
 
     class Config:
-        orm_mode = True  # or from_attributes = True for Pydantic v2
+        from_attributes = True  # For Pydantic v2 ORM mode
         use_enum_values = True
 
 
@@ -203,7 +203,7 @@ class AssetInformation(BaseModel):
     )  # Changed 'any' to 'Any'
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Example of a more complex schema that might be used for API responses or data aggregation
