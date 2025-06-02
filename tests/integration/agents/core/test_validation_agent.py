@@ -274,7 +274,7 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
         # Create a new agent instance that is NOT started
         new_agent = ValidationAgent(
             agent_id="not_started_validator",
-            event_bus=self.event_bus,  # Use the same bus
+            event_bus=AsyncMock(),  # Use a dedicated mock bus for new_agent
             crud_sensor_reading=self.mock_crud_sensor_reading,
             rule_engine=self.rule_engine,
         )
