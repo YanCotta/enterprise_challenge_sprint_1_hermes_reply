@@ -30,6 +30,7 @@ asyncpg = "^0.30.0"
 aiosqlite = "^0.21.0"
 numpy = "^2.2.6"
 scikit-learn = "^1.4.0" # Using a recent version, compatible with numpy 2.x
+prophet = "^1.1.5" # For time series forecasting and maintenance predictions
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
