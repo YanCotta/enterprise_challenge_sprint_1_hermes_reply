@@ -198,6 +198,70 @@ class AnomalyValidatedEvent(BaseEventModel):
     )
 
 
+class MaintenancePredictedEvent(BaseEventModel):
+    """
+    Event indicating that a maintenance prediction has been generated for equipment/component.
+    
+    This event is published by the PredictionAgent after analyzing historical data
+    and generating time-to-failure predictions using Prophet or other ML models.
+
+    Attributes:
+        original_anomaly_event_id: Reference to the AnomalyValidatedEvent that triggered this prediction.
+        equipment_id: Identifier of the equipment/component for which prediction is made.
+        predicted_failure_date: Predicted date/time when maintenance will be needed.
+        confidence_interval_lower: Lower bound of the prediction confidence interval.
+        confidence_interval_upper: Upper bound of the prediction confidence interval.
+        prediction_confidence: Overall confidence in the prediction (0.0 to 1.0).
+        time_to_failure_days: Number of days until predicted failure/maintenance need.
+        maintenance_type: Type of maintenance predicted (e.g., "preventive", "corrective", "inspection").
+        prediction_method: Method used for prediction (e.g., "prophet", "linear_regression", "arima").
+        historical_data_points: Number of historical data points used in the prediction.
+        model_metrics: Dictionary containing model performance metrics (e.g., MAE, RMSE).
+        recommended_actions: List of recommended maintenance actions.
+        agent_id: ID of the prediction agent that generated this event.
+    """
+
+    original_anomaly_event_id: UUID = Field(
+        ..., description="Reference to the AnomalyValidatedEvent that triggered this prediction."
+    )
+    equipment_id: str = Field(
+        ..., description="Identifier of the equipment/component for which prediction is made."
+    )
+    predicted_failure_date: datetime = Field(
+        ..., description="Predicted date/time when maintenance will be needed."
+    )
+    confidence_interval_lower: datetime = Field(
+        ..., description="Lower bound of the prediction confidence interval."
+    )
+    confidence_interval_upper: datetime = Field(
+        ..., description="Upper bound of the prediction confidence interval."
+    )
+    prediction_confidence: float = Field(
+        ..., ge=0.0, le=1.0, description="Overall confidence in the prediction (0.0 to 1.0)."
+    )
+    time_to_failure_days: float = Field(
+        ..., ge=0.0, description="Number of days until predicted failure/maintenance need."
+    )
+    maintenance_type: str = Field(
+        default="preventive", description="Type of maintenance predicted (e.g., 'preventive', 'corrective', 'inspection')."
+    )
+    prediction_method: str = Field(
+        default="prophet", description="Method used for prediction (e.g., 'prophet', 'linear_regression', 'arima')."
+    )
+    historical_data_points: int = Field(
+        ..., ge=0, description="Number of historical data points used in the prediction."
+    )
+    model_metrics: Dict[str, float] = Field(
+        default_factory=dict, description="Dictionary containing model performance metrics (e.g., MAE, RMSE)."
+    )
+    recommended_actions: List[str] = Field(
+        default_factory=list, description="List of recommended maintenance actions."
+    )
+    agent_id: str = Field(
+        ..., description="ID of the prediction agent that generated this event."
+    )
+
+
 # Example of how to use these models (for testing purposes, can be removed or commented out):
 # if __name__ == "__main__":
 #     sensor_event = SensorDataReceivedEvent(
