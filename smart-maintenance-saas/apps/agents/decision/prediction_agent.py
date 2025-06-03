@@ -234,6 +234,14 @@ class PredictionAgent(BaseAgent):
                 if equipment_id:
                     return equipment_id
             
+            # Second, try to get equipment_id from triggering reading payload metadata
+            if isinstance(event.triggering_reading_payload, dict):
+                metadata = event.triggering_reading_payload.get('metadata', {})
+                if isinstance(metadata, dict):
+                    equipment_id = metadata.get('equipment_id')
+                    if equipment_id:
+                        return equipment_id
+            
             # If not found, use sensor_id as equipment_id (common pattern)
             sensor_id = self._extract_sensor_id(event)
             if sensor_id:
@@ -333,8 +341,13 @@ class PredictionAgent(BaseAgent):
             # Convert to pandas DataFrame
             data = []
             for reading in historical_readings:
+                # Remove timezone info for Prophet compatibility
+                timestamp = reading.timestamp
+                if timestamp.tzinfo is not None:
+                    timestamp = timestamp.replace(tzinfo=None)
+                
                 data.append({
-                    'ds': reading.timestamp,  # datestamp
+                    'ds': timestamp,  # datestamp (timezone-naive)
                     'y': reading.value       # value to predict
                 })
             
