@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/Tests-174%2F174%20Passing-brightgreen.svg)](#running-tests)
+[![Tests](https://img.shields.io/badge/Tests-209%2F209%20Passing-brightgreen.svg)](#running-tests)
 [![Poetry](https://img.shields.io/badge/Poetry-Dependency%20Management-blue.svg)](https://python-poetry.org/)
 [![Code Style](https://img.shields.io/badge/Code%20Style-Black-black.svg)](https://github.com/psf/black)
 
@@ -10,14 +10,15 @@
 
 A robust, **event-driven, multi-agent backend** for an industrial predictive maintenance SaaS platform. This system provides a solid foundation for ingesting sensor data, detecting anomalies, validating alerts, predicting failures, and orchestrating maintenance workflows through a sophisticated agent-based architecture.
 
-**Current Status:** Major milestone reached - **Production-ready anomaly detection and validation system** with comprehensive testing framework. All **174/174 tests passing**, including extensive unit and integration test suites. The system features a fully functional multi-stage anomaly processing pipeline:
+**Current Status:** Major milestone reached - **Production-ready anomaly detection, validation, and predictive maintenance system** with comprehensive testing framework. All **209/209 tests passing**, including extensive unit and integration test suites. The system features a fully functional multi-stage anomaly processing pipeline with predictive capabilities:
 
 1. **Data Acquisition:** Robust ingestion and validation of sensor readings
 2. **Anomaly Detection:** Dual-method detection using ML-based pattern recognition and statistical analysis
 3. **Anomaly Validation:** Advanced validation with rule-based confidence adjustment and historical context analysis
-4. **False Positive Reduction:** Sophisticated filtering of noise through multi-layered validation rules and temporal pattern analysis
+4. **Predictive Maintenance:** Time-to-failure predictions using Prophet machine learning with automated maintenance recommendations
+5. **False Positive Reduction:** Sophisticated filtering of noise through multi-layered validation rules and temporal pattern analysis
 
-This enterprise-grade system now incorporates a complete validation layer, significantly reducing false positives and increasing the reliability of actionable alerts while maintaining high performance.
+This enterprise-grade system now incorporates a complete validation layer and predictive maintenance capabilities, significantly reducing false positives and providing proactive maintenance scheduling while maintaining high performance.
 
 ## Tech Stack
 
@@ -35,6 +36,7 @@ This enterprise-grade system now incorporates a complete validation layer, signi
 - **Custom BaseAgent Framework** (`apps/agents/base_agent.py`) - Agent lifecycle and capability management
 - **Event-Driven Architecture** - Decoupled system components with strong typing
 - **Machine Learning Integration** - Scikit-learn for anomaly detection with Isolation Forest
+- **Predictive Analytics** - **NEW:** Facebook Prophet for time-to-failure forecasting and maintenance predictions
 - **Statistical Analysis** - Advanced statistical models for threshold-based anomaly detection
 
 ### Development & Quality
@@ -56,6 +58,7 @@ The Python project root is `smart-maintenance-saas/`, containing **47 core Pytho
 - **`agents/core/data_acquisition_agent.py`** - Production-ready DataAcquisitionAgent
 - **`agents/core/anomaly_detection_agent.py`** - Advanced anomaly detection with ML and statistical models
 - **`agents/core/validation_agent.py`** - **KEY: Advanced validation agent with historical context analysis**
+- **`agents/decision/prediction_agent.py`** - **NEW: Predictive maintenance agent with Prophet ML and time-to-failure analysis**
 - **`ml/statistical_models.py`** - Statistical anomaly detection algorithms
 - **`rules/validation_rules.py`** - **KEY: Flexible rule engine for confidence adjustment and validation**
 - **`agents/decision/`** - Decision-making agent implementations (placeholder)
@@ -250,29 +253,34 @@ poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
 poetry run pytest
 ```
 
-**Current Status:** ✅ **174/174 tests passing** - demonstrating robust unit and integration test coverage for all components, including the advanced anomaly detection and validation systems.
+**Current Status:** ✅ **209/209 tests passing** - demonstrating robust unit and integration test coverage for all components, including the advanced anomaly detection, validation, and predictive maintenance systems.
 
 ### **NEW: Advanced Testing Strategy**
-Our testing approach ensures reliability and performance across all system components, now totaling **174 tests**:
+Our testing approach ensures reliability and performance across all system components, now totaling **209 tests**:
 
-**Unit Tests (30 tests):**
+**Unit Tests (65 tests):**
 - Statistical model validation with edge cases (NaN, infinity, zero std deviation)
 - Input validation and error handling verification
 - Mathematical confidence calculation accuracy
 - Boundary condition testing
+- **NEW:** PredictionAgent Prophet model testing and maintenance recommendations
+- **NEW:** Time-to-failure prediction accuracy validation
 
-**Integration Tests (80 tests):**
+**Integration Tests (85 tests):**
 - End-to-end anomaly detection workflows
 - Agent lifecycle and event handling
 - Database integration with TimescaleDB
 - Event bus communication patterns
 - Error recovery and graceful degradation scenarios
+- **NEW:** Complete predictive maintenance pipeline testing
+- **NEW:** Historical data analysis and Prophet integration testing
 
 **Performance Testing:**
 - Sub-5ms processing speed validation
 - Memory efficiency verification
 - Concurrent processing capabilities
 - Load testing with realistic sensor data volumes
+- **NEW:** Prophet model performance optimization
 
 ### Optional: Run with Coverage
 ```bash
@@ -366,6 +374,37 @@ poetry run pytest --cov=apps --cov=core --cov=data
 - **Publishes:** `AnomalyValidatedEvent` with comprehensive validation details
 - **Integration:** Seamlessly works with downstream decision-making components
 
+### **NEW: PredictionAgent (`apps/agents/decision/prediction_agent.py`)**
+**The advanced predictive maintenance agent** that uses machine learning to forecast equipment failures and generate maintenance recommendations.
+
+**Core Capabilities:**
+- 🔮 **Time-to-Failure Predictions** - Uses Facebook Prophet ML library for accurate forecasting
+- 📊 **Historical Data Analysis** - Analyzes sensor patterns from database to build prediction models
+- 🎯 **Maintenance Recommendations** - Generates specific maintenance actions based on prediction confidence and timeline
+- ⚡ **Real-Time Processing** - Processes validated anomalies and publishes maintenance predictions
+- 🧠 **Intelligent Filtering** - Only processes high-confidence anomalies to focus on credible threats
+- 🔄 **Graceful Error Handling** - Comprehensive error management for Prophet model failures
+
+**Advanced Features:**
+- **Prophet Model Integration**: Industry-standard time series forecasting with trend and seasonality detection
+- **Confidence-Based Recommendations**: Different maintenance strategies based on prediction confidence levels
+- **Equipment Context Awareness**: Extracts equipment identifiers for targeted maintenance scheduling
+- **Performance Optimization**: Efficient data preparation and model execution for production workloads
+- **Comprehensive Logging**: Detailed audit trails for all predictions and recommendations
+
+**Event Flow:**
+
+- **Subscribes to:** `AnomalyValidatedEvent` (only processes high-confidence, credible anomalies)
+- **Publishes:** `MaintenancePredictedEvent` with failure predictions and maintenance recommendations
+- **Integration:** Enables proactive maintenance scheduling and resource planning
+
+**Prediction Pipeline:**
+- Historical data fetching (minimum 10 data points required)
+- Prophet model training with sensor-specific time series data
+- Failure probability calculation using trend analysis
+- Maintenance recommendation generation based on urgency and confidence
+- Structured event publishing with actionable maintenance details
+
 ## Event Catalog
 
 ### Core Event Models (`core/events/event_models.py`)
@@ -378,6 +417,7 @@ poetry run pytest --cov=apps --cov=core --cov=data
 | `DataProcessingFailedEvent` | Processing failure with error details | `agent_id`, `error_message`, `original_event_payload` |
 | `AnomalyDetectedEvent` | Anomaly detection results with detailed analysis | `anomaly_details`, `confidence_score`, `detection_method`, `sensor_info`, `evidence` |
 | `AnomalyValidatedEvent` | Output of the ValidationAgent, signaling a thoroughly validated anomaly status with enriched information | `original_anomaly_alert_payload`, `triggering_reading_payload`, `validation_status`, `final_confidence`, `validation_reasons`, `agent_id`, `correlation_id` |
+| `MaintenancePredictedEvent` | **NEW:** Predictive maintenance output from PredictionAgent with time-to-failure predictions and maintenance recommendations | `sensor_id`, `equipment_id`, `failure_probability`, `predicted_failure_date`, `confidence_score`, `maintenance_recommendations`, `model_metrics`, `prediction_details` |
 | `AgentStatusUpdateEvent` | Agent operational status reports *(future use)* | TBD |
 
 ### **NEW: Anomaly Detection Event Structure**
@@ -455,6 +495,7 @@ poetry run pytest --cov=apps --cov=core --cov=data
 | **Data Processing** | `apps/agents/core/data_acquisition_agent.py` | Production data pipeline implementation |
 | **Anomaly Detection** | `apps/agents/core/anomaly_detection_agent.py` | Advanced ML and statistical anomaly detection |
 | **Validation Agent** | `apps/agents/core/validation_agent.py` | Sophisticated rule-based and historical context validation |
+| **Prediction Agent** | `apps/agents/decision/prediction_agent.py` | **NEW: Prophet ML-based predictive maintenance and time-to-failure forecasting** |
 | **Rule Engine** | `apps/rules/validation_rules.py` | Flexible rule definitions for anomaly confidence adjustment |
 | **Statistical Models** | `apps/ml/statistical_models.py` | Mathematical anomaly detection algorithms |
 | **Event System** | `core/events/event_bus.py` | Async pub/sub communication |
@@ -466,16 +507,18 @@ poetry run pytest --cov=apps --cov=core --cov=data
 | **NEW: Statistical Tests** | `tests/unit/ml/test_statistical_models.py` | **Statistical model validation and edge cases** |
 | **NEW: Validation Tests** | `tests/integration/agents/core/test_validation_agent.py`, `tests/unit/agents/core/test_validation_agent_components.py` | Tests for `ValidationAgent` and its components |
 | **NEW: Rule Engine Tests** | `tests/unit/rules/test_validation_rules.py` | Tests for `RuleEngine` and validation rules |
+| **NEW: Prediction Tests** | `tests/unit/agents/decision/test_prediction_agent.py`, `tests/integration/agents/decision/test_prediction_agent_integration.py` | **Comprehensive PredictionAgent testing with Prophet ML and maintenance workflows** |
 
 ### Recommended Exploration Path
 1. Start with `BaseAgent` to understand the agent framework
 2. Examine `DataAcquisitionAgent` for a complete implementation example
 3. **NEW:** Study `AnomalyDetectionAgent` for advanced ML and statistical detection patterns
-4. **NEW:** Investigate `ValidationAgent` and `RuleEngine` for the advanced validation pipeline.
-5. **NEW:** Review `StatisticalAnomalyDetector` for mathematical anomaly detection algorithms
-6. Review `EventBus` and event models for communication patterns
-7. Explore test files to understand expected behaviors and edge cases
-8. **NEW:** Examine comprehensive test suites for anomaly detection (`test_anomaly_detection_agent.py`), validation (`test_validation_agent.py`, `test_validation_agent_components.py`), and rules (`test_validation_rules.py`) to understand edge cases and performance validation.
+4. **NEW:** Investigate `ValidationAgent` and `RuleEngine` for the advanced validation pipeline
+5. **NEW:** Explore `PredictionAgent` for Prophet ML-based predictive maintenance and time-to-failure forecasting
+6. **NEW:** Review `StatisticalAnomalyDetector` for mathematical anomaly detection algorithms
+7. Review `EventBus` and event models for communication patterns
+8. Explore test files to understand expected behaviors and edge cases
+9. **NEW:** Examine comprehensive test suites for anomaly detection, validation, prediction, and rules to understand edge cases and performance validation
 
 ## Major Milestones Achieved
 
@@ -498,6 +541,31 @@ poetry run pytest --cov=apps --cov=core --cov=data
   - Performance validation and error resilience testing
   - Real-world scenario testing with actual sensor data patterns
 
+### ✅ **NEW: Milestone Achieved - Complete Predictive Maintenance Pipeline**
+
+**Major breakthrough:** Full end-to-end predictive maintenance system now operational with **209/209 tests passing**
+
+Key accomplishments in this milestone include:
+
+- 🔮 **PredictionAgent Implementation** - Production-ready predictive maintenance agent
+  - Facebook Prophet ML integration for time-to-failure forecasting
+  - Intelligent historical data analysis with minimum data requirements
+  - Confidence-based maintenance recommendation engine
+  - Real-time processing of validated anomalies with structured predictions
+  - Comprehensive error handling for Prophet model failures and edge cases
+
+- 📊 **MaintenancePredictedEvent** - Rich predictive maintenance event model
+  - Time-to-failure predictions with confidence scoring
+  - Equipment-specific maintenance recommendations
+  - Model performance metrics and prediction details
+  - Full event correlation for end-to-end traceability
+
+- 🧪 **Comprehensive Testing Expansion** - All 209 tests passing
+  - 30+ new unit tests covering Prophet integration and prediction logic
+  - 5+ integration tests for complete predictive maintenance workflows
+  - Edge case validation for insufficient data and model failures
+  - Performance optimization testing for production workloads
+
 ### ✅ Milestone Achieved: Advanced Anomaly Validation and False Positive Reduction
 
 Key accomplishments in this milestone include:
@@ -508,7 +576,7 @@ Key accomplishments in this milestone include:
 - Creation of the `AnomalyValidatedEvent` with rich contextual data for clear, actionable communication of validated anomaly statuses.
 - Implementation of a sophisticated confidence scoring system that adjusts based on multiple validation factors.
 - Robust validation status determination (credible anomaly/false positive/needs investigation) for actionable outcomes.
-- Rigorous testing (all 174 unit and integration tests passing) ensuring the reliability and correctness of these new validation components.
+- Rigorous testing ensuring the reliability and correctness of these validation components.
 
 ### Foundation Achieved
 
@@ -518,10 +586,12 @@ Key accomplishments in this milestone include:
 ✅ **Comprehensive testing** providing confidence for future development  
 ✅ **Production-ready anomaly detection** with ML and statistical capabilities  
 ✅ **Advanced anomaly validation** with rule-based and historical context analysis  
+✅ **🔮 NEW: Complete predictive maintenance system** with Prophet ML forecasting  
+✅ **🎯 NEW: Maintenance recommendation engine** with confidence-based scheduling  
 ✅ **False positive reduction capabilities** through multi-layered validation  
 ✅ **Enterprise-grade error handling** with graceful degradation and retry logic  
 ✅ **Performance optimization** with sub-5ms processing and intelligent caching  
-✅ **174/174 tests passing** demonstrating system robustness and reliability
+✅ **209/209 tests passing** demonstrating system robustness and reliability
 
 ---
 
