@@ -8,9 +8,16 @@
 
 ## Overview
 
-A robust, **event-driven, multi-agent backend** for an industrial predictive maintenance SaaS platform. This system provides a solid foundation for ingesting sensor data, detecting anomalies, predicting failures, and orchestrating maintenance workflows through a sophisticated agent-based architecture.
+A robust, **event-driven, multi-agent backend** for an industrial predictive maintenance SaaS platform. This system provides a solid foundation for ingesting sensor data, detecting anomalies, validating alerts, predicting failures, and orchestrating maintenance workflows through a sophisticated agent-based architecture.
 
-**Current Status:** Major milestone reached - **Production-ready anomaly detection system** with comprehensive testing framework. All **174/174 tests passing**, including extensive unit and integration test suites. The system now features a fully functional AnomalyDetectionAgent with ML-based pattern recognition, statistical anomaly detection, and robust error handling. The system now incorporates an advanced validation layer, significantly reducing false positives and increasing the reliability of actionable alerts.
+**Current Status:** Major milestone reached - **Production-ready anomaly detection and validation system** with comprehensive testing framework. All **174/174 tests passing**, including extensive unit and integration test suites. The system features a fully functional multi-stage anomaly processing pipeline:
+
+1. **Data Acquisition:** Robust ingestion and validation of sensor readings
+2. **Anomaly Detection:** Dual-method detection using ML-based pattern recognition and statistical analysis
+3. **Anomaly Validation:** Advanced validation with rule-based confidence adjustment and historical context analysis
+4. **False Positive Reduction:** Sophisticated filtering of noise through multi-layered validation rules and temporal pattern analysis
+
+This enterprise-grade system now incorporates a complete validation layer, significantly reducing false positives and increasing the reliability of actionable alerts while maintaining high performance.
 
 ## Tech Stack
 
@@ -39,7 +46,7 @@ A robust, **event-driven, multi-agent backend** for an industrial predictive mai
 
 ## Project Structure
 
-The Python project root is `smart-maintenance-saas/`, containing **45 core Python modules** organized for maximum modularity and maintainability:
+The Python project root is `smart-maintenance-saas/`, containing **47 core Python modules** organized for maximum modularity and maintainability:
 
 ### 📁 Core Directories
 
@@ -47,10 +54,10 @@ The Python project root is `smart-maintenance-saas/`, containing **45 core Pytho
 - **`api/main.py`** - FastAPI application with health endpoints
 - **`agents/base_agent.py`** - Abstract BaseAgent class with lifecycle management
 - **`agents/core/data_acquisition_agent.py`** - Production-ready DataAcquisitionAgent
-- **`agents/core/anomaly_detection_agent.py`** - **NEW: Advanced anomaly detection with ML and statistical models**
-- **`agents/core/validation_agent.py`** - **KEY: Core validation agent**
-- **`ml/statistical_models.py`** - **NEW: Statistical anomaly detection algorithms**
-- **`rules/validation_rules.py`** - Validation rules for data processing
+- **`agents/core/anomaly_detection_agent.py`** - Advanced anomaly detection with ML and statistical models
+- **`agents/core/validation_agent.py`** - **KEY: Advanced validation agent with historical context analysis**
+- **`ml/statistical_models.py`** - Statistical anomaly detection algorithms
+- **`rules/validation_rules.py`** - **KEY: Flexible rule engine for confidence adjustment and validation**
 - **`agents/decision/`** - Decision-making agent implementations (placeholder)
 - **`agents/interface/`** - User interface agent implementations (placeholder)
 - **`agents/learning/`** - Machine learning agent implementations (placeholder)
@@ -159,9 +166,18 @@ The Python project root is `smart-maintenance-saas/`, containing **45 core Pytho
   - **Configurable Parameters**: Customizable sigma thresholds and confidence levels
   - **Edge Case Handling**: Zero standard deviation and extreme value management
 
-### **NEW: RuleEngine (`apps/rules/validation_rules.py`)**
-- **Initial Confidence Adjustment**: Provides quick, rule-based adjustments to anomaly confidence scores.
-- **Versatile Rule Types**: Implements rules based on initial alert confidence, sensor data quality metrics, and sensor type-specific checks (e.g., for temperature sensors).
+### RuleEngine (`apps/rules/validation_rules.py`)
+
+**Flexible rule system** for validation and confidence adjustment of detected anomalies.
+
+**Core Capabilities:**
+
+- **Initial Confidence Adjustment**: Provides quick, rule-based adjustments to anomaly confidence scores
+- **Versatile Rule Types**: Implements rules based on initial alert confidence, sensor data quality metrics, and sensor type-specific checks
+- **Pluggable Architecture**: Easily extendable with new rule types and conditions
+- **Confidence Scoring**: Mathematical adjustment of confidence based on predefined rules and thresholds
+- **Sensor Type Specialization**: Custom rules for different sensor types (temperature, vibration, pressure)
+- **Sensor Quality Assessment**: Evaluates sensor reading quality to prevent false positives from degraded sensors
 
 ### 🔧 API Foundation
 - **FastAPI application** with automatic OpenAPI documentation
@@ -234,7 +250,7 @@ poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
 poetry run pytest
 ```
 
-**Current Status:** ✅ **174/174 tests passing** - demonstrating robust unit and integration test coverage for all components, including the advanced validation system.
+**Current Status:** ✅ **174/174 tests passing** - demonstrating robust unit and integration test coverage for all components, including the advanced anomaly detection and validation systems.
 
 ### **NEW: Advanced Testing Strategy**
 Our testing approach ensures reliability and performance across all system components, now totaling **174 tests**:
@@ -325,17 +341,30 @@ poetry run pytest --cov=apps --cov=core --cov=data
 - Memory efficiency: Optimal baseline caching
 - Error resilience: Zero crashes with malformed data
 
-### **NEW: ValidationAgent (`apps/agents/core/validation_agent.py`)**
-**Sophisticated anomaly validation agent** that provides in-depth analysis of detected anomalies.
+### ValidationAgent (`apps/agents/core/validation_agent.py`)
+**Sophisticated anomaly validation agent** that provides in-depth analysis of detected anomalies to reduce false positives and ensure alert reliability.
 
 **Role & Responsibilities:**
 - 🔎 **Processes `AnomalyDetectedEvent`** from the `AnomalyDetectionAgent`.
-- 룰 **Utilizes `RuleEngine`** for initial rule-based confidence adjustments based on alert properties and sensor reading quality.
+- 📏 **Utilizes `RuleEngine`** for initial rule-based confidence adjustments based on alert properties and sensor reading quality.
 - 📊 **Performs Historical Context Validation** by fetching and analyzing past data for the specific sensor. This includes configurable checks like 'Recent Value Stability' and 'Recurring Anomaly Pattern'.
 - ⚙️ **Configurable Validation Logic** - Detailed historical validation logic is adjustable via agent-specific settings.
 - 💯 **Calculates `final_confidence`** by combining rule-based adjustments and historical analysis.
 - 🤔 **Determines `validation_status`** (e.g., "credible_anomaly", "false_positive_suspected", "further_investigation_needed") based on the final confidence.
 - 📤 **Publishes `AnomalyValidatedEvent`** containing comprehensive details: original alert data, triggering sensor data, all validation reasons, final confidence, and determined status.
+
+**Advanced Capabilities:**
+- **Temporal Pattern Recognition**: Identifies recurring anomalies and patterns over time.
+- **False Positive Reduction**: Sophisticated multi-layered validation to filter out noise.
+- **Value Stability Analysis**: Examines recent reading stability to assess anomaly credibility.
+- **Confidence Scoring System**: Adjusts confidence based on multiple validation factors.
+- **Traceability**: Complete audit trail of validation reasoning for each anomaly.
+
+**Event Flow:**
+
+- **Subscribes to:** `AnomalyDetectedEvent`
+- **Publishes:** `AnomalyValidatedEvent` with comprehensive validation details
+- **Integration:** Seamlessly works with downstream decision-making components
 
 ## Event Catalog
 
@@ -347,18 +376,29 @@ poetry run pytest --cov=apps --cov=core --cov=data
 | `SensorDataReceivedEvent` | Raw sensor data arrival signal | `raw_data` payload |
 | `DataProcessedEvent` | Successful data processing notification | `processed_data` |
 | `DataProcessingFailedEvent` | Processing failure with error details | `agent_id`, `error_message`, `original_event_payload` |
-| **NEW:** `AnomalyDetectedEvent` | **Anomaly detection results with detailed analysis** | `anomaly_details`, `confidence_score`, `detection_method`, `sensor_info`, `evidence` |
-| `AnomalyValidatedEvent` | Output of the ValidationAgent, signaling a thoroughly validated anomaly status with enriched information. | `original_anomaly_alert_payload`, `triggering_reading_payload`, `validation_status`, `final_confidence`, `validation_reasons`, `agent_id`, `correlation_id` |
+| `AnomalyDetectedEvent` | Anomaly detection results with detailed analysis | `anomaly_details`, `confidence_score`, `detection_method`, `sensor_info`, `evidence` |
+| `AnomalyValidatedEvent` | Output of the ValidationAgent, signaling a thoroughly validated anomaly status with enriched information | `original_anomaly_alert_payload`, `triggering_reading_payload`, `validation_status`, `final_confidence`, `validation_reasons`, `agent_id`, `correlation_id` |
 | `AgentStatusUpdateEvent` | Agent operational status reports *(future use)* | TBD |
 
 ### **NEW: Anomaly Detection Event Structure**
 
 **AnomalyDetectedEvent** provides comprehensive anomaly information:
+
 - **Anomaly Details**: Type, confidence score, detection method used
 - **Sensor Context**: Sensor ID, type, current and historical values
 - **Evidence**: Statistical analysis results, ML model predictions
 - **Severity Mapping**: Confidence-based severity classification (LOW/MEDIUM/HIGH/CRITICAL)
 - **Correlation Support**: Full traceability through event correlation IDs
+
+**AnomalyValidatedEvent** delivers thoroughly validated anomaly status:
+
+- **Original Alert Data**: Full payload from the original AnomalyDetectedEvent
+- **Triggering Sensor Data**: Complete sensor reading that triggered the anomaly
+- **Validation Status**: Clear actionable status ("credible_anomaly", "false_positive_suspected", "further_investigation_needed")
+- **Final Confidence Score**: Refined confidence after rule-based and historical validation
+- **Validation Reasoning**: Comprehensive list of all validation checks and their results
+- **Historical Context**: Results from temporal pattern analysis and value stability checks
+- **Correlation Tracking**: Links to original detection events for full traceability
 
 **Event Architecture Benefits:**
 - 🔄 **Loose coupling** between system components
@@ -413,10 +453,10 @@ poetry run pytest --cov=apps --cov=core --cov=data
 |-----------|------|------------------|
 | **Agent Framework** | `apps/agents/base_agent.py` | Abstract agent lifecycle and event handling |
 | **Data Processing** | `apps/agents/core/data_acquisition_agent.py` | Production data pipeline implementation |
-| **NEW: Anomaly Detection** | `apps/agents/core/anomaly_detection_agent.py` | **Advanced ML and statistical anomaly detection** |
-| **NEW: Anomaly Validation** | `apps/agents/core/validation_agent.py` | Sophisticated rule-based and historical context validation |
-| **NEW: Rule Engine** | `apps/rules/validation_rules.py` | Flexible rule definitions for anomaly confidence adjustment |
-| **NEW: Statistical Models** | `apps/ml/statistical_models.py` | **Mathematical anomaly detection algorithms** |
+| **Anomaly Detection** | `apps/agents/core/anomaly_detection_agent.py` | Advanced ML and statistical anomaly detection |
+| **Validation Agent** | `apps/agents/core/validation_agent.py` | Sophisticated rule-based and historical context validation |
+| **Rule Engine** | `apps/rules/validation_rules.py` | Flexible rule definitions for anomaly confidence adjustment |
+| **Statistical Models** | `apps/ml/statistical_models.py` | Mathematical anomaly detection algorithms |
 | **Event System** | `core/events/event_bus.py` | Async pub/sub communication |
 | **Event Models** | `core/events/event_models.py` | Strongly-typed event definitions |
 | **Data Models** | `data/schemas.py` | Centralized Pydantic schemas |
@@ -459,20 +499,26 @@ poetry run pytest --cov=apps --cov=core --cov=data
   - Real-world scenario testing with actual sensor data patterns
 
 ### ✅ Milestone Achieved: Advanced Anomaly Validation and False Positive Reduction
+
 Key accomplishments in this milestone include:
-- Successful implementation and integration of the `ValidationAgent`.
-- Development of a flexible `RuleEngine` for initial confidence scoring.
+
+- Successful implementation and integration of the `ValidationAgent` with comprehensive historical validation capabilities.
+- Development of a flexible `RuleEngine` with sensor-specific rules and extensible rule architecture.
 - Introduction of a detailed and settings-driven historical context analysis module within the `ValidationAgent`, capable of identifying patterns like recent value stability and recurring anomalies.
-- Creation of the `AnomalyValidatedEvent` for clear, actionable communication of validated anomaly statuses.
+- Creation of the `AnomalyValidatedEvent` with rich contextual data for clear, actionable communication of validated anomaly statuses.
+- Implementation of a sophisticated confidence scoring system that adjusts based on multiple validation factors.
+- Robust validation status determination (credible anomaly/false positive/needs investigation) for actionable outcomes.
 - Rigorous testing (all 174 unit and integration tests passing) ensuring the reliability and correctness of these new validation components.
 
 ### Foundation Achieved
+
 ✅ **Solid architectural foundation** with proven stability  
 ✅ **Event-driven communication** ready for complex workflows  
 ✅ **Type-safe data processing** ensuring reliability  
 ✅ **Comprehensive testing** providing confidence for future development  
 ✅ **Production-ready anomaly detection** with ML and statistical capabilities  
-✅ **Advanced anomaly validation and false positive reduction capabilities.**
+✅ **Advanced anomaly validation** with rule-based and historical context analysis  
+✅ **False positive reduction capabilities** through multi-layered validation  
 ✅ **Enterprise-grade error handling** with graceful degradation and retry logic  
 ✅ **Performance optimization** with sub-5ms processing and intelligent caching  
 ✅ **174/174 tests passing** demonstrating system robustness and reliability
