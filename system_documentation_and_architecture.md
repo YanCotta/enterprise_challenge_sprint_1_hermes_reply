@@ -196,6 +196,8 @@ O coração do sistema é composto por uma arquitetura multi-agente avançada qu
 | **APIs** | FastAPI | Interface RESTful |
 | **Comunicação** | gRPC | Microsserviços eficientes |
 
+> **Nota sobre Implementação de Agentes:** Em vez de utilizar frameworks multi-agênticas prontas como CrewAI e LangChain, para eliminar os custos de utilizar API de um LLM, ou custos computacionais de rodar um localmente, e também pelo desafio, escolhemos fazer nossa própria framework low-code, em vez de utilizar bibliotecas prontas. Esta abordagem permite uma solução mais personalizada, detalhada e eficiente em termos de custos a longo prazo para o lado comercial. Frameworks existentes como CrewAI e LangChain ainda podem ser implementados posteriormente, mas nossa solução atual oferece maior controle sobre o sistema e independência de serviços externos de LLM.
+
 ##### Arquitetura de Agentes
 
 ```mermaid
