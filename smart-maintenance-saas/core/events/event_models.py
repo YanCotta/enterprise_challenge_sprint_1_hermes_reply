@@ -318,6 +318,30 @@ class MaintenanceScheduledEvent(BaseEventModel):
     )
 
 
+class SystemFeedbackReceivedEvent(BaseEventModel):
+    """
+    Event indicating that system feedback has been received and needs to be processed by the Learning Agent.
+    
+    This event is published when the system receives feedback that should be stored
+    in the knowledge base for future retrieval and learning purposes.
+
+    Attributes:
+        feedback_payload: The feedback data to be processed and stored.
+        source_agent_id: Optional ID of the agent that generated or forwarded this feedback.
+        processing_priority: Priority level for processing this feedback (1=highest, 5=lowest).
+    """
+
+    feedback_payload: Dict[str, Any] = Field(
+        ..., description="The feedback data payload (FeedbackData model serialized)."
+    )
+    source_agent_id: Optional[str] = Field(
+        None, description="ID of the agent that generated or forwarded this feedback."
+    )
+    processing_priority: int = Field(
+        default=3, ge=1, le=5, description="Priority level for processing (1=highest, 5=lowest)."
+    )
+
+
 # Example of how to use these models (for testing purposes, can be removed or commented out):
 # if __name__ == "__main__":
 #     sensor_event = SensorDataReceivedEvent(
