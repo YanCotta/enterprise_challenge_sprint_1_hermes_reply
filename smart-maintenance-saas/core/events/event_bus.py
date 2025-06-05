@@ -2,7 +2,7 @@ import asyncio
 import logging
 import traceback
 from collections import defaultdict
-from typing import Any, Callable, Coroutine, DefaultDict, List
+from typing import Any, Callable, Coroutine, DefaultDict, List, Dict
 
 # Set up a basic logger for the module
 logger = logging.getLogger(__name__)
@@ -26,7 +26,23 @@ class EventBus:
         self.subscriptions: DefaultDict[
             str, List[Callable[..., Coroutine[Any, Any, Any]]]
         ] = defaultdict(list)
+        self._running = False
         logger.info("EventBus initialized.")
+
+    async def start(self):
+        """Start the EventBus."""
+        self._running = True
+        logger.info("EventBus started.")
+
+    async def stop(self):
+        """Stop the EventBus."""
+        self._running = False
+        logger.info("EventBus stopped.")
+
+    @property
+    def _subscribers(self) -> Dict[str, List[Callable]]:
+        """Expose subscribers for testing purposes."""
+        return dict(self.subscriptions)
 
     async def subscribe(
         self, event_type_name: str, handler: Callable[..., Coroutine[Any, Any, Any]]
@@ -73,43 +89,76 @@ class EventBus:
                 f"No subscribers for event type name '{event_type_name}' during unsubscribe attempt."
             )
 
-    async def publish(
-        self, event: Any
-    ):  # Removed 'data' param, event object should contain all data
+    async def publish(self, event_type_or_object: Any, data: Any = None):
         """
-        Publishes an event object to all subscribed asynchronous handlers.
-        The event's class name is used to find appropriate handlers.
-
+        Publishes an event to all subscribed asynchronous handlers.
+        
+        Supports two calling patterns:
+        1. publish(event_object) - event object contains all data, class name used as event type
+        2. publish(event_type_string, data_dict) - explicit event type and data
+        
         Args:
-            event: The event object to publish. This object is passed directly to the handlers.
+            event_type_or_object: Either an event object or event type string
+            data: Optional data dict when using explicit event type
         """
-        event_type_name = (
-            event.__class__.__name__
-        )  # Use the class name string as the key
-        handler_name = "unknown_handler"
+        if data is None:
+            # Pattern 1: event object
+            event = event_type_or_object
+            event_type_name = event.__class__.__name__
+            handler_name = "unknown_handler"
 
-        log_payload = str(event)  # Log the event object itself
-        if len(log_payload) > 200:
-            log_payload = log_payload[:200] + "..."
+            log_payload = str(event)  # Log the event object itself
+            if len(log_payload) > 200:
+                log_payload = log_payload[:200] + "..."
 
-        logger.info(
-            f"Publishing event of type '{event_type_name}' with payload (preview): {log_payload}"
-        )
+            logger.info(
+                f"Publishing event of type '{event_type_name}' with payload (preview): {log_payload}"
+            )
 
-        if event_type_name in self.subscriptions:
-            handlers_to_call = list(self.subscriptions[event_type_name])
-            for handler in handlers_to_call:
-                handler_name = getattr(handler, "__name__", "unknown_handler")
-                try:
-                    logger.debug(
-                        f"Calling handler '{handler_name}' for event type '{event_type_name}'."
-                    )
-                    await handler(event)  # Pass the event object directly
-                except Exception as e:
-                    logger.error(
-                        f"Error in event handler '{handler_name}' for event type '{event_type_name}' with payload (preview): {log_payload}.\\\\n"
-                        f"Error: {e}\\\\n"
-                        f"Traceback: {traceback.format_exc()}"
-                    )
+            if event_type_name in self.subscriptions:
+                handlers_to_call = list(self.subscriptions[event_type_name])
+                for handler in handlers_to_call:
+                    handler_name = getattr(handler, "__name__", "unknown_handler")
+                    try:
+                        logger.debug(
+                            f"Calling handler '{handler_name}' for event type '{event_type_name}'."
+                        )
+                        await handler(event)  # Pass the event object directly
+                    except Exception as e:
+                        logger.error(
+                            f"Error in event handler '{handler_name}' for event type '{event_type_name}' with payload (preview): {log_payload}.\n"
+                            f"Error: {e}\n"
+                            f"Traceback: {traceback.format_exc()}"
+                        )
+            else:
+                logger.debug(f"No subscribers for event type {event_type_name}")
         else:
-            logger.debug(f"No subscribers for event type {event_type_name}")
+            # Pattern 2: explicit event type and data
+            event_type_name = str(event_type_or_object)
+            handler_name = "unknown_handler"
+
+            log_payload = str(data)
+            if len(log_payload) > 200:
+                log_payload = log_payload[:200] + "..."
+
+            logger.info(
+                f"Publishing event of type '{event_type_name}' with data (preview): {log_payload}"
+            )
+
+            if event_type_name in self.subscriptions:
+                handlers_to_call = list(self.subscriptions[event_type_name])
+                for handler in handlers_to_call:
+                    handler_name = getattr(handler, "__name__", "unknown_handler")
+                    try:
+                        logger.debug(
+                            f"Calling handler '{handler_name}' for event type '{event_type_name}'."
+                        )
+                        await handler(event_type_name, data)  # Pass event type and data
+                    except Exception as e:
+                        logger.error(
+                            f"Error in event handler '{handler_name}' for event type '{event_type_name}' with data (preview): {log_payload}.\n"
+                            f"Error: {e}\n"
+                            f"Traceback: {traceback.format_exc()}"
+                        )
+            else:
+                logger.debug(f"No subscribers for event type {event_type_name}")
