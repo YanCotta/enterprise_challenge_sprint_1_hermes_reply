@@ -22,6 +22,9 @@ The Smart Maintenance SaaS platform employs a microservices-inspired, event-driv
   * `SensorDataReceivedEvent`
   * `DataProcessedEvent`
   * `AnomalyDetectedEvent`
+  * `AnomalyValidatedEvent`
+  * `MaintenancePredictedEvent`
+  * `MaintenanceScheduledEvent`
   * `AgentStatusUpdateEvent`
 
 ### 2.3. Agent System
@@ -44,8 +47,10 @@ The heart of the platform, consisting of specialized agents built upon a common 
 * **Specialized Agents (Examples - to be expanded):**
   * `DataAcquisitionAgent`: Ingests data from various sources.
   * `AnomalyDetectionAgent`: Analyzes data for anomalies.
-  * `MaintenanceSchedulerAgent`: Optimizes maintenance schedules.
-  * (More agents for prediction, learning, decision support, etc.)
+  * `ValidationAgent`: Validates and enriches anomaly alerts.
+  * `PredictionAgent`: Provides predictive maintenance recommendations using ML.
+  * `SchedulingAgent`: Optimizes maintenance task scheduling and technician assignments.
+  * (More agents for learning, decision support, etc.)
 
 ### 2.4. Data Persistence Layer
 
