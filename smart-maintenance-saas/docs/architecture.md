@@ -48,6 +48,7 @@ The heart of the platform, consisting of specialized agents built upon a common 
   * `DataAcquisitionAgent`: Ingests data from various sources.
   * `AnomalyDetectionAgent`: Analyzes data for anomalies.
   * `ValidationAgent`: Validates and enriches anomaly alerts.
+  * `LearningAgent`: RAG-based knowledge management and learning from system feedback.
   * `PredictionAgent`: Provides predictive maintenance recommendations using ML.
   * `SchedulingAgent`: Optimizes maintenance task scheduling and technician assignments.
   * `NotificationAgent`: Sends notifications through multiple channels (console, email, SMS, etc.) based on maintenance scheduling events and other system events.
@@ -365,6 +366,65 @@ The `ReportingAgent` provides comprehensive analytics and visualization capabili
 * **Scheduled Reporting:** Can be integrated with scheduling systems for regular report generation
 * **Dashboard Integration:** JSON output optimized for consumption by dashboards and monitoring systems
 * **Export Capabilities:** Text format suitable for email distribution and document generation
+
+## 5.3. LearningAgent: RAG-Based Knowledge Management
+
+The **LearningAgent** implements a Retrieval-Augmented Generation (RAG) system for continuous learning and knowledge management within the maintenance platform.
+
+### Architecture
+
+The LearningAgent utilizes two key technologies:
+
+1. **ChromaDB**: A vector database that stores textual knowledge with semantic embeddings for efficient similarity search
+2. **SentenceTransformers**: State-of-the-art language models that convert text into high-dimensional vector embeddings
+
+### Core Capabilities
+
+#### Knowledge Storage
+- **Semantic Embeddings**: Converts textual content into vector representations using the `all-MiniLM-L6-v2` model
+- **Metadata Association**: Stores rich metadata alongside knowledge items (source, category, timestamp, etc.)
+- **Persistent Storage**: Knowledge persists across agent restarts using ChromaDB's storage layer
+
+#### Knowledge Retrieval
+- **Semantic Search**: Finds relevant knowledge based on meaning rather than exact keyword matches
+- **Similarity Scoring**: Returns cosine similarity scores to rank knowledge relevance
+- **Configurable Results**: Adjustable number of results and similarity thresholds
+
+#### Event-Driven Learning
+- **SystemFeedbackReceivedEvent Subscription**: Automatically processes feedback events from other system components
+- **Real-time Learning**: Immediately incorporates new feedback into the knowledge base
+- **Structured Processing**: Validates feedback using Pydantic schemas before storage
+
+### Integration with System Events
+
+The LearningAgent subscribes to `SystemFeedbackReceivedEvent` and automatically:
+
+1. **Validates** incoming feedback using the `FeedbackData` schema
+2. **Enriches** metadata with event context (event ID, source agent, timestamps)
+3. **Stores** feedback as searchable knowledge with semantic embeddings
+4. **Logs** processing results for monitoring and debugging
+
+### Error Handling and Resilience
+
+- **Graceful Degradation**: Continues operation even when ChromaDB or embedding models fail
+- **Component Health Monitoring**: Provides detailed health status for all RAG components
+- **Comprehensive Logging**: Detailed error reporting and operational logging
+- **Robust Error Recovery**: Handles various failure scenarios without crashing
+
+### Data Models
+
+The agent uses three key Pydantic models:
+
+- **FeedbackData**: Structures incoming feedback with validation
+- **KnowledgeItem**: Represents retrieved knowledge with similarity scores
+- **LearningResult**: Reports success/failure of knowledge operations
+
+### Use Cases
+
+1. **Historical Context**: Retrieve past maintenance experiences similar to current situations
+2. **Best Practices**: Store and retrieve maintenance best practices and lessons learned
+3. **Troubleshooting**: Access relevant troubleshooting guides based on current issues
+4. **Continuous Learning**: Automatically learn from system feedback and operator inputs
 
 ## 6. Scalability and Resilience
 
