@@ -262,6 +262,62 @@ class MaintenancePredictedEvent(BaseEventModel):
     )
 
 
+class MaintenanceScheduledEvent(BaseEventModel):
+    """
+    Event indicating that a maintenance task has been scheduled by the SchedulingAgent.
+    
+    This event is published after the SchedulingAgent successfully schedules maintenance
+    based on predictions from the PredictionAgent.
+
+    Attributes:
+        original_prediction_event_id: Reference to the MaintenancePredictedEvent that triggered this scheduling.
+        schedule_details: Complete details of the optimized schedule.
+        equipment_id: Identifier of the equipment/component that was scheduled for maintenance.
+        assigned_technician_id: ID of the technician assigned to the maintenance task.
+        scheduled_start_time: When the maintenance is scheduled to start.
+        scheduled_end_time: When the maintenance is scheduled to end.
+        scheduling_method: Method used for scheduling (e.g., "greedy", "or_tools", "manual").
+        optimization_score: Quality score of the scheduling solution (0.0 to 1.0).
+        constraints_satisfied: List of constraints that were satisfied during scheduling.
+        constraints_violated: List of constraints that were violated during scheduling.
+        agent_id: ID of the scheduling agent that generated this event.
+    """
+
+    original_prediction_event_id: UUID = Field(
+        ..., description="Reference to the MaintenancePredictedEvent that triggered this scheduling."
+    )
+    schedule_details: Dict[str, Any] = Field(
+        ..., description="Complete details of the optimized schedule (OptimizedSchedule model serialized)."
+    )
+    equipment_id: str = Field(
+        ..., description="Identifier of the equipment/component that was scheduled for maintenance."
+    )
+    assigned_technician_id: Optional[str] = Field(
+        None, description="ID of the technician assigned to the maintenance task."
+    )
+    scheduled_start_time: Optional[datetime] = Field(
+        None, description="When the maintenance is scheduled to start."
+    )
+    scheduled_end_time: Optional[datetime] = Field(
+        None, description="When the maintenance is scheduled to end."
+    )
+    scheduling_method: str = Field(
+        default="greedy", description="Method used for scheduling (e.g., 'greedy', 'or_tools', 'manual')."
+    )
+    optimization_score: Optional[float] = Field(
+        None, ge=0.0, le=1.0, description="Quality score of the scheduling solution (0.0 to 1.0)."
+    )
+    constraints_satisfied: List[str] = Field(
+        default_factory=list, description="List of constraints that were satisfied during scheduling."
+    )
+    constraints_violated: List[str] = Field(
+        default_factory=list, description="List of constraints that were violated during scheduling."
+    )
+    agent_id: str = Field(
+        ..., description="ID of the scheduling agent that generated this event."
+    )
+
+
 # Example of how to use these models (for testing purposes, can be removed or commented out):
 # if __name__ == "__main__":
 #     sensor_event = SensorDataReceivedEvent(
