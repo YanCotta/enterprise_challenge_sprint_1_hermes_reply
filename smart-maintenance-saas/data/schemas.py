@@ -227,6 +227,62 @@ class SensorDataSummary(BaseModel):
 # - Configuration schemas for different system components
 
 
+class NotificationChannel(str, Enum):
+    """Supported notification channels."""
+
+    EMAIL = "email"
+    SMS = "sms"
+    WHATSAPP = "whatsapp"
+    CONSOLE = "console"
+    SLACK = "slack"
+    TEAMS = "teams"
+
+
+class NotificationRequest(BaseModel):
+    """Schema for a notification request."""
+
+    id: str = Field(..., description="Unique identifier for the notification request")
+    recipient: str = Field(..., description="Recipient identifier (email, phone, etc.)")
+    channel: NotificationChannel = Field(..., description="Notification channel to use")
+    subject: str = Field(..., description="Notification subject/title")
+    message: str = Field(..., description="Notification message content")
+    priority: int = Field(default=3, ge=1, le=5, description="Priority level (1=highest, 5=lowest)")
+    template_id: Optional[str] = Field(None, description="Template identifier if using templates")
+    template_data: Dict[str, Any] = Field(default_factory=dict, description="Data for template rendering")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class NotificationStatus(str, Enum):
+    """Status of a notification delivery."""
+
+    PENDING = "pending"
+    SENT = "sent"
+    DELIVERED = "delivered"
+    FAILED = "failed"
+    RETRYING = "retrying"
+
+
+class NotificationResult(BaseModel):
+    """Schema for notification delivery result."""
+
+    request_id: str = Field(..., description="Reference to the NotificationRequest ID")
+    status: NotificationStatus = Field(..., description="Delivery status")
+    channel_used: NotificationChannel = Field(..., description="Channel used for delivery")
+    sent_at: Optional[datetime] = Field(None, description="When the notification was sent")
+    delivered_at: Optional[datetime] = Field(None, description="When the notification was delivered")
+    error_message: Optional[str] = Field(None, description="Error message if delivery failed")
+    provider_response: Dict[str, Any] = Field(default_factory=dict, description="Response from the notification provider")
+    retry_count: int = Field(default=0, ge=0, description="Number of retry attempts")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
 class MaintenanceRequest(BaseModel):
     """Schema for a maintenance request generated from predictions."""
 
