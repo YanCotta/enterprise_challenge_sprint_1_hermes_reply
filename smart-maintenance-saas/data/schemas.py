@@ -330,6 +330,41 @@ class OptimizedSchedule(BaseModel):
         json_encoders = {datetime: lambda dt: dt.isoformat()}
 
 
+# =============================================================================
+# REPORTING MODELS
+# =============================================================================
+
+class ReportRequest(BaseModel):
+    """Schema for requesting a report generation."""
+
+    report_id: Optional[str] = Field(None, description="Optional report identifier")
+    report_type: str = Field(..., description="Type of report to generate")
+    format: str = Field(default="json", description="Output format (json/text)")
+    time_range_start: Optional[datetime] = Field(None, description="Start time for report data")
+    time_range_end: Optional[datetime] = Field(None, description="End time for report data")
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Additional report parameters")
+    include_charts: bool = Field(default=True, description="Whether to include charts in the report")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class ReportResult(BaseModel):
+    """Schema for report generation results."""
+
+    report_id: str = Field(..., description="Unique report identifier")
+    report_type: str = Field(..., description="Type of report generated")
+    format: str = Field(..., description="Output format (json/text)")
+    content: str = Field(..., description="Report content in the requested format")
+    generated_at: datetime = Field(..., description="UTC timestamp when report was generated")
+    charts_encoded: Dict[str, str] = Field(default_factory=dict, description="Base64 encoded charts")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional report metadata")
+    error_message: Optional[str] = Field(None, description="Error message if report generation failed")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
 # Ensure all necessary imports are at the top
 # (Pydantic, datetime, Enum, typing modules are already imported)
 
