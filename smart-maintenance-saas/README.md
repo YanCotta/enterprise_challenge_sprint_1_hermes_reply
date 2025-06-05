@@ -62,6 +62,7 @@ The Python project root is `smart-maintenance-saas/`, containing **47 core Pytho
 - **`agents/core/validation_agent.py`** - **KEY: Advanced validation agent with historical context analysis**
 - **`agents/decision/prediction_agent.py`** - **NEW: Predictive maintenance agent with Prophet ML and time-to-failure analysis**
 - **`agents/decision/reporting_agent.py`** - **NEW: Analytics and reporting agent with chart generation and data visualization**
+- **`agents/learning/learning_agent.py`** - **NEW: RAG-based learning agent with ChromaDB and SentenceTransformers for knowledge management**
 - **`ml/statistical_models.py`** - Statistical anomaly detection algorithms
 - **`rules/validation_rules.py`** - **KEY: Flexible rule engine for confidence adjustment and validation**
 - **`agents/decision/`** - Decision-making agent implementations (placeholder)
@@ -184,6 +185,18 @@ The Python project root is `smart-maintenance-saas/`, containing **47 core Pytho
 - **Confidence Scoring**: Mathematical adjustment of confidence based on predefined rules and thresholds
 - **Sensor Type Specialization**: Custom rules for different sensor types (temperature, vibration, pressure)
 - **Sensor Quality Assessment**: Evaluates sensor reading quality to prevent false positives from degraded sensors
+
+### 🧠 **NEW: RAG-Based Learning Agent**
+- **LearningAgent** - Advanced knowledge management with Retrieval-Augmented Generation (RAG)
+  - **ChromaDB Integration**: Vector database for semantic knowledge storage and retrieval
+  - **SentenceTransformers**: State-of-the-art embedding models for semantic search
+  - **Feedback Processing**: Automated learning from system feedback events
+  - **Knowledge Storage**: Persistent storage of textual knowledge with metadata
+  - **Semantic Retrieval**: Context-aware knowledge retrieval using cosine similarity
+  - **Event-Driven Learning**: Real-time learning from `SystemFeedbackReceivedEvent`
+  - **Graceful Degradation**: Continues operation even when RAG components fail
+  - **Health Monitoring**: Comprehensive health checks for ChromaDB and embedding models
+  - **Robust Error Handling**: Comprehensive error recovery and logging
 
 ### 🔧 API Foundation
 - **FastAPI application** with automatic OpenAPI documentation
