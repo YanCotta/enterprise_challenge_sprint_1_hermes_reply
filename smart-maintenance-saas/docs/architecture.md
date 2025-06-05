@@ -50,6 +50,7 @@ The heart of the platform, consisting of specialized agents built upon a common 
   * `ValidationAgent`: Validates and enriches anomaly alerts.
   * `PredictionAgent`: Provides predictive maintenance recommendations using ML.
   * `SchedulingAgent`: Optimizes maintenance task scheduling and technician assignments.
+  * `NotificationAgent`: Sends notifications through multiple channels (console, email, SMS, etc.) based on maintenance scheduling events and other system events.
   * (More agents for learning, decision support, etc.)
 
 ### 2.4. Data Persistence Layer
@@ -89,6 +90,17 @@ The heart of the platform, consisting of specialized agents built upon a common 
    * It stores the anomaly details in the database via `CRUDAnomalyAlert`.
 5. **Further Processing:** Other agents (e.g., `NotificationAgent`, `MaintenanceSchedulerAgent`) can subscribe to `AnomalyDetectedEvent` to trigger further actions like sending alerts or creating maintenance tasks.
 
+### 3.1. Notification Flow (Maintenance Scheduling Events)
+
+1. **Maintenance Scheduling:** The `SchedulingAgent` processes maintenance requests and publishes a `MaintenanceScheduledEvent` to the Event Bus with scheduling details.
+2. **Notification Handling:** The `NotificationAgent`, subscribed to `MaintenanceScheduledEvent`, receives the event.
+   * It creates a `NotificationRequest` with appropriate message content based on scheduling success/failure.
+   * It uses template rendering to format maintenance details (equipment ID, technician, timing, etc.).
+3. **Multi-Channel Delivery:** The agent uses configured notification providers to deliver notifications:
+   * `ConsoleNotificationProvider`: For development/testing (prints to console).
+   * Future providers: Email, SMS, WhatsApp, Slack for production use.
+4. **Result Tracking:** Each notification attempt returns a `NotificationResult` with delivery status, timing, and error details if applicable.
+
 ## 4. Diagrams
 
 *(Placeholder for diagrams. Consider adding: Component Diagram, Sequence Diagram for key workflows)*
@@ -114,16 +126,21 @@ graph TD
         MSA -->|Store Tasks| DB
         MSA -->|Publish Task| EventBus
 
+        EventBus -->|Events| NA[Notification Agent]
+        NA -->|Send Notifications| NotificationProviders[Console/Email/SMS/WhatsApp]
+
         EventBus -->|Events| OtherAgents[...]
 
         BaseAgent[BaseAgent] -- Inherited by --> DAA
         BaseAgent -- Inherited by --> ADA
         BaseAgent -- Inherited by --> MSA
+        BaseAgent -- Inherited by --> NA
         BaseAgent -- Inherited by --> OtherAgents
 
         AgentRegistry[Agent Registry] -- Manages --> DAA
         AgentRegistry -- Manages --> ADA
         AgentRegistry -- Manages --> MSA
+        AgentRegistry -- Manages --> NA
         AgentRegistry -- Manages --> OtherAgents
     end
 
@@ -164,6 +181,38 @@ sequenceDiagram
         EventBus-->>-ADA: Ack
     end
     ADA-->>-EventBus: (Done)
+```
+
+### 4.3. Sequence Diagram: Maintenance Scheduling & Notification Flow
+
+```mermaid
+sequenceDiagram
+    participant SA as Scheduling Agent
+    participant EventBus as Event Bus
+    participant NA as Notification Agent
+    participant CP as Console Provider
+    participant EP as Email Provider (Future)
+
+    SA->>SA: Process Maintenance Request
+    SA->>+EventBus: Publish(MaintenanceScheduledEvent)
+    EventBus-->>-SA: Ack
+
+    EventBus->>+NA: Handle(MaintenanceScheduledEvent)
+    NA->>NA: Create NotificationRequest
+    NA->>NA: Render Template with Event Data
+    
+    alt Console Notification
+        NA->>+CP: send(NotificationRequest)
+        CP->>CP: Format & Print to Console
+        CP-->>-NA: NotificationResult(SENT)
+    else Email Notification (Future)
+        NA->>+EP: send(NotificationRequest)
+        EP->>EP: Send via SMTP
+        EP-->>-NA: NotificationResult(SENT/FAILED)
+    end
+    
+    NA->>NA: Log Notification Result
+    NA-->>-EventBus: (Done)
 ```
 
 ## 5. Machine Learning Considerations
