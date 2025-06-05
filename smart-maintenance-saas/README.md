@@ -396,7 +396,7 @@ poetry run pytest --cov=apps --cov=core --cov=data
 
 **Event Flow:**
 
-- **Subscribes to:** `AnomalyValidatedEvent` (only processes high-confidence, credible anomalies)
+- **Subscribes to:** `AnomalyValidatedEvent` (processes maintenance predictions from PredictionAgent)
 - **Publishes:** `MaintenancePredictedEvent` with failure predictions and maintenance recommendations
 - **Integration:** Enables proactive maintenance scheduling and resource planning
 
@@ -439,6 +439,42 @@ poetry run pytest --cov=apps --cov=core --cov=data
 - Calendar integration for scheduling confirmation
 - Structured event publishing with complete schedule details
 
+### **NEW: NotificationAgent (`apps/agents/decision/notification_agent.py`)**
+**The notification service agent** that handles communication with technicians and stakeholders about maintenance schedules and alerts.
+
+**Core Capabilities:**
+- 📨 **Multi-Channel Notifications** - Supports multiple notification channels including console, email, and SMS
+- 🔧 **Maintenance Schedule Notifications** - Sends notifications when maintenance is scheduled
+- 👤 **Targeted Messaging** - Routes notifications to specific technicians and stakeholders
+- 📋 **Template-Based Messages** - Uses customizable message templates for different notification types
+- ⚡ **Real-Time Processing** - Processes maintenance schedules and sends immediate notifications
+- 🔄 **Provider-Based Architecture** - Extensible notification provider system for different channels
+
+**Advanced Features:**
+- **Console Notification Provider**: Immediate console-based notifications for development and testing
+- **Template Rendering Engine**: Dynamic message generation with equipment and schedule details
+- **Notification Status Tracking**: Comprehensive tracking of notification delivery status
+- **Error Resilience**: Graceful handling of notification failures with detailed error reporting
+- **Metadata Integration**: Rich notification metadata for debugging and audit trails
+- **Extensible Architecture**: Easy integration of new notification channels (email, SMS, webhooks)
+
+**Event Flow:**
+
+- **Subscribes to:** `MaintenanceScheduledEvent` (processes scheduled maintenance from SchedulingAgent)
+- **Publishes:** None (terminal agent in the notification pipeline)
+- **Integration:** Provides communication bridge between automated scheduling and human operators
+
+**Notification Pipeline:**
+- Maintenance schedule event processing
+- Notification request creation with recipient details
+- Message template rendering with schedule information
+- Provider-based notification delivery
+- Status tracking and error handling with comprehensive logging
+
+**Message Templates:**
+- **Successful Scheduling**: "🔧 Maintenance Scheduled: {equipment_id}" with full schedule details
+- **Failed Scheduling**: "⚠️ Maintenance Scheduling Failed: {equipment_id}" with constraint information
+- **Rich Metadata**: Includes timestamps, technician details, and maintenance context
 ## Event Catalog
 
 ### Core Event Models (`core/events/event_models.py`)
@@ -461,7 +497,7 @@ poetry run pytest --cov=apps --cov=core --cov=data
 
 - **Anomaly Details**: Type, confidence score, detection method used
 - **Sensor Context**: Sensor ID, type, current and historical values
-- **Evidence**: Statistical analysis results, ML model predictions
+- **Evidência**: Statistical analysis results, ML model predictions
 - **Severity Mapping**: Confidence-based severity classification (LOW/MEDIUM/HIGH/CRITICAL)
 - **Correlation Support**: Full traceability through event correlation IDs
 
@@ -561,21 +597,21 @@ poetry run pytest --cov=apps --cov=core --cov=data
 **Current Progress:** Major breakthrough in anomaly detection capabilities
 
 ### ✅ **Recently Completed: Advanced Anomaly Detection System**
-- 🧠 **AnomalyDetectionAgent** - Production-ready ML-powered anomaly detection
-  - Dual-method approach combining Isolation Forest and statistical analysis
-  - Ensemble decision making with confidence scoring
-  - Unknown sensor baseline caching and graceful degradation
-  - Exponential backoff retry logic for resiliência
-- 📊 **StatisticalAnomalyDetector** - Mathematical anomaly detection algorithms
-  - Linear confidence scaling based on deviation multiples
-  - Comprehensive input validation (NaN/infinito rejection)
-  - Configurable parameters for different sensor types
-  - Edge case handling for zero standard deviation scenarios
-- 🧪 **Comprehensive Testing Framework** - 174/174 tests passing
-  - 30+ unit tests covering statistical model edge cases
-  - 25+ integration tests for end-to-end anomaly detection workflows
-  - Performance validation and error resilience testing
-  - Real-world scenario testing with actual sensor data patterns
+- 🧠 **AnomalyDetectionAgent** - Detecção de anomalias com ML pronta para produção
+  - Abordagem de método duplo combinando Isolation Forest e análise estatística
+  - Tomada de decisão ensemble com pontuação de confiança
+  - Cache de linha de base para sensores desconhecidos e degradação graciosa
+  - Lógica de tentativa com backoff exponencial para resiliência
+- 📊 **StatisticalAnomalyDetector** - Algoritmos matemáticos de detecção de anomalias
+  - Escalonamento linear de confiança baseado em múltiplos de desvio
+  - Validação de entrada abrangente (rejeição de NaN/infinito)
+  - Parâmetros configuráveis para diferentes tipos de sensores
+  - Tratamento de casos extremos para cenários de desvio padrão zero
+- 🧪 **Framework de Testes Abrangente** - 174/174 testes passando
+  - 30+ testes unitários cobrindo casos extremos de modelo estatístico
+  - 25+ testes de integração para fluxos de trabalho de detecção de anomalias ponta a ponta
+  - Validação de performance e teste de resiliência a erros
+  - Teste de cenários do mundo real com padrões de dados de sensores reais
 
 ### ✅ **NEW: Milestone Achieved - Complete Predictive Maintenance Pipeline**
 
@@ -602,17 +638,17 @@ Key accomplishments in this milestone include:
   - Edge case validation for insufficient data and model failures
   - Performance optimization testing for production workloads
 
-### ✅ Milestone Achieved: Advanced Anomaly Validation and False Positive Reduction
+### ✅ Marco Alcançado: Validação Avançada de Anomalias e Redução de Falsos Positivos
 
-Key accomplishments in this milestone include:
+Principais conquistas neste marco incluem:
 
-- Successful implementation and integration of the `ValidationAgent` with comprehensive historical validation capabilities.
-- Development of a flexible `RuleEngine` with sensor-specific rules and extensible rule architecture.
-- Introduction of a detailed and settings-driven historical context analysis module within the `ValidationAgent`, capable of identifying patterns like recent value stability and recurring anomalias.
+- Implementação e integração bem-sucedidas do `ValidationAgent` com capacidades abrangentes de validação histórica.
+- Desenvolvimento de um `RuleEngine` flexível com regras específicas de sensor e arquitetura de regras extensível.
+- Introdução de um módulo detalhado de análise de contexto histórico orientado por configurações dentro do `ValidationAgent`, capaz de identificar padrões como estabilidade de valor recente e anomalias recorrentes.
 - Criação do `AnomalyValidatedEvent` com dados contextuais ricos para comunicação clara e acionável de status de anomalias validadas.
 - Implementação de um sistema sofisticado de pontuação de confiança que se ajusta com base em múltiplos fatores de validação.
-- Robust validation status determination (credible anomaly/false positive/needs investigation) for actionable outcomes.
-- Rigorous testing ensuring the reliability and correctness of these validation components.
+- Determinação robusta do status de validação (anomalia crível/falso positivo/necessita investigação) para resultados acionáveis.
+- Testes rigorosos garantindo a confiabilidade e correção desses componentes de validação.
 
 ### Foundation Achieved
 
@@ -657,7 +693,7 @@ Um backend robusto, **orientado a eventos e multi-agente** para uma plataforma S
 4.  **Manutenção Preditiva:** Previsões de tempo até a falha usando Machine Learning com Prophet e recomendações automatizadas de manutenção
 5.  **Redução de Falsos Positivos:** Filtragem sofisticada de ruído através de regras de validação multicamadas e análise de padrões temporais
 
-Este sistema de nível empresarial agora incorpora uma camada de validação completa e capacidades de manutenção preditiva, reduzindo significativamente falsos positivos e fornecendo agendamento proativo de manutenção, mantendo alto desempenho.
+Este sistema de nível empresarial agora incorpora uma camada de validação completa e capacidades de manutenção preditiva, reduzindo significativamente falsos positivos e fornecendo agendamento proativo de manutenção enquanto mantém alto desempenho.
 
 ## Stack Tecnológico
 
@@ -692,7 +728,7 @@ O diretório raiz do projeto Python é `smart-maintenance-saas/`, contendo **47 
 ### 📁 Diretórios Principais
 
 #### `apps/` - Lógica da Aplicação
-- **`api/main.py`** - Aplicação FastAPI com endpoints de saúde
+- **`api/main.py`** - Aplicação FastAPI com health endpoints
 - **`agents/base_agent.py`** - Classe Abstrata BaseAgent com gerenciamento de ciclo de vida
 - **`agents/core/data_acquisition_agent.py`** - DataAcquisitionAgent pronto para produção
 - **`agents/core/anomaly_detection_agent.py`** - Detecção avançada de anomalias com ML e modelos estatísticos
@@ -1016,7 +1052,7 @@ poetry run pytest --cov=apps --cov=core --cov=data
 - 🎯 **Recomendações de Manutenção** - Gera ações de manutenção específicas baseadas na confiança e cronograma da predição
 - ⚡ **Processamento em Tempo Real** - Processa anomalias validadas e publica predições de manutenção
 - 🧠 **Filtragem Inteligente** - Processa apenas anomalias de alta confiança para focar em ameaças críveis
-- 🔄 **Tratamento de Erros Gracioso** - Gerenciamento de erros abrangente para falhas do modelo Prophet
+- 🔄 **Tratamento de Erros Gracioso** - Gerenciamento de erros abrangente para falhas do modelo Prophet e casos extremos
 
 **Funcionalidades Avançadas:**
 - **Integração com Modelo Prophet**: Padrão da indústria para previsão de séries temporais com detecção de tendência e sazonalidade
@@ -1032,91 +1068,166 @@ poetry run pytest --cov=apps --cov=core --cov=data
 - **Integração:** Permite agendamento proativo de manutenção e planejamento de recursos
 
 **Pipeline de Predição:**
-
 - Busca de dados históricos (mínimo de 10 pontos de dados requerido)
 - Treinamento do modelo Prophet com dados de séries temporais específicos do sensor
 - Cálculo da probabilidade de falha usando análise de tendência
 - Geração de recomendação de manutenção baseada em urgência e confiança
 - Publicação de evento estruturado com detalhes acionáveis de manutenção
-Catálogo de Eventos
 
-### Modelos de Eventos Principais (core/events/event_models.py)
+### **NOVO: SchedulingAgent (`apps/agents/decision/scheduling_agent.py`)**
+**The intelligent maintenance scheduling agent** that optimizes maintenance task assignments and coordinates with external calendar systems.
 
-| Evento | Propósito | Atributos Chave |
+**Core Capabilities:**
+- 📅 **Maintenance Task Scheduling** - Converts maintenance predictions into optimized schedules
+- 👥 **Technician Assignment** - Assigns tasks to available technicians using greedy optimization
+- 🔗 **Calendar Integration** - Interfaces with external calendar systems (mock implementation)
+- ⚡ **Real-Time Processing** - Processes maintenance predictions and publishes scheduled tasks
+- 🎯 **Optimization Logic** - Uses simple greedy assignment with OR-Tools dependency for future enhancements
+- 🔄 **Resource Management** - Tracks technician availability and workload distribution
+
+**Advanced Features:**
+- **Greedy Assignment Algorithm**: Efficient task-to-technician matching based on availability and skills
+- **Calendar Service Integration**: Mock external calendar service for realistic scheduling simulation
+- **Optimization Scoring**: Calculates task priority based on failure probability and urgency
+- **Workload Balancing**: Distributes maintenance tasks across available technicians
+- **Comprehensive Logging**: Detailed audit trails for all scheduling decisions and assignments
+- **Error Resilience**: Graceful handling of scheduling conflicts and resource constraints
+
+**Event Flow:**
+
+- **Subscribes to:** `MaintenancePredictedEvent` (processa previsões de manutenção do PredictionAgent)
+- **Publica:** `MaintenanceScheduledEvent` com horários otimizados e atribuições de técnicos
+- **Integração:** Permite execução coordenada da manutenção e planejamento de recursos
+
+**Pipeline de Agendamento:**
+- Criação de solicitação de manutenção a partir de predições
+- Avaliação da disponibilidade do técnico
+- Otimização da atribuição de tarefas gananciosa
+- Integração com calendário para confirmação de agendamento
+- Publicação de evento estruturado com detalhes completos do agendamento
+
+### **NOVO: NotificationAgent (`apps/agents/decision/notification_agent.py`)**
+**The notification service agent** that handles communication with technicians and stakeholders about maintenance schedules and alerts.
+
+**Core Capabilities:**
+- 📨 **Multi-Channel Notifications** - Supports multiple notification channels including console, email, and SMS
+- 🔧 **Maintenance Schedule Notifications** - Sends notifications when maintenance is scheduled
+- 👤 **Targeted Messaging** - Routes notifications to specific technicians and stakeholders
+- 📋 **Template-Based Messages** - Uses customizable message templates for different notification types
+- ⚡ **Real-Time Processing** - Processes maintenance schedules and sends immediate notifications
+- 🔄 **Provider-Based Architecture** - Extensible notification provider system for different channels
+
+**Advanced Features:**
+- **Console Notification Provider**: Immediate console-based notifications for development and testing
+- **Template Rendering Engine**: Dynamic message generation with equipment and schedule details
+- **Notification Status Tracking**: Comprehensive tracking of notification delivery status
+- **Error Resilience**: Graceful handling of notification failures with detailed error reporting
+- **Metadata Integration**: Rich notification metadata for debugging and audit trails
+- **Extensible Architecture**: Easy integration of new notification channels (email, SMS, webhooks)
+
+**Event Flow:**
+
+- **Subscribes to:** `MaintenanceScheduledEvent` (processa agendamentos de manutenção do SchedulingAgent)
+- **Publishes:** None (terminal agent in the notification pipeline)
+- **Integration:** Provides communication bridge between automated scheduling and human operators
+
+**Notification Pipeline:**
+- Maintenance schedule event processing
+- Notification request creation with recipient details
+- Message template rendering with schedule information
+- Provider-based notification delivery
+- Status tracking and error handling with comprehensive logging
+
+**Message Templates:**
+- **Successful Scheduling**: "🔧 Maintenance Scheduled: {equipment_id}" with full schedule details
+- **Failed Scheduling**: "⚠️ Maintenance Scheduling Failed: {equipment_id}" with constraint information
+- **Rich Metadata**: Includes timestamps, technician details, and maintenance context
+## Event Catalog
+
+### Core Event Models (`core/events/event_models.py`)
+
+| Event | Purpose | Key Attributes |
 |-------|---------|----------------|
-| `BaseEventModel` | Modelo pai para todos os eventos | `timestamp`, `event_id`, `correlation_id` |
-| `SensorDataReceivedEvent` | Sinal de chegada de dados brutos do sensor | `raw_data` payload |
-| `DataProcessedEvent` | Notificação de processamento de dados bem-sucedido | `processed_data` |
-| `DataProcessingFailedEvent` | Falha no processamento com detalhes do erro | `agent_id`, `error_message`, `original_event_payload` |
-| `AnomalyDetectedEvent` | Resultados da detecção de anomalias com análise detalhada | `anomaly_details`, `confidence_score`, `detection_method`, `sensor_info`, `evidence` |
-| `AnomalyValidatedEvent` | Saída do ValidationAgent, sinalizando um status de anomalia completamente validado com informação enriquecida | `original_anomaly_alert_payload`, `triggering_reading_payload`, `validation_status`, `final_confidence`, `validation_reasons`, `agent_id`, `correlation_id` |
-| `MaintenancePredictedEvent` | **NOVO:** Saída de manutenção preditiva do PredictionAgent com previsões de tempo até a falha e recomendações | `sensor_id`, `equipment_id`, `failure_probability`, `predicted_failure_date`, `confidence_score`, `maintenance_recommendations`, `model_metrics`, `prediction_details` |
-| `AgentStatusUpdateEvent` | Relatórios de status operacional do agente (uso futuro) | TBD |
+| `BaseEventModel` | Parent model for all events | `timestamp`, `event_id`, `correlation_id` |
+| `SensorDataReceivedEvent` | Raw sensor data arrival signal | `raw_data` payload |
+| `DataProcessedEvent` | Successful data processing notification | `processed_data` |
+| `DataProcessingFailedEvent` | Processing failure with error details | `agent_id`, `error_message`, `original_event_payload` |
+| `AnomalyDetectedEvent` | Anomaly detection results with detailed analysis | `anomaly_details`, `confidence_score`, `detection_method`, `sensor_info`, `evidence` |
+| `AnomalyValidatedEvent` | Output of the ValidationAgent, signaling a thoroughly validated anomaly status with enriched information | `original_anomaly_alert_payload`, `triggering_reading_payload`, `validation_status`, `final_confidence`, `validation_reasons`, `agent_id`, `correlation_id` |
+| `MaintenancePredictedEvent` | **NEW:** Predictive maintenance output from PredictionAgent with time-to-failure predictions and maintenance recommendations | `sensor_id`, `equipment_id`, `failure_probability`, `predicted_failure_date`, `confidence_score`, `maintenance_recommendations`, `model_metrics`, `prediction_details` |
+| `MaintenanceScheduledEvent` | **NEW:** Optimized maintenance schedule from SchedulingAgent with technician assignments and calendar integration | `request_id`, `sensor_id`, `equipment_id`, `assigned_technician`, `scheduled_time`, `estimated_duration`, `priority_score`, `task_description`, `calendar_event_id`, `optimization_details` |
+| `AgentStatusUpdateEvent` | Agent operational status reports *(future use)* | TBD |
 
-### **NOVO: Estrutura do Evento de Detecção de Anomalia**
+### **NEW: Anomaly Detection Event Structure**
 
-**AnomalyDetectedEvent** fornece informação abrangente da anomalia:
+**AnomalyDetectedEvent** provides comprehensive anomaly information:
 
-- **Detalhes da Anomalia**: Tipo, pontuação de confiança, método de detecção usado
-- **Contexto do Sensor**: Sensor ID, tipo, valores atuais e históricos
-- **Evidência**: Resultados de análise estatística, predições do modelo de ML
-- **Mapeamento de Severidade**: Classificação de severidade baseada em confiança (BAIXA/MÉDIA/ALTA/CRÍTICA)
-- **Suporte à Correlação**: Rastreabilidade completa através de IDs de correlação de eventos
+- **Anomaly Details**: Type, confidence score, detection method used
+- **Sensor Context**: Sensor ID, type, current and historical values
+- **Evidência**: Statistical analysis results, ML model predictions
+- **Severity Mapping**: Confidence-based severity classification (LOW/MEDIUM/HIGH/CRITICAL)
+- **Correlation Support**: Full traceability through event correlation IDs
 
-**AnomalyValidatedEvent** entrega status de anomalia completamente validado:
+**AnomalyValidatedEvent** delivers thoroughly validated anomaly status:
 
-- **Dados do Alerta Original**: Payload completo do AnomalyDetectedEvent original
-- **Dados do Sensor Gatilho**: Leitura completa do sensor que disparou a anomalia
-- **Status de Validação**: Status claro e acionável ("credible_anomaly", "false_positive_suspected", "further_investigation_needed")
-- **Pontuação Final de Confiança**: Confiança refinada após validação baseada em regras e histórica
-- **Raciocínio da Validação**: Lista abrangente de todas as checagens de validação e seus resultados
-- **Contexto Histórico**: Resultados da análise de padrões temporais e checagens de estabilidade de valor
-- **Rastreamento de Correlação**: Links para eventos de detecção originais para rastreabilidade completa
+- **Original Alert Data**: Full payload from the original AnomalyDetectedEvent
+- **Triggering Sensor Data**: Complete sensor reading that triggered the anomaly
+- **Validation Status**: Clear actionable status ("credible_anomaly", "false_positive_suspected", "further_investigation_needed")
+- **Final Confidence Score**: Refined confidence after rule-based and historical validation
+- **Validation Reasoning**: Comprehensive list of all validation checks and their results
+- **Historical Context**: Results from temporal pattern analysis and value stability checks
+- **Correlation Tracking**: Links to original detection events for full traceability
 
-**Benefícios da Arquitetura de Eventos:**
-- 🔄 Baixo acoplamento entre componentes do sistema
-- 📊 Rastreabilidade completa através de IDs de correlação
-- 🛡️ Segurança de tipo com validação Pydantic
-- ⚡ Processamento assíncrono para alta performance
-Visão Geral do Esquema do Banco de Dados
-Stack Tecnológico
-- **PostgreSQL** com extensão **TimescaleDB** para operações otimizadas de séries temporais
-- **SQLAlchemy 2.0** async ORM com segurança de tipo completa
-- **Alembic** para migrações de esquema versionadas
+**Event Architecture Benefits:**
+- 🔄 **Loose coupling** between system components
+- 📊 **Full traceability** through correlation IDs
+- 🛡️ **Type safety** with Pydantic validation
+- ⚡ **Asynchronous processing** for high performance
 
-### Modelos ORM Principais (`core/database/orm_models.py`)
+## Database Schema Overview
 
-| Modelo | Propósito | Funcionalidades Especiais |
+### Technology Stack
+- **PostgreSQL** with **TimescaleDB extension** for optimized time-series operations
+- **SQLAlchemy 2.0** async ORM with full type safety
+- **Alembic** for version-controlled schema migrations
+
+### Core ORM Models (`core/database/orm_models.py`)
+
+| Model | Purpose | Special Features |
 |-------|---------|------------------|
-| `SensorReadingORM` | Medições individuais de sensores | Hypertable TimescaleDB particionada por timestamp |
-| `AnomalyAlertORM` | Registros de anomalias detectadas (uso futuro) | Tabela PostgreSQL padrão |
-| `MaintenanceTaskORM` | Rastreamento de fluxos de trabalho de manutenção (uso futuro) | Tabela PostgreSQL padrão |
+| `SensorReadingORM` | Individual sensor measurements | TimescaleDB hypertable partitioned by timestamp |
+| `AnomalyAlertORM` | Detected anomaly records *(future use)* | Standard PostgreSQL table |
+| `MaintenanceTaskORM` | Maintenance workflow tracking *(future use)* | Standard PostgreSQL table |
 
-**Funcionalidades do Banco de Dados:**
-- 🕒 Hypertables TimescaleDB para queries eficientes de séries temporais
-- 🔄 Operações Assíncronas para acesso não bloqueante ao banco de dados
-- 📊 Particionamento Automático para performance otimizada em escala
-- 🔄 Migrações Versionadas com Alembic
-Qualidade de Código e Melhores Práticas
-Padrões de Desenvolvimento
-✨ Código limpo e manutenível com dicas de tipo abrangentes
-🔍 Pre-commit hooks garantem qualidade de código consistente:
-Black - Formatação de código automatizada
-Flake8 - Linting de estilo e complexidade
-iSort - Organização de imports
-MyPy - Checagem estática de tipos
-📝 Logging JSON Estruturado para monitoramento e debugging eficazes
-🧪 Testes Abrangentes com 174/174 testes passando
+**Database Features:**
+- 🕒 **TimescaleDB hypertables** for efficient time-series queries
+- 🔄 **Async operations** for non-blocking database access
+- 📊 **Automatic partitioning** for optimal performance at scale
+- 🔄 **Version-controlled migrations** with Alembic
 
-Princípios de Arquitetura
-🏗️ Responsabilidade Única - Cada componente tem um propósito claro e focado
-🔌 Injeção de Dependência - Componentes testáveis e fracamente acoplados
-📋 Segregação de Interface - Abstrações limpas através de protocolos
-🔄 Design Orientado a Eventos - Arquitetura de sistema escalável e reativa
-Explorando o Código
-### Áreas Chave para Entender a Arquitetura
+## Code Quality and Best Practices
 
-| Componente | Arquivo | O Que Procurar |
+### Development Standards
+- ✨ **Clean, maintainable code** with comprehensive type hints
+- 🔍 **Pre-commit hooks** ensure consistent code quality:
+  - **Black** - Automated code formatting
+  - **Flake8** - Style and complexity linting
+  - **iSort** - Import statement organization
+  - **MyPy** - Static type checking
+- 📝 **Structured JSON logging** for effective monitoring and debugging
+- 🧪 **Comprehensive testing** with **174/174 tests passing**
+
+### Architecture Principles
+- 🏗️ **Single Responsibility** - Each component has a clear, focused purpose
+- 🔌 **Dependency Injection** - Testable, loosely-coupled components
+- 📋 **Interface Segregation** - Clean abstractions through protocols
+- 🔄 **Event-Driven Design** - Scalable, reactive system architecture
+
+## Exploring the Code
+
+### Key Areas for Understanding the Architecture
+
+| Component | File | What to Look For |
 |-----------|------|------------------|
 | **Agent Framework** | `apps/agents/base_agent.py` | Abstract agent lifecycle and event handling |
 | **Data Processing** | `apps/agents/core/data_acquisition_agent.py` | Production data pipeline implementation |
@@ -1137,82 +1248,565 @@ Explorando o Código
 | **NEW: Rule Engine Tests** | `tests/unit/rules/test_validation_rules.py` | Tests for `RuleEngine` and validation rules |
 | **NEW: Prediction Tests** | `tests/unit/agents/decision/test_prediction_agent.py`, `tests/integration/agents/decision/test_prediction_agent_integration.py` | **Comprehensive PredictionAgent testing with Prophet ML and maintenance workflows** |
 
-### Caminho de Exploração Recomendado
-1. Comece com `BaseAgent` para entender o framework de agentes
-2. Examine `DataAcquisitionAgent` para um exemplo completo de implementação
-3. **NOVO:** Estude `AnomalyDetectionAgent` para padrões avançados de detecção ML e estatística
-4. **NOVO:** Investigue `ValidationAgent` e `RuleEngine` para o pipeline de validação avançado
-5. **NOVO:** Explore `PredictionAgent` para manutenção preditiva baseada em Prophet ML e previsão de tempo até a falha
-6. **NOVO:** Revise `StatisticalAnomalyDetector` para algoritmos matemáticos de detecção de anomalias
-7. Revise `EventBus` e modelos de eventos para padrões de comunicação
-8. Explore arquivos de teste para entender comportamentos esperados e casos extremos
-9. **NOVO:** Examine suítes de testes abrangentes para detecção de anomalias, validação, predição e regras para entender casos extremos e validação de performance
-Marcos Importantes Alcançados
-Progresso Atual: Grande avanço nas capacidades de detecção de anomalias.
+### Recommended Exploration Path
+1. Start with `BaseAgent` to understand the agent framework
+2. Examine `DataAcquisitionAgent` for a complete implementation example
+3. **NEW:** Study `AnomalyDetectionAgent` for advanced ML and statistical detection patterns
+4. **NEW:** Investigate `ValidationAgent` and `RuleEngine` for the advanced validation pipeline
+5. **NEW:** Explore `PredictionAgent` for Prophet ML-based predictive maintenance and time-to-failure forecasting
+6. **NEW:** Review `StatisticalAnomalyDetector` for mathematical anomaly detection algorithms
+7. Review `EventBus` and event models for communication patterns
+8. Explore test files to understand expected behaviors and edge cases
+9. **NEW:** Examine comprehensive test suites for anomaly detection, validation, prediction, and rules to understand edge cases and performance validation
 
-✅ Concluído Recentemente: Sistema Avançado de Detecção de Anomalias
-🧠 AnomalyDetectionAgent - Detecção de anomalias com ML pronta para produção
-Abordagem de método duplo combinando Isolation Forest e análise estatística
-Tomada de decisão ensemble com pontuação de confiança
-Cache de linha de base para sensores desconhecidos e degradação graciosa
-Lógica de tentativa com backoff exponencial para resiliência
-📊 StatisticalAnomalyDetector - Algoritmos matemáticos de detecção de anomalias
-Escalonamento linear de confiança baseado em múltiplos de desvio
-Validação de entrada abrangente (rejeição de NaN/infinito)
-Parâmetros configuráveis para diferentes tipos de sensores
-Tratamento de casos extremos para cenários de desvio padrão zero
-🧪 Framework de Testes Abrangente - 174/174 testes passando
-30+ testes unitários cobrindo casos extremos de modelo estatístico
-25+ testes de integração para fluxos de trabalho de detecção de anomalias ponta a ponta
-Validação de performance e teste de resiliência a erros
-Teste de cenários do mundo real com padrões de dados de sensores reais
-✅ NOVO: Marco Alcançado - Pipeline Completo de Manutenção Preditiva
-Grande avanço: Sistema completo de manutenção preditiva ponta a ponta agora operacional com 209/209 testes passando
+## Major Milestones Achieved
+
+**Current Progress:** Major breakthrough in anomaly detection capabilities
+
+### ✅ **Recently Completed: Advanced Anomaly Detection System**
+- 🧠 **AnomalyDetectionAgent** - Detecção de anomalias com ML pronta para produção
+  - Abordagem de método duplo combinando Isolation Forest e análise estatística
+  - Tomada de decisão ensemble com pontuação de confiança
+  - Cache de linha de base para sensores desconhecidos e degradação graciosa
+  - Lógica de tentativa com backoff exponencial para resiliência
+- 📊 **StatisticalAnomalyDetector** - Algoritmos matemáticos de detecção de anomalias
+  - Escalonamento linear de confiança baseado em múltiplos de desvio
+  - Validação de entrada abrangente (rejeição de NaN/infinito)
+  - Parâmetros configuráveis para diferentes tipos de sensores
+  - Tratamento de casos extremos para cenários de desvio padrão zero
+- 🧪 **Framework de Testes Abrangente** - 174/174 testes passando
+  - 30+ testes unitários cobrindo casos extremos de modelo estatístico
+  - 25+ testes de integração para fluxos de trabalho de detecção de anomalias ponta a ponta
+  - Validação de performance e teste de resiliência a erros
+  - Teste de cenários do mundo real com padrões de dados de sensores reais
+
+### ✅ **NEW: Milestone Achieved - Complete Predictive Maintenance Pipeline**
+
+**Major breakthrough:** Full end-to-end predictive maintenance system now operational with **209/209 tests passing**
+
+Key accomplishments in this milestone include:
+
+- 🔮 **PredictionAgent Implementation** - Production-ready predictive maintenance agent
+  - Facebook Prophet ML integration for time-to-failure forecasting
+  - Intelligent historical data analysis with minimum data requirements
+  - Confidence-based maintenance recommendation engine
+  - Real-time processing of validated anomalies with structured predictions
+  - Comprehensive error handling for Prophet model failures and edge cases
+
+- 📊 **MaintenancePredictedEvent** - Rich predictive maintenance event model
+  - Time-to-failure predictions with confidence scoring
+  - Equipment-specific maintenance recommendations
+  - Model performance metrics and prediction details
+  - Full event correlation for end-to-end traceability
+
+- 🧪 **Comprehensive Testing Expansion** - All 209 tests passing
+  - 30+ new unit tests covering Prophet integration and prediction logic
+  - 5+ integration tests for complete predictive maintenance workflows
+  - Edge case validation for insufficient data and model failures
+  - Performance optimization testing for production workloads
+
+### ✅ Marco Alcançado: Validação Avançada de Anomalias e Redução de Falsos Positivos
 
 Principais conquistas neste marco incluem:
 
-🔮 Implementação do PredictionAgent - Agente de manutenção preditiva pronto para produção
+- Implementação e integração bem-sucedidas do `ValidationAgent` com capacidades abrangentes de validação histórica.
+- Desenvolvimento de um `RuleEngine` flexível com regras específicas de sensor e arquitetura de regras extensível.
+- Introdução de um módulo detalhado de análise de contexto histórico orientado por configurações dentro do `ValidationAgent`, capaz de identificar padrões como estabilidade de valor recente e anomalias recorrentes.
+- Criação do `AnomalyValidatedEvent` com dados contextuais ricos para comunicação clara e acionável de status de anomalias validadas.
+- Implementação de um sistema sofisticado de pontuação de confiança que se ajusta com base em múltiplos fatores de validação.
+- Determinação robusta do status de validação (anomalia crível/falso positivo/necessita investigação) para resultados acionáveis.
+- Testes rigorosos garantindo a confiabilidade e correção desses componentes de validação.
 
-Integração com Facebook Prophet (ML) para previsão de tempo até a falha
-Análise inteligente de dados históricos com requisitos mínimos de dados
-Motor de recomendação de manutenção baseado em confiança
-Processamento em tempo real de anomalias validadas com predições estruturadas
-Tratamento de erros abrangente para falhas do modelo Prophet e casos extremos
-📊 MaintenancePredictedEvent - Modelo de evento rico para manutenção preditiva
+### Foundation Achieved
 
-Previsões de tempo até a falha com pontuação de confiança
-Recomendações de manutenção específicas do equipamento
-Métricas de performance do modelo e detalhes da predição
-Correlação completa de eventos para rastreabilidade ponta a ponta
-🧪 Expansão Abrangente de Testes - Todos os 209 testes passando
-30+ novos testes unitários cobrindo integração com Prophet e lógica de predição
-5+ testes de integração para fluxos de trabalho completos de manutenção preditiva
-Validação de casos extremos para dados insuficientes e falhas de modelo
-Teste de otimização de performance para cargas de trabalho de produção
-✅ Marco Alcançado: Validação Avançada de Anomalias e Redução de Falsos Positivos
-Principais conquistas neste marco incluem:
+✅ **Solid architectural foundation** with proven stability  
+✅ **Event-driven communication** ready for complex workflows  
+✅ **Type-safe data processing** ensuring reliability  
+✅ **Comprehensive testing** providing confidence for future development  
+✅ **Production-ready anomaly detection** with capabilities of ML and statistics  
+✅ **Advanced anomaly validation** with rule-based and historical context analysis  
+✅ **🔮 NEW: Complete predictive maintenance system** with Prophet ML forecasting  
+✅ **🎯 NEW: Maintenance recommendation engine** with confidence-based scheduling  
+✅ **False positive reduction capabilities** through multi-layered validation  
+✅ **Enterprise-grade error handling** with graceful degradation and retry logic  
+✅ **Performance optimization** with sub-5ms processing and intelligent caching  
+✅ **209/209 tests passing** demonstrating system robustness and reliability
 
-Implementação e integração bem-sucedidas do ValidationAgent com capacidades abrangentes de validação histórica.
-Desenvolvimento de um RuleEngine flexível com regras específicas de sensor e arquitetura de regras extensível.
-Introdução de um módulo detalhado de análise de contexto histórico orientado por configurações dentro do ValidationAgent, capaz de identificar padrões como estabilidade de valor recente e anomalias recorrentes.
-Criação do AnomalyValidatedEvent com dados contextuais ricos para comunicação clara e acionável de status de anomalias validadas.
-Implementação de um sistema sofisticado de pontuação de confiança que se ajusta com base em múltiplos fatores de validação.
-Determinação robusta do status de validação (anomalia crível/falso positivo/necessita investigação) para resultados acionáveis.
-Testes rigorosos garantindo a confiabilidade e correção desses componentes de validação.
-Fundação Alcançada
+---
 
-✅ Base arquitetural sólida com estabilidade comprovada
-✅ Comunicação orientada a eventos pronta para fluxos de trabalho complexos
-✅ Processamento de dados com segurança de tipo garantindo confiabilidade
-✅ Testes abrangentes fornecendo confiança para desenvolvimento futuro
-✅ Detecção de anomalias pronta para produção com capacidades de ML e estatísticas
-✅ Validação avançada de anomalias com análise baseada em regras e contexto histórico
-✅ 🔮 NOVO: Sistema completo de manutenção preditiva com previsão Prophet ML
-✅ 🎯 NOVO: Motor de recomendação de manutenção com agendamento baseado em confiança
-✅ Capacidades de redução de falsos positivos através de validação multicamadas
-✅ Tratamento de erros de nível empresarial com degradação graciosa e lógica de tentativa
-✅ Otimização de performance com processamento abaixo de 5ms e cache inteligente
-✅ 209/209 testes passando demonstrando robustez e confiabilidade do sistema
+*This project demonstrates enterprise-grade Python development practices, modern async architecture, production-ready code quality standards, and advanced machine learning integration for industrial IoT applications.*
 
-Este projeto demonstra práticas de desenvolvimento Python de nível empresarial, arquitetura assíncrona moderna, padrões de qualidade de código prontos para produção e integração avançada de machine learning para aplicações IoT industriais.
+---
+
+## Versão em Português Brasileiro
+
+# Smart Maintenance SaaS - Backend
+
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![Tests](https://img.shields.io/badge/Tests-209%2F209%20Passing-brightgreen.svg)](#executando-testes)
+[![Poetry](https://img.shields.io/badge/Poetry-Gerenciamento%20de%20Dependências-blue.svg)](https://python-poetry.org/)
+[![Code Style](https://img.shields.io/badge/Estilo%20de%20Código-Black-black.svg)](https://github.com/psf/black)
+
+## Visão Geral
+
+Um backend robusto, **orientado a eventos e multi-agente** para uma plataforma SaaS de manutenção preditiva industrial. Este sistema fornece uma base sólida para ingestão de dados de sensores, detecção de anomalias, validação de alertas, previsão de falhas e orquestração de fluxos de trabalho de manutenção através de uma sofisticada arquitetura baseada em agentes.
+
+**Status Atual:** Marco importante alcançado - **Sistema de detecção de anomalias, validação e manutenção preditiva pronto para produção**, com um framework de testes abrangente. Todos os **209/209 testes passando**, incluindo extensas suítes de testes unitários e de integração. O sistema apresenta um pipeline de processamento de anomalias multi-estágio totalmente funcional com capacidades preditivas:
+
+1. **Aquisição de Dados:** Ingestão e validação robustas de leituras de sensores
+2. **Detecção de Anomalias:** Detecção por método duplo usando reconhecimento de padrões baseado em ML e análise estatística
+3.  **Validação de Anomalias:** Validação avançada com ajuste de confiança baseado em regras e análise de contexto histórico
+4.  **Manutenção Preditiva:** Previsões de tempo até a falha usando Machine Learning com Prophet e recomendações automatizadas de manutenção
+5.  **Redução de Falsos Positivos:** Filtragem sofisticada de ruído através de regras de validação multicamadas e análise de padrões temporais
+
+Este sistema de nível empresarial agora incorpora uma camada de validação completa e capacidades de manutenção preditiva, reduzindo significativamente falsos positivos e fornecendo agendamento proativo de manutenção enquanto mantém alto desempenho.
+
+## Stack Tecnológico
+
+### Tecnologias Principais
+- **Python 3.11+** - Python moderno com suporte completo a async/await
+- **FastAPI** - Framework web assíncrono de alta performance com documentação OpenAPI automática
+- **Pydantic v2** - Validação de dados avançada e gerenciamento de configurações com desempenho aprimorado
+- **SQLAlchemy 2.0** - ORM assíncrono moderno com segurança de tipo completa
+- **asyncpg** - Driver assíncrono rápido para PostgreSQL
+- **PostgreSQL + TimescaleDB** - Banco de dados de séries temporais otimizado para dados de sensores
+- **Alembic** - Migrações de banco de dados com suporte assíncrono
+
+### Arquitetura & Comunicação
+- **EventBus Customizado** (`core/events/event_bus.py`) - Comunicação inter-agentes assíncrona
+- **Framework BaseAgent Customizado** (`apps/agents/base_agent.py`) - Gerenciamento de ciclo de vida e capacidades do agente
+- **Arquitetura Orientada a Eventos** - Componentes de sistema desacoplados com tipagem forte
+- **Integração com Machine Learning** - Scikit-learn para detecção de anomalias com Isolation Forest
+- **Análise Preditiva** - **NOVO:** Facebook Prophet para previsão de tempo até a falha e predições de manutenção
+- **Análise Estatística** - Modelos estatísticos avançados para detecção de anomalias baseada em limiares
+
+### Desenvolvimento & Qualidade
+- **Poetry** - Gerenciamento moderno de dependências e empacotamento
+- **Docker & Docker Compose** - Ambiente de desenvolvimento containerizado
+- **Pytest + pytest-asyncio** - Framework de testes assíncronos abrangente
+- **Pre-commit Hooks** - Black, Flake8, iSort, MyPy para qualidade de código
+- **Logging JSON Estruturado** - Observabilidade aprimorada com `python-json-logger`
+
+## Estrutura do Projeto
+
+O diretório raiz do projeto Python é `smart-maintenance-saas/`, contendo **47 módulos Python principais** organizados para máxima modularidade e manutenibilidade:
+
+### 📁 Diretórios Principais
+
+#### `apps/` - Lógica da Aplicação
+- **`api/main.py`** - Aplicação FastAPI com health endpoints
+- **`agents/base_agent.py`** - Classe Abstrata BaseAgent com gerenciamento de ciclo de vida
+- **`agents/core/data_acquisition_agent.py`** - DataAcquisitionAgent pronto para produção
+- **`agents/core/anomaly_detection_agent.py`** - Detecção avançada de anomalias com ML e modelos estatísticos
+- **`agents/core/validation_agent.py`** - **CHAVE: Agente de validação avançado com análise de contexto histórico**
+- **`agents/decision/prediction_agent.py`** - **NOVO: Agente de manutenção preditiva com Prophet ML e análise de tempo até a falha**
+- **`ml/statistical_models.py`** - Algoritmos estatísticos de detecção de anomalias
+- **`rules/validation_rules.py`** - **CHAVE: Motor de regras flexível para ajuste de confiança e validação**
+- **`agents/decision/`** - Implementações de agentes de tomada de decisão (placeholder)
+- **`agents/interface/`** - Implementações de agentes de interface de usuário (placeholder)
+- **`agents/learning/`** - Implementações de agentes de aprendizado de máquina (placeholder)
+- **`workflows/`** - Lógica de orquestração de fluxos de trabalho (arquivos placeholder)
+
+#### `core/` - Infraestrutura Compartilhada
+- **`config/settings.py`** - Gerenciamento de configuração baseado em Pydantic
+- **`database/`**
+  - `orm_models.py` - Modelos SQLAlchemy (SensorReadingORM, AnomalyAlertORM, MaintenanceTaskORM)
+  - `session.py` - Gerenciamento de sessão de banco de dados assíncrono
+  - `crud/crud_sensor_reading.py` - Operações CRUD com segurança de tipo
+  - `base.py` - Base declarativa SQLAlchemy
+- **`events/`**
+  - `event_models.py` - Modelos de eventos Pydantic com tipagem forte
+  - `event_bus.py` - Publicação e assinatura de eventos assíncronos
+- **`logging_config.py`** - Configuração de logging JSON estruturado
+- **`agent_registry.py`** - Descoberta e gerenciamento centralizado de agentes (Singleton)
+
+#### `data/` - Camada de Dados
+- **`schemas.py`** - **Fonte única da verdade** para modelos de dados Pydantic
+- **`generators/sensor_data_generator.py`** - Utilitários de geração de dados de amostra
+- **`processors/agent_data_enricher.py`** - Lógica de enriquecimento de dados
+- **`validators/agent_data_validator.py`** - Lógica de validação de dados
+- **`exceptions.py`** - Exceções customizadas relacionadas a dados
+
+#### `tests/` - Testes Abrangentes
+- **`unit/`** - Testes em nível de componente
+- **`integration/`** - Testes de fluxos de trabalho ponta a ponta
+- **`conftest.py`** - Fixtures compartilhados e configuração de banco de dados de teste
+
+#### `alembic_migrations/` - Gerenciamento de Esquema de Banco de Dados
+- **`env.py`** - Ambiente Alembic configurado para assíncrono
+- **`versions/`** - Scripts de migração versionados
+
+#### `scripts/` - Scripts Utilitários
+- **`migrate_db.py`** - Utilitários de migração de banco de dados
+- **`seed_data.py`** - Inserção de dados para desenvolvimento
+- **`setup_dev.py`** - Configuração de ambiente de desenvolvimento
+
+#### `infrastructure/` - Infraestrutura como Código
+- **`docker/init-scripts/01-init-timescaledb.sh`** - Script de inicialização do TimescaleDB
+- **`k8s/`** - Manifestos de deployment Kubernetes (placeholder)
+- **`terraform/`** - Provisionamento de infraestrutura (placeholder)
+
+#### `docs/` - Documentação do Projeto
+- **`api.md`** - Documentação da API
+- **`architecture.md`** - Detalhes da arquitetura do sistema
+- **`deployment.md`** - Guia de deployment
+
+#### `examples/` - Exemplos de Uso
+- **`fastapi_logging_example.py`** - Integração de logging com FastAPI
+- **`logging_example.py`** - Uso básico de logging
+- **`using_settings.py`** - Exemplo de gerenciamento de configuração
+
+### 📄 Arquivos de Configuração Chave
+- `pyproject.toml` - Dependências Poetry e metadados do projeto
+- `docker-compose.yml` - Orquestração de banco de dados de desenvolvimento
+- `alembic.ini` - Configuração de migração de banco de dados
+- `pytest.ini` - Configuração de execução de testes
+- `.pre-commit-config.yaml` - Automação de qualidade de código
+
+## Funcionalidades Chave Implementadas
+
+### 🤖 Framework de Agentes Principal
+- **BaseAgent** - Base abstrata fornecendo gerenciamento de ciclo de vida, tratamento de eventos e registro de capacidades
+- **AgentRegistry** - Padrão Singleton para descoberta de agentes e gerenciamento centralizado
+- **Comunicação entre agentes com segurança de tipo** com suporte assíncrono completo
+
+### ⚡ Arquitetura Orientada a Eventos
+- **EventBus Customizado** - Comunicação assíncrona de alta performance
+- **Eventos com tipagem forte** - Modelos Pydantic garantem integridade dos dados
+- **Rastreamento de correlação** - Rastreamento completo de requisições através de IDs de correlação de eventos
+
+### 🗄️ Camada de Dados Assíncrona
+- **SQLAlchemy 2.0** - ORM assíncrono moderno com segurança de tipo completa
+- **Hypertables TimescaleDB** - Armazenamento otimizado de séries temporais para dados de sensores
+- **Migrações Alembic** - Gerenciamento de esquema versionado
+- **Operações CRUD Assíncronas** - Interações com banco de dados não bloqueantes
+
+### 📊 Pipeline de Aquisição de Dados
+- **DataAcquisitionAgent** - Ingestão de dados de sensores pronta para produção
+  - Assina `SensorDataReceivedEvent`
+  - Valida dados usando `DataValidator` e esquema `SensorReadingCreate`
+  - Enriquece dados usando `DataEnricher`
+  - Publica `DataProcessedEvent` em sucesso ou `DataProcessingFailedEvent` em falha
+- **Tratamento de erros abrangente** com relatório detalhado de falhas
+
+### 🔍 **NOVO: Sistema Avançado de Detecção de Anomalias**
+- **AnomalyDetectionAgent** - Detecção de anomalias pronta para produção com abordagem de método duplo
+  - **Detecção por Machine Learning**: Algoritmo Isolation Forest para detecção de anomalias não supervisionada
+  - **Detecção Estatística**: Análise baseada em limiares com cálulos de Z-score
+  - **Tomada de Decisão Ensemble**: Combina resultados de ML e estatísticos para precisão aprimorada
+  - **Tratamento de Sensores Desconhecidos**: Cache inteligente de linha de base para novos sensores
+  - **Degradação Graciosa**: Continua processamento quando métodos de detecção individuais falham
+  - **Lógica de Tentativa (Retry)**: Backoff exponencial para falhas na publicação de eventos
+  - **Otimizado para Performance**: Processamento abaixo de 5ms por leitura de sensor
+- **StatisticalAnomalyDetector** - Análise estatística avançada
+  - **Validação de Entrada**: Rejeição de NaN/infinito com tratamento de erros abrangente
+  - **Escalonamento Linear de Confiança**: Cálculo matemático de confiança baseado em múltiplos de desvio
+  - **Parâmetros Configuráveis**: Limiares sigma e níveis de confiança customizáveis
+  - **Tratamento de Casos Extremos**: Gerenciamento de desvio padrão zero e valores extremos
+
+### RuleEngine (`apps/rules/validation_rules.py`)
+
+**Sistema de regras flexível** para validação e ajuste de confiança de anomalias detectadas.
+
+**Capacidades Principais:**
+
+- **Ajuste Inicial de Confiança**: Fornece ajustes rápidos baseados em regras para pontuações de confiança de anomalias
+- **Tipos de Regras Versáteis**: Implementa regras baseadas na confiança inicial do alerta, métricas de qualidade de dados do sensor e checagens específicas do tipo de sensor
+- **Arquitetura Plugável**: Facilmente extensível com novos tipos de regras e condições
+- **Pontuação de Confiança**: Ajuste matemático de confiança baseado em regras e limiares predefinidos
+- **Especialização por Tipo de Sensor**: Regras customizadas para diferentes tipos de sensores (temperatura, vibração, pressão)
+- **Avaliação da Qualidade do Sensor**: Avalia a qualidade da leitura do sensor para prevenir falsos positivos de sensores degradados
+
+### 🔧 Base da API
+- **Aplicação FastAPI** com documentação OpenAPI automática
+- **Endpoints de health check** - Monitoramento de conectividade da aplicação e banco de dados
+- **Design nativo assíncrono** para máxima performance
+
+### 📝 Configuração & Observabilidade
+- **Configurações Centralizadas** - Pydantic BaseSettings com suporte a variáveis de ambiente
+- **Logging JSON Estruturado** - Capacidades aprimoradas de debugging e monitoramento
+- **Testes Abrangentes** - **174/174 testes passando** garantindo estabilidade do sistema
+
+## Configuração e Instalação
+
+### Pré-requisitos
+- **Python 3.11+**
+- **Poetry** (para gerenciamento de dependências)
+- **Docker & Docker Compose** (para banco de dados)
+- **Git**
+
+### Passos de Instalação
+
+1. **Clonar o Repositório**
+    ```bash
+    git clone <url-do-seu-repositorio>
+    cd smart-maintenance-saas
+    ```
+
+2. **Instalar Dependências**
+    ```bash
+    poetry install
+    ```
+
+3. **Configurar Ambiente**
+    ```bash
+    # Copiar arquivo de ambiente de exemplo
+    cp .env.example .env
+
+    # Revisar e atualizar variáveis no .env se necessário
+    # (padrões funcionam com configuração Docker)
+    ```
+
+4. **Iniciar Serviço de Banco de Dados**
+    ```bash
+    # Inicia PostgreSQL com extensão TimescaleDB
+    docker-compose up -d db
+    ```
+
+5. **Aplicar Migrações de Banco de Dados**
+    ```bash
+    # Configura esquema e hypertables TimescaleDB
+    poetry run alembic upgrade head
+    ```
+
+## Executando a Aplicação
+
+### Iniciar Servidor da API
+```bash
+poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Pontos de Acesso
+- **URL Base da API:** http://localhost:8000
+- **Documentação Interativa (Swagger UI):** http://localhost:8000/docs
+- **Documentação Alternativa (ReDoc):** http://localhost:8000/redoc
+
+## Executando Testes
+
+### Executar Suíte de Testes
+```bash
+poetry run pytest
+```
+
+**Status Atual:** ✅ **209/209 testes passando** - demonstrando cobertura robusta de testes unitários e de integração para todos os componentes, incluindo os sistemas avançados de detecção de anomalias, validação e manutenção preditiva.
+
+### **NOVO: Estratégia de Testes Avançada**
+Nossa abordagem de testes garante confiabilidade e performance em todos os componentes do sistema, totalizando agora **209 testes**:
+
+**Testes Unitários (65 testes):**
+- Validação de modelo estatístico com casos extremos (NaN, infinito, desvio padrão zero)
+- Verificação de validação de entrada e tratamento de erros
+- Precisão do cálculo matemático de confiança
+- Testes de condições de contorno
+- **NOVO:** Teste do modelo Prophet do PredictionAgent e recomendações de manutenção
+- **NOVO:** Validação da precisão da predição de tempo até a falha
+
+**Testes de Integração (85 testes):**
+- Fluxos de trabalho de detecção de anomalias ponta a ponta
+- Ciclo de vida do agente e tratamento de eventos
+- Integração com banco de dados TimescaleDB
+- Padrões de comunicação do barramento de eventos
+- Cenários de recuperação de erros e degradação graciosa
+- **NOVO:** Teste completo do pipeline de manutenção preditiva
+- **NOVO:** Análise de dados históricos e teste de integração do Prophet
+
+**Testes de Performance:**
+- Validação de velocidade de processamento abaixo de 5ms
+- Verificação de eficiência de memória
+- Capacidades de processamento concorrente
+- Teste de carga com volumes de dados de sensores realistas
+- **NOVO:** Otimização de performance do modelo Prophet
+
+### Opcional: Executar com Cobertura
+```bash
+poetry run pytest --cov=apps --cov=core --cov=data
+```
+
+## Endpoints da API Atuais
+
+| Método | Endpoint | Descrição |
+|--------|----------|-------------|
+| `GET` | `/health` | Status geral de saúde da aplicação |
+| `GET` | `/health/db` | Status de conectividade do banco de dados |
+
+## Agentes Implementados & Seus Papéis
+
+### BaseAgent (`apps/agents/base_agent.py`)
+**A classe abstrata fundamental** para todos os agentes especializados no sistema.
+
+**Capacidades Principais:**
+- 🆔 **Identificação única** com IDs de agente auto-gerados
+- 🔄 **Gerenciamento de ciclo de vida** - iniciar, parar, monitoramento de saúde
+- 📡 **Integração com barramento de eventos** - comunicação pub/sub transparente
+- 🎯 **Registro de capacidades** - descoberta dinâmica de funcionalidades
+- ⚡ **Tratamento de eventos assíncrono** com implementações padrão
+- 🏥 **Relatório de status de saúde** para monitoramento do sistema
+
+### DataAcquisitionAgent (`apps/agents/core/data_acquisition_agent.py`)
+**Agente pronto para produção** responsável pelo estágio inicial crítico do pipeline de dados.
+
+**Papel & Responsabilidades:**
+- 📥 **Ingestão de Dados** - Recebe dados brutos de sensores de fontes externas
+- ✅ **Validação de Dados** - Garante integridade estrutural e regras de negócio usando `DataValidator`
+- 🔧 **Enriquecimento de Dados** - Adiciona informação contextual usando `DataEnricher`
+- 📤 **Publicação de Eventos** - Notifica sistemas downstream dos resultados do processamento
+
+**Fluxo de Eventos:**
+- **Assina:** `SensorDataReceivedEvent`
+- **Publica em Sucesso:** `DataProcessedEvent` (com dados validados & enriquecidos)
+- **Publica em Falha:** `DataProcessingFailedEvent` (com informação detalhada do erro)
+
+### **NOVO: AnomalyDetectionAgent (`apps/agents/core/anomaly_detection_agent.py`)**
+**Agente avançado com ML fornecendo capacidades de detecção de anomalias de nível empresarial.**
+
+**Arquitetura Principal:**
+- 🧠 **Métodos de Detecção Duplos** - Combina Isolation Forest ML com análise estatística de limiares
+- 🔄 **Tomada de Decisão Ensemble** - Agregação inteligente de múltiplos resultados de detecção
+- 🎯 **Aprendizado Adaptativo** - Estabelecimento e cache de linha de base para sensores desconhecidos
+- ⚡ **Alta Performance** - Otimizado para processamento em tempo real (<5ms por leitura)
+- 🛡️ **Tolerância a Falhas** - Degradação graciosa e tratamento de erros abrangente
+
+**Capacidades de Detecção:**
+- **Detecção por Machine Learning**: Isolation Forest algorithm for pattern-based anomaly identification
+- **Detecção Estatística**: Z-score analysis with configurable sigma thresholds
+- **Confidence Scoring**: Linear confidence scaling based on deviation multiples
+- **Sensor Type Awareness**: Specialized handling for temperature, vibration, and pressure sensors
+- **Unknown Sensor Management**: Intelligent baseline caching with fallback values
+
+**Fluxo de Eventos:**
+- **Assina:** `DataProcessedEvent`
+- **Publica em Anomalia:** `AnomalyDetectedEvent` (com informação detalhada da anomalia e pontuações de confiança)
+- **Tratamento de Erros:** Lógica de tentativa com backoff exponencial para falhas na publicação de eventos
+
+**Métricas de Performance:**
+- Model fitting: ~50ms initialization
+- Processing speed: <5ms per sensor reading
+- Memory efficiency: Optimal baseline caching
+- Error resilience: Zero crashes with malformed data
+
+### ValidationAgent (`apps/agents/core/validation_agent.py`)
+**Agente sofisticado de validação de anomalias que fornece análise aprofundada de anomalias detectadas para reduzir falsos positivos e garantir a confiabilidade dos alertas.**
+
+**Papel & Responsabilidades:**
+- 🔎 **Processa `AnomalyDetectedEvent`** do `AnomalyDetectionAgent`.
+- 📏 **Utiliza `RuleEngine`** para ajustes iniciais de confiança baseados em regras, de acordo com propriedades do alerta e qualidade da leitura do sensor.
+- 📊 **Realiza Validação de Contexto Histórico** buscando e analisando dados passados para o sensor específico. Isso inclui checagens configuráveis como 'Estabilidade de Valor Recente' e 'Padrão de Anomalia Recorrente'.
+- ⚙️ **Lógica de Validação Configurável** - Lógica detalhada de validação histórica é ajustável via configurações específicas do agente.
+- 💯 **Calcula `final_confidence`** combinando ajustes baseados em regras e análise histórica.
+- 🤔 **Determina `validation_status`** (ex: "credible_anomaly", "false_positive_suspected", "further_investigation_needed") baseado na confiança final.
+- 📤 **Publica `AnomalyValidatedEvent`** contendo detalhes abrangentes: dados do alerta original, dados da leitura que disparou o alerta, todas as razões de validação, confiança final e status determinado.
+
+**Capacidades Avançadas:**
+- **Reconhecimento de Padrões Temporais**: Identifica anomalias e padrões recorrentes ao longo do tempo.
+- **Redução de Falsos Positivos**: Validação multicamadas sofisticada para filtrar ruído.
+- **Análise de Estabilidade de Valor**: Examina a estabilidade de leituras recentes para avaliar a credibilidade da anomalia.
+- **Sistema de Pontuação de Confiança**: Ajusta a confiança baseada em múltiplos fatores de validação.
+- **Rastreabilidade**: Trilha de auditoria completa do raciocínio de validação para cada anomalia.
+
+**Fluxo de Eventos:**
+
+- **Assina:** `AnomalyDetectedEvent`
+- **Publica:** `AnomalyValidatedEvent` com detalhes abrangentes da validação
+- **Integração:** Funciona de forma transparente com componentes de tomada de decisão downstream
+
+### **NOVO: PredictionAgent (`apps/agents/decision/prediction_agent.py`)**
+**O agente avançado de manutenção preditiva que usa machine learning para prever falhas de equipamento e gerar recomendações de manutenção.**
+
+**Capacidades Principais:**
+- 🔮 **Previsões de Tempo Até a Falha** - Usa a biblioteca Prophet ML do Facebook para previsões precisas
+- 📊 **Análise de Dados Históricos** - Analisa padrões de sensores do banco de dados para construir modelos de predição
+- 🎯 **Recomendações de Manutenção** - Gera ações de manutenção específicas baseadas na confiança e cronograma da predição
+- ⚡ **Processamento em Tempo Real** - Processa anomalias validadas e publica predições de manutenção
+- 🧠 **Filtragem Inteligente** - Processa apenas anomalias de alta confiança para focar em ameaças críveis
+- 🔄 **Tratamento de Erros Gracioso** - Gerenciamento de erros abrangente para falhas do modelo Prophet e casos extremos
+
+**Funcionalidades Avançadas:**
+- **Integração com Modelo Prophet**: Padrão da indústria para previsão de séries temporais com detecção de tendência e sazonalidade
+- **Recomendações Baseadas em Confiança**: Diferentes estratégias de manutenção baseadas nos níveis de confiança da predição
+- **Consciência do Contexto do Equipamento**: Extrai identificadores de equipamento para agendamento de manutenção direcionado
+- **Otimização de Performance**: Preparação de dados e execução de modelo eficientes para cargas de trabalho de produção
+- **Logging Abrangente**: Trilhas de auditoria detalhadas para todas as predições e recomendações
+
+**Fluxo de Eventos:**
+
+- **Assina:** `AnomalyValidatedEvent` (processa apenas anomalias críveis de alta confiança)
+- **Publica:** `MaintenancePredictedEvent` com previsões de falha e recomendações de manutenção
+- **Integração:** Permite agendamento proativo de manutenção e planejamento de recursos
+
+**Pipeline de Predição:**
+- Busca de dados históricos (mínimo de 10 pontos de dados requerido)
+- Treinamento do modelo Prophet com dados de séries temporais específicos do sensor
+- Cálculo da probabilidade de falha usando análise de tendência
+- Geração de recomendação de manutenção baseada em urgência e confiança
+- Publicação de evento estruturado com detalhes acionáveis de manutenção
+
+### **NOVO: SchedulingAgent (`apps/agents/decision/scheduling_agent.py`)**
+**The intelligent maintenance scheduling agent** that optimizes maintenance task assignments and coordinates with external calendar systems.
+
+**Core Capabilities:**
+- 📅 **Maintenance Task Scheduling** - Converts maintenance predictions into optimized schedules
+- 👥 **Technician Assignment** - Assigns tasks to available technicians using greedy optimization
+- 🔗 **Calendar Integration** - Interfaces with external calendar systems (mock implementation)
+- ⚡ **Real-Time Processing** - Processes maintenance predictions and publishes scheduled tasks
+- 🎯 **Optimization Logic** - Uses simple greedy assignment with OR-Tools dependency for future enhancements
+- 🔄 **Resource Management** - Tracks technician availability and workload distribution
+
+**Advanced Features:**
+- **Greedy Assignment Algorithm**: Efficient task-to-technician matching based on availability and skills
+- **Calendar Service Integration**: Mock external calendar service for realistic scheduling simulation
+- **Optimization Scoring**: Calculates task priority based on failure probability and urgency
+- **Workload Balancing**: Distributes maintenance tasks across available technicians
+- **Comprehensive Logging**: Detailed audit trails for all scheduling decisions and assignments
+- **Error Resilience**: Graceful handling of scheduling conflicts and resource constraints
+
+**Event Flow:**
+
+- **Subscribes to:** `MaintenancePredictedEvent` (processa previsões de manutenção do PredictionAgent)
+- **Publica:** `MaintenanceScheduledEvent` com horários otimizados e atribuições de técnicos
+- **Integração:** Permite execução coordenada da manutenção e planejamento de recursos
+
+**Pipeline de Agendamento:**
+- Criação de solicitação de manutenção a partir de predições
+- Avaliação da disponibilidade do técnico
+- Otimização da atribuição de tarefas gananciosa
+- Integração com calendário para confirmação de agendamento
+- Publicação de evento estruturado com detalhes completos do agendamento
+
+### **NOVO: NotificationAgent (`apps/agents/decision/notification_agent.py`)**
+**The notification service agent** that handles communication with technicians and stakeholders about maintenance schedules and alerts.
+
+**Core Capabilities:**
+- 📨 **Multi-Channel Notifications** - Supports multiple notification channels including console, email, and SMS
+- 🔧 **Maintenance Schedule Notifications** - Sends notifications when maintenance is scheduled
+- 👤 **Targeted Messaging** - Routes notifications to specific technicians and stakeholders
+- 📋 **Template-Based Messages** - Uses customizable message templates for different notification types
+- ⚡ **Real-Time Processing** - Processes maintenance schedules and sends immediate notifications
+- 🔄 **Provider-Based Architecture** - Extensible notification provider system for different channels
+
+**Advanced Features:**
+- **Console Notification Provider**: Immediate console-based notifications for development and testing
+- **Template Rendering Engine**: Dynamic message generation with equipment and schedule details
+- **Notification Status Tracking**: Comprehensive tracking of notification delivery status
+- **Error Resilience**: Graceful handling of notification failures with detailed error reporting
+- **Metadata Integration**: Rich notification metadata for debugging and audit trails
+- **Extensible Architecture**: Easy integration of new notification channels (email, SMS, webhooks)
+
+**Event Flow:**
+
+- **Subscribes to:** `MaintenanceScheduledEvent` (processa agendamentos de manutenção do SchedulingAgent)
+- **Publishes:** None (terminal agent in the notification pipeline)
+- **Integration:** Provides communication bridge between automated scheduling and human operators
+
+**Notification Pipeline:**
+- Maintenance schedule event processing
+- Notification request creation with recipient details
+- Message template rendering with schedule information
+- Provider-based notification delivery
+- Status tracking and error handling with comprehensive logging
+
+**Message Templates:**
+- **Successful Scheduling**: "🔧 Maintenance Scheduled: {equipment_id}" with full schedule details
+- **Failed Scheduling**: "⚠️ Maintenance Scheduling Failed: {equipment_id}" with constraint information
+- **Rich Metadata**: Includes timestamps, technician details, and maintenance context
 
