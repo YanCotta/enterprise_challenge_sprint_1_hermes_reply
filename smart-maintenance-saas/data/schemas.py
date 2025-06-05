@@ -365,6 +365,46 @@ class ReportResult(BaseModel):
         json_encoders = {datetime: lambda dt: dt.isoformat()}
 
 
+# =============================================================================
+# LEARNING AGENT MODELS
+# =============================================================================
+
+class FeedbackData(BaseModel):
+    """Schema for feedback data to be processed by the Learning Agent."""
+
+    feedback_id: str = Field(..., description="Unique identifier for the feedback")
+    feedback_text: str = Field(..., description="The textual content of the feedback")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="When the feedback was received")
+    source: Optional[str] = Field(None, description="Source of the feedback (e.g., 'user', 'system', 'agent')")
+    category: Optional[str] = Field(None, description="Category of feedback (e.g., 'maintenance', 'anomaly', 'prediction')")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the feedback")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class KnowledgeItem(BaseModel):
+    """Schema for a knowledge item retrieved from the RAG system."""
+
+    id: str = Field(..., description="Unique identifier for the knowledge item")
+    description: str = Field(..., description="The textual content/description of the knowledge")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata associated with the knowledge item")
+    similarity_score: Optional[float] = Field(None, ge=-1.0, le=1.0, description="Similarity score for retrieval relevance (cosine similarity can be negative)")
+    created_at: Optional[datetime] = Field(None, description="When this knowledge was added")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class LearningResult(BaseModel):
+    """Schema for the result of a learning operation."""
+
+    knowledge_updated: bool = Field(..., description="Whether the knowledge base was successfully updated")
+    knowledge_id: Optional[str] = Field(None, description="ID of the added/updated knowledge item")
+    error_message: Optional[str] = Field(None, description="Error message if the operation failed")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the learning operation")
+
+
 # Ensure all necessary imports are at the top
 # (Pydantic, datetime, Enum, typing modules are already imported)
 
