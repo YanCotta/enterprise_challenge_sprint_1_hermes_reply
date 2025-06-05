@@ -61,6 +61,7 @@ The Python project root is `smart-maintenance-saas/`, containing **47 core Pytho
 - **`agents/core/anomaly_detection_agent.py`** - Advanced anomaly detection with ML and statistical models
 - **`agents/core/validation_agent.py`** - **KEY: Advanced validation agent with historical context analysis**
 - **`agents/decision/prediction_agent.py`** - **NEW: Predictive maintenance agent with Prophet ML and time-to-failure analysis**
+- **`agents/decision/reporting_agent.py`** - **NEW: Analytics and reporting agent with chart generation and data visualization**
 - **`ml/statistical_models.py`** - Statistical anomaly detection algorithms
 - **`rules/validation_rules.py`** - **KEY: Flexible rule engine for confidence adjustment and validation**
 - **`agents/decision/`** - Decision-making agent implementations (placeholder)
@@ -475,6 +476,42 @@ poetry run pytest --cov=apps --cov=core --cov=data
 - **Successful Scheduling**: "🔧 Maintenance Scheduled: {equipment_id}" with full schedule details
 - **Failed Scheduling**: "⚠️ Maintenance Scheduling Failed: {equipment_id}" with constraint information
 - **Rich Metadata**: Includes timestamps, technician details, and maintenance context
+
+### **NEW: ReportingAgent (`apps/agents/decision/reporting_agent.py`)**
+**The analytics and reporting agent** that generates comprehensive reports with data visualization and actionable insights.
+
+**Core Capabilities:**
+- 📊 **Analytics Engine** - Provides analytics and KPI generation for maintenance operations
+- 📋 **Report Generation** - Creates JSON and text reports with customizable formats
+- 📈 **Chart Generation** - Integrates matplotlib for data visualization with base64 encoding
+- 🎯 **Multiple Report Types** - Supports anomaly summaries, maintenance overviews, and system health reports
+- ⚡ **High Performance** - Optimized for concurrent report generation and large datasets
+- 🔄 **Error Resilience** - Comprehensive error handling with graceful degradation
+
+**Advanced Features:**
+- **AnalyticsEngine**: Mock analytics generator for realistic KPIs and metrics
+- **Chart Integration**: Line charts, bar charts, and histograms with matplotlib visualization
+- **Text Report Templates**: Formatted text reports with equipment metrics and maintenance insights
+- **JSON Report Structure**: Structured data output for API consumption and further processing
+- **Time Range Support**: Flexible time-based filtering for historical and real-time reporting
+- **Metadata Enrichment**: Rich report metadata with generation timestamps and correlation tracking
+
+**Report Types:**
+- **Anomaly Summary**: Analysis of detected anomalies with confidence distributions and equipment impact
+- **Maintenance Overview**: Comprehensive maintenance metrics including task completion rates and technician utilization
+- **System Health**: Overall system performance with uptime metrics and data quality scores
+
+**Event Flow:**
+- **Triggered by:** External API requests (not event-driven)
+- **Publishes:** None (on-demand report generation)
+- **Integration:** Provides data insights for decision-making and operational dashboards
+
+**Reporting Pipeline:**
+- Report request processing with parameter validation
+- Analytics data generation using AnalyticsEngine
+- Chart creation with matplotlib visualization
+- Report content generation (JSON or text format)
+- Base64 encoding for chart integration and delivery
 ## Event Catalog
 
 ### Core Event Models (`core/events/event_models.py`)
