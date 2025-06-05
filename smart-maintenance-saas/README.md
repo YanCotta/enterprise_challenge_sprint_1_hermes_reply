@@ -407,6 +407,38 @@ poetry run pytest --cov=apps --cov=core --cov=data
 - Maintenance recommendation generation based on urgency and confidence
 - Structured event publishing with actionable maintenance details
 
+### **NEW: SchedulingAgent (`apps/agents/decision/scheduling_agent.py`)**
+**The intelligent maintenance scheduling agent** that optimizes maintenance task assignments and coordinates with external calendar systems.
+
+**Core Capabilities:**
+- 📅 **Maintenance Task Scheduling** - Converts maintenance predictions into optimized schedules
+- 👥 **Technician Assignment** - Assigns tasks to available technicians using greedy optimization
+- 🔗 **Calendar Integration** - Interfaces with external calendar systems (mock implementation)
+- ⚡ **Real-Time Processing** - Processes maintenance predictions and publishes scheduled tasks
+- 🎯 **Optimization Logic** - Uses simple greedy assignment with OR-Tools dependency for future enhancements
+- 🔄 **Resource Management** - Tracks technician availability and workload distribution
+
+**Advanced Features:**
+- **Greedy Assignment Algorithm**: Efficient task-to-technician matching based on availability and skills
+- **Calendar Service Integration**: Mock external calendar service for realistic scheduling simulation
+- **Optimization Scoring**: Calculates task priority based on failure probability and urgency
+- **Workload Balancing**: Distributes maintenance tasks across available technicians
+- **Comprehensive Logging**: Detailed audit trails for all scheduling decisions and assignments
+- **Error Resilience**: Graceful handling of scheduling conflicts and resource constraints
+
+**Event Flow:**
+
+- **Subscribes to:** `MaintenancePredictedEvent` (processes maintenance predictions from PredictionAgent)
+- **Publishes:** `MaintenanceScheduledEvent` with optimized schedules and technician assignments
+- **Integration:** Enables coordinated maintenance execution and resource planning
+
+**Scheduling Pipeline:**
+- Maintenance request creation from predictions
+- Technician availability assessment
+- Greedy task assignment optimization
+- Calendar integration for scheduling confirmation
+- Structured event publishing with complete schedule details
+
 ## Event Catalog
 
 ### Core Event Models (`core/events/event_models.py`)
@@ -420,6 +452,7 @@ poetry run pytest --cov=apps --cov=core --cov=data
 | `AnomalyDetectedEvent` | Anomaly detection results with detailed analysis | `anomaly_details`, `confidence_score`, `detection_method`, `sensor_info`, `evidence` |
 | `AnomalyValidatedEvent` | Output of the ValidationAgent, signaling a thoroughly validated anomaly status with enriched information | `original_anomaly_alert_payload`, `triggering_reading_payload`, `validation_status`, `final_confidence`, `validation_reasons`, `agent_id`, `correlation_id` |
 | `MaintenancePredictedEvent` | **NEW:** Predictive maintenance output from PredictionAgent with time-to-failure predictions and maintenance recommendations | `sensor_id`, `equipment_id`, `failure_probability`, `predicted_failure_date`, `confidence_score`, `maintenance_recommendations`, `model_metrics`, `prediction_details` |
+| `MaintenanceScheduledEvent` | **NEW:** Optimized maintenance schedule from SchedulingAgent with technician assignments and calendar integration | `request_id`, `sensor_id`, `equipment_id`, `assigned_technician`, `scheduled_time`, `estimated_duration`, `priority_score`, `task_description`, `calendar_event_id`, `optimization_details` |
 | `AgentStatusUpdateEvent` | Agent operational status reports *(future use)* | TBD |
 
 ### **NEW: Anomaly Detection Event Structure**
@@ -498,6 +531,7 @@ poetry run pytest --cov=apps --cov=core --cov=data
 | **Anomaly Detection** | `apps/agents/core/anomaly_detection_agent.py` | Advanced ML and statistical anomaly detection |
 | **Validation Agent** | `apps/agents/core/validation_agent.py` | Sophisticated rule-based and historical context validation |
 | **Prediction Agent** | `apps/agents/decision/prediction_agent.py` | **NEW: Prophet ML-based predictive maintenance and time-to-failure forecasting** |
+| **Scheduling Agent** | `apps/agents/decision/scheduling_agent.py` | **NEW: Intelligent maintenance scheduling with technician assignment and calendar integration** |
 | **Rule Engine** | `apps/rules/validation_rules.py` | Flexible rule definitions for anomaly confidence adjustment |
 | **Statistical Models** | `apps/ml/statistical_models.py` | Mathematical anomaly detection algorithms |
 | **Event System** | `core/events/event_bus.py` | Async pub/sub communication |
@@ -1080,7 +1114,7 @@ Princípios de Arquitetura
 📋 Segregação de Interface - Abstrações limpas através de protocolos
 🔄 Design Orientado a Eventos - Arquitetura de sistema escalável e reativa
 Explorando o Código
-Áreas Chave para Entender a Arquitetura
+### Áreas Chave para Entender a Arquitetura
 
 | Componente | Arquivo | O Que Procurar |
 |-----------|------|------------------|
@@ -1089,6 +1123,7 @@ Explorando o Código
 | **Anomaly Detection** | `apps/agents/core/anomaly_detection_agent.py` | Advanced ML and statistical anomaly detection |
 | **Validation Agent** | `apps/agents/core/validation_agent.py` | Sophisticated rule-based and historical context validation |
 | **Prediction Agent** | `apps/agents/decision/prediction_agent.py` | **NEW: Prophet ML-based predictive maintenance and time-to-failure forecasting** |
+| **Scheduling Agent** | `apps/agents/decision/scheduling_agent.py` | **NEW: Intelligent maintenance scheduling with technician assignment and calendar integration** |
 | **Rule Engine** | `apps/rules/validation_rules.py` | Flexible rule definitions for anomaly confidence adjustment |
 | **Statistical Models** | `apps/ml/statistical_models.py` | Mathematical anomaly detection algorithms |
 | **Event System** | `core/events/event_bus.py` | Async pub/sub communication |
