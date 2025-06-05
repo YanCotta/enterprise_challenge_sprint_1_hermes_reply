@@ -226,6 +226,54 @@ class SensorDataSummary(BaseModel):
 # - Predictive maintenance model input/output schemas
 # - Configuration schemas for different system components
 
+
+class MaintenanceRequest(BaseModel):
+    """Schema for a maintenance request generated from predictions."""
+
+    id: str = Field(..., description="Unique identifier for the maintenance request")
+    equipment_id: str = Field(..., description="Equipment/component identifier requiring maintenance")
+    maintenance_type: str = Field(..., description="Type of maintenance needed")
+    priority: int = Field(..., ge=1, le=5, description="Priority level (1=highest, 5=lowest)")
+    estimated_duration_hours: float = Field(..., gt=0, description="Estimated duration in hours")
+    required_skills: List[str] = Field(default_factory=list, description="Required technician skills")
+    preferred_time_window_start: Optional[datetime] = Field(None, description="Preferred start time")
+    preferred_time_window_end: Optional[datetime] = Field(None, description="Preferred end time")
+    deadline: Optional[datetime] = Field(None, description="Hard deadline for completion")
+    parts_needed: List[str] = Field(default_factory=list, description="Required parts/materials")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class ScheduleStatus(str, Enum):
+    """Status of a maintenance schedule."""
+
+    SCHEDULED = "Scheduled"
+    FAILED_TO_SCHEDULE = "Failed_To_Schedule"
+    PENDING = "Pending"
+    CANCELLED = "Cancelled"
+
+
+class OptimizedSchedule(BaseModel):
+    """Schema for an optimized maintenance schedule."""
+
+    request_id: str = Field(..., description="Reference to the MaintenanceRequest ID")
+    status: ScheduleStatus = Field(..., description="Status of the scheduling attempt")
+    assigned_technician_id: Optional[str] = Field(None, description="ID of assigned technician")
+    scheduled_start_time: Optional[datetime] = Field(None, description="Scheduled start time")
+    scheduled_end_time: Optional[datetime] = Field(None, description="Scheduled end time")
+    optimization_score: Optional[float] = Field(None, ge=0, le=1, description="Quality score of the schedule")
+    constraints_satisfied: List[str] = Field(default_factory=list, description="List of satisfied constraints")
+    constraints_violated: List[str] = Field(default_factory=list, description="List of violated constraints")
+    alternative_slots: List[Dict[str, Any]] = Field(default_factory=list, description="Alternative time slots if available")
+    scheduling_notes: Optional[str] = Field(None, description="Additional scheduling notes")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
 # Ensure all necessary imports are at the top
 # (Pydantic, datetime, Enum, typing modules are already imported)
 
