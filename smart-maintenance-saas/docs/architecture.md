@@ -51,6 +51,7 @@ The heart of the platform, consisting of specialized agents built upon a common 
   * `PredictionAgent`: Provides predictive maintenance recommendations using ML.
   * `SchedulingAgent`: Optimizes maintenance task scheduling and technician assignments.
   * `NotificationAgent`: Sends notifications through multiple channels (console, email, SMS, etc.) based on maintenance scheduling events and other system events.
+  * `ReportingAgent`: Generates analytics reports with data visualization and actionable insights for maintenance operations.
   * (More agents for learning, decision support, etc.)
 
 ### 2.4. Data Persistence Layer
@@ -113,6 +114,7 @@ graph TD
 
     subgraph Backend Services
         API --> EventBus[Event Bus]
+        API -->|Direct Calls| RA[Reporting Agent]
 
         EventBus -->|Events| DAA[Data Acquisition Agent]
         DAA -->|Store Data| DB[(TimescaleDB/PostgreSQL)]
@@ -129,18 +131,23 @@ graph TD
         EventBus -->|Events| NA[Notification Agent]
         NA -->|Send Notifications| NotificationProviders[Console/Email/SMS/WhatsApp]
 
+        RA -->|Query Data| DB
+        RA -->|Generate Reports| ReportOutput[Reports & Charts]
+
         EventBus -->|Events| OtherAgents[...]
 
         BaseAgent[BaseAgent] -- Inherited by --> DAA
         BaseAgent -- Inherited by --> ADA
         BaseAgent -- Inherited by --> MSA
         BaseAgent -- Inherited by --> NA
+        BaseAgent -- Inherited by --> RA
         BaseAgent -- Inherited by --> OtherAgents
 
         AgentRegistry[Agent Registry] -- Manages --> DAA
         AgentRegistry -- Manages --> ADA
         AgentRegistry -- Manages --> MSA
         AgentRegistry -- Manages --> NA
+        AgentRegistry -- Manages --> RA
         AgentRegistry -- Manages --> OtherAgents
     end
 
@@ -321,6 +328,43 @@ Based on these, the key metrics are:
 **Performance Monitoring:** If a feedback mechanism is in place (e.g., maintenance logs confirming if an alert corresponded to a real issue), these metrics can be tracked over time to monitor the agent's performance in production and signal when models might need retraining or adjustment.
 
 **Business Value Justification:** Correlating these metrics with operational costs (e.g., cost of a missed failure vs. cost of investigating a false alarm) can help in optimizing the system for business objectives.
+
+### 5.3. Reporting and Analytics Flow
+
+The `ReportingAgent` provides comprehensive analytics and visualization capabilities for maintenance operations:
+
+#### Data Flow: Report Generation
+
+1. **Report Request:** External systems or API endpoints trigger report generation by calling the `ReportingAgent.generate_report()` method directly.
+2. **Analytics Processing:** The `AnalyticsEngine` component within the agent processes the request:
+   * Analyzes request parameters (report type, time range, format requirements)
+   * Generates mock analytics data appropriate for the report type (anomaly summary, maintenance overview, system health)
+   * Calculates KPIs, metrics, and statistical summaries
+3. **Chart Generation:** If charts are requested:
+   * Creates matplotlib visualizations (line charts, bar charts, histograms)
+   * Encodes charts as base64 strings for easy integration
+   * Handles various chart types based on data characteristics
+4. **Content Formatting:** Generates final report content:
+   * **JSON Format:** Structured data with metadata, analytics summary, and embedded charts
+   * **Text Format:** Human-readable reports with formatted metrics and equipment insights
+5. **Report Assembly:** Combines all components into a `ReportResult` with:
+   * Complete metadata (timestamps, correlation tracking, generation details)
+   * Analytics summary with key metrics
+   * Generated charts (if requested)
+   * Formatted content appropriate for the target audience
+
+#### Report Types Supported
+
+* **Anomaly Summary Reports:** Analysis of detected anomalies with confidence distributions and equipment impact assessment
+* **Maintenance Overview Reports:** Comprehensive maintenance metrics including task completion rates, technician utilization, and equipment uptime
+* **System Health Reports:** Overall system performance with uptime metrics, data quality scores, and operational efficiency indicators
+
+#### Integration Points
+
+* **On-Demand Generation:** Direct API integration for real-time report requests
+* **Scheduled Reporting:** Can be integrated with scheduling systems for regular report generation
+* **Dashboard Integration:** JSON output optimized for consumption by dashboards and monitoring systems
+* **Export Capabilities:** Text format suitable for email distribution and document generation
 
 ## 6. Scalability and Resilience
 
