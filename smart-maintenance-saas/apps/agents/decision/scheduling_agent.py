@@ -165,19 +165,27 @@ class SchedulingAgent(BaseAgent):
         
         self.logger.debug(f"SchedulingAgent {self.agent_id} registered {len(self.capabilities)} capabilities")
     
-    async def handle_maintenance_predicted_event(self, event_type: str, event_data: Dict[str, Any]) -> None:
+    async def handle_maintenance_predicted_event(self, event_type: str, event_data) -> None:
         """
         Handle MaintenancePredictedEvent by creating and scheduling maintenance requests.
         
         Args:
             event_type: Type of the event (should be "MaintenancePredictedEvent")
-            event_data: Event payload containing prediction data
+            event_data: Event payload containing prediction data (can be MaintenancePredictedEvent object or dict)
         """
-        self.logger.info(f"Received {event_type} for equipment {event_data.get('equipment_id')}")
+        # Handle both event object and data dictionary patterns
+        if hasattr(event_data, 'equipment_id'):
+            # event_data is a MaintenancePredictedEvent object
+            equipment_id = event_data.equipment_id
+            prediction_event = event_data
+        else:
+            # event_data is a dictionary, parse it into MaintenancePredictedEvent
+            equipment_id = event_data.get('equipment_id', 'unknown')
+            prediction_event = MaintenancePredictedEvent(**event_data)
+            
+        self.logger.info(f"Received {event_type} for equipment {equipment_id}")
         
         try:
-            # Parse the event data
-            prediction_event = MaintenancePredictedEvent(**event_data)
             
             # Transform prediction into maintenance request
             maintenance_request = self._create_maintenance_request(prediction_event)
