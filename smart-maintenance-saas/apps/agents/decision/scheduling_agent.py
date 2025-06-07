@@ -13,7 +13,7 @@ from uuid import uuid4
 from apps.agents.base_agent import BaseAgent, AgentCapability
 from core.events.event_models import MaintenancePredictedEvent, MaintenanceScheduledEvent
 from data.schemas import MaintenanceRequest, OptimizedSchedule, ScheduleStatus
-
+from data.exceptions import EventPublishError # Import EventPublishError
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +21,6 @@ logger = logging.getLogger(__name__)
 class CalendarService:
     """
     Dummy CalendarService for mocking external calendar integrations.
-    In production, this would integrate with actual calendar systems like Google Calendar,
-    Outlook, or specialized maintenance management systems.
     """
     
     def __init__(self):
@@ -30,435 +28,179 @@ class CalendarService:
         self.logger.info("CalendarService initialized (dummy implementation)")
     
     def check_availability(self, technician_id: str, start_time: datetime, end_time: datetime) -> bool:
-        """
-        Check if a technician is available during the specified time window.
-        
-        Args:
-            technician_id: ID of the technician to check
-            start_time: Start of the time window
-            end_time: End of the time window
-            
-        Returns:
-            bool: True if technician is available, False otherwise
-        """
         self.logger.debug(f"Checking availability for technician {technician_id} from {start_time} to {end_time}")
-        
-        # Mock logic: assume technicians are available during business hours (8 AM - 6 PM)
-        business_start = 8  # 8 AM
-        business_end = 18   # 6 PM
-        
-        # Simple availability check based on business hours
+        business_start, business_end = 8, 18
         if (start_time.hour >= business_start and end_time.hour <= business_end and
-            start_time.weekday() < 5):  # Monday = 0, Friday = 4
+            start_time.weekday() < 5):
             self.logger.debug(f"Technician {technician_id} is available")
             return True
-        
         self.logger.debug(f"Technician {technician_id} is not available")
         return False
     
     def book_slot(self, technician_id: str, start_time: datetime, end_time: datetime, 
                   maintenance_request_id: str) -> bool:
-        """
-        Book a time slot for a technician.
-        
-        Args:
-            technician_id: ID of the technician
-            start_time: Start time of the booking
-            end_time: End time of the booking
-            maintenance_request_id: ID of the maintenance request
-            
-        Returns:
-            bool: True if booking successful, False otherwise
-        """
-        self.logger.info(f"Booking slot for technician {technician_id}: {start_time} to {end_time} "
-                        f"for request {maintenance_request_id}")
-        
-        # Mock implementation - always succeeds for now
+        self.logger.info(f"Booking slot for technician {technician_id}: {start_time} to {end_time} for request {maintenance_request_id}")
         return True
 
 
 # Mock technicians data
 mock_technicians = [
-    {
-        "id": "tech_001",
-        "name": "John Smith",
-        "skills": ["electrical", "mechanical", "hvac"],
-        "experience_years": 5,
-        "availability_score": 0.8
-    },
-    {
-        "id": "tech_002", 
-        "name": "Sarah Johnson",
-        "skills": ["mechanical", "plumbing", "general"],
-        "experience_years": 8,
-        "availability_score": 0.9
-    },
-    {
-        "id": "tech_003",
-        "name": "Mike Davis",
-        "skills": ["electrical", "electronics", "automation"],
-        "experience_years": 12,
-        "availability_score": 0.7
-    },
-    {
-        "id": "tech_004",
-        "name": "Lisa Chen",
-        "skills": ["hvac", "refrigeration", "controls"],
-        "experience_years": 6,
-        "availability_score": 0.85
-    }
+    {"id": "tech_001", "name": "John Smith", "skills": ["electrical", "mechanical"], "experience_years": 5, "availability_score": 0.8},
+    {"id": "tech_002", "name": "Sarah Johnson", "skills": ["mechanical", "plumbing"], "experience_years": 8, "availability_score": 0.9},
 ]
 
 
 class SchedulingAgent(BaseAgent):
     """
     SchedulingAgent handles maintenance task scheduling based on predictions.
-    
-    This agent subscribes to MaintenancePredictedEvent and generates optimized
-    maintenance schedules using various optimization strategies.
     """
     
     def __init__(self, agent_id: str, event_bus: Any):
-        """
-        Initialize the SchedulingAgent.
-        
-        Args:
-            agent_id: Unique identifier for this agent instance
-            event_bus: Event bus for inter-agent communication
-        """
         super().__init__(agent_id, event_bus)
         self.logger = logging.getLogger(f"{__name__}.{agent_id}")
         self.calendar_service = CalendarService()
         self.logger.info(f"SchedulingAgent {agent_id} initialized")
     
     async def start(self) -> None:
-        """Start the agent and subscribe to relevant events."""
         await super().start()
-        
-        # Subscribe to MaintenancePredictedEvent
-        await self.event_bus.subscribe(
-            "MaintenancePredictedEvent",
-            self.handle_maintenance_predicted_event
-        )
-        
-        self.logger.info(f"SchedulingAgent {self.agent_id} subscribed to MaintenancePredictedEvent")
+        await self.event_bus.subscribe(MaintenancePredictedEvent.__name__, self.handle_maintenance_predicted_event)
+        self.logger.info(f"SchedulingAgent {self.agent_id} subscribed to {MaintenancePredictedEvent.__name__}")
     
     async def register_capabilities(self) -> None:
-        """Register the agent's capabilities."""
         self.capabilities.append(
-            AgentCapability(
-                name="maintenance_scheduling",
-                description="Schedules maintenance tasks based on predictions using optimization algorithms",
-                input_types=["MaintenancePredictedEvent"],
-                output_types=["MaintenanceScheduledEvent"]
-            )
+            AgentCapability(name="maintenance_scheduling", description="Schedules maintenance tasks",
+                            input_types=[MaintenancePredictedEvent.__name__], output_types=[MaintenanceScheduledEvent.__name__])
         )
-        
         self.capabilities.append(
-            AgentCapability(
-                name="technician_assignment",
-                description="Assigns optimal technicians to maintenance tasks based on skills and availability",
-                input_types=["MaintenanceRequest"],
-                output_types=["OptimizedSchedule"]
-            )
+            AgentCapability(name="technician_assignment", description="Assigns optimal technicians",
+                            input_types=["MaintenanceRequest"], output_types=["OptimizedSchedule"])
         )
-        
         self.logger.debug(f"SchedulingAgent {self.agent_id} registered {len(self.capabilities)} capabilities")
     
-    async def handle_maintenance_predicted_event(self, event_type: str, event_data) -> None:
-        """
-        Handle MaintenancePredictedEvent by creating and scheduling maintenance requests.
-        
-        Args:
-            event_type: Type of the event (should be "MaintenancePredictedEvent")
-            event_data: Event payload containing prediction data (can be MaintenancePredictedEvent object or dict)
-        """
-        # Handle both event object and data dictionary patterns
-        if hasattr(event_data, 'equipment_id'):
-            # event_data is a MaintenancePredictedEvent object
-            equipment_id = event_data.equipment_id
-            prediction_event = event_data
-        else:
-            # event_data is a dictionary, parse it into MaintenancePredictedEvent
-            equipment_id = event_data.get('equipment_id', 'unknown')
-            prediction_event = MaintenancePredictedEvent(**event_data)
-            
+    async def handle_maintenance_predicted_event(self, event_type: str, event_data_or_obj) -> None:
+        event_obj = event_data_or_obj if isinstance(event_data_or_obj, MaintenancePredictedEvent) else MaintenancePredictedEvent(**event_data_or_obj)
+        equipment_id = event_obj.equipment_id
         self.logger.info(f"Received {event_type} for equipment {equipment_id}")
         
         try:
-            
-            # Transform prediction into maintenance request
-            maintenance_request = self._create_maintenance_request(prediction_event)
+            maintenance_request = self._create_maintenance_request(event_obj)
             self.logger.info(f"Created maintenance request {maintenance_request.id} for equipment {maintenance_request.equipment_id}")
             
-            # Schedule the maintenance task
             optimized_schedule = await self.schedule_maintenance_task(maintenance_request)
             
-            # Publish MaintenanceScheduledEvent if scheduling was successful
             if optimized_schedule.status == ScheduleStatus.SCHEDULED:
-                await self._publish_maintenance_scheduled_event(prediction_event, optimized_schedule)
+                await self._publish_maintenance_scheduled_event(event_obj, optimized_schedule)
                 self.logger.info(f"Successfully scheduled maintenance for request {maintenance_request.id}")
             else:
                 self.logger.warning(f"Failed to schedule maintenance for request {maintenance_request.id}: {optimized_schedule.status}")
+                # Optionally publish a "SchedulingFailedEvent" here
                 
-        except Exception as e:
-            self.logger.error(f"Error handling MaintenancePredictedEvent: {e}", exc_info=True)
+        except Exception as e: # This will be caught by BaseAgent.handle_event's error handling
+            self.logger.error(f"Error handling MaintenancePredictedEvent for eq {equipment_id}: {e}", exc_info=True)
+            raise # Re-raise to be handled by BaseAgent's error handling logic
     
     def _create_maintenance_request(self, prediction_event: MaintenancePredictedEvent) -> MaintenanceRequest:
-        """
-        Create a MaintenanceRequest from a MaintenancePredictedEvent.
+        priority = 1 if prediction_event.time_to_failure_days <= 7 else 2 # Simplified
+        estimated_duration = 2.0 # Simplified
+        required_skills = ["mechanical"] # Simplified
         
-        Args:
-            prediction_event: The prediction event data
-            
-        Returns:
-            MaintenanceRequest: The created maintenance request
-        """
-        # Calculate priority based on time to failure and confidence
-        if prediction_event.time_to_failure_days <= 7:
-            priority = 1  # Critical - within a week
-        elif prediction_event.time_to_failure_days <= 30:
-            priority = 2  # High - within a month
-        elif prediction_event.time_to_failure_days <= 90:
-            priority = 3  # Medium - within 3 months
-        else:
-            priority = 4  # Low - more than 3 months
-        
-        # Estimate duration based on maintenance type
-        duration_map = {
-            "preventive": 2.0,
-            "corrective": 4.0,
-            "inspection": 1.0,
-            "replacement": 6.0,
-            "calibration": 1.5
-        }
-        estimated_duration = duration_map.get(prediction_event.maintenance_type, 3.0)
-        
-        # Determine required skills based on equipment type (simplified logic)
-        equipment_id = prediction_event.equipment_id.lower()
-        required_skills = []
-        if "pump" in equipment_id or "motor" in equipment_id:
-            required_skills = ["mechanical", "electrical"]
-        elif "hvac" in equipment_id or "air" in equipment_id:
-            required_skills = ["hvac", "refrigeration"]
-        elif "sensor" in equipment_id:
-            required_skills = ["electrical", "electronics"]
-        else:
-            required_skills = ["general", "mechanical"]
-        
-        # Set preferred time window (e.g., schedule before predicted failure with buffer)
-        buffer_days = max(1, prediction_event.time_to_failure_days * 0.1)  # 10% buffer, minimum 1 day
-        preferred_deadline = prediction_event.predicted_failure_date - timedelta(days=buffer_days)
-        preferred_start = datetime.utcnow() + timedelta(days=1)  # Start tomorrow at earliest
+        preferred_deadline = prediction_event.predicted_failure_date - timedelta(days=max(1, prediction_event.time_to_failure_days * 0.1))
+        preferred_start = datetime.utcnow() + timedelta(days=1)
         
         return MaintenanceRequest(
-            id=str(uuid4()),
-            equipment_id=prediction_event.equipment_id,
-            maintenance_type=prediction_event.maintenance_type,
-            priority=priority,
-            estimated_duration_hours=estimated_duration,
-            required_skills=required_skills,
-            preferred_time_window_start=preferred_start,
-            preferred_time_window_end=preferred_deadline,
-            deadline=prediction_event.predicted_failure_date,
-            parts_needed=[]  # Would be determined by more detailed analysis
+            id=str(uuid4()), equipment_id=prediction_event.equipment_id,
+            maintenance_type=prediction_event.maintenance_type, priority=priority,
+            estimated_duration_hours=estimated_duration, required_skills=required_skills,
+            preferred_time_window_start=preferred_start, preferred_time_window_end=preferred_deadline,
+            deadline=prediction_event.predicted_failure_date, parts_needed=[]
         )
     
     async def schedule_maintenance_task(self, maintenance_request: MaintenanceRequest) -> OptimizedSchedule:
-        """
-        Schedule a maintenance task using optimization algorithms.
-        
-        Currently implements a greedy assignment algorithm. Future versions will
-        integrate OR-Tools for more sophisticated optimization.
-        
-        Args:
-            maintenance_request: The maintenance request to schedule
-            
-        Returns:
-            OptimizedSchedule: The optimized schedule result
-        """
         self.logger.info(f"Scheduling maintenance request {maintenance_request.id}")
-        
         try:
-            # TODO: Replace with OR-Tools implementation for more sophisticated optimization
-            # For now, using simplified greedy assignment logic
-            
-            # Filter technicians by required skills
-            qualified_technicians = []
-            for tech in mock_technicians:
-                if any(skill in tech["skills"] for skill in maintenance_request.required_skills):
-                    qualified_technicians.append(tech)
-            
+            qualified_technicians = [tech for tech in mock_technicians if any(skill in tech["skills"] for skill in maintenance_request.required_skills)]
             if not qualified_technicians:
-                self.logger.warning(f"No qualified technicians found for request {maintenance_request.id}")
-                return OptimizedSchedule(
-                    request_id=maintenance_request.id,
-                    status=ScheduleStatus.FAILED_TO_SCHEDULE,
-                    constraints_violated=["no_qualified_technicians"],
-                    scheduling_notes="No technicians available with required skills"
-                )
+                return OptimizedSchedule(request_id=maintenance_request.id, status=ScheduleStatus.FAILED_TO_SCHEDULE, constraints_violated=["no_qualified_technicians"])
+
+            qualified_technicians.sort(key=lambda t: (t["availability_score"], t["experience_years"]), reverse=True)
             
-            # Sort by availability score and experience
-            qualified_technicians.sort(
-                key=lambda t: (t["availability_score"], t["experience_years"]), 
-                reverse=True
-            )
-            
-            # Try to find an available time slot for the best technician
             for technician in qualified_technicians:
-                # Try to schedule within preferred time window
                 current_time = maintenance_request.preferred_time_window_start or datetime.utcnow()
                 end_window = maintenance_request.preferred_time_window_end or (current_time + timedelta(days=30))
                 
-                # Check availability in 4-hour blocks during business hours
                 while current_time < end_window:
-                    # Ensure we're scheduling during business hours
-                    if current_time.hour < 8:
-                        current_time = current_time.replace(hour=8, minute=0, second=0, microsecond=0)
-                    elif current_time.hour > 14:  # Last start time for a 4-hour job
-                        current_time = (current_time + timedelta(days=1)).replace(hour=8, minute=0, second=0, microsecond=0)
-                        continue
+                    if current_time.hour < 8: current_time = current_time.replace(hour=8, minute=0, second=0, microsecond=0)
+                    elif current_time.hour > 14: current_time = (current_time + timedelta(days=1)).replace(hour=8, minute=0, second=0, microsecond=0); continue
                     
                     scheduled_end = current_time + timedelta(hours=maintenance_request.estimated_duration_hours)
-                    
-                    # Check if technician is available
                     if self.calendar_service.check_availability(technician["id"], current_time, scheduled_end):
-                        # Book the slot
                         if self.calendar_service.book_slot(technician["id"], current_time, scheduled_end, maintenance_request.id):
-                            
-                            # Calculate optimization score based on various factors
-                            score = self._calculate_optimization_score(
-                                maintenance_request, technician, current_time, scheduled_end
-                            )
-                            
+                            score = self._calculate_optimization_score(maintenance_request, technician, current_time, scheduled_end)
                             return OptimizedSchedule(
-                                request_id=maintenance_request.id,
-                                status=ScheduleStatus.SCHEDULED,
-                                assigned_technician_id=technician["id"],
-                                scheduled_start_time=current_time,
-                                scheduled_end_time=scheduled_end,
-                                optimization_score=score,
-                                constraints_satisfied=[
-                                    "technician_skills_match",
-                                    "within_time_window",
-                                    "technician_available"
-                                ],
-                                scheduling_notes=f"Assigned to {technician['name']} (experience: {technician['experience_years']} years)"
+                                request_id=maintenance_request.id, status=ScheduleStatus.SCHEDULED,
+                                assigned_technician_id=technician["id"], scheduled_start_time=current_time,
+                                scheduled_end_time=scheduled_end, optimization_score=score
                             )
-                    
-                    # Move to next time slot (try every 2 hours)
                     current_time += timedelta(hours=2)
             
-            # If no slot found for any qualified technician
-            self.logger.warning(f"No available time slots found for request {maintenance_request.id}")
-            return OptimizedSchedule(
-                request_id=maintenance_request.id,
-                status=ScheduleStatus.FAILED_TO_SCHEDULE,
-                constraints_violated=["no_available_time_slots"],
-                scheduling_notes="All qualified technicians are unavailable in the preferred time window"
-            )
-            
+            return OptimizedSchedule(request_id=maintenance_request.id, status=ScheduleStatus.FAILED_TO_SCHEDULE, constraints_violated=["no_available_time_slots"])
         except Exception as e:
             self.logger.error(f"Error scheduling maintenance request {maintenance_request.id}: {e}", exc_info=True)
-            return OptimizedSchedule(
-                request_id=maintenance_request.id,
-                status=ScheduleStatus.FAILED_TO_SCHEDULE,
-                constraints_violated=["scheduling_error"],
-                scheduling_notes=f"Scheduling failed due to error: {str(e)}"
-            )
+            # Let this exception propagate to be handled by handle_maintenance_predicted_event's try-except
+            raise AgentProcessingError(f"Scheduling sub-process failed for request {maintenance_request.id}: {str(e)}", original_exception=e) from e # Import AgentProcessingError
     
-    def _calculate_optimization_score(self, request: MaintenanceRequest, technician: Dict[str, Any], 
-                                    start_time: datetime, end_time: datetime) -> float:
-        """
-        Calculate an optimization score for a schedule assignment.
-        
-        Args:
-            request: The maintenance request
-            technician: The assigned technician data
-            start_time: Scheduled start time
-            end_time: Scheduled end time
-            
-        Returns:
-            float: Optimization score between 0.0 and 1.0
-        """
-        score = 0.0
-        
-        # Factor 1: Technician availability score (30%)
-        score += technician["availability_score"] * 0.3
-        
-        # Factor 2: Skills match (25%)
-        matching_skills = len(set(request.required_skills) & set(technician["skills"]))
-        total_required_skills = len(request.required_skills)
-        if total_required_skills > 0:
-            skills_score = matching_skills / total_required_skills
-        else:
-            skills_score = 1.0
-        score += skills_score * 0.25
-        
-        # Factor 3: Experience relevance (20%)
-        experience_score = min(technician["experience_years"] / 10.0, 1.0)  # Cap at 10 years
-        score += experience_score * 0.2
-        
-        # Factor 4: Time window preference (15%)
-        if request.preferred_time_window_start and request.preferred_time_window_end:
-            window_duration = (request.preferred_time_window_end - request.preferred_time_window_start).total_seconds()
-            delay_from_preferred = (start_time - request.preferred_time_window_start).total_seconds()
-            if window_duration > 0:
-                time_score = max(0, 1.0 - (delay_from_preferred / window_duration))
-            else:
-                time_score = 1.0
-        else:
-            time_score = 1.0
-        score += time_score * 0.15
-        
-        # Factor 5: Priority adjustment (10%)
-        priority_score = (6 - request.priority) / 5.0  # Higher priority = higher score
-        score += priority_score * 0.1
-        
-        return min(score, 1.0)  # Ensure score doesn't exceed 1.0
+    def _calculate_optimization_score(self, request: MaintenanceRequest, technician: Dict[str, Any], start_time: datetime, end_time: datetime) -> float:
+        # Simplified scoring
+        score = technician["availability_score"] * 0.5 + min(technician["experience_years"] / 10.0, 1.0) * 0.5
+        return min(score, 1.0)
     
-    async def _publish_maintenance_scheduled_event(self, original_event: MaintenancePredictedEvent, 
-                                                 schedule: OptimizedSchedule) -> None:
-        """
-        Publish a MaintenanceScheduledEvent.
-        
-        Args:
-            original_event: The original prediction event
-            schedule: The optimized schedule
-        """
+    async def _publish_maintenance_scheduled_event(self, original_event: MaintenancePredictedEvent, schedule: OptimizedSchedule) -> None:
+        """Publish a MaintenanceScheduledEvent using the event bus directly."""
         try:
-            event_data = MaintenanceScheduledEvent(
+            # Create the event object instance
+            event_data_object = MaintenanceScheduledEvent(
                 original_prediction_event_id=original_event.event_id,
-                schedule_details=schedule.dict(),
+                schedule_details=schedule.model_dump(), # Use model_dump() for Pydantic V2+
                 equipment_id=original_event.equipment_id,
                 assigned_technician_id=schedule.assigned_technician_id,
                 scheduled_start_time=schedule.scheduled_start_time,
                 scheduled_end_time=schedule.scheduled_end_time,
-                scheduling_method="greedy",
+                scheduling_method="greedy", # Example
                 optimization_score=schedule.optimization_score,
-                constraints_satisfied=schedule.constraints_satisfied,
-                constraints_violated=schedule.constraints_violated,
+                constraints_satisfied=schedule.constraints_satisfied or [],
+                constraints_violated=schedule.constraints_violated or [],
                 agent_id=self.agent_id,
                 correlation_id=original_event.correlation_id
             )
             
-            await self._publish_event("MaintenanceScheduledEvent", event_data.dict())
-            self.logger.info(f"Published MaintenanceScheduledEvent for equipment {original_event.equipment_id}")
-            
+            if self.event_bus:
+                await self.event_bus.publish(event_data_object) # Pass the object directly
+                self.logger.info(f"Published MaintenanceScheduledEvent for equipment {original_event.equipment_id}")
+            else:
+                self.logger.warning(f"Event bus not available. Cannot publish MaintenanceScheduledEvent for {original_event.equipment_id}")
+                # Consider raising ConfigurationError if event bus is essential
         except Exception as e:
-            self.logger.error(f"Error publishing MaintenanceScheduledEvent: {e}", exc_info=True)
+            self.logger.error(f"Error publishing MaintenanceScheduledEvent for eq {original_event.equipment_id}: {e}", exc_info=True)
+            # Wrap and re-raise as EventPublishError
+            raise EventPublishError(
+                message=f"Failed to publish MaintenanceScheduledEvent for {original_event.equipment_id}: {str(e)}",
+                original_exception=e
+            ) from e
     
     async def process(self, data: Any) -> Any:
-        """
-        Main processing method for the agent.
-        
-        Args:
-            data: Input data to process
-            
-        Returns:
-            Any: Processing result
-        """
-        # This method is called by the base class event handler
-        # For this agent, specific event handling is done in handle_maintenance_predicted_event
-        self.logger.debug(f"SchedulingAgent {self.agent_id} processing data: {str(data)[:100]}...")
+        # This agent's primary work is initiated by handle_maintenance_predicted_event
+        self.logger.debug(f"SchedulingAgent {self.agent_id} received generic process call: {str(data)[:100]}...")
+        # If data is a MaintenancePredictedEvent, route it (though it's usually handled by direct subscription)
+        if isinstance(data, MaintenancePredictedEvent):
+            await self.handle_maintenance_predicted_event(MaintenancePredictedEvent.__name__, data)
+            return None # Explicitly return None as it's handled
+        elif isinstance(data, dict) and "time_to_failure_days" in data and "equipment_id" in data: # Heuristic for dict
+             try:
+                event_obj = MaintenancePredictedEvent(**data)
+                await self.handle_maintenance_predicted_event(MaintenancePredictedEvent.__name__, event_obj)
+                return None
+             except Exception as e: # Catch Pydantic validation or other errors
+                 self.logger.error(f"Error processing dict data as MaintenancePredictedEvent: {e}", exc_info=True)
+                 # Re-raise as AgentProcessingError to be caught by BaseAgent.handle_event
+                 raise AgentProcessingError(f"Failed to process dict data as MaintenancePredictedEvent: {str(e)}", original_exception=e) from e
         return data

@@ -100,5 +100,4 @@ async def read_root():
 
 # If you want to run this directly with uvicorn for testing (though poetry script is better for prod-like)
 # if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+#     pass
