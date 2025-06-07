@@ -46,40 +46,29 @@ The heart of the platform, consisting of specialized agents built upon a common 
   * **Purpose:** Singleton service for discovering and managing active agent instances.
   * **Responsibilities:** Allows agents to register themselves and other components to look up agents by ID.
 
-* **`HumanInterfaceAgent` (`apps.agents.interface.human_interface_agent.HumanInterfaceAgent`)**:
-  * **Purpose:** Simulates human-in-the-loop decision points for critical maintenance scenarios requiring human judgment.
-  * **Responsibilities:**
-    * Subscribes to `HumanDecisionRequiredEvent` from other agents (typically the future `OrchestratorAgent`).
-    * Simulates intelligent human decision-making based on decision type and contextual information.
-    * Publishes `HumanDecisionResponseEvent` with decisions, reasoning, and additional context.
-    * Supports multiple decision types: maintenance approval, priority assignment, resource allocation, and safety overrides.
-  * **Key Features:**
-    * **Decision Simulation Logic:** Applies appropriate decision-making algorithms based on the decision type and context provided.
-    * **Comprehensive Logging:** Provides detailed logging of all decision requests, processing steps, and responses for audit trails.
-    * **Event Correlation:** Maintains correlation IDs to track decision requests through the entire workflow.
-    * **Error Handling:** Gracefully handles malformed requests and unknown decision types with appropriate fallback responses.
-  * **Future Enhancement:** In production, this agent would be replaced or augmented with actual human interface components (web dashboards, mobile apps, notification systems) for real human decision-making.
+For detailed descriptions of each agent's roles and responsibilities, please see the [Implemented Agents & Their Roles section in the main project README](../README.md#implemented-agents--their-roles).
 
-* **Specialized Agents (Examples - to be expanded):**
-  * `DataAcquisitionAgent`: Ingests data from various sources.
-  * `AnomalyDetectionAgent`: Analyzes data for anomalies.
-  * `ValidationAgent`: Validates and enriches anomaly alerts.
-  * `OrchestratorAgent`: **CENTRAL COORDINATOR** - Manages event-driven workflows and coordinates decision-making between all agents. Acts as the central workflow orchestrator.
-  * `LearningAgent`: RAG-based knowledge management and learning from system feedback.
-  * `PredictionAgent`: Provides predictive maintenance recommendations using ML.
-  * `SchedulingAgent`: Optimizes maintenance task scheduling and technician assignments.
-  * `NotificationAgent`: Sends notifications through multiple channels (console, email, SMS, etc.) based on maintenance scheduling events and other system events.
-  * `ReportingAgent`: Generates analytics reports with data visualization and actionable insights for maintenance operations.
-  * `HumanInterfaceAgent`: Simulates human-in-the-loop decision points for critical maintenance decisions requiring human judgment.
-  * (More agents for learning, decision support, etc.)
+* **`HumanInterfaceAgent` (`apps.agents.interface.human_interface_agent.HumanInterfaceAgent`)**:
+  * **Purpose:** Manages human-in-the-loop decision points. In dev/test, simulates human decisions; in production, integrates with actual human interfaces.
+  * **Responsibilities:** Processes `HumanDecisionRequiredEvent`, applies logic (or awaits human input), and publishes `HumanDecisionResponseEvent`.
+  * *For full details, see README.*
+
+* **Specialized Agents:**
+  * `DataAcquisitionAgent`: Ingests, validates, and enriches sensor data.
+  * `AnomalyDetectionAgent`: Detects anomalies using ML and statistical models.
+  * `ValidationAgent`: Validates detected anomalies using rules and historical context.
+  * `OrchestratorAgent`: **CENTRAL COORDINATOR** - Manages workflows and coordinates decisions between agents.
+  * `LearningAgent`: Manages knowledge using RAG, learning from system feedback.
+  * `PredictionAgent`: Predicts failures and recommends maintenance using ML.
+  * `SchedulingAgent`: Schedules maintenance tasks and assigns technicians.
+  * `NotificationAgent`: Sends notifications about system events and maintenance.
+  * `ReportingAgent`: Generates analytics reports and visualizations.
+  * (More agents for learning, decision support, etc., will be detailed in the README as implemented.)
 
 ### 2.4. Data Persistence Layer
 
 * **Purpose:** Stores all relevant data, including sensor readings, asset information, anomalies, and maintenance tasks.
-* **Technologies:**
-  * **PostgreSQL with TimescaleDB:** For efficient storage and querying of time-series sensor data. Hypertables are used for `sensor_readings`.
-  * **SQLAlchemy:** ORM for interacting with the database.
-  * **Alembic:** For database schema migrations.
+* **Technologies:** The core data persistence technologies are detailed in the [Tech Stack](../README.md#tech-stack) section of the main project documentation.
 * **Key ORM Models:** (`core.database.orm_models`)
   * `SensorReadingORM`
   * `AnomalyAlertORM`
@@ -99,27 +88,9 @@ The heart of the platform, consisting of specialized agents built upon a common 
 ### 2.7. OrchestratorAgent - Central Workflow Coordinator
 
 * **Purpose:** Acts as the central nervous system of the Smart Maintenance platform, orchestrating complex event-driven workflows and coordinating decision-making across all system agents.
-
-* **Key Responsibilities:**
-  * **Workflow Orchestration:** Manages end-to-end maintenance workflows from anomaly detection through execution
-  * **Decision Coordination:** Determines when human approval is required vs. automated processing
-  * **State Management:** Maintains consistent system state and decision tracking across complex multi-agent workflows
-  * **Event-Driven Processing:** Responds to key system events and orchestrates appropriate downstream actions
-  * **Cross-Agent Communication:** Facilitates complex interactions between DataAcquisition, AnomalyDetection, Validation, Prediction, and Scheduling agents
-
-* **Core Capabilities:**
-  * **Intelligent Decision Logic:** Policy-based rules to determine urgency levels and approval requirements
-  * **Correlation Tracking:** Maintains complete context across multi-stage workflows using correlation IDs
-  * **Robust State Management:** Persistent workflow state with recovery from failures and restarts
-  * **Multi-Agent Coordination:** Orchestrates complex interactions between specialized agents
-  * **Comprehensive Auditing:** Complete decision trails and state transitions for compliance and debugging
-
-* **Event Integration:**
-  * **Subscribes to:** `AnomalyValidatedEvent`, `MaintenancePredictedEvent`, `HumanDecisionResponseEvent`
-  * **Publishes:** `HumanDecisionRequiredEvent`, `ScheduleMaintenanceCommand`
-  * **Coordination:** Works with `HumanInterfaceAgent` for approvals and `SchedulingAgent` for execution
-
+* **Key Responsibilities & Capabilities:** Manages end-to-end maintenance workflows, coordinates decision-making (human vs. automated), manages state, and facilitates cross-agent communication.
 * **Implementation:** `apps.agents.core.orchestrator_agent.OrchestratorAgent`
+* *For a detailed description, see the [OrchestratorAgent section in the README](../README.md#orchestratoragent-appsagentscoreorchestratoragentpy).*
 
 ## 3. Data Flow (Example: Sensor Data Ingestion & Anomaly Detection)
 
@@ -137,35 +108,13 @@ The heart of the platform, consisting of specialized agents built upon a common 
 
 ### 3.1. Notification Flow (Maintenance Scheduling Events)
 
-1. **Maintenance Scheduling:** The `SchedulingAgent` processes maintenance requests and publishes a `MaintenanceScheduledEvent` to the Event Bus with scheduling details.
-2. **Notification Handling:** The `NotificationAgent`, subscribed to `MaintenanceScheduledEvent`, receives the event.
-   * It creates a `NotificationRequest` with appropriate message content based on scheduling success/failure.
-   * It uses template rendering to format maintenance details (equipment ID, technician, timing, etc.).
-3. **Multi-Channel Delivery:** The agent uses configured notification providers to deliver notifications:
-   * `ConsoleNotificationProvider`: For development/testing (prints to console).
-   * Future providers: Email, SMS, WhatsApp, Slack for production use.
-4. **Result Tracking:** Each notification attempt returns a `NotificationResult` with delivery status, timing, and error details if applicable.
+The `SchedulingAgent` publishes `MaintenanceScheduledEvent`. The `NotificationAgent` subscribes to this, formats a message, and sends it via configured providers (e.g., console).
+* *For detailed descriptions of these agents, see the [README section on Implemented Agents](../README.md#implemented-agents--their-roles).*
 
 ### 3.2. Human-in-the-Loop Decision Flow
 
-The `HumanInterfaceAgent` facilitates critical decision points requiring human judgment:
-
-1. **Decision Request:** Any agent (typically the future `OrchestratorAgent`) publishes a `HumanDecisionRequiredEvent` to the Event Bus when encountering a situation requiring human input.
-2. **Decision Processing:** The `HumanInterfaceAgent`, subscribed to `HumanDecisionRequiredEvent`, receives the request.
-   * It logs the decision request with all contextual information.
-   * It simulates human decision-making based on the decision type and context.
-   * It applies appropriate decision logic (approval/rejection for maintenance decisions, priority assignment for scheduling, etc.).
-3. **Response Publication:** The agent publishes a `HumanDecisionResponseEvent` with:
-   * The decision outcome (approved/rejected/modified).
-   * Reasoning and justification for the decision.
-   * Any additional context or instructions.
-4. **Workflow Continuation:** Requesting agents receive the response and continue their workflows based on the human decision.
-
-**Decision Types Supported:**
-* `MAINTENANCE_APPROVAL`: Critical maintenance task approval/rejection
-* `PRIORITY_ASSIGNMENT`: Task priority level determination
-* `RESOURCE_ALLOCATION`: Resource assignment decisions
-* `SAFETY_OVERRIDE`: Safety-critical override decisions
+The `OrchestratorAgent` typically identifies situations requiring human input and publishes a `HumanDecisionRequiredEvent`. The `HumanInterfaceAgent` processes this event, simulating or awaiting actual human input, and then publishes a `HumanDecisionResponseEvent`. This allows the `OrchestratorAgent` or other relevant agents to continue the workflow based on the human decision.
+* *For a detailed description of the `HumanInterfaceAgent` and `OrchestratorAgent`, see the [README section on Implemented Agents](../README.md#implemented-agents--their-roles).*
 
 ## 4. Diagrams
 
@@ -443,99 +392,14 @@ Based on these, the key metrics are:
 
 ### 5.3. Reporting and Analytics Flow
 
-The `ReportingAgent` provides comprehensive analytics and visualization capabilities for maintenance operations:
-
-#### Data Flow: Report Generation
-
-1. **Report Request:** External systems or API endpoints trigger report generation by calling the `ReportingAgent.generate_report()` method directly.
-2. **Analytics Processing:** The `AnalyticsEngine` component within the agent processes the request:
-   * Analyzes request parameters (report type, time range, format requirements)
-   * Generates mock analytics data appropriate for the report type (anomaly summary, maintenance overview, system health)
-   * Calculates KPIs, metrics, and statistical summaries
-3. **Chart Generation:** If charts are requested:
-   * Creates matplotlib visualizations (line charts, bar charts, histograms)
-   * Encodes charts as base64 strings for easy integration
-   * Handles various chart types based on data characteristics
-4. **Content Formatting:** Generates final report content:
-   * **JSON Format:** Structured data with metadata, analytics summary, and embedded charts
-   * **Text Format:** Human-readable reports with formatted metrics and equipment insights
-5. **Report Assembly:** Combines all components into a `ReportResult` with:
-   * Complete metadata (timestamps, correlation tracking, generation details)
-   * Analytics summary with key metrics
-   * Generated charts (if requested)
-   * Formatted content appropriate for the target audience
-
-#### Report Types Supported
-
-* **Anomaly Summary Reports:** Analysis of detected anomalies with confidence distributions and equipment impact assessment
-* **Maintenance Overview Reports:** Comprehensive maintenance metrics including task completion rates, technician utilization, and equipment uptime
-* **System Health Reports:** Overall system performance with uptime metrics, data quality scores, and operational efficiency indicators
-
-#### Integration Points
-
-* **On-Demand Generation:** Direct API integration for real-time report requests
-* **Scheduled Reporting:** Can be integrated with scheduling systems for regular report generation
-* **Dashboard Integration:** JSON output optimized for consumption by dashboards and monitoring systems
-* **Export Capabilities:** Text format suitable for email distribution and document generation
+The `ReportingAgent` generates reports and visualizations. It can be triggered via API or scheduled jobs.
+* *For a detailed description, see the [ReportingAgent section in the README](../README.md#reportingagent-appsagentsdecisionreportingagentpy).*
 
 ## 5.3. LearningAgent: RAG-Based Knowledge Management
+*(Note: This is the second section numbered 5.3 in the original document)*
 
-The **LearningAgent** implements a Retrieval-Augmented Generation (RAG) system for continuous learning and knowledge management within the maintenance platform.
-
-### Architecture
-
-The LearningAgent utilizes two key technologies:
-
-1. **ChromaDB**: A vector database that stores textual knowledge with semantic embeddings for efficient similarity search
-2. **SentenceTransformers**: State-of-the-art language models that convert text into high-dimensional vector embeddings
-
-### Core Capabilities
-
-#### Knowledge Storage
-- **Semantic Embeddings**: Converts textual content into vector representations using the `all-MiniLM-L6-v2` model
-- **Metadata Association**: Stores rich metadata alongside knowledge items (source, category, timestamp, etc.)
-- **Persistent Storage**: Knowledge persists across agent restarts using ChromaDB's storage layer
-
-#### Knowledge Retrieval
-- **Semantic Search**: Finds relevant knowledge based on meaning rather than exact keyword matches
-- **Similarity Scoring**: Returns cosine similarity scores to rank knowledge relevance
-- **Configurable Results**: Adjustable number of results and similarity thresholds
-
-#### Event-Driven Learning
-- **SystemFeedbackReceivedEvent Subscription**: Automatically processes feedback events from other system components
-- **Real-time Learning**: Immediately incorporates new feedback into the knowledge base
-- **Structured Processing**: Validates feedback using Pydantic schemas before storage
-
-### Integration with System Events
-
-The LearningAgent subscribes to `SystemFeedbackReceivedEvent` and automatically:
-
-1. **Validates** incoming feedback using the `FeedbackData` schema
-2. **Enriches** metadata with event context (event ID, source agent, timestamps)
-3. **Stores** feedback as searchable knowledge with semantic embeddings
-4. **Logs** processing results for monitoring and debugging
-
-### Error Handling and Resilience
-
-- **Graceful Degradation**: Continues operation even when ChromaDB or embedding models fail
-- **Component Health Monitoring**: Provides detailed health status for all RAG components
-- **Comprehensive Logging**: Detailed error reporting and operational logging
-- **Robust Error Recovery**: Handles various failure scenarios without crashing
-
-### Data Models
-
-The agent uses three key Pydantic models:
-
-- **FeedbackData**: Structures incoming feedback with validation
-- **KnowledgeItem**: Represents retrieved knowledge with similarity scores
-- **LearningResult**: Reports success/failure of knowledge operations
-
-### Use Cases
-
-1. **Historical Context**: Retrieve past maintenance experiences similar to current situations
-2. **Best Practices**: Store and retrieve maintenance best practices and lessons learned
-3. **Troubleshooting**: Access relevant troubleshooting guides based on current issues
-4. **Continuous Learning**: Automatically learn from system feedback and operator inputs
+The **LearningAgent** uses a Retrieval-Augmented Generation (RAG) approach with ChromaDB and SentenceTransformers for knowledge management. It learns from system events like `SystemFeedbackReceivedEvent` to provide context and historical insights.
+* *For a detailed description, see the [LearningAgent section in the README](../README.md#learningagent-appsagentslearninglearningagentpy).*
 
 ## 6. Scalability and Resilience
 

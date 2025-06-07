@@ -58,10 +58,9 @@ Successfully implemented and finalized the **Day 9 LearningAgent** for the Herme
   - Added LearningAgent to agents listing
   - New section highlighting RAG-based learning capabilities
 
-- **Enhanced**: `smart-maintenance-saas/docs/architecture.md`
-  - Comprehensive section on LearningAgent architecture
-  - RAG system design and integration details
-  - Use cases and capabilities documentation
+- **Updated**: `smart-maintenance-saas/docs/architecture.md`
+  - Included LearningAgent in the specialized agents list with a concise overview.
+  - Added a link to the main `README.md` for comprehensive details on LearningAgent's architecture, RAG system design, use cases, and capabilities.
 
 ### 6. Demo and Examples
 - **Created**: `smart-maintenance-saas/examples/learning_agent_demo.py`
