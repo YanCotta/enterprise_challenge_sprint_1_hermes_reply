@@ -64,6 +64,7 @@ The heart of the platform, consisting of specialized agents built upon a common 
   * `DataAcquisitionAgent`: Ingests data from various sources.
   * `AnomalyDetectionAgent`: Analyzes data for anomalies.
   * `ValidationAgent`: Validates and enriches anomaly alerts.
+  * `OrchestratorAgent`: **CENTRAL COORDINATOR** - Manages event-driven workflows and coordinates decision-making between all agents. Acts as the central workflow orchestrator.
   * `LearningAgent`: RAG-based knowledge management and learning from system feedback.
   * `PredictionAgent`: Provides predictive maintenance recommendations using ML.
   * `SchedulingAgent`: Optimizes maintenance task scheduling and technician assignments.
@@ -94,6 +95,31 @@ The heart of the platform, consisting of specialized agents built upon a common 
 
 * **Purpose:** Provides structured, centralized logging.
 * **Technology:** `python-json-logger` (`core.logging_config.py`).
+
+### 2.7. OrchestratorAgent - Central Workflow Coordinator
+
+* **Purpose:** Acts as the central nervous system of the Smart Maintenance platform, orchestrating complex event-driven workflows and coordinating decision-making across all system agents.
+
+* **Key Responsibilities:**
+  * **Workflow Orchestration:** Manages end-to-end maintenance workflows from anomaly detection through execution
+  * **Decision Coordination:** Determines when human approval is required vs. automated processing
+  * **State Management:** Maintains consistent system state and decision tracking across complex multi-agent workflows
+  * **Event-Driven Processing:** Responds to key system events and orchestrates appropriate downstream actions
+  * **Cross-Agent Communication:** Facilitates complex interactions between DataAcquisition, AnomalyDetection, Validation, Prediction, and Scheduling agents
+
+* **Core Capabilities:**
+  * **Intelligent Decision Logic:** Policy-based rules to determine urgency levels and approval requirements
+  * **Correlation Tracking:** Maintains complete context across multi-stage workflows using correlation IDs
+  * **Robust State Management:** Persistent workflow state with recovery from failures and restarts
+  * **Multi-Agent Coordination:** Orchestrates complex interactions between specialized agents
+  * **Comprehensive Auditing:** Complete decision trails and state transitions for compliance and debugging
+
+* **Event Integration:**
+  * **Subscribes to:** `AnomalyValidatedEvent`, `MaintenancePredictedEvent`, `HumanDecisionResponseEvent`
+  * **Publishes:** `HumanDecisionRequiredEvent`, `ScheduleMaintenanceCommand`
+  * **Coordination:** Works with `HumanInterfaceAgent` for approvals and `SchedulingAgent` for execution
+
+* **Implementation:** `apps.agents.core.orchestrator_agent.OrchestratorAgent`
 
 ## 3. Data Flow (Example: Sensor Data Ingestion & Anomaly Detection)
 
