@@ -449,6 +449,56 @@ class DecisionResponse(BaseModel):
         json_encoders = {datetime: lambda dt: dt.isoformat()}
 
 
+# Orchestrator Agent Models
+class WorkflowStep(BaseModel):
+    """
+    Schema for tracking workflow steps in the orchestrator.
+    """
+    step_id: str = Field(..., description="Unique identifier for the workflow step")
+    step_name: str = Field(..., description="Name of the workflow step")
+    agent_id: Optional[str] = Field(None, description="ID of the agent handling this step")
+    status: str = Field(default="pending", description="Status of the step (pending, in_progress, completed, failed)")
+    started_at: Optional[datetime] = Field(None, description="When the step was started")
+    completed_at: Optional[datetime] = Field(None, description="When the step was completed")
+    input_data: Dict[str, Any] = Field(default_factory=dict, description="Input data for the step")
+    output_data: Dict[str, Any] = Field(default_factory=dict, description="Output data from the step")
+    error_message: Optional[str] = Field(None, description="Error message if the step failed")
+    correlation_id: Optional[str] = Field(None, description="Correlation ID for tracking")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class DecisionLog(BaseModel):
+    """
+    Schema for logging decisions made by the orchestrator.
+    """
+    decision_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique identifier for the decision")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="When the decision was made")
+    decision_type: str = Field(..., description="Type of decision made")
+    trigger_event: str = Field(..., description="Event that triggered the decision")
+    decision_rationale: str = Field(..., description="Reasoning behind the decision")
+    action_taken: str = Field(..., description="Action taken as a result of the decision")
+    context_data: Dict[str, Any] = Field(default_factory=dict, description="Context data used in decision making")
+    correlation_id: Optional[str] = Field(None, description="Correlation ID for tracking")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class SystemState(BaseModel):
+    """
+    Schema for representing system state in the orchestrator.
+    Simple Dict-based implementation as suggested in the plan.
+    """
+    state_data: Dict[str, Any] = Field(default_factory=dict, description="Dictionary containing system state information")
+    last_updated: datetime = Field(default_factory=datetime.utcnow, description="When the state was last updated")
+    version: int = Field(default=1, description="Version number for state tracking")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
 # Ensure all necessary imports are at the top
 # (Pydantic, datetime, Enum, typing modules are already imported)
 
