@@ -113,7 +113,7 @@ O core do projeto é um robusto **sistema multi-agente orientado a eventos** que
 | 🔍 **AnomalyDetection** | Detecção de anomalias | Isolation Forest, Estatística | ✅ Completo |
 | ✅ **Validation** | Validação de anomalias | Regras, Análise de Contexto Histórico | ✅ Completo |
 | 🔮 **Prediction** | Previsão de falhas | Prophet, Time-to-Failure | ✅ Completo |
-| 🎯 **Orchestrator** | Coordenação de decisões | RL, Decision Making | 🔄 Em Progresso |
+| 🎯 **Orchestrator** | Coordenação de decisões | Event-driven Workflows, State Management | ✅ Completo |
 | 📅 **Scheduler** | Agendamento de manutenções | MCP, Calendar Integration | 🔄 Em Progresso |
 | 📊 **Reporter** | Geração de relatórios | NLP, Data Visualization | 🔄 Planejado |
 | 🧠 **Learning** | Otimização contínua | RAG, Feedback Loop | 🔄 Planejado |
