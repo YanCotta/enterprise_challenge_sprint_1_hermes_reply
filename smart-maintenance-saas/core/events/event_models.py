@@ -370,6 +370,38 @@ class HumanDecisionResponseEvent(BaseEventModel):
     )
 
 
+class ScheduleMaintenanceCommand(BaseEventModel):
+    """
+    Command event to trigger maintenance scheduling.
+    
+    This event is published by the OrchestratorAgent when a maintenance task
+    needs to be scheduled, either automatically or after human approval.
+    
+    Attributes:
+        maintenance_data: Data about the maintenance that needs to be scheduled.
+        urgency_level: Level of urgency (low, medium, high, critical).
+        auto_approved: Whether this maintenance was auto-approved or went through human review.
+        source_prediction_event_id: ID of the original MaintenancePredictedEvent that triggered this.
+    """
+    
+    maintenance_data: Dict[str, Any] = Field(
+        ...,
+        description="Data about the maintenance task to be scheduled."
+    )
+    urgency_level: str = Field(
+        default="medium",
+        description="Urgency level: low, medium, high, critical."
+    )
+    auto_approved: bool = Field(
+        default=False,
+        description="Whether this maintenance was automatically approved."
+    )
+    source_prediction_event_id: Optional[str] = Field(
+        None,
+        description="ID of the MaintenancePredictedEvent that triggered this command."
+    )
+
+
 # Example of how to use these models (for testing purposes, can be removed or commented out):
 # if __name__ == "__main__":
 #     sensor_event = SensorDataReceivedEvent(
