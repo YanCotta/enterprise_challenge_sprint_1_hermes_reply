@@ -317,7 +317,7 @@ class ValidationAgent(BaseAgent):
             validated_event = AnomalyValidatedEvent(**validated_event_payload)
             
             if self.event_bus:
-                await self.event_bus.publish(event=validated_event)
+                await self.event_bus.publish(validated_event)
                 self.logger.info(
                     f"Published AnomalyValidatedEvent {getattr(validated_event, 'event_id', 'N/A')} "
                     f"for sensor {parsed_alert.sensor_id} (Corr ID: {log_correlation_id})."
