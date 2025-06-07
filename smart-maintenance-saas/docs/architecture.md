@@ -437,3 +437,68 @@ The agent uses three key Pydantic models:
 * Service Discovery (Consul, etcd) if moving beyond a single-node deployment for agents.
 * Distributed Tracing.
 * More sophisticated Agent capabilities (learning, planning).
+
+## 8. Architectural Evolution: Custom Foundation vs. Advanced Frameworks
+
+### Strategic Implementation Approach
+
+Our long-term architectural vision for the Smart Maintenance SaaS platform encompasses an "Enhanced Tech Stack" that includes powerful frameworks like **CrewAI**, **LangGraph**, and **Temporal.io**, along with advanced communication protocols such as **Google's A2A** and **Anthropic's Model Context Protocol (MCP)**. These technologies represent the cutting edge of multi-agent systems, workflow orchestration, and AI-powered collaboration.
+
+However, our current implementation deliberately employs a custom, foundational approach built around:
+
+- **Custom BaseAgent Class**: Provides core lifecycle management, event handling, and capability registration for all specialized agents
+- **Custom EventBus**: Manages asynchronous, event-driven communication between agents using Pydantic-defined models for type safety and validation
+- **Emergent Workflow Patterns**: System orchestration that emerges naturally from direct publish-subscribe relationships between agents
+
+### Rationale: Why Custom Foundation First
+
+This custom approach represents a **deliberate strategic decision** for our initial 14-day implementation sprint, driven by several key considerations:
+
+#### 1. Accelerated Core Functionality Delivery
+Building on a custom foundation allowed us to prioritize and rapidly develop the essential functional capabilities of individual agents—data acquisition, anomaly detection, validation, and predictive maintenance. Rather than investing significant time in framework integration, we could focus on delivering working AI and ML capabilities that demonstrate immediate business value.
+
+#### 2. Maintained Development Momentum
+Our approach builds upon the existing, battle-tested codebase without the disruption of integrating large new frameworks mid-sprint. This preserved development velocity during a critical timeline where proving core functionality was paramount.
+
+#### 3. Managed Complexity Appropriately
+Advanced frameworks like Temporal.io and LangGraph bring sophisticated capabilities but also introduce substantial architectural complexity. Deferring this complexity until we have a solid understanding of our specific orchestration needs reduces the risk of over-engineering and helps maintain project timeline commitments.
+
+#### 4. Risk Mitigation
+By establishing a working system first, we create a stable foundation that can be incrementally enhanced rather than risking a "big bang" integration approach that could compromise the entire deliverable.
+
+### The Path Forward: Strategic Framework Integration
+
+This custom foundation approach is **not an abandonment** of our architectural vision, but rather a pragmatic, phased evolution strategy:
+
+#### Strategic Introduction Points
+
+Advanced frameworks will be introduced strategically when their specific advantages solve clear, emergent problems identified through real system operation:
+
+**The Orchestrator Agent (Day 10) as a Critical Decision Point**: The development of our planned OrchestratorAgent represents the natural inflection point to critically assess the system's orchestration needs. As workflow complexity grows beyond simple event chains, this is when dedicated engines like **Temporal.io** for robust workflow management or **LangGraph** for state-machine-based agent coordination will be rigorously evaluated.
+
+#### Framework-Specific Adoption Criteria
+
+**CrewAI Integration**: Will be considered when we develop complex, collaborative, LLM-powered agent teams that require sophisticated role assignment, task delegation, and collaborative reasoning capabilities beyond our current event-driven patterns.
+
+**Model Context Protocol (MCP)**: Will be integrated when our agents require standardized, sophisticated "tool use" capabilities, particularly for LLM-based agents that need to interact with external systems, APIs, and databases in a structured, protocol-driven manner.
+
+**Temporal.io**: Will be evaluated for complex, long-running workflows that require durability guarantees, advanced retry logic, versioning, and sophisticated state management beyond what our current EventBus provides.
+
+**LangGraph**: Will be considered for agents requiring complex state machines, conditional branching, and sophisticated decision trees that go beyond simple publish-subscribe patterns.
+
+#### Selective Adoption Philosophy
+
+Rather than wholesale framework adoption, we will implement a **selective integration approach**:
+
+1. **Proof of Concept Validation**: New frameworks will be validated through isolated proof-of-concept implementations
+2. **Incremental Migration**: Critical components will be migrated gradually, maintaining system stability
+3. **Hybrid Architecture**: We will maintain our custom components where they provide sufficient value while selectively upgrading high-complexity areas
+4. **Continuous Evaluation**: Regular assessment of framework benefits against our evolving system complexity
+
+### Summary: Pragmatic Evolution Strategy
+
+Our architectural strategy balances **speed of delivery with long-term architectural excellence** through a pragmatic, iterative approach. We are building robust core features on our solid, custom foundation first, while systematically planning to incorporate specialized, advanced frameworks as our system's complexity and operational requirements evolve.
+
+This approach ensures we deliver immediate business value while positioning the platform for sophisticated future capabilities. Rather than betting everything on framework selection upfront, we are letting real-world usage patterns and operational requirements guide our architectural evolution—a strategy that maximizes both short-term delivery success and long-term architectural soundness.
+
+The result is a system that can demonstrate immediate ROI while maintaining the flexibility to evolve into a best-in-class, enterprise-grade platform leveraging the most appropriate advanced technologies for each specific challenge we encounter.
