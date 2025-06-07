@@ -435,7 +435,7 @@ class TestPredictionAgent(unittest.IsolatedAsyncioTestCase):
         )
         
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertIsInstance(published_event, MaintenancePredictedEvent)
         self.assertEqual(published_event.equipment_id, "test_equipment")
         self.assertEqual(published_event.time_to_failure_days, 30.0)
@@ -502,7 +502,7 @@ class TestPredictionAgent(unittest.IsolatedAsyncioTestCase):
             
             # Verify event was published
             self.mock_event_bus.publish.assert_called_once()
-            published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+            published_event = self.mock_event_bus.publish.call_args.args[0]
             self.assertIsInstance(published_event, MaintenancePredictedEvent)
 
     async def test_process_insufficient_data(self):
