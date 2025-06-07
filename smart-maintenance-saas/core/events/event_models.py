@@ -342,6 +342,34 @@ class SystemFeedbackReceivedEvent(BaseEventModel):
     )
 
 
+class HumanDecisionRequiredEvent(BaseEventModel):
+    """
+    Event indicating that a human decision is required.
+
+    Attributes:
+        payload: The decision request containing all necessary information for the human operator.
+    """
+    
+    payload: Any = Field(
+        ...,
+        description="DecisionRequest object containing details about the required decision."
+    )
+
+
+class HumanDecisionResponseEvent(BaseEventModel):
+    """
+    Event indicating that a human has made a decision.
+
+    Attributes:
+        payload: The decision response containing the human's choice and justification.
+    """
+    
+    payload: Any = Field(
+        ...,
+        description="DecisionResponse object containing the human's decision and details."
+    )
+
+
 # Example of how to use these models (for testing purposes, can be removed or commented out):
 # if __name__ == "__main__":
 #     sensor_event = SensorDataReceivedEvent(
