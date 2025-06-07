@@ -162,3 +162,12 @@ class EventBus:
                         )
             else:
                 logger.debug(f"No subscribers for event type {event_type_name}")
+
+    async def shutdown(self):
+        """
+        Shutdown the event bus and clear all subscriptions.
+        
+        This method is primarily used for cleanup in tests and shutdown scenarios.
+        """
+        self.subscriptions.clear()
+        logger.info("EventBus shutdown complete. All subscriptions cleared.")
