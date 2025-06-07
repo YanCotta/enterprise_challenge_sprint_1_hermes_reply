@@ -405,6 +405,50 @@ class LearningResult(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the learning operation")
 
 
+# Human Interface Agent Models
+class DecisionType(str, Enum):
+    """Enumeration of different types of decisions that can be requested from humans."""
+    MAINTENANCE_APPROVAL = "maintenance_approval"
+    EMERGENCY_RESPONSE = "emergency_response"
+    BUDGET_APPROVAL = "budget_approval"
+    SCHEDULE_CHANGE = "schedule_change"
+    QUALITY_INSPECTION = "quality_inspection"
+
+
+class DecisionRequest(BaseModel):
+    """
+    Schema for requesting a decision from a human operator.
+    """
+    request_id: str = Field(..., description="Unique identifier for the decision request")
+    decision_type: DecisionType = Field(..., description="Type of decision being requested")
+    context: Dict[str, Any] = Field(..., description="Context information for the decision")
+    options: List[str] = Field(..., description="Available decision options")
+    priority: str = Field(default="medium", description="Priority level (low, medium, high, critical)")
+    requester_agent_id: str = Field(..., description="ID of the agent requesting the decision")
+    deadline: Optional[datetime] = Field(None, description="Optional deadline for the decision")
+    correlation_id: Optional[str] = Field(None, description="Correlation ID for tracking")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class DecisionResponse(BaseModel):
+    """
+    Schema for a human decision response.
+    """
+    request_id: str = Field(..., description="ID of the original decision request")
+    decision: str = Field(..., description="The chosen decision")
+    justification: Optional[str] = Field(None, description="Optional explanation for the decision")
+    operator_id: str = Field(..., description="ID of the human operator who made the decision")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="When the decision was made")
+    confidence: float = Field(default=1.0, ge=0, le=1, description="Confidence level in the decision")
+    additional_notes: Optional[str] = Field(None, description="Any additional notes or comments")
+    correlation_id: Optional[str] = Field(None, description="Correlation ID for tracking")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
 # Ensure all necessary imports are at the top
 # (Pydantic, datetime, Enum, typing modules are already imported)
 
