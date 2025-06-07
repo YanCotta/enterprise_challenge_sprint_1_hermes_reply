@@ -121,7 +121,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data, correlation_id=event_corr_id)
         await self.agent.process(event)
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertIsInstance(published_event, AnomalyValidatedEvent)
         self.assertEqual(published_event.validation_status, "credible_anomaly")
         self.assertAlmostEqual(published_event.final_confidence, 0.85)
@@ -145,7 +145,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertEqual(published_event.validation_status, "false_positive_suspected") 
         self.assertAlmostEqual(published_event.final_confidence, 0.2) 
         expected_reasons = rule_reasons + ["No historical readings available for context."]
@@ -159,7 +159,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertEqual(published_event.validation_status, "further_investigation_needed") 
         self.assertAlmostEqual(published_event.final_confidence, 0.5) 
         expected_reasons = rule_reasons + ["No historical readings available for context."]
@@ -176,7 +176,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertAlmostEqual(published_event.final_confidence, 1.0) 
         self.assertEqual(published_event.validation_status, "credible_anomaly")
 
@@ -191,7 +191,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertAlmostEqual(published_event.final_confidence, 0.0) 
         self.assertEqual(published_event.validation_status, "false_positive_suspected")
 
@@ -203,7 +203,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         triggering_data = self._get_default_triggering_data()
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertAlmostEqual(published_event.final_confidence, initial_confidence)
         self.assertEqual(published_event.validation_status, "credible_anomaly")
 
@@ -215,7 +215,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         triggering_data = self._get_default_triggering_data()
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertAlmostEqual(published_event.final_confidence, initial_confidence)
         self.assertEqual(published_event.validation_status, "further_investigation_needed")
 
@@ -227,7 +227,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         triggering_data = self._get_default_triggering_data()
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertAlmostEqual(published_event.final_confidence, initial_confidence)
         self.assertEqual(published_event.validation_status, "further_investigation_needed")
 
@@ -239,7 +239,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         triggering_data = self._get_default_triggering_data()
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertAlmostEqual(published_event.final_confidence, initial_confidence)
         self.assertEqual(published_event.validation_status, "false_positive_suspected")
 
@@ -275,7 +275,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         )
         await self.agent.process(event)
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertEqual(published_event.correlation_id, fixed_event_id)
 
     async def test_process_error_in_crud_historical_fetch(self):
@@ -288,7 +288,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
                 await self.agent.process(event)
         self.assertTrue(any("DB connection failed!" in msg for msg in log_watcher.output))
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertIn("Historical data fetch failed.", published_event.validation_reasons)
 
     async def test_process_parsing_failure_malformed_anomaly_details(self):
@@ -349,7 +349,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         self.mock_event_bus.publish.assert_called_once()
         # Check that the event published has "No historical readings" because timestamp was None
         # and mock CRUD returned [] for end_time=None
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertIn("No historical readings available for context.", published_event.validation_reasons)
 
 
@@ -413,7 +413,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertAlmostEqual(published_event.final_confidence, 0.85)
         self.assertIn("No historical readings available for context.", published_event.validation_reasons)
         self.assertIn("Positive rule", published_event.validation_reasons)
@@ -431,7 +431,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         triggering_data = self._get_default_triggering_data(sensor_id=sensor_id, value=current_value, sensor_type=SensorType.TEMPERATURE)
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         avg_recent_value_formatted = f"{20.166666666666668:.2f}"
         std_dev_recent_formatted = f"{0.6236095644623235:.2f}"
         expected_reason = (
@@ -454,7 +454,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         triggering_data = self._get_default_triggering_data(sensor_id=sensor_id, value=15, sensor_type=SensorType.TEMPERATURE)
         event = self._create_anomaly_detected_event(anomaly_details, triggering_data)
         await self.agent.process(event)
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         current_value_for_reason = 15.0 
         avg_recent_value_for_reason = 12.00
         std_dev_recent_for_reason = 1.41421356
@@ -500,7 +500,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         event = self._create_anomaly_detected_event(anomaly_details, self._get_default_triggering_data(sensor_type=SensorType.TEMPERATURE))
         await self.agent.process(event)
         self.mock_event_bus.publish.assert_called_once()
-        published_event = self.mock_event_bus.publish.call_args.kwargs['event']
+        published_event = self.mock_event_bus.publish.call_args.args[0]
         self.assertIn("Historical data fetch failed.", published_event.validation_reasons)
         self.assertAlmostEqual(published_event.final_confidence, 0.8)
 
