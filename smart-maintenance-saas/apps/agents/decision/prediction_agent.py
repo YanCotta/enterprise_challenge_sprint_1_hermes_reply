@@ -644,7 +644,7 @@ class PredictionAgent(BaseAgent):
             
             # Publish the event
             if self.event_bus:
-                await self.event_bus.publish(event=maintenance_event)
+                await self.event_bus.publish(maintenance_event)
                 self.logger.info(
                     f"Published MaintenancePredictedEvent {maintenance_event.event_id} "
                     f"for equipment {equipment_id} (sensor {sensor_id}). "
