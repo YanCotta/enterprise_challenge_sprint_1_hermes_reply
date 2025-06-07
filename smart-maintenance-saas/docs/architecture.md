@@ -26,6 +26,8 @@ The Smart Maintenance SaaS platform employs a microservices-inspired, event-driv
   * `MaintenancePredictedEvent`
   * `MaintenanceScheduledEvent`
   * `AgentStatusUpdateEvent`
+  * `HumanDecisionRequiredEvent`
+  * `HumanDecisionResponseEvent`
 
 ### 2.3. Agent System
 
@@ -44,6 +46,20 @@ The heart of the platform, consisting of specialized agents built upon a common 
   * **Purpose:** Singleton service for discovering and managing active agent instances.
   * **Responsibilities:** Allows agents to register themselves and other components to look up agents by ID.
 
+* **`HumanInterfaceAgent` (`apps.agents.interface.human_interface_agent.HumanInterfaceAgent`)**:
+  * **Purpose:** Simulates human-in-the-loop decision points for critical maintenance scenarios requiring human judgment.
+  * **Responsibilities:**
+    * Subscribes to `HumanDecisionRequiredEvent` from other agents (typically the future `OrchestratorAgent`).
+    * Simulates intelligent human decision-making based on decision type and contextual information.
+    * Publishes `HumanDecisionResponseEvent` with decisions, reasoning, and additional context.
+    * Supports multiple decision types: maintenance approval, priority assignment, resource allocation, and safety overrides.
+  * **Key Features:**
+    * **Decision Simulation Logic:** Applies appropriate decision-making algorithms based on the decision type and context provided.
+    * **Comprehensive Logging:** Provides detailed logging of all decision requests, processing steps, and responses for audit trails.
+    * **Event Correlation:** Maintains correlation IDs to track decision requests through the entire workflow.
+    * **Error Handling:** Gracefully handles malformed requests and unknown decision types with appropriate fallback responses.
+  * **Future Enhancement:** In production, this agent would be replaced or augmented with actual human interface components (web dashboards, mobile apps, notification systems) for real human decision-making.
+
 * **Specialized Agents (Examples - to be expanded):**
   * `DataAcquisitionAgent`: Ingests data from various sources.
   * `AnomalyDetectionAgent`: Analyzes data for anomalies.
@@ -53,6 +69,7 @@ The heart of the platform, consisting of specialized agents built upon a common 
   * `SchedulingAgent`: Optimizes maintenance task scheduling and technician assignments.
   * `NotificationAgent`: Sends notifications through multiple channels (console, email, SMS, etc.) based on maintenance scheduling events and other system events.
   * `ReportingAgent`: Generates analytics reports with data visualization and actionable insights for maintenance operations.
+  * `HumanInterfaceAgent`: Simulates human-in-the-loop decision points for critical maintenance decisions requiring human judgment.
   * (More agents for learning, decision support, etc.)
 
 ### 2.4. Data Persistence Layer
@@ -103,6 +120,27 @@ The heart of the platform, consisting of specialized agents built upon a common 
    * Future providers: Email, SMS, WhatsApp, Slack for production use.
 4. **Result Tracking:** Each notification attempt returns a `NotificationResult` with delivery status, timing, and error details if applicable.
 
+### 3.2. Human-in-the-Loop Decision Flow
+
+The `HumanInterfaceAgent` facilitates critical decision points requiring human judgment:
+
+1. **Decision Request:** Any agent (typically the future `OrchestratorAgent`) publishes a `HumanDecisionRequiredEvent` to the Event Bus when encountering a situation requiring human input.
+2. **Decision Processing:** The `HumanInterfaceAgent`, subscribed to `HumanDecisionRequiredEvent`, receives the request.
+   * It logs the decision request with all contextual information.
+   * It simulates human decision-making based on the decision type and context.
+   * It applies appropriate decision logic (approval/rejection for maintenance decisions, priority assignment for scheduling, etc.).
+3. **Response Publication:** The agent publishes a `HumanDecisionResponseEvent` with:
+   * The decision outcome (approved/rejected/modified).
+   * Reasoning and justification for the decision.
+   * Any additional context or instructions.
+4. **Workflow Continuation:** Requesting agents receive the response and continue their workflows based on the human decision.
+
+**Decision Types Supported:**
+* `MAINTENANCE_APPROVAL`: Critical maintenance task approval/rejection
+* `PRIORITY_ASSIGNMENT`: Task priority level determination
+* `RESOURCE_ALLOCATION`: Resource assignment decisions
+* `SAFETY_OVERRIDE`: Safety-critical override decisions
+
 ## 4. Diagrams
 
 *(Placeholder for diagrams. Consider adding: Component Diagram, Sequence Diagram for key workflows)*
@@ -132,6 +170,9 @@ graph TD
         EventBus -->|Events| NA[Notification Agent]
         NA -->|Send Notifications| NotificationProviders[Console/Email/SMS/WhatsApp]
 
+        EventBus -->|Events| HIA[Human Interface Agent]
+        HIA -->|Simulate Human Decision| EventBus
+
         RA -->|Query Data| DB
         RA -->|Generate Reports| ReportOutput[Reports & Charts]
 
@@ -142,6 +183,7 @@ graph TD
         BaseAgent -- Inherited by --> MSA
         BaseAgent -- Inherited by --> NA
         BaseAgent -- Inherited by --> RA
+        BaseAgent -- Inherited by --> HIA
         BaseAgent -- Inherited by --> OtherAgents
 
         AgentRegistry[Agent Registry] -- Manages --> DAA
@@ -149,6 +191,7 @@ graph TD
         AgentRegistry -- Manages --> MSA
         AgentRegistry -- Manages --> NA
         AgentRegistry -- Manages --> RA
+        AgentRegistry -- Manages --> HIA
         AgentRegistry -- Manages --> OtherAgents
     end
 
@@ -157,6 +200,7 @@ graph TD
     style DB fill:#lightgrey,stroke:#333,stroke-width:2px
     style BaseAgent fill:#e6ffcc,stroke:#333,stroke-width:1px
     style AgentRegistry fill:#ffe6cc,stroke:#333,stroke-width:1px
+    style HIA fill:#ffccff,stroke:#333,stroke-width:2px
 ```
 
 ### 4.2. Sequence Diagram: Sensor Data Ingestion & Anomaly Detection
@@ -221,6 +265,47 @@ sequenceDiagram
     
     NA->>NA: Log Notification Result
     NA-->>-EventBus: (Done)
+```
+
+### 4.4. Sequence Diagram: Human-in-the-Loop Decision Flow
+
+```mermaid
+sequenceDiagram
+    participant OA as Orchestrator Agent (Future)
+    participant EventBus as Event Bus
+    participant HIA as Human Interface Agent
+    participant DB as Database
+
+    OA->>OA: Encounter Decision Point
+    OA->>+EventBus: Publish(HumanDecisionRequiredEvent)
+    Note over OA,EventBus: Decision Type: MAINTENANCE_APPROVAL<br/>Context: Critical equipment failure<br/>Options: [Immediate repair, Schedule maintenance, Defer]
+    EventBus-->>-OA: Ack
+
+    EventBus->>+HIA: Handle(HumanDecisionRequiredEvent)
+    HIA->>HIA: Log Decision Request
+    HIA->>HIA: Analyze Decision Context
+    HIA->>HIA: Apply Decision Logic Based on Type
+    
+    alt Decision Type: MAINTENANCE_APPROVAL
+        HIA->>HIA: Evaluate Risk vs Cost
+        HIA->>HIA: Determine: APPROVED with modifications
+    else Decision Type: PRIORITY_ASSIGNMENT  
+        HIA->>HIA: Assess Business Impact
+        HIA->>HIA: Determine: HIGH priority
+    else Decision Type: RESOURCE_ALLOCATION
+        HIA->>HIA: Check Resource Availability
+        HIA->>HIA: Determine: Assign Team A
+    end
+
+    HIA->>+EventBus: Publish(HumanDecisionResponseEvent)
+    Note over HIA,EventBus: Decision: APPROVED<br/>Reasoning: Safety critical<br/>Modifications: Use backup power
+    EventBus-->>-HIA: Ack
+    HIA-->>-EventBus: (Done)
+
+    EventBus->>+OA: Handle(HumanDecisionResponseEvent)
+    OA->>OA: Apply Human Decision
+    OA->>OA: Continue Workflow with Decision
+    OA-->>-EventBus: (Done)
 ```
 
 ## 5. Machine Learning Considerations
