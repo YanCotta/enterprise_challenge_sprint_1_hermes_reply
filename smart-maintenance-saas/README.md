@@ -6,7 +6,7 @@
 [![Poetry](https://img.shields.io/badge/Poetry-Dependency%20Management-blue.svg)](https://python-poetry.org/)
 [![Code Style](https://img.shields.io/badge/Code%20Style-Black-black.svg)](https://github.com/psf/black)
 
-> 🇧🇷 [Versão em Português Brasileiro](#versão-em-português-brasileiro)
+> 🇧🇷 [Versão em Português Brasileiro (Sumário)](#versão-em-português-brasileiro-sumário)
 
 ## Overview
 
@@ -187,62 +187,212 @@ The Python project root is `smart-maintenance-saas/`, containing **47 core Pytho
 - **Sensor Type Specialization**: Custom rules for different sensor types (temperature, vibration, pressure)
 - **Sensor Quality Assessment**: Evaluates sensor reading quality to prevent false positives from degraded sensors
 
-### 🧠 **NEW: RAG-Based Learning Agent**
-- **LearningAgent** - Advanced knowledge management with Retrieval-Augmented Generation (RAG)
-  - **ChromaDB Integration**: Vector database for semantic knowledge storage and retrieval
-  - **SentenceTransformers**: State-of-the-art embedding models for semantic search
-  - **Feedback Processing**: Automated learning from system feedback events
-  - **Knowledge Storage**: Persistent storage of textual knowledge with metadata
-  - **Semantic Retrieval**: Context-aware knowledge retrieval using cosine similarity
-  - **Event-Driven Learning**: Real-time learning from `SystemFeedbackReceivedEvent`
-  - **Graceful Degradation**: Continues operation even when RAG components fail
-  - **Health Monitoring**: Comprehensive health checks for ChromaDB and embedding models
-  - **Robust Error Handling**: Comprehensive error recovery and logging
+### LearningAgent (`apps/agents/learning/learning_agent.py`)
+**Role & Responsibilities**: Implements advanced knowledge management and enables continuous system improvement using a **Retrieval-Augmented Generation (RAG)** mechanism. It captures, stores, and makes searchable textual data from various sources, including system feedback (e.g., `SystemFeedbackReceivedEvent`), maintenance logs, and potentially technical documentation. Its primary goal is to provide context-aware insights, retrieve historical solutions for similar problems, and support decision-making for other agents (like `OrchestratorAgent` or `HumanInterfaceAgent`) and human operators. This agent helps the system learn from its operational history, improving accuracy and efficiency over time.
 
-### **NOVO: HumanInterfaceAgent (`apps/agents/interface/human_interface_agent.py`)**
-**The human-in-the-loop decision management agent** that simulates human decision points in automated workflows.
+**Key Technologies**:
+- **ChromaDB**: Utilized as a vector database for storing textual knowledge along with their semantic embeddings. This allows for efficient similarity searches based on the meaning of the text rather than just keyword matching.
+- **SentenceTransformers**: Employs models like `all-MiniLM-L6-v2` for converting text into dense vector embeddings. These embeddings capture the semantic meaning of the text, which is crucial for the RAG process.
 
-**Core Capabilities:**
-- 🤝 **Human-in-the-Loop Integration** - Manages decision points requiring human approval or input
-- 🎯 **Decision Request Processing** - Handles various types of decisions including maintenance approvals, budget approvals, and emergency responses
-- ⚡ **Simulated Decision Making** - Provides intelligent simulation of human decision processes for testing and development
-- 🔄 **Real-Time Response** - Processes decision requests and publishes responses with minimal latency
-- 📋 **Multiple Decision Types** - Supports maintenance approval, emergency response, budget approval, schedule changes, and quality inspections
-- 🎨 **Context-Aware Logic** - Makes intelligent decisions based on priority, context, and decision type
+**Capabilities**:
+- **Knowledge Storage & Semantic Retrieval**: Ingests textual data (e.g., feedback on anomaly alerts, maintenance outcomes, technician notes, resolutions to past issues) and stores it with associated metadata (e.g., timestamps, source agent, related equipment). Allows for querying based on semantic similarity to find relevant historical information or documented procedures.
+- **Event-Driven Learning**: Primarily learns from `SystemFeedbackReceivedEvent`, automatically processing validated feedback to enrich its knowledge base. This allows the agent to continuously update its understanding based on new information and outcomes. It can be extended to learn from other events or data sources, such as `MaintenanceTaskCompletedEvent` if these events are enriched with detailed textual notes.
+- **Context Provisioning**: Other agents, particularly the `OrchestratorAgent` during workflow management or the `HumanInterfaceAgent` when preparing information for human review, can query the `LearningAgent` to fetch relevant historical data. This provides valuable context for new anomalies or decision points.
+- **Feedback Loop Integration**: Plays a vital role in the system's overall feedback loop. By making past experiences and resolutions accessible, it helps to inform future actions, potentially improving the accuracy of anomaly validation, the relevance of maintenance predictions, or the efficiency of scheduling.
+- **Health Monitoring**: Includes health checks for its underlying components, such as the ChromaDB connection and the availability of embedding models, to ensure reliable operation.
 
-**Advanced Features:**
-- **Decision Type Handling**: Specialized logic for different types of human decisions
-- **Priority-Based Processing**: Higher priority requests receive appropriate decision logic
-- **Context Analysis**: Evaluates decision context including emergency conditions and budget constraints
-- **Operator Simulation**: Simulates human operator responses with realistic thinking time
-- **Confidence Scoring**: Provides confidence levels for simulated decisions
-- **Audit Trail**: Complete logging of all decision requests and responses for traceability
+**Event Flow**:
+- **Subscribes to**: `SystemFeedbackReceivedEvent`, and potentially other events like `MaintenanceTaskCompletedEvent` (if they contain detailed textual notes or structured feedback).
+- **Publishes**: While primarily queried directly, it could publish events like `KnowledgeAddedEvent` or `LearningSummaryEvent` to signal updates to its knowledge base or provide periodic insights.
+- **Use Cases**:
+    - Providing historical context for anomaly validation (e.g., "Has this specific sensor shown this pattern before under similar operational conditions? What was the outcome?").
+    - Suggesting troubleshooting steps or potential root causes based on successfully resolved similar past events.
+    - Aiding human operators by retrieving relevant snippets from technical documentation or best practice guides related to specific alerts or equipment types.
+    - Over time, its knowledge base can be used to identify recurring issues, assess the effectiveness of certain maintenance procedures, and highlight areas for system improvement.
 
-**Decision Types Supported:**
-- **Maintenance Approval**: Evaluates maintenance requests based on priority and emergency conditions
-- **Emergency Response**: Immediate approval for critical emergency situations
-- **Budget Approval**: Evaluates budget requests against configurable thresholds ($10,000 default)
-- **Schedule Change**: Handles maintenance schedule modification requests
-- **Quality Inspection**: Manages quality control and inspection approval workflows
+### HumanInterfaceAgent (`apps/agents/interface/human_interface_agent.py`)
+**Role & Responsibilities**: Manages human-in-the-loop decision points within automated workflows. It simulates or facilitates human interaction for critical decisions that require judgment, approval, or input that cannot be fully automated (e.g., high-cost maintenance approvals, responses to novel situations).
 
-**Event Flow:**
-- **Subscribes to:** `HumanDecisionRequiredEvent` (requests for human decisions from other agents)
-- **Publishes:** `HumanDecisionResponseEvent` (human decision responses with justification and metadata)
-- **Integration:** Enables human oversight and approval in automated maintenance workflows
+**Capabilities**:
+- **Decision Request Processing**: Handles various decision types (maintenance approval, budget, emergency response).
+- **Simulated Decision Making (for dev/testing)**: Can intelligently simulate human decision processes. In production, it would integrate with actual human interfaces (dashboards, notification systems).
+- **Context-Aware Logic**: Considers priority, context, and decision type.
 
-**Decision Pipeline:**
-- Decision request reception and validation
-- Context analysis and priority assessment
-- Simulated human thinking time (configurable)
-- Intelligent decision logic based on request type
-- Decision response generation with justification
-- Event publishing with full correlation tracking
+**Event Flow**:
+- **Subscribes to**: `HumanDecisionRequiredEvent` (typically from `OrchestratorAgent`).
+- **Publishes**: `HumanDecisionResponseEvent` (with the decision, justification, and metadata).
+
+### ReportingAgent (`apps/agents/decision/reporting_agent.py`)
+**Role & Responsibilities**: Generates analytics reports, visualizations, and actionable insights related to maintenance operations, equipment health, and system performance.
+
+**Capabilities**: Data aggregation, KPI calculation, chart generation (e.g., using matplotlib), and formatting reports in various outputs (JSON, text).
+
+**Event Flow**: Typically invoked via API call or scheduled trigger rather than subscribing to operational events directly, though it might subscribe to summary events.
 
 ### 🔧 API Foundation
 - **FastAPI application** with automatic OpenAPI documentation
 - **Health check endpoints** - Application and database connectivity monitoring
 - **Async-native design** for maximum performance
 
+---
+
+## Versão em Português Brasileiro (Sumário)
+
+Uma robusta plataforma de backend **orientada a eventos e multiagente** para manutenção preditiva industrial SaaS. (Consulte a seção em inglês para detalhes completos)
+
+### Agentes Implementados & Seus Papéis (Versão em Português)
+Para informações arquiteturais detalhadas e diagramas, por favor consulte o [Documento de Arquitetura (docs/architecture.md)](docs/architecture.md).
+
+### BaseAgent (`apps/agents/base_agent.py`)
+**A classe abstrata fundamental** para todos os agentes especializados no sistema.
+
+**Capacidades Principais:**
+- 🆔 **Identificação única** com IDs de agente auto-gerados.
+- 🔄 **Gerenciamento de ciclo de vida** - `start`, `stop`, monitoramento de saúde.
+- 📡 **Integração com barramento de eventos** - comunicação pub/sub transparente.
+- 🎯 **Registro de capacidades** - descoberta dinâmica de funcionalidades.
+- ⚡ **Tratamento de eventos assíncrono** com implementações padrão.
+- 🏥 **Relatório de status de saúde** para monitoramento do sistema.
+
+### DataAcquisitionAgent (`apps/agents/core/data_acquisition_agent.py`)
+**Papel & Responsabilidades**: Responsável pelo estágio inicial do pipeline de dados. Realiza a ingestão de dados brutos de sensores de várias fontes externas, executa validação estrutural e de regras de negócio usando `DataValidator`, enriquece os dados com informações contextuais (ex: detalhes de ativos) via `DataEnricher`, e então publica os dados processados para consumo downstream.
+
+**Fluxo de Eventos**:
+- **Assina**: `SensorDataReceivedEvent` (ou lida com envios diretos de dados).
+- **Publica em Sucesso**: `DataProcessedEvent` (com dados validados & enriquecidos).
+- **Publica em Falha**: `DataProcessingFailedEvent` (com informações detalhadas do erro).
+- **Principais Características**: Ingestão robusta de dados, validação abrangente, enriquecimento de dados contextuais, publicação confiável de eventos para progressão no pipeline.
+
+### AnomalyDetectionAgent (`apps/agents/core/anomaly_detection_agent.py`)
+**Arquitetura & Papel**: Um agente avançado que emprega uma abordagem de método duplo para detecção de anomalias de nível empresarial. Combina Machine Learning (Isolation Forest para identificação baseada em padrões) com análise estatística (Z-score com limiares sigma configuráveis) para identificação robusta e precisa de anomalias. Lida inteligentemente com sensores desconhecidos estabelecendo e cacheando linhas de base, e é otimizado para processamento em tempo real.
+
+**Capacidades**:
+- **Métodos de Detecção Duplos**: Utiliza tanto ML (Isolation Forest) quanto análise estatística (Z-score).
+- **Tomada de Decisão Ensemble**: Agrega resultados de múltiplos métodos de detecção.
+- **Aprendizado Adaptativo**: Cacheia linhas de base para sensores novos/desconhecidos.
+- **Pontuação de Confiança**: Fornece escalonamento linear de confiança baseado no desvio.
+- **Consciência do Tipo de Sensor**: Pode aplicar lógica especializada para diferentes tipos de sensores (ex: temperatura, vibração).
+- **Alta Performance**: Otimizado para processamento abaixo de 5ms por leitura.
+- **Tolerância a Falhas**: Degradação graciosa e tratamento abrangente de erros.
+
+**Fluxo de Eventos**:
+- **Assina**: `DataProcessedEvent`.
+- **Publica em Anomalia**: `AnomalyDetectedEvent` (com informações detalhadas da anomalia, pontuações de confiança e evidências de suporte).
+- **Nota**: Para produção, modelos de ML (StandardScaler, IsolationForest) devem ser pré-treinados com dados históricos representativos e carregados pelo agente, ao invés de serem ajustados em pontos de dados únicos recebidos.
+
+### ValidationAgent (`apps/agents/core/validation_agent.py`)
+**Papel & Responsabilidades**: Fornece validação sofisticada de anomalias detectadas para reduzir falsos positivos e aumentar a confiabilidade dos alertas. Processa anomalias do `AnomalyDetectionAgent`, aplica um `RuleEngine` para ajustes iniciais de confiança (baseados nas propriedades do alerta, qualidade dos dados do sensor) e realiza validação de contexto histórico (ex: verificando estabilidade de valores recentes, padrões recorrentes de anomalia).
+
+**Capacidades**:
+- **Ajustes Baseados em Regras**: Utiliza um `RuleEngine` flexível para pontuação inicial de confiança.
+- **Análise de Contexto Histórico**: Consulta e analisa dados passados do sensor específico para identificar padrões como estabilidade de valor ou anomalias recorrentes.
+- **Lógica de Validação Configurável**: Parâmetros de validação histórica são ajustáveis.
+- **Cálculo de Confiança Final**: Combina análise baseada em regras e histórica para uma pontuação final de confiança.
+- **Determinação de Status**: Atribui um status (ex: "anomalia_credível", "suspeita_falso_positivo") baseado na confiança final.
+- **Reconhecimento de Padrões Temporais**: Identifica padrões recorrentes ao longo do tempo.
+
+**Fluxo de Eventos**:
+- **Assina**: `AnomalyDetectedEvent`.
+- **Publica**: `AnomalyValidatedEvent` (contendo dados originais do alerta, leitura do sensor que disparou o alerta, razões da validação, confiança final e status determinado).
+
+### OrchestratorAgent (`apps/agents/core/orchestrator_agent.py`)
+**Papel & Responsabilidades**: Atua como o **sistema nervoso central** da plataforma de manutenção. Este agente crucial orquestra fluxos de trabalho complexos e orientados a eventos de ponta a ponta, incluindo o gerenciamento do estado geral das atividades de manutenção. Coordena os processos de tomada de decisão entre todos os agentes especializados, determinando inteligentemente quando a intervenção humana é necessária (disparando `HumanDecisionRequiredEvent` para o `HumanInterfaceAgent`) versus quando as ações podem ser automatizadas (por exemplo, emitindo diretamente `ScheduleMaintenanceCommand`). Garante uma interação fluida entre agentes como `AnomalyDetectionAgent`, `ValidationAgent`, `PredictionAgent` e `SchedulingAgent`, processando seus resultados e roteando informações apropriadamente. Suas responsabilidades incluem gerenciar o ciclo de vida das tarefas de manutenção, desde a detecção e validação iniciais, passando pela predição, aprovação humana (se necessário), agendamento, execução e aprendizado com o feedback.
+
+**Principais Capacidades**:
+- **Coordenação Central de Fluxos de Trabalho**: Gerencia pipelines de manutenção multiestágio, englobando validação de anomalias, predição de falhas, pontos de decisão humano-no-loop, agendamento de manutenção e disparo de notificações.
+- **Gerenciamento de Estado**: Mantém um estado consistente e potencialmente persistente para fluxos de trabalho ativos e decisões pendentes. Isso é crucial para a resiliência do sistema, permitindo que os fluxos de trabalho sejam pausados, retomados ou recuperados em caso de interrupções ou reinicializações de agentes.
+- **Roteamento Inteligente de Decisões**: Emprega regras baseadas em políticas e dados contextuais (ex: severidade da anomalia do `ValidationAgent`, urgência da predição do `PredictionAgent`, insights históricos do `LearningAgent`) para decidir se automatiza ações ou escala para revisão humana através do `HumanInterfaceAgent`.
+- **Hub de Comunicação Multiagente**: Serve como um ponto primário de comunicação e coordenação, garantindo que os agentes trabalhem juntos de forma coesa, inscrevendo-se em seus principais eventos de saída e publicando comandos ou novos eventos para direcionar ações subsequentes.
+- **Rastreamento de Correlação & Auditoria**: Mantém o contexto através de fluxos de trabalho complexos e multiestágio usando IDs de correlação. Também registra decisões significativas, transições de estado e ações para rastreabilidade e auditoria abrangentes.
+- **Tolerância a Falhas**: Projetado para tratamento robusto de erros e recuperação graciosa de falhas de componentes ou eventos inesperados dentro do fluxo de trabalho.
+
+**Fluxo de Eventos**:
+- **Assina**: `AnomalyValidatedEvent`, `MaintenancePredictedEvent`, `HumanDecisionResponseEvent` e, potencialmente, outros eventos de vários agentes que sinalizam a conclusão de uma etapa ou requerem uma mudança no estado do fluxo de trabalho.
+- **Publica**: `HumanDecisionRequiredEvent` (para engajar expertise humana), `ScheduleMaintenanceCommand` (para direcionar o `SchedulingAgent`), `WorkflowStepCompletedEvent` (para rastreamento geral e potencialmente para outros assinantes) e outros comandos ou eventos específicos conforme necessário para guiar a progressão das tarefas de manutenção.
+- **Lógica Operacional**: O Orquestrador avalia eventos recebidos, como anomalias validadas ou predições de manutenção. Com base em políticas configuráveis (ex: severidade, custo, criticidade do equipamento, tempo até a falha), ele determina o próximo passo. Isso pode envolver a aprovação e o agendamento automáticos de manutenção de rotina ou, para questões mais críticas/complexas, solicitar a entrada humana através do `HumanInterfaceAgent` antes de prosseguir. Em seguida, processa respostas (ex: `HumanDecisionResponseEvent`) para continuar, modificar ou interromper os fluxos de trabalho.
+
+### PredictionAgent (`apps/agents/decision/prediction_agent.py`)
+**Papel & Responsabilidades**: Realiza manutenção preditiva prevendo falhas potenciais de equipamentos. Utiliza modelos de machine learning (ex: Facebook Prophet) para analisar padrões históricos de dados de sensores ao receber uma anomalia validada altamente credível, prevendo o Tempo Até a Falha (TTF) e gerando recomendações de manutenção acionáveis.
+
+**Capacidades**:
+- **Previsão de Tempo Até a Falha (TTF)**: Emprega modelos de ML como Prophet para previsão.
+- **Análise de Dados Históricos**: Analisa dados históricos específicos do sensor para treinar modelos de predição.
+- **Recomendações de Manutenção**: Gera ações de manutenção específicas baseadas na confiança e cronograma da predição.
+- **Filtragem Inteligente**: Tipicamente processa apenas anomalias validadas de alta confiança.
+- **Consciência Contextual**: Extrai identificadores de equipamento para recomendações direcionadas.
+
+**Fluxo de Eventos**:
+- **Assina**: `AnomalyValidatedEvent` (tipicamente filtrando por anomalias críveis de alta confiança).
+- **Publica**: `MaintenancePredictedEvent` (com detalhes da falha prevista, TTF, confiança e ações recomendadas).
+
+### SchedulingAgent (`apps/agents/decision/scheduling_agent.py`)
+**Papel & Responsabilidades**: Agenda inteligentemente tarefas de manutenção com base em predições e restrições operacionais. Otimiza a atribuição de tarefas a técnicos disponíveis (potencialmente considerando habilidades e carga de trabalho) e pode integrar-se com sistemas de calendário externos (atualmente simulado).
+
+**Capacidades**:
+- **Agendamento Otimizado de Tarefas**: Converte predições/comandos de manutenção em cronogramas otimizados.
+- **Atribuição de Técnicos**: Implementa lógica de atribuição (ex: algoritmo guloso, com planos para OR-Tools para otimização avançada).
+- **Integração com Calendário**: Interface (simulada) para verificar disponibilidade e agendar tarefas.
+- **Gerenciamento de Recursos**: Rastreamento básico da disponibilidade de técnicos.
+
+**Fluxo de Eventos**:
+- **Assina**: `MaintenancePredictedEvent` ou `ScheduleMaintenanceCommand` (do `OrchestratorAgent`).
+- **Publica**: `MaintenanceScheduledEvent` (com detalhes do cronograma, técnico atribuído e especificidades da tarefa).
+
+### NotificationAgent (`apps/agents/decision/notification_agent.py`)
+**Papel & Responsabilidades**: Gerencia comunicações com técnicos e partes interessadas sobre cronogramas de manutenção, alertas e outros eventos do sistema. Suporta múltiplos canais de notificação e usa modelos para mensagens consistentes.
+
+**Capacidades**:
+- **Notificações Multicanal**: Suporta console, com um sistema de provedor extensível para email, SMS, etc.
+- **Mensagens Direcionadas**: Roteia notificações para usuários/grupos específicos.
+- **Mensagens Baseadas em Modelos**: Usa modelos personalizáveis para diferentes tipos de eventos.
+
+**Fluxo de Eventos**:
+- **Assina**: `MaintenanceScheduledEvent`, potencialmente outros eventos como `AnomalyValidatedEvent` (para alertas críticos) ou `HumanDecisionRequiredEvent`.
+- **Publica**: Nenhum (tipicamente um agente terminal em seu pipeline específico, mas poderia publicar `NotificationSentEvent` ou `NotificationFailedEvent` para auditoria).
+
+### LearningAgent (`apps/agents/learning/learning_agent.py`)
+**Papel & Responsabilidades**: Implementa gerenciamento avançado de conhecimento e habilita a melhoria contínua do sistema usando um mecanismo de **Geração Aumentada por Recuperação (RAG)**. Captura, armazena e torna pesquisáveis dados textuais de várias fontes, incluindo feedback do sistema (ex: `SystemFeedbackReceivedEvent`), logs de manutenção e, potencialmente, documentação técnica. Seu objetivo principal é fornecer insights conscientes do contexto, recuperar soluções históricas para problemas semelhantes e apoiar a tomada de decisão para outros agentes (como `OrchestratorAgent` ou `HumanInterfaceAgent`) e operadores humanos. Este agente ajuda o sistema a aprender com seu histórico operacional, melhorando a precisão e eficiência ao longo do tempo.
+
+**Principais Tecnologias**:
+- **ChromaDB**: Utilizado como um banco de dados vetorial para armazenar conhecimento textual juntamente com seus embeddings semânticos. Isso permite buscas por similaridade eficientes baseadas no significado do texto, em vez de apenas correspondência de palavras-chave.
+- **SentenceTransformers**: Emprega modelos como `all-MiniLM-L6-v2` para converter texto em embeddings vetoriais densos. Esses embeddings capturam o significado semântico do texto, o que é crucial para o processo RAG.
+
+**Capacidades**:
+- **Armazenamento de Conhecimento & Recuperação Semântica**: Ingesta dados textuais (ex: feedback sobre alertas de anomalia, resultados de manutenção, notas de técnicos, resoluções de problemas passados) e os armazena com metadados associados (ex: timestamps, agente de origem, equipamento relacionado). Permite consultas baseadas em similaridade semântica para encontrar informações históricas relevantes ou procedimentos documentados.
+- **Aprendizado Orientado a Eventos**: Aprende primariamente a partir de `SystemFeedbackReceivedEvent`, processando feedback validado automaticamente para enriquecer sua base de conhecimento. Isso permite que o agente atualize continuamente seu entendimento com base em novas informações e resultados. Pode ser estendido para aprender a partir de outros eventos ou fontes de dados, como `MaintenanceTaskCompletedEvent`, se esses eventos forem enriquecidos com notas textuais detalhadas.
+- **Provisionamento de Contexto**: Outros agentes, particularmente o `OrchestratorAgent` durante o gerenciamento de fluxos de trabalho ou o `HumanInterfaceAgent` ao preparar informações para revisão humana, podem consultar o `LearningAgent` para buscar dados históricos relevantes. Isso fornece contexto valioso para novas anomalias ou pontos de decisão.
+- **Integração com Loop de Feedback**: Desempenha um papel vital no loop de feedback geral do sistema. Ao tornar acessíveis experiências e resoluções passadas, ajuda a informar ações futuras, melhorando potencialmente a precisão da validação de anomalias, a relevância das predições de manutenção ou a eficiência do agendamento.
+- **Monitoramento de Saúde**: Inclui verificações de saúde para seus componentes subjacentes, como a conexão com o ChromaDB e a disponibilidade dos modelos de embedding, para garantir uma operação confiável.
+
+**Fluxo de Eventos**:
+- **Assina**: `SystemFeedbackReceivedEvent` e, potencialmente, outros eventos como `MaintenanceTaskCompletedEvent` (se contiverem notas textuais detalhadas ou feedback estruturado).
+- **Publica**: Embora primariamente consultado diretamente, poderia publicar eventos como `KnowledgeAddedEvent` ou `LearningSummaryEvent` para sinalizar atualizações em sua base de conhecimento ou fornecer insights periódicos.
+- **Casos de Uso**:
+    - Fornecer contexto histórico para validação de anomalias (ex: "Este sensor específico já apresentou este padrão antes sob condições operacionais semelhantes? Qual foi o resultado?").
+    - Sugerir etapas de solução de problemas ou possíveis causas raiz com base em eventos passados semelhantes resolvidos com sucesso.
+    - Auxiliar operadores humanos recuperando trechos relevantes de documentação técnica ou guias de melhores práticas relacionados a alertas específicos ou tipos de equipamento.
+    - Com o tempo, sua base de conhecimento pode ser usada para identificar problemas recorrentes, avaliar a eficácia de certos procedimentos de manutenção e destacar áreas para melhoria do sistema.
+
+### HumanInterfaceAgent (`apps/agents/interface/human_interface_agent.py`)
+**Papel & Responsabilidades**: Gerencia pontos de decisão humano-no-loop dentro de fluxos de trabalho automatizados. Simula ou facilita a interação humana para decisões críticas que requerem julgamento, aprovação ou entrada que não pode ser totalmente automatizada (ex: aprovações de manutenção de alto custo, respostas a situações novas).
+
+**Capacidades**:
+- **Processamento de Solicitações de Decisão**: Lida com vários tipos de decisão (aprovação de manutenção, orçamento, resposta a emergências).
+- **Tomada de Decisão Simulada (para dev/teste)**: Pode simular inteligentemente processos de decisão humana. Em produção, integraria com interfaces humanas reais (dashboards, sistemas de notificação).
+- **Lógica Consciente do Contexto**: Considera prioridade, contexto e tipo de decisão.
+
+**Fluxo de Eventos**:
+- **Assina**: `HumanDecisionRequiredEvent` (tipicamente do `OrchestratorAgent`).
+- **Publica**: `HumanDecisionResponseEvent` (com a decisão, justificativa e metadados).
+
+### ReportingAgent (`apps/agents/decision/reporting_agent.py`)
+**Papel & Responsabilidades**: Gera relatórios analíticos, visualizações e insights acionáveis relacionados a operações de manutenção, saúde de equipamentos e performance do sistema.
+
+**Capacidades**: Agregação de dados, cálculo de KPI, geração de gráficos (ex: usando matplotlib) e formatação de relatórios em várias saídas (JSON, texto).
+
+**Fluxo de Eventos**: Tipicamente invocado via chamada de API ou gatilho agendado, em vez de assinar diretamente eventos operacionais, embora possa assinar eventos de resumo.
+
+---
 ### 📝 Configuração & Observabilidade
 - **Configurações Centralizadas** - Pydantic BaseSettings com suporte a variáveis de ambiente
 - **Logging JSON Estruturado** - Capacidades aprimoradas de debugging e monitoramento
@@ -350,215 +500,114 @@ poetry run pytest --cov=apps --cov=core --cov=data
 | `GET` | `/health` | Status geral de saúde da aplicação |
 | `GET` | `/health/db` | Status de conectividade do banco de dados |
 
-## Agentes Implementados & Seus Papéis
+## Implemented Agents & Their Roles
+
+For more detailed architectural information and diagrams, please see the [Architecture Document (docs/architecture.md)](docs/architecture.md).
 
 ### BaseAgent (`apps/agents/base_agent.py`)
-**A classe abstrata fundamental** para todos os agentes especializados no sistema.
+**The foundational abstract class** for all specialized agents within the system.
 
-**Capacidades Principais:**
-- 🆔 **Identificação única** com IDs de agente auto-gerados
-- 🔄 **Gerenciamento de ciclo de vida** - iniciar, parar, monitoramento de saúde
-- 📡 **Integração com barramento de eventos** - comunicação pub/sub transparente
-- 🎯 **Registro de capacidades** - descoberta dinâmica de funcionalidades
-- ⚡ **Tratamento de eventos assíncrono** com implementações padrão
-- 🏥 **Relatório de status de saúde** para monitoramento do sistema
+**Core Capabilities:**
+- 🆔 **Unique Identification** with auto-generated agent IDs.
+- 🔄 **Lifecycle Management** - `start`, `stop`, health monitoring.
+- 📡 **Event Bus Integration** - Transparent pub/sub communication.
+- 🎯 **Capability Registration** - Dynamic discovery of functionalities.
+- ⚡ **Asynchronous Event Handling** with default implementations.
+- 🏥 **Health Status Reporting** for system monitoring.
 
 ### DataAcquisitionAgent (`apps/agents/core/data_acquisition_agent.py`)
-**Agente pronto para produção** responsável pelo estágio inicial crítico do pipeline de dados.
+**Role & Responsibilities**: Responsible for the initial stage of the data pipeline. It ingests raw sensor data from various external sources, performs structural and business rule validation using `DataValidator`, enriches the data with contextual information (e.g., asset details) via `DataEnricher`, and then publishes the processed data for downstream consumption.
 
-**Papel & Responsabilidades:**
-- 📥 **Ingestão de Dados** - Recebe dados brutos de sensores de fontes externas
-- ✅ **Validação de Dados** - Garante integridade estrutural e regras de negócio usando `DataValidator`
-- 🔧 **Enriquecimento de Dados** - Adiciona informação contextual usando `DataEnricher`
-- 📤 **Publicação de Eventos** - Notifica sistemas downstream dos resultados do processamento
+**Event Flow**:
+- **Subscribes to**: `SensorDataReceivedEvent` (or handles direct data pushes).
+- **Publishes on Success**: `DataProcessedEvent` (with validated & enriched data).
+- **Publishes on Failure**: `DataProcessingFailedEvent` (with detailed error information).
+- **Key Features**: Robust data ingestion, comprehensive validation, contextual data enrichment, reliable event publication for pipeline progression.
 
-**Fluxo de Eventos:**
-- **Assina:** `SensorDataReceivedEvent`
-- **Publica em Sucesso:** `DataProcessedEvent` (com dados validados & enriquecidos)
-- **Publica em Falha:** `DataProcessingFailedEvent` (com informação detalhada do erro)
+### AnomalyDetectionAgent (`apps/agents/core/anomaly_detection_agent.py`)
+**Architecture & Role**: An advanced agent employing a dual-method approach for enterprise-grade anomaly detection. It combines Machine Learning (Isolation Forest for pattern-based identification) with statistical analysis (Z-score with configurable sigma thresholds) for robust and accurate anomaly identification. It intelligently handles unknown sensors by establishing and caching baselines and is optimized for real-time processing.
 
-### **NOVO: AnomalyDetectionAgent (`apps/agents/core/anomaly_detection_agent.py`)**
-**Agente avançado com ML fornecendo capacidades de detecção de anomalias de nível empresarial.**
+**Capabilities**:
+- **Dual Detection Methods**: Utilizes both ML (Isolation Forest) and statistical (Z-score) analysis.
+- **Ensemble Decision Making**: Aggregates results from multiple detection methods.
+- **Adaptive Learning**: Caches baselines for new/unknown sensors.
+- **Confidence Scoring**: Provides linear confidence scaling based on deviation.
+- **Sensor Type Awareness**: Can apply specialized logic for different sensor types (e.g., temperature, vibration).
+- **High Performance**: Optimized for sub-5ms processing per reading.
+- **Fault Tolerance**: Graceful degradation and comprehensive error handling.
 
-**Arquitetura Principal:**
-- 🧠 **Métodos de Detecção Duplos** - Combina Isolation Forest ML com análise estatística de limiares
-- 🔄 **Tomada de Decisão Ensemble** - Agregação inteligente de múltiplos resultados de detecção
-- 🎯 **Aprendizado Adaptativo** - Estabelecimento e cache de linha de base para sensores desconhecidos
-- ⚡ **Alta Performance** - Otimizado para processamento em tempo real (<5ms por leitura)
-- 🛡️ **Tolerância a Falhas** - Degradação graciosa e tratamento de erros abrangente
-
-**Capacidades de Detecção:**
-- **Detecção por Machine Learning**: Isolation Forest algorithm for pattern-based anomaly identification
-- **Detecção Estatística**: Z-score analysis with configurable sigma thresholds
-- **Confidence Scoring**: Linear confidence scaling based on deviation multiples
-- **Sensor Type Awareness**: Specialized handling for temperature, vibration, and pressure sensors
-- **Unknown Sensor Management**: Intelligent baseline caching with fallback values
-
-**Fluxo de Eventos:**
-- **Assina:** `DataProcessedEvent`
-- **Publica em Anomalia:** `AnomalyDetectedEvent` (com informação detalhada da anomalia e pontuações de confiança)
-- **Tratamento de Erros:** Lógica de tentativa com backoff exponencial para falhas na publicação de eventos
-
-**Métricas de Performance:**
-- Model fitting: ~50ms initialization
-- Processing speed: <5ms per sensor reading
-- Memory efficiency: Optimal baseline caching
-- Error resilience: Zero crashes with malformed data
+**Event Flow**:
+- **Subscribes to**: `DataProcessedEvent`.
+- **Publishes on Anomaly**: `AnomalyDetectedEvent` (with detailed anomaly information, confidence scores, and supporting evidence).
+- **Note**: For production, ML models (StandardScaler, IsolationForest) should be pre-trained on representative historical data and loaded by the agent, rather than being fit on single incoming data points.
 
 ### ValidationAgent (`apps/agents/core/validation_agent.py`)
-**Agente sofisticado de validação de anomalias que fornece análise aprofundada de anomalias detectadas para reduzir falsos positivos e garantir a confiabilidade dos alertas.**
+**Role & Responsibilities**: Provides sophisticated validation of detected anomalies to reduce false positives and enhance alert reliability. It processes anomalies from the `AnomalyDetectionAgent`, applies a `RuleEngine` for initial confidence adjustments (based on alert properties, sensor data quality), and performs historical context validation (e.g., checking for recent value stability, recurring anomaly patterns).
 
-**Papel & Responsabilidades:**
-- 🔎 **Processa `AnomalyDetectedEvent`** do `AnomalyDetectionAgent`.
-- 📏 **Utiliza `RuleEngine`** para ajustes iniciais de confiança baseados em regras, de acordo com propriedades do alerta e qualidade da leitura do sensor.
-- 📊 **Realiza Validação de Contexto Histórico** buscando e analisando dados passados para o sensor específico. Isso inclui checagens configuráveis como 'Estabilidade de Valor Recente' e 'Padrão de Anomalia Recorrente'.
-- ⚙️ **Lógica de Validação Configurável** - Lógica detalhada de validação histórica é ajustável via configurações específicas do agente.
-- 💯 **Calcula `final_confidence`** combinando ajustes baseados em regras e análise histórica.
-- 🤔 **Determina `validation_status`** (ex: "credible_anomaly", "false_positive_suspected", "further_investigation_needed") baseado na confiança final.
-- 📤 **Publica `AnomalyValidatedEvent`** contendo detalhes abrangentes: dados do alerta original, dados da leitura que disparou o alerta, todas as razões de validação, confiança final e status determinado.
+**Capabilities**:
+- **Rule-Based Adjustments**: Utilizes a flexible `RuleEngine` for initial confidence scoring.
+- **Historical Context Analysis**: Queries and analyzes past data for the specific sensor to identify patterns like value stability or recurring anomalies.
+- **Configurable Validation Logic**: Historical validation parameters are adjustable.
+- **Final Confidence Calculation**: Combines rule-based and historical analysis for a final confidence score.
+- **Status Determination**: Assigns a status (e.g., "credible_anomaly", "false_positive_suspected") based on final confidence.
+- **Temporal Pattern Recognition**: Identifies recurring patterns over time.
 
-**Capacidades Avançadas:**
-- **Reconhecimento de Padrões Temporais**: Identifica anomalias e padrões recorrentes ao longo do tempo.
-- **Redução de Falsos Positivos**: Validação multicamadas sofisticada para filtrar ruído.
-- **Análise de Estabilidade de Valor**: Examina a estabilidade de leituras recentes para avaliar a credibilidade da anomalia.
-- **Sistema de Pontuação de Confiança**: Ajusta a confiança baseada em múltiplos fatores de validação.
-- **Rastreabilidade**: Trilha de auditoria completa do raciocínio de validação para cada anomalia.
+**Event Flow**:
+- **Subscribes to**: `AnomalyDetectedEvent`.
+- **Publishes**: `AnomalyValidatedEvent` (containing original alert data, triggering sensor reading, validation reasons, final confidence, and determined status).
 
-**Event Flow:**
+### OrchestratorAgent (`apps/agents/core/orchestrator_agent.py`)
+**Role & Responsibilities**: Acts as the **central nervous system** of the maintenance platform. This crucial agent orchestrates complex, event-driven workflows from end-to-end, including managing the overall state of maintenance activities. It coordinates decision-making processes across all specialized agents, intelligently determining when human intervention is required (triggering `HumanDecisionRequiredEvent` for the `HumanInterfaceAgent`) versus when actions can be automated (e.g., directly issuing `ScheduleMaintenanceCommand`). It ensures seamless interaction between agents like `AnomalyDetectionAgent`, `ValidationAgent`, `PredictionAgent`, and `SchedulingAgent` by processing their outputs and routing information appropriately. Its responsibilities include managing the lifecycle of maintenance tasks, from initial detection and validation, through prediction, human approval (if necessary), scheduling, execution, and learning from feedback.
 
-- **Subscribes to:** `AnomalyDetectedEvent`
-- **Publishes:** `AnomalyValidatedEvent` with comprehensive validation details
-- **Integration:** Seamlessly works with downstream decision-making components
+**Key Capabilities**:
+- **Central Workflow Coordination**: Manages multi-stage maintenance pipelines, encompassing anomaly validation, failure prediction, human-in-the-loop decision points, maintenance scheduling, and triggering notifications.
+- **State Management**: Maintains a consistent and potentially persistent state for active workflows and pending decisions. This is crucial for system resilience, allowing workflows to be paused, resumed, or recovered in case of interruptions or agent restarts.
+- **Intelligent Decision Routing**: Employs policy-based rules and contextual data (e.g., anomaly severity from `ValidationAgent`, prediction urgency from `PredictionAgent`, historical insights from `LearningAgent`) to decide whether to automate actions or escalate for human review via the `HumanInterfaceAgent`.
+- **Multi-Agent Communication Hub**: Serves as a primary communication and coordination point, ensuring agents work together cohesively by subscribing to their key output events and publishing commands or new events to direct subsequent actions.
+- **Correlation Tracking & Auditing**: Maintains context across complex, multi-stage workflows using correlation IDs. It also logs significant decisions, state transitions, and actions for comprehensive traceability and auditing purposes.
+- **Fault Tolerance**: Designed for robust error handling and graceful recovery from component failures or unexpected events within the workflow.
 
-### **NOVO: OrchestratorAgent (`apps/agents/core/orchestrator_agent.py`)**
-**O agente central de orquestração** que gerencia workflows orientados a eventos e coordena decisões entre todos os agentes do sistema.
+**Event Flow**:
+- **Subscribes to**: `AnomalyValidatedEvent`, `MaintenancePredictedEvent`, `HumanDecisionResponseEvent`, and potentially other events from various agents that signal the completion of a step or require a change in workflow state.
+- **Publishes**: `HumanDecisionRequiredEvent` (to engage human expertise), `ScheduleMaintenanceCommand` (to direct the `SchedulingAgent`), `WorkflowStepCompletedEvent` (for general tracking and potentially for other subscribers), and other specific commands or events as needed to guide the progression of maintenance tasks.
+- **Operational Logic**: The Orchestrator evaluates incoming events like validated anomalies or maintenance predictions. Based on configurable policies (e.g., severity, cost, equipment criticality, time-to-failure), it determines the next step. This might involve automatically approving and scheduling routine maintenance, or for more critical/complex issues, requesting human input via the `HumanInterfaceAgent` before proceeding. It then processes responses (e.g., `HumanDecisionResponseEvent`) to continue, modify, or halt workflows.
 
-**Papel & Responsabilidades:**
-- 🎯 **Coordenação Central** - Atua como o ponto central de controle para todos os workflows de manutenção
-- 🔄 **Gerenciamento de Estado** - Mantém estado consistente dos workflows ativos e decisões pendentes
-- 🎭 **Orquestração de Decisões** - Coordena processo de tomada de decisão entre múltiplos agentes
-- ⚡ **Processamento Orientado a Eventos** - Responde a eventos do sistema e orquestra fluxos complexos
-- 🧠 **Lógica de Decisão Inteligente** - Determina automaticamente quando ação humana é necessária vs automação
-- 📊 **Rastreamento de Correlação** - Mantém contexto completo através de workflows multi-estágio
+### PredictionAgent (`apps/agents/decision/prediction_agent.py`)
+**Role & Responsibilities**: Performs predictive maintenance by forecasting potential equipment failures. It utilizes machine learning models (e.g., Facebook Prophet) to analyze historical sensor data patterns upon receiving a highly credible validated anomaly, predicting Time-To-Failure (TTF) and generating actionable maintenance recommendations.
 
-**Capacidades Avançadas:**
-- **Gestão de Workflows Complexos**: Orquestra pipelines de manutenção preditiva de ponta a ponta
-- **Tomada de Decisão Baseada em Políticas**: Regras configuráveis para determinar quando requerer aprovação humana
-- **Gestão de Estado Robusta**: Mantém estado consistente através de falhas e reinicializações
-- **Coordenação Multi-Agente**: Gerencia interações complexas entre DataAcquisition, Anomaly Detection, Validation, Prediction e outros agentes
-- **Auditoria Completa**: Registra todas as decisões e transições de estado para rastreabilidade
-- **Tolerância a Falhas**: Recuperação graciosa de falhas de componentes e estados inconsistentes
+**Capabilities**:
+- **Time-To-Failure (TTF) Prediction**: Employs ML models like Prophet for forecasting.
+- **Historical Data Analysis**: Analyzes sensor-specific historical data to train prediction models.
+- **Maintenance Recommendations**: Generates specific maintenance actions based on prediction confidence and timeline.
+- **Intelligent Filtering**: Typically processes only high-confidence validated anomalies.
+- **Contextual Awareness**: Extracts equipment identifiers for targeted recommendations.
 
-**Event Flow:**
+**Event Flow**:
+- **Subscribes to**: `AnomalyValidatedEvent` (typically filtering for high-confidence, credible anomalies).
+- **Publishes**: `MaintenancePredictedEvent` (with predicted failure details, TTF, confidence, and recommended actions).
 
-- **Subscribes to:** `AnomalyValidatedEvent`, `MaintenancePredictedEvent`, `HumanDecisionResponseEvent`
-- **Publishes:** `HumanDecisionRequiredEvent`, `ScheduleMaintenanceCommand`
-- **Integration:** Coordena com HumanInterfaceAgent para aprovações e SchedulingAgent para execução
+### SchedulingAgent (`apps/agents/decision/scheduling_agent.py`)
+**Role & Responsibilities**: Intelligently schedules maintenance tasks based on predictions and operational constraints. It optimizes task assignments to available technicians (potentially considering skills and workload) and can integrate with external calendar systems (currently mocked).
 
-**Pipeline de Orquestração:**
-- Avalia anomalias validadas para determinar urgência e necessidade de aprovação humana
-- Gerencia processo de aprovação humana para manutenção urgente (< 30 dias)
-- Auto-aprova manutenção não-urgente para eficiência operacional
-- Publica comandos de agendamento estruturados para downstream agents
-- Mantém estado consistente e logs de auditoria para todas as decisões
+**Capabilities**:
+- **Optimized Task Scheduling**: Converts maintenance predictions/commands into optimized schedules.
+- **Technician Assignment**: Implements assignment logic (e.g., greedy algorithm, with plans for OR-Tools for advanced optimization).
+- **Calendar Integration**: (Mocked) Interface for checking availability and booking tasks.
+- **Resource Management**: Basic tracking of technician availability.
 
-### **NOVO: PredictionAgent (`apps/agents/decision/prediction_agent.py`)**
-**O agente avançado de manutenção preditiva que usa machine learning para prever falhas de equipamento e gerar recomendações de manutenção.**
+**Event Flow**:
+- **Subscribes to**: `MaintenancePredictedEvent` or `ScheduleMaintenanceCommand` (from `OrchestratorAgent`).
+- **Publishes**: `MaintenanceScheduledEvent` (with schedule details, assigned technician, and task specifics).
 
-**Capacidades Principais:**
-- 🔮 **Previsões de Tempo Até a Falha** - Usa a biblioteca Prophet ML do Facebook para previsões precisas
-- 📊 **Análise de Dados Históricos** - Analisa padrões de sensores do banco de dados para construir modelos de predição
-- 🎯 **Recomendações de Manutenção** - Gera ações de manutenção específicas baseadas na confiança e cronograma da predição
-- ⚡ **Processamento em Tempo Real** - Processa anomalias validadas e publica predições de manutenção
-- 🧠 **Filtragem Inteligente** - Processa apenas anomalias de alta confiança para focar em ameaças críveis
-- 🔄 **Tratamento de Erros Gracioso** - Gerenciamento de erros abrangente para falhas do modelo Prophet e casos extremos
+### NotificationAgent (`apps/agents/decision/notification_agent.py`)
+**Role & Responsibilities**: Manages communications with technicians and stakeholders regarding maintenance schedules, alerts, and other system events. It supports multiple notification channels and uses templates for consistent messaging.
 
-**Funcionalidades Avançadas:**
-- **Integração com Modelo Prophet**: Padrão da indústria para previsão de séries temporais com detecção de tendência e sazonalidade
-- **Recomendações Baseadas em Confiança**: Diferentes estratégias de manutenção baseadas nos níveis de confiança da predição
-- **Consciência do Contexto do Equipamento**: Extrai identificadores de equipamento para agendamento de manutenção direcionado
-- **Otimização de Performance**: Preparação de dados e execução de modelo eficientes para cargas de trabalho de produção
-- **Logging Abrangente**: Trilhas de auditoria detalhadas para todas as predições e recomendações
+**Capabilities**:
+- **Multi-Channel Notifications**: Supports console, with an extensible provider system for email, SMS, etc.
+- **Targeted Messaging**: Routes notifications to specific users/groups.
+- **Template-Based Messages**: Uses customizable templates for different event types.
 
-**Event Flow:**
-
-- **Subscribes to:** `AnomalyValidatedEvent` (processa manutenção preditiva apenas de anomalias críveis de alta confiança)
-- **Publishes:** `MaintenancePredictedEvent` com falhas previstas e recomendações de manutenção
-- **Integração:** Permite agendamento proativo de manutenção e planejamento de recursos
-
-**Pipeline de Predição:**
-- Busca de dados históricos (mínimo 10 dados pontos requeridos)
-- Treinamento do modelo Prophet com dados de séries temporais específicos do sensor
-- Cálculo da probabilidade de falha usando análise de tendência
-- Geração de recomendação de manutenção baseada em urgência e confiança
-- Publicação de evento estruturado com detalhes acionáveis de manutenção
-
-### **NOVO: SchedulingAgent (`apps/agents/decision/scheduling_agent.py`)**
-**The intelligent maintenance scheduling agent** that optimizes maintenance task assignments and coordinates with external calendar systems.
-
-**Core Capabilities:**
-- 📅 **Maintenance Task Scheduling** - Converts maintenance predictions into optimized schedules
-- 👥 **Technician Assignment** - Assigns tasks to available technicians using greedy optimization
-- 🔗 **Calendar Integration** - Interfaces with external calendar systems (mock implementation)
-- ⚡ **Real-Time Processing** - Processes maintenance predictions and publishes scheduled tasks
-- 🎯 **Optimization Logic** - Uses simple greedy assignment with OR-Tools dependency for future enhancements
-- 🔄 **Resource Management** - Tracks technician availability and workload distribution
-
-**Advanced Features:**
-- **Greedy Assignment Algorithm**: Efficient task-to-technician matching based on availability and skills
-- **Calendar Service Integration**: Mock external calendar service for realistic scheduling simulation
-- **Optimization Scoring**: Calculates task priority based on failure probability and urgency
-- **Workload Balancing**: Distributes maintenance tasks across available technicians
-- **Comprehensive Logging**: Detailed audit trails for all scheduling decisions and assignments
-- **Error Resilience**: Graceful handling of scheduling conflicts and resource constraints
-
-**Event Flow:**
-
-- **Subscribes to:** `MaintenancePredictedEvent` (processa previsões de manutenção do PredictionAgent)
-- **Publica:** `MaintenanceScheduledEvent` com horários otimizados e atribuições de técnicos
-- **Integração:** Permite execução coordenada da manutenção e planejamento de recursos
-
-**Pipeline de Agendamento:**
-- Criação de solicitação de manutenção a partir de predições
-- Avaliação da disponibilidade do técnico
-- Otimização da atribuição de tarefas gananciosa
-- Integração com calendário para confirmação de agendamento
-- Publicação de evento estruturado com detalhes completos do agendamento
-
-### **NOVO: NotificationAgent (`apps/agents/decision/notification_agent.py`)**
-**The notification service agent** that handles communication with technicians and stakeholders about maintenance schedules and alerts.
-
-**Core Capabilities:**
-- 📨 **Multi-Channel Notifications** - Supports multiple notification channels including console, email, and SMS
-- 🔧 **Maintenance Schedule Notifications** - Sends notifications when maintenance is scheduled
-- 👤 **Targeted Messaging** - Routes notifications to specific technicians and stakeholders
-- 📋 **Template-Based Messages** - Uses customizable message templates for different notification types
-- ⚡ **Real-Time Processing** - Processes maintenance schedules and sends immediate notifications
-- 🔄 **Provider-Based Architecture** - Extensible notification provider system for different channels
-
-**Advanced Features:**
-- **Console Notification Provider**: Immediate console-based notifications for development and testing
-- **Template Rendering Engine**: Dynamic message generation with equipment and schedule details
-- **Notification Status Tracking**: Comprehensive tracking of notification delivery status
-- **Error Resilience**: Graceful handling of notification failures with detailed error reporting
-- **Metadata Integration**: Rich notification metadata for debugging and audit trails
-- **Extensible Architecture**: Easy integration of new notification channels (email, SMS, webhooks)
-
-**Event Flow:**
-
-- **Subscribes to:** `MaintenanceScheduledEvent` (processa agendamentos de manutenção do SchedulingAgent)
-- **Publishes:** None (terminal agent in the notification pipeline)
-- **Integration:** Provides communication bridge between automated scheduling and human operators
-
-**Notification Pipeline:**
-- Maintenance schedule event processing
-- Notification request creation with recipient details
-- Message template rendering with schedule information
-- Provider-based notification delivery
-- Status tracking and error handling with comprehensive logging
-
-**Message Templates:**
-- **Successful Scheduling**: "🔧 Maintenance Scheduled: {equipment_id}" with full schedule details
-- **Failed Scheduling**: "⚠️ Maintenance Scheduling Failed: {equipment_id}" with constraint information
-- **Rich Metadata**: Includes timestamps, technician details, and maintenance context
+**Event Flow**:
+- **Subscribes to**: `MaintenanceScheduledEvent`, potentially other events like `AnomalyValidatedEvent` (for critical alerts) or `HumanDecisionRequiredEvent`.
+- **Publishes**: None (typically a terminal agent in its specific pipeline, but could publish `NotificationSentEvent` or `NotificationFailedEvent` for auditing).
 
