@@ -395,8 +395,7 @@ Based on these, the key metrics are:
 The `ReportingAgent` generates reports and visualizations. It can be triggered via API or scheduled jobs.
 * *For a detailed description, see the [ReportingAgent section in the README](../README.md#reportingagent-appsagentsdecisionreportingagentpy).*
 
-## 5.3. LearningAgent: RAG-Based Knowledge Management
-*(Note: This is the second section numbered 5.3 in the original document)*
+## 5.4. LearningAgent: RAG-Based Knowledge Management
 
 The **LearningAgent** uses a Retrieval-Augmented Generation (RAG) approach with ChromaDB and SentenceTransformers for knowledge management. It learns from system events like `SystemFeedbackReceivedEvent` to provide context and historical insights.
 * *For a detailed description, see the [LearningAgent section in the README](../README.md#learningagent-appsagentslearninglearningagentpy).*
