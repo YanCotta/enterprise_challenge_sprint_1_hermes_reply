@@ -8,7 +8,6 @@ from data.schemas import SensorReading, SensorReadingCreate, AnomalyAlert, Senso
 from core.events.event_bus import EventBus
 
 # Base Agent (though not directly instantiated, good for context if needed)
-# from apps.agents.base_agent import BaseAgent # This was noted as problematic, using core.base_agent_abc
 from core.base_agent_abc import BaseAgent
 
 # Agent Imports
