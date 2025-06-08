@@ -67,6 +67,9 @@ class AnomalyDetectionAgent(BaseAgent):
         except ConfigurationError as ce: # Catch our specific config error first
             self.logger.error(f"Configuration error during AnomalyDetectionAgent init: {ce}", exc_info=True)
             raise # Re-raise as it's a startup issue
+        except ValueError as ve: # Parameter validation errors should be propagated as-is
+            self.logger.error(f"Parameter validation error during AnomalyDetectionAgent init: {ve}", exc_info=True)
+            raise # Re-raise as ValueError for parameter validation
         except Exception as e:
             self.logger.error(f"Failed to initialize ML models or settings: {e}", exc_info=True)
             # Wrap generic exception as MLModelError or ConfigurationError depending on context
@@ -337,7 +340,7 @@ class AnomalyDetectionAgent(BaseAgent):
                 await self._publish_anomaly_event(anomaly_detected_event) # Can raise EventPublishError
             except EventPublishError as epe:
                 # For event publishing errors, log but don't propagate - allow graceful degradation
-                self.logger.error(f"Failed to publish anomaly event for {_event_id_for_log}: {epe}", exc_info=False)
+                self.logger.error(f"Failed to create or publish AnomalyDetectedEvent for {_event_id_for_log}: {epe}", exc_info=False)
                 # Don't raise - continue gracefully
 
         except (DataValidationException) as app_exc: # Catch specific ones first (removed EventPublishError since we handle it above)
@@ -360,16 +363,16 @@ class AnomalyDetectionAgent(BaseAgent):
         
         for attempt in range(max_retries):
             try:
-                self.logger.info(f"Publishing AnomalyDetectedEvent: {_event_id_for_log} (attempt {attempt + 1}/{max_retries})")
+                self.logger.info(f"Publishing AnomalyDetectedEvent (attempt {attempt + 1}/{max_retries}) for {_event_id_for_log}")
                 await self.event_bus.publish(event)
                 self.logger.debug(f"Successfully published AnomalyDetectedEvent: {_event_id_for_log}")
                 return
             except Exception as e:
+                self.logger.warning(f"Publish attempt {attempt + 1}/{max_retries} failed for AnomalyDetectedEvent {_event_id_for_log}: {e}")
                 if attempt < max_retries - 1:
-                    self.logger.warning(f"Failed to publish AnomalyDetectedEvent {_event_id_for_log} (attempt {attempt + 1}/{max_retries}): {e}")
                     await asyncio.sleep(retry_delay)
                 else:
-                    self.logger.error(f"Failed to create or publish AnomalyDetectedEvent {_event_id_for_log} after {max_retries} attempts: {e}")
+                    self.logger.error(f"Failed to publish after {max_retries} attempts for AnomalyDetectedEvent {_event_id_for_log}: {e}")
                     raise EventPublishError(
                         message=f"Failed to publish AnomalyDetectedEvent {_event_id_for_log} via event bus: {e}",
                         original_exception=e

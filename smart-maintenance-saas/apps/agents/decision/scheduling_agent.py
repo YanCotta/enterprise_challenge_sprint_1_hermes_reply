@@ -168,7 +168,7 @@ class SchedulingAgent(BaseAgent):
                             score = self._calculate_optimization_score(maintenance_request, technician, current_time, scheduled_end)
                             
                             # Add constraints satisfied
-                            constraints_satisfied = ["technician_skills_match", "within_time_window"]
+                            constraints_satisfied = ["technician_skills_match", "within_time_window", "technician_available"]
                             
                             return OptimizedSchedule(
                                 request_id=maintenance_request.id, status=ScheduleStatus.SCHEDULED,
