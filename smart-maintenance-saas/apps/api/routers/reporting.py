@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
-from smart_maintenance_saas.apps.api.dependencies import get_api_key
-from smart_maintenance_saas.data.schemas import ReportRequest, ReportResult
+from apps.api.dependencies import get_api_key
+from data.schemas import ReportRequest, ReportResult
 # Assuming ReportingAgent might be found in a path like this, adjust if necessary
-# from smart_maintenance_saas.apps.agents.reporting_agent import ReportingAgent
+# from apps.agents.reporting_agent import ReportingAgent
 
 router = APIRouter()
 
-@router.post("/reports/generate", response_model=ReportResult, status_code=200, dependencies=[Depends(get_api_key)])
+@router.post("/generate", response_model=ReportResult, status_code=200, dependencies=[Depends(get_api_key)])
 async def generate_report_endpoint(
     report_request: ReportRequest,
     request: Request,

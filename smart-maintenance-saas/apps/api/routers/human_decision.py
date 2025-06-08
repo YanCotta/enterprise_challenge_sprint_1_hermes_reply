@@ -1,21 +1,24 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
-from smart_maintenance_saas.apps.api.dependencies import get_api_key
-from smart_maintenance_saas.data.schemas import DecisionResponse
-from smart_maintenance_saas.core.events.event_models import HumanDecisionResponseEvent
-from smart_maintenance_saas.core.event_bus.event_bus import EventBus
+from apps.api.dependencies import get_api_key
+from data.schemas import DecisionResponse
+from core.events.event_models import HumanDecisionResponseEvent
+from core.events.event_bus import EventBus
 
 router = APIRouter()
 
-@router.post("/decisions/respond", status_code=200, dependencies=[Depends(get_api_key)])
-async def respond_to_decision_request(
+@router.post("/submit", status_code=201, dependencies=[Depends(get_api_key)])
+async def submit_decision(
     decision_response: DecisionResponse,
     request: Request,
 ):
     """
     Accepts a human decision response and publishes it to the event bus.
     """
-    event_bus: EventBus = request.app.state.event_bus
-
+    coordinator = request.app.state.coordinator
+    if not coordinator:
+        raise HTTPException(status_code=500, detail="System coordinator not available")
+    
+    event_bus = coordinator.event_bus
     if not event_bus:
         raise HTTPException(status_code=500, detail="Event bus not available")
 

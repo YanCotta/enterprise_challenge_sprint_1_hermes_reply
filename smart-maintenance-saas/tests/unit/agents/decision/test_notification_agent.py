@@ -339,23 +339,24 @@ class TestNotificationAgent:
     @pytest.mark.asyncio
     async def test_handle_maintenance_scheduled_event_success(self, notification_agent):
         """Test successful handling of maintenance scheduled event."""
-        # Create test event data
-        event_data = {
-            "original_prediction_event_id": str(uuid.uuid4()),
-            "agent_id": "scheduling-agent-003",
-            "event_id": str(uuid.uuid4()),
-            "equipment_id": "PUMP-001",
-            "scheduled_start_time": datetime.now(timezone.utc).isoformat(),
-            "scheduled_end_time": datetime.now(timezone.utc).isoformat(),
-            "assigned_technician_id": "tech-456",
-            "scheduling_method": "optimization",
-            "optimization_score": 0.85,
-            "schedule_details": {
+        # Create test event data - create a proper MaintenanceScheduledEvent object
+        from core.events.event_models import MaintenanceScheduledEvent
+        event_data = MaintenanceScheduledEvent(
+            original_prediction_event_id=uuid.uuid4(),
+            agent_id="scheduling-agent-003",
+            event_id=uuid.uuid4(),
+            equipment_id="PUMP-001",
+            scheduled_start_time=datetime.now(timezone.utc),
+            scheduled_end_time=datetime.now(timezone.utc),
+            assigned_technician_id="tech-456",
+            scheduling_method="optimization",
+            optimization_score=0.85,
+            schedule_details={
                 "priority": "High",
                 "task_description": "Pump maintenance"
             },
-            "constraints_violated": []
-        }
+            constraints_violated=[]
+        )
         
         # Mock send_notification
         with patch.object(notification_agent, 'send_notification') as mock_send:
@@ -366,8 +367,8 @@ class TestNotificationAgent:
                 sent_at=datetime.now(timezone.utc)
             )
             
-            # Handle event
-            await notification_agent.handle_maintenance_scheduled_event(event_data)
+            # Handle event - pass as string event type with data parameter
+            await notification_agent.handle_maintenance_scheduled_event("MaintenanceScheduledEvent", event_data)
             
             # Verify send_notification was called
             assert mock_send.called
@@ -378,11 +379,12 @@ class TestNotificationAgent:
     @pytest.mark.asyncio
     async def test_handle_maintenance_scheduled_event_error(self, notification_agent):
         """Test error handling in maintenance scheduled event handler."""
-        # Create invalid event data
+        # Test with invalid event type - should log error and return gracefully
         invalid_event_data = {"invalid": "data"}
         
-        # Handle event (should not raise exception)
-        await notification_agent.handle_maintenance_scheduled_event(invalid_event_data)
+        # Handle event with invalid type (should not raise exception)
+        # The method expects MaintenanceScheduledEvent but we pass a dict
+        await notification_agent.handle_maintenance_scheduled_event("MaintenanceScheduledEvent", invalid_event_data)
         
         # Agent should continue running despite error
         # No assertion needed, just verify no exception is raised

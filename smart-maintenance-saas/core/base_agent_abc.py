@@ -141,6 +141,23 @@ class BaseAgent(ABC):
                 except Exception as pub_exc:
                     logger.error(f"Agent {self.agent_id}: Failed to publish AgentExceptionEvent after generic error: {pub_exc}", exc_info=True)
 
+    async def _publish_event(self, event_type: str, event_data: Any) -> None:
+        """
+        Helper method to publish events through the event bus.
+        
+        Args:
+            event_type (str): The type of event to publish
+            event_data (Any): The event data to publish
+        """
+        if self.event_bus:
+            try:
+                await self.event_bus.publish(event_type, event_data)
+                logger.debug(f"Agent {self.agent_id}: Published {event_type} event")
+            except Exception as e:
+                logger.error(f"Agent {self.agent_id}: Failed to publish {event_type} event: {e}")
+                raise
+        else:
+            logger.warning(f"Agent {self.agent_id}: No event bus available to publish {event_type} event")
 
     async def get_health(self) -> Dict[str, Any]:
         """

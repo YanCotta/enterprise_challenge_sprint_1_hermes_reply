@@ -187,6 +187,14 @@ class SystemCoordinator:
         ]
         logger.info(f"SystemCoordinator initialized with {len(self.agents)} agents and event bus.")
 
+    @property
+    def reporting_agent(self) -> Optional[ReportingAgent]:
+        """Get the ReportingAgent instance from the agents list."""
+        for agent in self.agents:
+            if isinstance(agent, ReportingAgent):
+                return agent
+        return None
+
     async def startup_system(self):
         logger.info("SystemCoordinator starting up all agents...")
         for agent in self.agents:

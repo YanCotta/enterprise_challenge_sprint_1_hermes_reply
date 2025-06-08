@@ -1,7 +1,7 @@
 import logging  # For basic logging if setup_logging is not yet fully integrated
 
 from fastapi import Depends, FastAPI, HTTPException
-from smart_maintenance_saas.apps.api.routers import data_ingestion, reporting, human_decision
+from apps.api.routers import data_ingestion, reporting, human_decision
 from sqlalchemy import select  # Import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

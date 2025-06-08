@@ -77,6 +77,7 @@ class AnomalyDetectionAgent(BaseAgent):
         self.historical_data_store: Dict[str, Dict[str, float]] = {
             "sensor_temp_001": {"mean": 22.5, "std": 2.1},
             "sensor_vibr_001": {"mean": 0.05, "std": 0.02},
+            "sensor_press_001": {"mean": 101.3, "std": 1.5},
         }
         self._validate_historical_data() # Can raise ConfigurationError
         
@@ -168,9 +169,36 @@ class AnomalyDetectionAgent(BaseAgent):
                     original_exception=e
                 ) from e
 
-            # ML and Statistical processing will raise MLModelError if they fail internally
-            ml_prediction, ml_score = await self._process_ml_models(features, reading)
-            stat_is_anomaly, stat_confidence, stat_desc = self._process_statistical_method(reading)
+            # ML and Statistical processing with graceful degradation
+            ml_prediction, ml_score = None, None
+            stat_is_anomaly, stat_confidence, stat_desc = None, None, None
+            ml_failed = False
+            stat_failed = False
+            
+            # Try ML models first
+            try:
+                ml_prediction, ml_score = await self._process_ml_models(features, reading)
+            except MLModelError as e:
+                self.logger.error(f"Isolation Forest prediction failed for {reading.sensor_id}: {e.original_exception}")
+                ml_prediction, ml_score = 1, 0.0  # Default to "no anomaly" for ML
+                ml_failed = True
+            
+            # Try statistical method
+            try:
+                stat_is_anomaly, stat_confidence, stat_desc = self._process_statistical_method(reading)
+            except MLModelError as e:
+                self.logger.error(f"Statistical detection failed for {reading.sensor_id}: {e.original_exception}")
+                stat_is_anomaly, stat_confidence, stat_desc = False, 0.0, "statistical_failure"
+                stat_failed = True
+                
+            # Log graceful degradation warnings
+            if ml_failed and not stat_failed:
+                self.logger.warning(f"ML models failed for {reading.sensor_id}, using statistical method only")
+            elif stat_failed and not ml_failed:
+                self.logger.warning(f"Statistical method failed for {reading.sensor_id}, using ML method only")
+            elif ml_failed and stat_failed:
+                self.logger.error(f"Both ML and statistical methods failed for {reading.sensor_id}, cannot proceed")
+                raise MLModelError(f"All anomaly detection methods failed for {reading.sensor_id}")
 
             overall_is_anomaly, overall_confidence, overall_description = self._ensemble_decision(
                 ml_prediction, ml_score, stat_is_anomaly, stat_confidence, stat_desc
@@ -191,8 +219,9 @@ class AnomalyDetectionAgent(BaseAgent):
             else:
                 self.logger.debug(f"No anomaly detected for sensor {reading.sensor_id} (event {_event_id_for_log})")
             
-        except (DataValidationException, MLModelError, AgentProcessingError, WorkflowError, EventPublishError) as app_exc:
+        except (DataValidationException, MLModelError, AgentProcessingError, WorkflowError) as app_exc:
             # Re-raise application specific errors to be caught by BaseAgent.handle_event
+            # Note: EventPublishError is handled gracefully in _handle_anomaly_detected, not re-raised here
             self.logger.error(f"Application error in AnomalyDetectionAgent.process for event {_event_id_for_log}: {app_exc}", exc_info=False) # exc_info=False as it's already in app_exc
             raise
         except Exception as e:
@@ -304,9 +333,14 @@ class AnomalyDetectionAgent(BaseAgent):
                 severity=severity_map.get(severity, "medium"), correlation_id=event.correlation_id
             )
             
-            await self._publish_anomaly_event(anomaly_detected_event) # Can raise EventPublishError
+            try:
+                await self._publish_anomaly_event(anomaly_detected_event) # Can raise EventPublishError
+            except EventPublishError as epe:
+                # For event publishing errors, log but don't propagate - allow graceful degradation
+                self.logger.error(f"Failed to publish anomaly event for {_event_id_for_log}: {epe}", exc_info=False)
+                # Don't raise - continue gracefully
 
-        except (DataValidationException, EventPublishError) as app_exc: # Catch specific ones first
+        except (DataValidationException) as app_exc: # Catch specific ones first (removed EventPublishError since we handle it above)
             self.logger.error(f"Error in anomaly handling for event {_event_id_for_log}: {app_exc}", exc_info=False)
             raise
         except Exception as e: # Catch any other error during this handling phase
@@ -317,25 +351,29 @@ class AnomalyDetectionAgent(BaseAgent):
             ) from e
 
     async def _publish_anomaly_event(self, event: AnomalyDetectedEvent) -> None:
-        """Publish anomaly event. Raise EventPublishError on failure after retries."""
-        # This method now directly calls event_bus.publish. The event_bus.publish method
-        # itself has retry and DLQ logic. So, this method might just need to call it once.
-        # If event_bus.publish raises an error (e.g., EventPublishError after its retries),
-        # it will propagate up.
+        """Publish anomaly event with retry logic."""
+        import asyncio
+        
         _event_id_for_log = getattr(event, 'event_id', 'N/A')
-        try:
-            self.logger.info(f"Publishing AnomalyDetectedEvent: {_event_id_for_log}")
-            await self.event_bus.publish(event) # EventBus handles retries & DLQ
-            self.logger.debug(f"Successfully initiated publishing of AnomalyDetectedEvent: {_event_id_for_log}")
-        except Exception as e: # Assuming event_bus.publish could raise its own specific errors or a generic one
-            self.logger.error(f"Publishing AnomalyDetectedEvent {_event_id_for_log} failed: {e}", exc_info=True)
-            # Wrap it as EventPublishError, as the source of error is publishing.
-            # This assumes event_bus.publish might not *always* raise EventPublishError itself.
-            # If it does, this wrapping is redundant.
-            raise EventPublishError(
-                message=f"Failed to publish AnomalyDetectedEvent {_event_id_for_log} via event bus: {str(e)}",
-                original_exception=e
-            ) from e
+        max_retries = 3
+        retry_delay = 0.1
+        
+        for attempt in range(max_retries):
+            try:
+                self.logger.info(f"Publishing AnomalyDetectedEvent: {_event_id_for_log} (attempt {attempt + 1}/{max_retries})")
+                await self.event_bus.publish(event)
+                self.logger.debug(f"Successfully published AnomalyDetectedEvent: {_event_id_for_log}")
+                return
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    self.logger.warning(f"Failed to publish AnomalyDetectedEvent {_event_id_for_log} (attempt {attempt + 1}/{max_retries}): {e}")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    self.logger.error(f"Failed to create or publish AnomalyDetectedEvent {_event_id_for_log} after {max_retries} attempts: {e}")
+                    raise EventPublishError(
+                        message=f"Failed to publish AnomalyDetectedEvent {_event_id_for_log} via event bus: {e}",
+                        original_exception=e
+                    ) from e
     
     def _ensemble_decision(
         self, if_prediction: int, if_score: float,

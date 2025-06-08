@@ -9,6 +9,7 @@ import asyncio
 import pytest
 from datetime import datetime, timedelta, timezone # Added timezone
 from uuid import uuid4
+from typing import Optional
 
 from apps.agents.core.orchestrator_agent import OrchestratorAgent
 from apps.agents.interface.human_interface_agent import HumanInterfaceAgent
@@ -100,7 +101,7 @@ class TestOrchestratorAgentIntegration:
         test_settings.ORCHESTRATOR_URGENT_MAINTENANCE_DAYS = 30
         test_settings.ORCHESTRATOR_HIGH_CONFIDENCE_THRESHOLD = 0.90
         test_settings.ORCHESTRATOR_MODERATE_CONFIDENCE_THRESHOLD = 0.75
-        test_settings.ORCHESTRATOR_VERY_URGENT_MAINTENANCE_DAYS_FACTOR = 0.5 # Explicitly set for clarity
+        test_settings.ORCHESTRATOR_VERY_URGENT_MAINTENANCE_DAYS_FACTOR = 0.5  # Explicitly set for clarity
 
         schedule_commands_received = []
         human_decision_events_received = []
@@ -146,7 +147,7 @@ class TestOrchestratorAgentIntegration:
     ):
         # Apply specific settings for this test if needed, or rely on defaults in conftest
         test_settings.ORCHESTRATOR_URGENT_MAINTENANCE_DAYS = 30
-        test_settings.ORCHESTRATOR_HIGH_CONFIDENCE_THRESHOLD = 0.90 # Default, but good to be explicit
+        test_settings.ORCHESTRATOR_HIGH_CONFIDENCE_THRESHOLD = 0.90  # Default, but good to be explicit
         # This test implies that TTF=15 days with confidence 0.95 requires human approval.
         # Let's check the logic. If default very_urgent_factor is 0.5, then 15 days is NOT very urgent.
         # So it falls into "Urgent" category. If confidence is high (0.95), it should auto-approve.
@@ -279,7 +280,7 @@ class TestOrchestratorAgentIntegration:
 
         assert len(received_events['schedule_commands']) == 0
         decision_log = await orchestrator_agent.get_decision_log()
-        assert any("rejected" in d.decision_rationale.lower() for d in decision_log)
+        assert any("reject" in d.decision_rationale.lower() for d in decision_log)
         assert any(d.context_data.get("human_decision") == "reject" for d in decision_log if d.decision_type == "human_decision_processing")
 
 
@@ -596,7 +597,7 @@ class TestOrchestratorAgentIntegration:
     # A better approach for test_settings is to use monkeypatching if it's a module-level variable.
     # If settings is a Pydantic object, its attributes can be directly set.
     @pytest.fixture
-    def test_settings(monkeypatch):
+    def test_settings(self, monkeypatch):
         """Fixture to temporarily modify global settings for a test."""
         # Store original values of settings we might change
         original_values = {
@@ -612,7 +613,7 @@ class TestOrchestratorAgentIntegration:
 
         # Restore original values after the test
         for key, value in original_values.items():
-            monkeypatch.setattr(global_settings, key, value)
+            setattr(global_settings, key, value)
 
 # Existing tests might need slight adjustments if their expected behavior relied on the old logic.
 # For example, urgency levels in ScheduleMaintenanceCommand or rationales in decision logs.
@@ -620,19 +621,21 @@ class TestOrchestratorAgentIntegration:
 # The test_urgent_maintenance_workflow_with_human_approval was updated.
 # The test_non_urgent_maintenance_workflow_auto_approval was updated.
 # The test_human_rejection_workflow was updated for consistency.
-# The test_event_correlation_tracking was updated.The integration test file `test_orchestrator_agent_integration.py` has been updated:
-
-1.  **Helper Function:** Added `_create_maintenance_predicted_event` to simplify event creation.
-2.  **`test_settings` Fixture:** A `test_settings` fixture using `monkeypatch` has been added to allow modification of global settings for the duration of a test and ensure they are restored afterwards. This is crucial for testing different configuration scenarios.
-3.  **New Test Scenarios (1a-1e):**
-    *   `test_auto_approval_urgent_ttf_high_confidence` (Scenario 1a)
-    *   `test_human_approval_urgent_ttf_moderate_confidence` (Scenario 1b)
-    *   `test_human_approval_urgent_ttf_low_confidence` (Scenario 1c)
-    *   `test_human_approval_not_urgent_ttf_low_confidence` (Scenario 1d)
-    *   `test_human_approval_very_urgent_ttf_moderate_confidence` (Scenario 1e)
-    These tests set specific orchestrator thresholds using the `test_settings` fixture and assert the correct behavior (auto-approval or human approval request) based on the new logic. They also check the decision log rationale.
-4.  **Duplicate Prediction Test:**
-    *   Added `test_duplicate_prediction_before_human_decision` to verify that if a maintenance prediction arrives while another for the same equipment is awaiting human decision, the new one is ignored and the state flag (`pending_human_approval_...`) is managed correctly.
-5.  **Existing Tests Updated:** The original tests (`test_urgent_maintenance_workflow_with_human_approval`, `test_non_urgent_maintenance_workflow_auto_approval`, `test_human_rejection_workflow`, `test_concurrent_maintenance_predictions`, `test_event_correlation_tracking`) were reviewed and slightly adjusted to use the `_create_maintenance_predicted_event` helper and the `test_settings` fixture, ensuring their assertions align with the new refined logic in `OrchestratorAgent`. For example, confidence values were chosen to ensure the intended path (human approval vs. auto-approval) was triggered according to the new rules.
-
-All planned tests have been implemented. The file is now ready.
+# The test_event_correlation_tracking was updated.
+#
+# The integration test file `test_orchestrator_agent_integration.py` has been updated:
+#
+# 1.  **Helper Function:** Added `_create_maintenance_predicted_event` to simplify event creation.
+# 2.  **`test_settings` Fixture:** A `test_settings` fixture using `monkeypatch` has been added to allow modification of global settings for the duration of a test and ensure they are restored afterwards. This is crucial for testing different configuration scenarios.
+# 3.  **New Test Scenarios (1a-1e):**
+#     *   `test_auto_approval_urgent_ttf_high_confidence` (Scenario 1a)
+#     *   `test_human_approval_urgent_ttf_moderate_confidence` (Scenario 1b)
+#     *   `test_human_approval_urgent_ttf_low_confidence` (Scenario 1c)
+#     *   `test_human_approval_not_urgent_ttf_low_confidence` (Scenario 1d)
+#     *   `test_human_approval_very_urgent_ttf_moderate_confidence` (Scenario 1e)
+#     These tests set specific orchestrator thresholds using the `test_settings` fixture and assert the correct behavior (auto-approval or human approval request) based on the new logic. They also check the decision log rationale.
+# 4.  **Duplicate Prediction Test:**
+#     *   Added `test_duplicate_prediction_before_human_decision` to verify that if a maintenance prediction arrives while another for the same equipment is awaiting human decision, the new one is ignored and the state flag (`pending_human_approval_...`) is managed correctly.
+# 5.  **Existing Tests Updated:** The original tests (`test_urgent_maintenance_workflow_with_human_approval`, `test_non_urgent_maintenance_workflow_auto_approval`, `test_human_rejection_workflow`, `test_concurrent_maintenance_predictions`, `test_event_correlation_tracking`) were reviewed and slightly adjusted to use the `_create_maintenance_predicted_event` helper and the `test_settings` fixture, ensuring their assertions align with the new refined logic in `OrchestratorAgent`. For example, confidence values were chosen to ensure the intended path (human approval vs. auto-approval) was triggered according to the new rules.
+#
+# All planned tests have been implemented. The file is now ready.

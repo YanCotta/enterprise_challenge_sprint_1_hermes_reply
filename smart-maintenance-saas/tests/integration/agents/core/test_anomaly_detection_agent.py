@@ -14,6 +14,7 @@ from apps.agents.core.anomaly_detection_agent import AnomalyDetectionAgent
 from core.events.event_bus import EventBus
 from core.events.event_models import AnomalyDetectedEvent, DataProcessedEvent
 from data.schemas import SensorReading, SensorType
+from data.exceptions import DataValidationException
 
 
 class TestAnomalyDetectionAgentIntegration:
@@ -119,12 +120,18 @@ class TestAnomalyDetectionAgentIntegration:
         
         # Mock the logger to capture error messages
         with patch.object(agent.logger, 'error') as mock_error:
-            await agent.process(invalid_event)
+            # Process method should raise DataValidationException for invalid data
+            with pytest.raises(DataValidationException) as exc_info:
+                await agent.process(invalid_event)
             
-            # Verify that an error was logged
-            mock_error.assert_called_once()
-            error_call = mock_error.call_args[0][0]
-            assert "Failed to parse sensor reading" in error_call # More specific to Pydantic error
+            # Verify that errors were logged (both validation and application error)
+            assert mock_error.call_count == 2
+            error_calls = [call[0][0] for call in mock_error.call_args_list]
+            assert any("Failed to parse sensor reading" in call for call in error_calls)
+            assert any("Application error in AnomalyDetectionAgent.process" in call for call in error_calls)
+            
+            # Verify the exception details
+            assert "Invalid sensor data payload" in str(exc_info.value)
 
     async def test_full_agent_lifecycle(self, agent, event_bus, sample_data_processed_event):
         """Test the complete agent lifecycle from start to processing events."""
@@ -202,8 +209,8 @@ class TestAnomalyDetectionAgentIntegration:
             
             # Verify logging includes prediction results
             info_calls = [call[0][0] for call in mock_info.call_args_list]
-            assert any("Isolation Forest results" in call for call in info_calls) # Corrected string
-            assert any("Statistical detection" in call for call in info_calls)
+            assert any("Isolation Forest for" in call for call in info_calls) # Corrected string
+            assert any("Statistical for" in call for call in info_calls)
 
     async def test_process_full_pipeline_with_unknown_sensor(self, agent):
         """Test that the full processing pipeline works with an unknown sensor."""
@@ -236,7 +243,7 @@ class TestAnomalyDetectionAgentIntegration:
             mock_info.assert_called()
             # Check that one of the info calls contains the expected message about first encounter
             info_calls = [str(call) for call in mock_info.call_args_list]
-            assert any("First encounter for unknown sensor unknown_sensor_999" in call_str for call_str in info_calls)
+            assert any("First encounter for unknown_sensor_999" in call_str for call_str in info_calls)
             
             # Verify statistical detector was called with default values
             mock_stat_detect.assert_called_once()
@@ -352,17 +359,16 @@ class TestAnomalyDetectionAgentIntegration:
             
             # Check that isolation forest results are logged
             info_calls = [call[0][0] for call in mock_info.call_args_list]
-            isolation_log = next((call for call in info_calls if "Isolation Forest results" in call), None) # Corrected string
+            isolation_log = next((call for call in info_calls if "Isolation Forest for" in call), None) # Corrected string
             assert isolation_log is not None
-            assert "prediction=-1" in isolation_log
-            assert "anomaly" in isolation_log
+            assert "pred=-1" in isolation_log
             assert "score=-0.1500" in isolation_log
             
             # Check that statistical results are logged
-            statistical_log = next((call for call in info_calls if "Statistical detection" in call), None)
+            statistical_log = next((call for call in info_calls if "Statistical for" in call), None)
             assert statistical_log is not None
-            assert "anomaly=True" in statistical_log # Corrected key
-            assert "confidence=0.9000" in statistical_log
+            assert "anom=True" in statistical_log # Corrected key
+            assert "conf=0.9000" in statistical_log
             assert "statistical_threshold_breach" in statistical_log
 
     async def test_anomaly_detection_and_event_publishing(self, agent, event_bus):
@@ -412,7 +418,7 @@ class TestAnomalyDetectionAgentIntegration:
             assert anomaly_details["sensor_id"] == "sensor_temp_001"
             assert anomaly_details["severity"] == 5  # High confidence should map to severity 5
             assert math.isclose(anomaly_details["confidence"], 0.835) # Corrected based on current ensemble logic
-            assert "Anomaly detected for sensor sensor_temp_001" in anomaly_details["description"]
+            assert "Anomaly: sensor_temp_001" in anomaly_details["description"]
             
             # Verify triggering data
             triggering_data = published_event.triggering_data
@@ -621,7 +627,7 @@ class TestAnomalyDetectionAgentIntegration:
             
             # Verify first encounter was logged
             info_calls = [str(call) for call in mock_info.call_args_list]
-            assert any(f"First encounter for unknown sensor {unknown_sensor_id}" in call_str for call_str in info_calls)
+            assert any(f"First encounter for {unknown_sensor_id}" in call_str for call_str in info_calls)
         
         # Second reading for same unknown sensor
         reading2 = SensorReading(

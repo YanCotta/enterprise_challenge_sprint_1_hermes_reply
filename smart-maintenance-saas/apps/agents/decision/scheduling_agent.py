@@ -100,9 +100,34 @@ class SchedulingAgent(BaseAgent):
             raise # Re-raise to be handled by BaseAgent's error handling logic
     
     def _create_maintenance_request(self, prediction_event: MaintenancePredictedEvent) -> MaintenanceRequest:
-        priority = 1 if prediction_event.time_to_failure_days <= 7 else 2 # Simplified
-        estimated_duration = 2.0 # Simplified
-        required_skills = ["mechanical"] # Simplified
+        # Calculate priority based on time to failure
+        if prediction_event.time_to_failure_days <= 7:
+            priority = 1  # High priority
+        elif prediction_event.time_to_failure_days <= 30:
+            priority = 2  # Medium priority  
+        elif prediction_event.time_to_failure_days <= 90:
+            priority = 3  # Low priority
+        else:
+            priority = 4  # Very low priority
+        
+        # Calculate duration based on maintenance type
+        if prediction_event.maintenance_type == "corrective":
+            estimated_duration = 4.0  # Corrective maintenance takes longer
+        elif prediction_event.maintenance_type == "preventive":
+            estimated_duration = 2.0  # Preventive maintenance is quicker
+        else:
+            estimated_duration = 2.0  # Default
+            
+        # Map equipment type to required skills
+        equipment_id = prediction_event.equipment_id.lower()
+        if "hvac" in equipment_id:
+            required_skills = ["hvac", "mechanical"]
+        elif "pump" in equipment_id:
+            required_skills = ["mechanical", "hydraulics"]
+        elif "motor" in equipment_id:
+            required_skills = ["electrical", "mechanical"]
+        else:
+            required_skills = ["mechanical"]  # Default fallback
         
         preferred_deadline = prediction_event.predicted_failure_date - timedelta(days=max(1, prediction_event.time_to_failure_days * 0.1))
         preferred_start = datetime.utcnow() + timedelta(days=1)
@@ -120,7 +145,12 @@ class SchedulingAgent(BaseAgent):
         try:
             qualified_technicians = [tech for tech in mock_technicians if any(skill in tech["skills"] for skill in maintenance_request.required_skills)]
             if not qualified_technicians:
-                return OptimizedSchedule(request_id=maintenance_request.id, status=ScheduleStatus.FAILED_TO_SCHEDULE, constraints_violated=["no_qualified_technicians"])
+                return OptimizedSchedule(
+                    request_id=maintenance_request.id, 
+                    status=ScheduleStatus.FAILED_TO_SCHEDULE, 
+                    constraints_violated=["no_qualified_technicians"],
+                    scheduling_notes="No technicians available with required skills"
+                )
 
             qualified_technicians.sort(key=lambda t: (t["availability_score"], t["experience_years"]), reverse=True)
             
@@ -136,10 +166,15 @@ class SchedulingAgent(BaseAgent):
                     if self.calendar_service.check_availability(technician["id"], current_time, scheduled_end):
                         if self.calendar_service.book_slot(technician["id"], current_time, scheduled_end, maintenance_request.id):
                             score = self._calculate_optimization_score(maintenance_request, technician, current_time, scheduled_end)
+                            
+                            # Add constraints satisfied
+                            constraints_satisfied = ["technician_skills_match", "within_time_window"]
+                            
                             return OptimizedSchedule(
                                 request_id=maintenance_request.id, status=ScheduleStatus.SCHEDULED,
                                 assigned_technician_id=technician["id"], scheduled_start_time=current_time,
-                                scheduled_end_time=scheduled_end, optimization_score=score
+                                scheduled_end_time=scheduled_end, optimization_score=score,
+                                constraints_satisfied=constraints_satisfied
                             )
                     current_time += timedelta(hours=2)
             
@@ -173,8 +208,11 @@ class SchedulingAgent(BaseAgent):
                 correlation_id=original_event.correlation_id
             )
             
+            # Convert to dictionary for _publish_event
+            event_data_dict = event_data_object.model_dump()
+            
             if self.event_bus:
-                await self.event_bus.publish(event_data_object) # Pass the object directly
+                await self._publish_event("MaintenanceScheduledEvent", event_data_dict)
                 self.logger.info(f"Published MaintenanceScheduledEvent for equipment {original_event.equipment_id}")
             else:
                 self.logger.warning(f"Event bus not available. Cannot publish MaintenanceScheduledEvent for {original_event.equipment_id}")

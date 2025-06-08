@@ -9,7 +9,7 @@ import logging
 import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import ValidationError # Ensure ValidationError is imported
 
@@ -107,10 +107,37 @@ class NotificationAgent(BaseAgent):
     def _initialize_templates(self) -> Dict[str, str]:
         # If templates were loaded from files, this could raise ConfigurationError
         return {
-            "maintenance_scheduled": "🔧 Maintenance Scheduled for {equipment_id}...\nHello {technician_name}...", # Truncated for brevity
-            "maintenance_failed_to_schedule": "⚠️ Maintenance Scheduling Failed for {equipment_id}...\nAttention Supervisor...",
-            "maintenance_rescheduled": "📅 Maintenance Rescheduled for {equipment_id}...\nHello {technician_name}...",
-        } # Keeping templates short for this example. Real templates are longer.
+            "maintenance_scheduled": (
+                "🔧 Maintenance Scheduled for {equipment_id}\n"
+                "Hello {technician_name},\n\n"
+                "You have been assigned maintenance work:\n"
+                "• Equipment: {equipment_id}\n"
+                "• Start Time: {scheduled_start_time}\n"
+                "• End Time: {scheduled_end_time}\n"
+                "• Priority: {priority}\n"
+                "• Task: {task_description}\n\n"
+                "Please confirm your availability."
+            ),
+            "maintenance_failed_to_schedule": (
+                "⚠️ Maintenance Scheduling Failed for {equipment_id}\n"
+                "Attention Supervisor,\n\n"
+                "Unable to schedule maintenance:\n"
+                "• Equipment: {equipment_id}\n"
+                "• Priority: {priority}\n"
+                "• Task: {task_description}\n\n"
+                "Manual intervention required."
+            ),
+            "maintenance_rescheduled": (
+                "📅 Maintenance Rescheduled for {equipment_id}\n"
+                "Hello {technician_name},\n\n"
+                "Your maintenance assignment has been updated:\n"
+                "• Equipment: {equipment_id}\n"
+                "• New Start Time: {scheduled_start_time}\n"
+                "• New End Time: {scheduled_end_time}\n"
+                "• Priority: {priority}\n\n"
+                "Please confirm the new schedule."
+            ),
+        }
     
     async def start(self) -> None:
         await super().start() # Includes capability registration
@@ -172,7 +199,7 @@ class NotificationAgent(BaseAgent):
             recipient = f"technician_{event.assigned_technician_id or 'unassigned'}"
             
             template_id = "maintenance_scheduled" if event.assigned_technician_id and event.scheduled_start_time else "maintenance_failed_to_schedule"
-            subject = f"🔧 Maint Sched: {equipment_id}" if template_id == "maintenance_scheduled" else f"⚠️ Maint Sched Fail: {equipment_id}"
+            subject = f"🔧 Maintenance Scheduled for {equipment_id}" if template_id == "maintenance_scheduled" else f"⚠️ Maintenance Scheduling Failed for {equipment_id}"
             priority = 2 if template_id == "maintenance_scheduled" else 1
 
             template_data = {
@@ -188,7 +215,7 @@ class NotificationAgent(BaseAgent):
             return NotificationRequest(
                 id=str(uuid.uuid4()), recipient=recipient, channel=NotificationChannel.CONSOLE,
                 subject=subject, message=message, priority=priority, template_id=template_id,
-                template_data=template_data, metadata={"event_id": str(event.event_id)}
+                template_data=template_data, metadata={"event_id": str(event.event_id), "equipment_id": equipment_id}
             )
         except DataValidationException: # If NotificationRequest Pydantic validation fails
             raise
@@ -198,23 +225,25 @@ class NotificationAgent(BaseAgent):
             raise WorkflowError(f"Failed to create notification request for event {event.event_id}: {e}", original_exception=e) from e
     
     def _render_template(self, template_id: str, template_data: Dict[str, Any]) -> str:
-        """Render template. Raise ConfigurationError on failure."""
+        """Render template. Return error message on failure."""
         template = self.templates.get(template_id)
         if not template:
-            raise ConfigurationError(f"Notification template '{template_id}' not found.")
+            return f"No template found for {template_id}"
         try:
             return template.format(**template_data)
         except KeyError as e:
-            raise ConfigurationError(
-                f"Missing data for template '{template_id}': key {e} not found in {list(template_data.keys())}",
-                original_exception=e
-            ) from e
+            return f"Template rendering failed: KeyError {e}"
     
     async def send_notification(self, request: NotificationRequest) -> NotificationResult:
-        """Send notification. Raise ConfigurationError or allow provider errors (e.g. ServiceUnavailableError) to pass."""
+        """Send notification. Return failed result if no provider available."""
         provider = self.providers.get(request.channel)
         if not provider:
-            raise ConfigurationError(f"No notification provider configured for channel {request.channel.value}")
+            error_msg = f"No provider available for channel {request.channel.value}"
+            return NotificationResult(
+                request_id=request.id, status=NotificationStatus.FAILED,
+                channel_used=request.channel, sent_at=datetime.now(timezone.utc),
+                error_message=error_msg
+            )
         
         self.logger.info(f"Sending notification {request.id} via {request.channel.value} to {request.recipient}")
         try:

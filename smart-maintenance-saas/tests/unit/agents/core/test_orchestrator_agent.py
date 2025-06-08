@@ -129,15 +129,15 @@ class TestOrchestratorAgent:
 
     @pytest.mark.asyncio
     async def test_handle_maintenance_predicted_urgent(self, orchestrator_agent, mock_event_bus):
-        """Test handling of urgent maintenance predictions (< 30 days)."""
-        # Create urgent maintenance prediction
+        """Test handling of urgent maintenance predictions (< 30 days) with high confidence."""
+        # Create urgent maintenance prediction with high confidence
         event = MaintenancePredictedEvent(
             original_anomaly_event_id=uuid4(),
             equipment_id="pump_001",
             predicted_failure_date=datetime.utcnow() + timedelta(days=15),
             confidence_interval_lower=datetime.utcnow() + timedelta(days=10),
             confidence_interval_upper=datetime.utcnow() + timedelta(days=20),
-            prediction_confidence=0.92,
+            prediction_confidence=0.92,  # High confidence (>= 0.90)
             time_to_failure_days=15.0,
             maintenance_type="corrective",
             historical_data_points=100,
@@ -148,15 +148,16 @@ class TestOrchestratorAgent:
         # Handle the event
         await orchestrator_agent.handle_maintenance_predicted(event)
         
-        # Verify human decision request was published
+        # Verify schedule maintenance command was published (auto-approved)
         mock_event_bus.publish.assert_called_once()
         call_args = mock_event_bus.publish.call_args
-        assert call_args[0][0] == "HumanDecisionRequiredEvent"
+        assert call_args[0][0].__class__.__name__ == "ScheduleMaintenanceCommand"
         
-        published_event = call_args[0][1]
-        assert isinstance(published_event, HumanDecisionRequiredEvent)
-        assert published_event.payload.decision_type == DecisionType.MAINTENANCE_APPROVAL
-        assert published_event.payload.priority == "high"
+        published_event = call_args[0][0]
+        assert isinstance(published_event, ScheduleMaintenanceCommand)
+        assert published_event.auto_approved is True
+        assert published_event.urgency_level == "high"
+        assert published_event.source_prediction_event_id == str(event.event_id)
         
         # Verify state and decision log
         state_key = f"prediction_{event.event_id}"
@@ -165,19 +166,19 @@ class TestOrchestratorAgent:
         
         assert len(orchestrator_agent.decision_log) == 1
         decision = orchestrator_agent.decision_log[0]
-        assert "requesting human approval" in decision.decision_rationale.lower()
+        assert "auto-approving" in decision.decision_rationale.lower()
 
     @pytest.mark.asyncio
     async def test_handle_maintenance_predicted_non_urgent(self, orchestrator_agent, mock_event_bus):
-        """Test handling of non-urgent maintenance predictions (>= 30 days)."""
-        # Create non-urgent maintenance prediction
+        """Test handling of non-urgent maintenance predictions (>= 30 days) with moderate confidence."""
+        # Create non-urgent maintenance prediction with moderate confidence
         event = MaintenancePredictedEvent(
             original_anomaly_event_id=uuid4(),
             equipment_id="motor_002",
             predicted_failure_date=datetime.utcnow() + timedelta(days=45),
             confidence_interval_lower=datetime.utcnow() + timedelta(days=40),
             confidence_interval_upper=datetime.utcnow() + timedelta(days=50),
-            prediction_confidence=0.78,
+            prediction_confidence=0.78,  # Moderate confidence (< 0.90)
             time_to_failure_days=45.0,
             maintenance_type="preventive",
             historical_data_points=200,
@@ -188,15 +189,87 @@ class TestOrchestratorAgent:
         # Handle the event
         await orchestrator_agent.handle_maintenance_predicted(event)
         
-        # Verify schedule maintenance command was published
+        # Verify human decision request was published (requires approval)
         mock_event_bus.publish.assert_called_once()
         call_args = mock_event_bus.publish.call_args
-        assert call_args[0][0] == "ScheduleMaintenanceCommand"
+        assert call_args[0][0].__class__.__name__ == "HumanDecisionRequiredEvent"
         
-        published_event = call_args[0][1]
+        published_event = call_args[0][0]
+        assert isinstance(published_event, HumanDecisionRequiredEvent)
+        assert published_event.payload.decision_type == DecisionType.MAINTENANCE_APPROVAL
+        assert published_event.payload.priority == "medium"
+        
+        # Verify decision log
+        assert len(orchestrator_agent.decision_log) == 1
+        decision = orchestrator_agent.decision_log[0]
+        assert "requesting human approval" in decision.decision_rationale.lower()
+
+    @pytest.mark.asyncio
+    async def test_handle_maintenance_predicted_urgent_low_confidence(self, orchestrator_agent, mock_event_bus):
+        """Test handling of urgent maintenance predictions with low confidence (requires human approval)."""
+        # Create urgent maintenance prediction with low confidence
+        event = MaintenancePredictedEvent(
+            original_anomaly_event_id=uuid4(),
+            equipment_id="pump_002",
+            predicted_failure_date=datetime.utcnow() + timedelta(days=20),
+            confidence_interval_lower=datetime.utcnow() + timedelta(days=15),
+            confidence_interval_upper=datetime.utcnow() + timedelta(days=25),
+            prediction_confidence=0.65,  # Low confidence (< 0.75)
+            time_to_failure_days=20.0,
+            maintenance_type="corrective",
+            historical_data_points=50,
+            recommended_actions=["Check bearing", "Monitor vibration"],
+            agent_id="prediction_agent_1"
+        )
+        
+        # Handle the event
+        await orchestrator_agent.handle_maintenance_predicted(event)
+        
+        # Verify human decision request was published (requires approval due to low confidence)
+        mock_event_bus.publish.assert_called_once()
+        call_args = mock_event_bus.publish.call_args
+        assert call_args[0][0].__class__.__name__ == "HumanDecisionRequiredEvent"
+        
+        published_event = call_args[0][0]
+        assert isinstance(published_event, HumanDecisionRequiredEvent)
+        assert published_event.payload.decision_type == DecisionType.MAINTENANCE_APPROVAL
+        assert published_event.payload.priority == "high"  # Still high priority due to urgency
+        
+        # Verify decision log
+        assert len(orchestrator_agent.decision_log) == 1
+        decision = orchestrator_agent.decision_log[0]
+        assert "requesting human approval" in decision.decision_rationale.lower()
+
+    @pytest.mark.asyncio
+    async def test_handle_maintenance_predicted_non_urgent_high_confidence(self, orchestrator_agent, mock_event_bus):
+        """Test handling of non-urgent maintenance predictions with high confidence (auto-approved)."""
+        # Create non-urgent maintenance prediction with high confidence
+        event = MaintenancePredictedEvent(
+            original_anomaly_event_id=uuid4(),
+            equipment_id="motor_003",
+            predicted_failure_date=datetime.utcnow() + timedelta(days=60),
+            confidence_interval_lower=datetime.utcnow() + timedelta(days=55),
+            confidence_interval_upper=datetime.utcnow() + timedelta(days=65),
+            prediction_confidence=0.95,  # High confidence (>= 0.90)
+            time_to_failure_days=60.0,
+            maintenance_type="preventive",
+            historical_data_points=300,
+            recommended_actions=["Scheduled maintenance", "Part replacement"],
+            agent_id="prediction_agent_1"
+        )
+        
+        # Handle the event
+        await orchestrator_agent.handle_maintenance_predicted(event)
+        
+        # Verify schedule maintenance command was published (auto-approved due to high confidence)
+        mock_event_bus.publish.assert_called_once()
+        call_args = mock_event_bus.publish.call_args
+        assert call_args[0][0].__class__.__name__ == "ScheduleMaintenanceCommand"
+        
+        published_event = call_args[0][0]
         assert isinstance(published_event, ScheduleMaintenanceCommand)
         assert published_event.auto_approved is True
-        assert published_event.urgency_level == "medium"
+        assert published_event.urgency_level == "medium"  # Medium urgency for non-urgent
         assert published_event.source_prediction_event_id == str(event.event_id)
         
         # Verify decision log
@@ -207,9 +280,23 @@ class TestOrchestratorAgent:
     @pytest.mark.asyncio
     async def test_handle_human_decision_approve(self, orchestrator_agent, mock_event_bus):
         """Test handling of human approval decisions."""
-        # Create approval response
+        # First, set up the prediction state that would normally be created
+        # when a human decision is requested
+        prediction_event_id = uuid4()
+        equipment_id = "pump_001"
+        
+        # Set up the prediction state
+        await orchestrator_agent._update_state(f"prediction_{prediction_event_id}", {
+            "equipment_id": equipment_id,
+            "time_to_failure_days": 45.0,
+            "prediction_confidence": 0.78,
+            "maintenance_type": "preventive",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        
+        # Create approval response with matching request_id format
         decision_response = DecisionResponse(
-            request_id="maintenance_approval_12345",
+            request_id=f"maintenance_approval_{prediction_event_id}",
             decision="approve",
             justification="Critical equipment failure risk",
             operator_id="operator_001",
@@ -224,9 +311,7 @@ class TestOrchestratorAgent:
         # Verify schedule maintenance command was published
         mock_event_bus.publish.assert_called_once()
         call_args = mock_event_bus.publish.call_args
-        assert call_args[0][0] == "ScheduleMaintenanceCommand"
-        
-        published_event = call_args[0][1]
+        published_event = call_args[0][0]
         assert isinstance(published_event, ScheduleMaintenanceCommand)
         assert published_event.auto_approved is False
         assert published_event.urgency_level == "high"
@@ -240,14 +325,27 @@ class TestOrchestratorAgent:
         
         assert len(orchestrator_agent.decision_log) == 1
         decision = orchestrator_agent.decision_log[0]
-        assert "approved maintenance request" in decision.decision_rationale.lower()
+        assert "approved" in decision.decision_rationale.lower()
 
     @pytest.mark.asyncio
     async def test_handle_human_decision_reject(self, orchestrator_agent, mock_event_bus):
         """Test handling of human rejection decisions."""
-        # Create rejection response
+        # First, set up the prediction state that would normally be created
+        prediction_event_id = uuid4()
+        equipment_id = "pump_002"
+        
+        # Set up the prediction state
+        await orchestrator_agent._update_state(f"prediction_{prediction_event_id}", {
+            "equipment_id": equipment_id,
+            "time_to_failure_days": 40.0,
+            "prediction_confidence": 0.80,
+            "maintenance_type": "corrective",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        
+        # Create rejection response with matching request_id format
         decision_response = DecisionResponse(
-            request_id="maintenance_approval_12346",
+            request_id=f"maintenance_approval_{prediction_event_id}",
             decision="reject",
             justification="Budget constraints",
             operator_id="operator_002",
@@ -265,15 +363,28 @@ class TestOrchestratorAgent:
         # Verify decision was logged
         assert len(orchestrator_agent.decision_log) == 1
         decision = orchestrator_agent.decision_log[0]
-        assert "rejected maintenance request" in decision.decision_rationale.lower()
-        assert "no scheduling command published" in decision.action_taken.lower()
+        assert "reject" in decision.decision_rationale.lower()
+        assert "logged decision: reject" in decision.action_taken.lower()
 
     @pytest.mark.asyncio
     async def test_handle_human_decision_modify(self, orchestrator_agent, mock_event_bus):
         """Test handling of human modification requests."""
-        # Create modification response
+        # First, set up the prediction state that would normally be created
+        prediction_event_id = uuid4()
+        equipment_id = "motor_001"
+        
+        # Set up the prediction state
+        await orchestrator_agent._update_state(f"prediction_{prediction_event_id}", {
+            "equipment_id": equipment_id,
+            "time_to_failure_days": 35.0,
+            "prediction_confidence": 0.82,
+            "maintenance_type": "preventive",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        
+        # Create modification response with matching request_id format
         decision_response = DecisionResponse(
-            request_id="maintenance_approval_12347",
+            request_id=f"maintenance_approval_{prediction_event_id}",
             decision="modify",
             justification="Change to less expensive parts",
             operator_id="operator_003",
@@ -291,15 +402,28 @@ class TestOrchestratorAgent:
         # Verify decision was logged
         assert len(orchestrator_agent.decision_log) == 1
         decision = orchestrator_agent.decision_log[0]
-        assert "modification" in decision.decision_rationale.lower()
-        assert "manual follow-up required" in decision.action_taken.lower()
+        assert "modify" in decision.decision_rationale.lower()
+        assert "logged decision: modify" in decision.action_taken.lower()
 
     @pytest.mark.asyncio
     async def test_handle_human_decision_defer(self, orchestrator_agent, mock_event_bus):
         """Test handling of human deferral decisions."""
-        # Create deferral response
+        # First, set up the prediction state that would normally be created
+        prediction_event_id = uuid4()
+        equipment_id = "conveyor_001"
+        
+        # Set up the prediction state
+        await orchestrator_agent._update_state(f"prediction_{prediction_event_id}", {
+            "equipment_id": equipment_id,
+            "time_to_failure_days": 50.0,
+            "prediction_confidence": 0.75,
+            "maintenance_type": "preventive",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        
+        # Create deferral response with matching request_id format
         decision_response = DecisionResponse(
-            request_id="maintenance_approval_12348",
+            request_id=f"maintenance_approval_{prediction_event_id}",
             decision="defer",
             justification="Wait for next shutdown window",
             operator_id="operator_004",
@@ -317,14 +441,28 @@ class TestOrchestratorAgent:
         # Verify decision was logged
         assert len(orchestrator_agent.decision_log) == 1
         decision = orchestrator_agent.decision_log[0]
-        assert "deferred maintenance request" in decision.decision_rationale.lower()
+        assert "defer" in decision.decision_rationale.lower()
+        assert "logged decision: defer" in decision.action_taken.lower()
 
     @pytest.mark.asyncio
     async def test_handle_human_decision_unknown(self, orchestrator_agent, mock_event_bus):
         """Test handling of unknown human decisions."""
-        # Create unknown decision response
+        # First, set up the prediction state that would normally be created
+        prediction_event_id = uuid4()
+        equipment_id = "compressor_001"
+        
+        # Set up the prediction state
+        await orchestrator_agent._update_state(f"prediction_{prediction_event_id}", {
+            "equipment_id": equipment_id,
+            "time_to_failure_days": 42.0,
+            "prediction_confidence": 0.70,
+            "maintenance_type": "corrective",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        
+        # Create unknown decision response with matching request_id format
         decision_response = DecisionResponse(
-            request_id="maintenance_approval_12349",
+            request_id=f"maintenance_approval_{prediction_event_id}",
             decision="escalate",  # Unknown decision type
             justification="Need supervisor approval",
             operator_id="operator_005",
@@ -342,8 +480,8 @@ class TestOrchestratorAgent:
         # Verify decision was logged with warning
         assert len(orchestrator_agent.decision_log) == 1
         decision = orchestrator_agent.decision_log[0]
-        assert "unknown decision" in decision.decision_rationale.lower()
-        assert "no action taken" in decision.action_taken.lower()
+        assert "escalate" in decision.decision_rationale.lower()
+        assert "logged decision: escalate" in decision.action_taken.lower()
 
     @pytest.mark.asyncio
     async def test_state_management_thread_safety(self, orchestrator_agent):

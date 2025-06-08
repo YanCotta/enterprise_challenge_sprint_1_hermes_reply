@@ -52,7 +52,25 @@ class OrchestratorAgent(BaseAgent):
                     ScheduleMaintenanceCommand.__name__
                 ]
             ),
-            # Other capabilities...
+            AgentCapability(
+                name="decision_management",
+                description="Manages decision-making processes and approval workflows",
+                input_types=[
+                    HumanDecisionResponseEvent.__name__,
+                ],
+                output_types=[
+                    ScheduleMaintenanceCommand.__name__,
+                ]
+            ),
+            AgentCapability(
+                name="state_management",
+                description="Maintains and manages system state across workflows",
+                input_types=[
+                    AnomalyValidatedEvent.__name__,
+                    MaintenancePredictedEvent.__name__,
+                ],
+                output_types=[]
+            ),
         ]
         logger.info(f"OrchestratorAgent {self.agent_id} registered {len(self.capabilities)} capabilities")
 
@@ -143,7 +161,7 @@ class OrchestratorAgent(BaseAgent):
             # Check for pending human approval for this equipment
             pending_approval_key = f"pending_human_approval_{equipment_id}"
             if await self._get_state(pending_approval_key):
-                decision_rationale = f"New maintenance prediction for equipment {equipment_id} received while a previous decision is still pending. Ignoring new prediction."
+                decision_rationale = f"New maintenance prediction for equipment {equipment_id} received while a previous decision is still pending. Ignored due to pending decision."
                 action_taken = "Ignored due to pending decision"
                 logger.warning(f"OrchestratorAgent {self.agent_id}: {decision_rationale}")
                 await self._log_decision(
@@ -371,5 +389,9 @@ class OrchestratorAgent(BaseAgent):
 
     async def get_health(self) -> Dict[str, Any]:
         base_health = await super().get_health()
-        base_health.update({"state_entries": len(self.system_state), "decision_log_entries": len(self.decision_log)})
+        base_health.update({
+            "state_entries": len(self.system_state), 
+            "decision_log_entries": len(self.decision_log),
+            "last_decision": self.decision_log[-1] if self.decision_log else None
+        })
         return base_health

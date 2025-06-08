@@ -1,9 +1,9 @@
 import uuid
 from fastapi import APIRouter, Request, HTTPException, Depends
-from smart_maintenance_saas.apps.api.dependencies import get_api_key
-from smart_maintenance_saas.data.schemas import SensorReadingCreate
-from smart_maintenance_saas.core.events.event_models import SensorDataReceivedEvent
-from smart_maintenance_saas.core.event_bus.event_bus import EventBus
+from apps.api.dependencies import get_api_key
+from data.schemas import SensorReadingCreate
+from core.events.event_models import SensorDataReceivedEvent
+from core.events.event_bus import EventBus
 
 router = APIRouter()
 
@@ -15,8 +15,11 @@ async def ingest_sensor_data(
     """
     Accepts sensor data readings and publishes them to the event bus.
     """
-    event_bus: EventBus = request.app.state.event_bus
-
+    coordinator = request.app.state.coordinator
+    if not coordinator:
+        raise HTTPException(status_code=500, detail="System coordinator not available")
+    
+    event_bus = coordinator.event_bus
     if not event_bus:
         raise HTTPException(status_code=500, detail="Event bus not available")
 

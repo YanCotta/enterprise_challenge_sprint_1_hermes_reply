@@ -1,21 +1,18 @@
 import pytest
 import asyncio
 import logging # Import logging for patching
+from datetime import datetime # Import datetime for timestamp
 from unittest.mock import patch, MagicMock # AsyncMock not needed if logger.error is not async
 from uuid import uuid4
 
 from core.events.event_bus import EventBus
-from core.events.event_models import BaseEvent
+from core.events.event_models import BaseEventModel
 from core.config import settings as global_settings
 
 # 1. Define a Test Event
-class TestDLQEvent(BaseEvent): # Simple event for testing
-    def __init__(self, data: str, event_id: str = None, correlation_id: str = None, timestamp: str = None):
-        super().__init__(event_id=event_id or str(uuid4()),
-                         correlation_id=correlation_id,
-                         timestamp=timestamp)
-        self.data = data
-
+class TestDLQEvent(BaseEventModel):
+    data: str  # Define as a Pydantic field
+    
     # The __str__ representation is sometimes used in logging, make it informative.
     def __str__(self):
         return f"TestDLQEvent(id='{self.event_id}', data='{self.data}')"
@@ -102,8 +99,8 @@ async def test_event_logged_to_dlq_after_retries(monkeypatch):
             # Handler name might include module path, so check for substring
             assert "consistently_failing_handler_for_dlq" in extra_info.get('handler_name', "")
             assert "Simulated handler failure" in extra_info.get('error', "")
-            # Event data in DLQ log is JSON stringified
-            assert '"data": "event_data_for_dlq_test"' in extra_info.get('event_data', "")
-            assert f'"event_id": "{test_event.event_id}"' in extra_info.get('event_data', "")
+            # Event data in DLQ log shows the actual event representation
+            assert "event_data_for_dlq_test" in extra_info.get('event_data', "")
+            assert str(test_event.event_id) in extra_info.get('event_data', "")
 
         await bus.stop() # Clean up the locally created bus
