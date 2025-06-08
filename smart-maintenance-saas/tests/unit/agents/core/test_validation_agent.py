@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from apps.agents.core.validation_agent import ValidationAgent
 from core.events.event_models import AnomalyDetectedEvent, AnomalyValidatedEvent
 from data.schemas import AnomalyAlert, SensorReading, SensorType
-from apps.agents.base_agent import BaseAgent
+from core.base_agent_abc import BaseAgent
 
 logging.disable(logging.CRITICAL)
 
@@ -505,7 +505,7 @@ class TestValidationAgent(unittest.IsolatedAsyncioTestCase):
         self.assertAlmostEqual(published_event.final_confidence, 0.8)
 
     async def test_start_method(self):
-        with patch("apps.agents.base_agent.BaseAgent.start", new_callable=AsyncMock) as mock_base_agent_start:
+        with patch("core.base_agent_abc.BaseAgent.start", new_callable=AsyncMock) as mock_base_agent_start:
             await self.agent.start()
             mock_base_agent_start.assert_called_once()
             self.mock_event_bus.subscribe.assert_called_once_with(

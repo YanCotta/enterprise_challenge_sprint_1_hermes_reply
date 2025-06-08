@@ -3,11 +3,40 @@ import logging
 import traceback
 from collections import defaultdict
 from typing import Any, Callable, Coroutine, DefaultDict, List, Dict
+import time # Added for retry delay, though asyncio.sleep is used
+import json # Added for DLQ serialization
+import os # Added for DLQ log directory
+
+from core.config.settings import settings
+# from data.exceptions import EventHandlerError, SmartMaintenanceBaseException # Not strictly needed if not raising new exceptions yet
 
 # Set up a basic logger for the module
 logger = logging.getLogger(__name__)
-# Configure logging (e.g., to console with a specific format)
-# This basic configuration can be done here for simplicity, or managed globally in the application
+
+# DLQ Logger Setup
+dlq_logger = None
+if settings.DLQ_ENABLED:
+    try:
+        # Ensure log directory exists
+        dlq_log_dir = os.path.dirname(settings.DLQ_LOG_FILE)
+        if dlq_log_dir and not os.path.exists(dlq_log_dir):
+            os.makedirs(dlq_log_dir, exist_ok=True)
+
+        dlq_logger = logging.getLogger("dlq")
+        # Check if handlers are already added to avoid duplication during reloads/tests
+        if not dlq_logger.handlers:
+            dlq_handler = logging.FileHandler(settings.DLQ_LOG_FILE)
+            # Using a custom formatter that expects specific keys in the LogRecord's extra dict
+            dlq_formatter = logging.Formatter(
+                "%(asctime)s - %(levelname)s - EventType: %(event_type)s - Handler: %(handler_name)s - Error: %(error)s - Trace: %(traceback)s - EventData: %(event_data)s"
+            )
+            dlq_handler.setFormatter(dlq_formatter)
+            dlq_logger.addHandler(dlq_handler)
+            dlq_logger.setLevel(settings.log_level.upper() if hasattr(settings, 'log_level') else logging.INFO)
+            dlq_logger.propagate = False # Avoid duplicate logging
+    except Exception as e:
+        logger.error(f"Failed to initialize DLQ logger: {e}", exc_info=True)
+        dlq_logger = None # Disable DLQ if setup fails
 
 
 class EventBus:
@@ -15,7 +44,7 @@ class EventBus:
     An event bus for decoupled asynchronous communication between components.
 
     Handles subscription, unsubscription, and publication of events.
-    Errors in event handlers are logged without interrupting other handlers.
+    Errors in event handlers are logged, retried, and potentially sent to a DLQ.
     """
 
     def __init__(self):
@@ -89,7 +118,7 @@ class EventBus:
                 f"No subscribers for event type name '{event_type_name}' during unsubscribe attempt."
             )
 
-    async def publish(self, event_type_or_object: Any, data: Any = None):
+    async def publish(self, event_type_or_object: Any, data_payload_arg: Any = None):
         """
         Publishes an event to all subscribed asynchronous handlers.
         
@@ -99,69 +128,92 @@ class EventBus:
         
         Args:
             event_type_or_object: Either an event object or event type string
-            data: Optional data dict when using explicit event type
+            data_payload_arg: Optional data dict when using explicit event type
         """
-        if data is None:
+        event_obj = None
+        data_dict_payload = None
+        event_type_name: str
+
+        if data_payload_arg is None:
             # Pattern 1: event object
-            event = event_type_or_object
-            event_type_name = event.__class__.__name__
-            handler_name = "unknown_handler"
-
-            log_payload = str(event)  # Log the event object itself
-            if len(log_payload) > 200:
-                log_payload = log_payload[:200] + "..."
-
-            logger.info(
-                f"Publishing event of type '{event_type_name}' with payload (preview): {log_payload}"
-            )
-
-            if event_type_name in self.subscriptions:
-                handlers_to_call = list(self.subscriptions[event_type_name])
-                for handler in handlers_to_call:
-                    handler_name = getattr(handler, "__name__", "unknown_handler")
-                    try:
-                        logger.debug(
-                            f"Calling handler '{handler_name}' for event type '{event_type_name}'."
-                        )
-                        await handler(event)  # Pass the event object directly
-                    except Exception as e:
-                        logger.error(
-                            f"Error in event handler '{handler_name}' for event type '{event_type_name}' with payload (preview): {log_payload}.\n"
-                            f"Error: {e}\n"
-                            f"Traceback: {traceback.format_exc()}"
-                        )
-            else:
-                logger.debug(f"No subscribers for event type {event_type_name}")
+            event_obj = event_type_or_object
+            event_type_name = event_obj.__class__.__name__
         else:
             # Pattern 2: explicit event type and data
             event_type_name = str(event_type_or_object)
-            handler_name = "unknown_handler"
+            data_dict_payload = data_payload_arg
 
-            log_payload = str(data)
-            if len(log_payload) > 200:
-                log_payload = log_payload[:200] + "..."
+        log_preview_payload = str(event_obj if event_obj else data_dict_payload)
+        if len(log_preview_payload) > 200:
+            log_preview_payload = log_preview_payload[:200] + "..."
 
-            logger.info(
-                f"Publishing event of type '{event_type_name}' with data (preview): {log_payload}"
-            )
+        logger.info(
+            f"Publishing event of type '{event_type_name}' with payload/data (preview): {log_preview_payload}"
+        )
 
-            if event_type_name in self.subscriptions:
-                handlers_to_call = list(self.subscriptions[event_type_name])
-                for handler in handlers_to_call:
-                    handler_name = getattr(handler, "__name__", "unknown_handler")
+        if event_type_name in self.subscriptions:
+            handlers_to_call = list(self.subscriptions[event_type_name])
+            for handler in handlers_to_call:
+                handler_name = getattr(handler, "__name__", "unknown_handler")
+
+                for attempt in range(settings.EVENT_HANDLER_MAX_RETRIES + 1):
                     try:
                         logger.debug(
-                            f"Calling handler '{handler_name}' for event type '{event_type_name}'."
+                            f"Calling handler '{handler_name}' for event type '{event_type_name}', attempt {attempt + 1}/{settings.EVENT_HANDLER_MAX_RETRIES + 1}."
                         )
-                        await handler(event_type_name, data)  # Pass event type and data
+                        if event_obj is not None:  # Pattern 1 (event object)
+                            await handler(event_obj)
+                        else:  # Pattern 2 (event_type, data_dict)
+                            await handler(event_type_name, data_dict_payload)
+
+                        logger.info(f"Handler '{handler_name}' successfully processed event '{event_type_name}' on attempt {attempt + 1}.")
+                        break  # Success, exit retry loop
                     except Exception as e:
+                        current_traceback = traceback.format_exc()
                         logger.error(
-                            f"Error in event handler '{handler_name}' for event type '{event_type_name}' with data (preview): {log_payload}.\n"
-                            f"Error: {e}\n"
-                            f"Traceback: {traceback.format_exc()}"
+                            f"Error in event handler '{handler_name}' for event type '{event_type_name}' (attempt {attempt + 1}/{settings.EVENT_HANDLER_MAX_RETRIES + 1}). Error: {e}\nTraceback: {current_traceback}"
                         )
-            else:
-                logger.debug(f"No subscribers for event type {event_type_name}")
+                        if attempt == settings.EVENT_HANDLER_MAX_RETRIES:
+                            logger.error(
+                                f"Handler '{handler_name}' failed after {settings.EVENT_HANDLER_MAX_RETRIES + 1} attempts for event '{event_type_name}'. Sending to DLQ if enabled."
+                            )
+                            if dlq_logger and settings.DLQ_ENABLED:
+                                event_content_for_dlq_str = ""
+                                if event_obj is not None: # Pattern 1
+                                    try:
+                                        # Attempt to serialize. For complex objects, __dict__ is a start, but might need custom serialization.
+                                        # Ensure it's JSON serializable.
+                                        serializable_event_data = event_obj.__dict__ if hasattr(event_obj, '__dict__') else str(event_obj)
+                                        event_content_for_dlq_str = json.dumps(serializable_event_data)
+                                    except TypeError: # Handle non-serializable objects
+                                        event_content_for_dlq_str = json.dumps(str(event_obj)) # Fallback to string representation
+                                    except Exception as serialization_exc:
+                                        event_content_for_dlq_str = f"Could not serialize event: {serialization_exc}"
+                                else: # Pattern 2
+                                    try:
+                                        event_content_for_dlq_str = json.dumps(data_dict_payload)
+                                    except TypeError: # Handle non-serializable objects
+                                        event_content_for_dlq_str = json.dumps(str(data_dict_payload)) # Fallback to string representation
+                                    except Exception as serialization_exc:
+                                        event_content_for_dlq_str = f"Could not serialize data: {serialization_exc}"
+
+                                dlq_logger.error(
+                                    "Failed event sent to DLQ",  # This message string is not used by formatter, but good for console
+                                    extra={
+                                        "event_type": event_type_name,
+                                        "handler_name": handler_name,
+                                        "error": str(e),
+                                        "traceback": current_traceback,
+                                        "event_data": event_content_for_dlq_str
+                                    }
+                                )
+                            # Break from retry loop, proceed to next handler or finish
+                            break
+                        else:
+                            logger.info(f"Retrying handler '{handler_name}' for event '{event_type_name}' after {settings.EVENT_HANDLER_RETRY_DELAY_SECONDS}s delay.")
+                            await asyncio.sleep(settings.EVENT_HANDLER_RETRY_DELAY_SECONDS)
+        else:
+            logger.debug(f"No subscribers for event type {event_type_name}")
 
     async def shutdown(self):
         """
@@ -170,4 +222,11 @@ class EventBus:
         This method is primarily used for cleanup in tests and shutdown scenarios.
         """
         self.subscriptions.clear()
-        logger.info("EventBus shutdown complete. All subscriptions cleared.")
+        if dlq_logger:
+            for handler in dlq_logger.handlers[:]: # Iterate over a copy
+                handler.close()
+                dlq_logger.removeHandler(handler)
+            logging.getLogger("dlq").handlers.clear()
+
+
+        logger.info("EventBus shutdown complete. All subscriptions cleared and DLQ handlers closed.")

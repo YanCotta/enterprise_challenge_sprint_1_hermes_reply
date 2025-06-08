@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = "change_this_to_a_secure_random_key_in_production"
     access_token_expire_minutes: int = 60
+    API_KEY: str = "your_default_api_key"  # Static API Key for basic auth
 
     # Agents
     agent_communication_timeout: int = 30
@@ -71,6 +72,34 @@ class Settings(BaseSettings):
 
     # Logging
     log_level: str = "INFO"
+
+    # Event Bus DLQ and Retries
+    EVENT_HANDLER_MAX_RETRIES: int = Field(default=3, description="Maximum retry attempts for event handlers.")
+    EVENT_HANDLER_RETRY_DELAY_SECONDS: float = Field(default=1.0, description="Delay in seconds between event handler retries.")
+    DLQ_ENABLED: bool = Field(default=True, description="Enable Dead Letter Queue for failed event processing.")
+    DLQ_LOG_FILE: str = Field(default="logs/dlq_events.log", description="Path to the DLQ log file.")
+
+    # Orchestrator Settings
+    ORCHESTRATOR_URGENT_MAINTENANCE_DAYS: int = Field(
+        default=30,
+        description="Threshold in days for considering maintenance urgent."
+    )
+    ORCHESTRATOR_HIGH_CONFIDENCE_THRESHOLD: float = Field(
+        default=0.90,
+        description="Prediction confidence level considered high."
+    )
+    ORCHESTRATOR_MODERATE_CONFIDENCE_THRESHOLD: float = Field(
+        default=0.75,
+        description="Prediction confidence level considered moderate."
+    )
+    ORCHESTRATOR_AUTO_APPROVAL_MAX_DAYS_MODERATE_CONFIDENCE: int = Field(
+        default=15,
+        description="Max days to failure for auto-approval if confidence is only moderate (but not low)."
+    )
+    ORCHESTRATOR_VERY_URGENT_MAINTENANCE_DAYS_FACTOR: float = Field(
+        default=0.5,
+        description="Factor of URGENT_MAINTENANCE_DAYS to determine 'very urgent' threshold (e.g., 0.5 for half)."
+    )
 
     class Config:
         """Pydantic config for settings."""

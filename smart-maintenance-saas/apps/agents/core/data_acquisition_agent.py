@@ -6,7 +6,7 @@ from uuid import UUID
 import pydantic  # For pydantic.ValidationError
 
 # Direct imports assuming 'smart-maintenance-saas' is the project root for Python
-from apps.agents.base_agent import BaseAgent
+from core.base_agent_abc import BaseAgent
 from core.events.event_bus import EventBus  # Corrected path
 from core.events.event_models import (
     DataProcessedEvent,
