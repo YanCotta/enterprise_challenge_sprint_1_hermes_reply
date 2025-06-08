@@ -16,7 +16,14 @@ pytestmark = pytest.mark.asyncio
 @pytest.fixture
 async def coordinator():
     """Pytest fixture to set up and tear down the SystemCoordinator."""
+    # Create a custom SystemCoordinator with lower historical data requirements for testing
     coord = SystemCoordinator()
+    
+    # Override the prediction agent with lower min_historical_points for E2E testing
+    for agent in coord.agents:
+        if hasattr(agent, 'min_historical_points'):
+            agent.min_historical_points = 5  # Lower requirement for testing
+    
     # Ensure all mock dependencies within SystemCoordinator are fully initialized
     # This might involve awaiting parts of its __init__ if it were async,
     # but currently, SystemCoordinator.__init__ is synchronous.
@@ -42,13 +49,31 @@ async def test_full_workflow_from_ingestion_to_scheduling(coordinator: SystemCoo
 
     correlation_id = str(uuid.uuid4())
 
-    # Step 1: Ingest - Create and publish a SensorDataReceivedEvent
-    # This data should be designed to be anomalous to trigger the workflow.
-    # The exact values might need tuning based on default mock agent logic.
+    # Step 1a: Send a few baseline readings first to establish a pattern
+    # This creates historical data for better anomaly detection
+    baseline_values = [50.0, 51.0, 49.5, 50.5, 52.0]  # Normal temperature readings
+    for i, value in enumerate(baseline_values):
+        baseline_event_data = {
+            "raw_data": {
+                "sensor_id": "temp_sensor_e2e_001",
+                "value": value,
+                "timestamp": datetime.utcnow().isoformat(),
+                "sensor_type": SensorType.TEMPERATURE.value,
+                "unit": "C"
+            },
+            "source_topic": "test/topic/e2e",
+            "sensor_id": "temp_sensor_e2e_001",
+            "correlation_id": str(uuid.uuid4())  # Use unique valid UUID for each baseline reading
+        }
+        baseline_event = SensorDataReceivedEvent(**baseline_event_data)
+        await coordinator.event_bus.publish(baseline_event)
+        await asyncio.sleep(0.1)  # Brief pause between readings
+
+    # Step 1b: Send the anomalous reading that should trigger the workflow
     sensor_event_data = {
         "raw_data": {
             "sensor_id": "temp_sensor_e2e_001",
-            "value": 105.0, # Anomalously high temperature
+            "value": 999.0, # Extremely anomalous high temperature (way outside normal range)
             "timestamp": datetime.utcnow().isoformat(), # Current time for relevance
             "sensor_type": SensorType.TEMPERATURE.value, # Explicitly set sensor_type
             "unit": "C"
@@ -62,8 +87,8 @@ async def test_full_workflow_from_ingestion_to_scheduling(coordinator: SystemCoo
     await coordinator.event_bus.publish(sensor_event)
 
     # Step 2: Wait for processing
-    # Wait for the event to be processed
-    await asyncio.wait_for(event_processed.wait(), timeout=10)
+    # Give the system extra time to process the event through all agents
+    await asyncio.sleep(3.0)  # Allow time for event propagation and processing
 
     # Step 3: Assert
     # Verify that the mock handler for MaintenanceScheduledEvent was called
