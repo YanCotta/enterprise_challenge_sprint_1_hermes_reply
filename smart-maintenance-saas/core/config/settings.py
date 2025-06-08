@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = "change_this_to_a_secure_random_key_in_production"
     access_token_expire_minutes: int = 60
+    API_KEY: str = "your_default_api_key"  # Static API Key for basic auth
 
     # Agents
     agent_communication_timeout: int = 30
