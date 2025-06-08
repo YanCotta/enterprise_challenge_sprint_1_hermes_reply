@@ -15,6 +15,34 @@ from data.schemas import AnomalyAlert, SensorReading # Pydantic models for parsi
 from sqlalchemy.ext.asyncio import AsyncSession 
 
 class ValidationAgent(BaseAgent):
+    """
+    The ValidationAgent is responsible for validating detected anomalies.
+
+    It subscribes to `AnomalyDetectedEvent`s and performs further checks to ascertain
+    the credibility of an anomaly. Its key responsibilities include:
+
+    1.  **Rule-Based Validation**: Utilizes a `RuleEngine` to apply a set of predefined
+        rules to the anomaly data. These rules can adjust the confidence score of the
+        anomaly based on various criteria.
+    2.  **Historical Contextualization**: Fetches historical sensor data preceding
+        the anomaly event using `CRUDSensorReading` and a database session factory.
+        It then analyzes this historical data to identify patterns (e.g., recent
+        stability, recurring similar anomalies) that might influence the anomaly's
+        confidence score.
+    3.  **Confidence Adjustment**: Combines the initial confidence score from the
+        `AnomalyDetectedEvent` with adjustments from the rule engine and historical
+        validation to compute a final confidence score.
+    4.  **Status Assignment**: Assigns a validation status (e.g., "credible_anomaly",
+        "false_positive_suspected", "further_investigation_needed") based on the
+        final confidence score and predefined thresholds.
+    5.  **Event Publishing**: Publishes an `AnomalyValidatedEvent` containing the
+        original anomaly details, triggering sensor reading, final confidence,
+        validation status, and reasons for adjustments.
+
+    The agent relies on injected instances of `CRUDSensorReading`, `RuleEngine`, and
+    a database session factory (`db_session_factory`) for its operations. Agent-specific
+    settings can be provided to customize thresholds and parameters for validation logic.
+    """
     def __init__(
         self,
         agent_id: str,

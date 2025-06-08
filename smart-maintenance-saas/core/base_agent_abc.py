@@ -29,9 +29,18 @@ class AgentCapability:
 
 class BaseAgent(ABC):
     """
-    Abstract base class for all agents in the Smart Maintenance SaaS system.
-    Provides common lifecycle methods, event handling, capability registration,
-    and health check functionalities.
+    Abstract Base Class (ABC) for all agents within the Smart Maintenance SaaS system.
+
+    Located in `core/base_agent_abc.py`, this class serves as the foundational blueprint
+    for any agent. It establishes a common interface and defines core lifecycle methods
+    that all concrete agent implementations must adhere to. These methods include
+    `initialize` (though often handled in `__init__`), `start`, `stop`, and
+    event publishing capabilities (e.g., `_publish_event` and its usage in `handle_event`).
+
+    By enforcing this common structure, `BaseAgent` plays a crucial role in ensuring a
+    consistent and maintainable agent architecture throughout the system. Subclasses are
+    expected to implement the `process` method, and can override other lifecycle
+    methods to provide specialized behavior.
     """
 
     def __init__(
