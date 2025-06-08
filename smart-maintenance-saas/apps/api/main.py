@@ -1,6 +1,7 @@
 import logging  # For basic logging if setup_logging is not yet fully integrated
 
 from fastapi import Depends, FastAPI, HTTPException
+from smart_maintenance_saas.apps.api.routers import data_ingestion, reporting, human_decision
 from sqlalchemy import select  # Import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -103,6 +104,24 @@ async def health_check_db(db: AsyncSession = Depends(get_async_db)):
 #     tags=["Sensor Readings"]
 # )
 
+# Include API V1 routers
+app.include_router(
+    data_ingestion.router,
+    prefix="/api/v1/data",
+    tags=["Data Ingestion"]
+)
+
+app.include_router(
+    reporting.router,
+    prefix="/api/v1/reports",
+    tags=["Reporting"]
+)
+
+app.include_router(
+    human_decision.router,
+    prefix="/api/v1/decisions",
+    tags=["Human Decisions"]
+)
 
 # Root endpoint (optional)
 @app.get("/", tags=["Root"])
