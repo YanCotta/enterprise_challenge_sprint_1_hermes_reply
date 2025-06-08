@@ -18,7 +18,7 @@ import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 
-from apps.agents.base_agent import BaseAgent
+from core.base_agent_abc import BaseAgent
 from data.schemas import ReportRequest, ReportResult
 from core.logging_config import get_logger
 

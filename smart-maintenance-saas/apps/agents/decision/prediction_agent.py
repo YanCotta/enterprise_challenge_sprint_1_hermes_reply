@@ -18,7 +18,7 @@ except ImportError as e:
     raise ImportError(f"Required dependencies not available: {e}. Please install Prophet and pandas.")
 
 # Core application imports
-from apps.agents.base_agent import BaseAgent, AgentCapability
+from core.base_agent_abc import BaseAgent, AgentCapability
 from core.events.event_bus import EventBus
 from core.database.crud.crud_sensor_reading import CRUDSensorReading
 from core.events.event_models import AnomalyValidatedEvent, MaintenancePredictedEvent

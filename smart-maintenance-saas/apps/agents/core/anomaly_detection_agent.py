@@ -12,7 +12,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from pydantic import ValidationError
 
-from apps.agents.base_agent import AgentCapability, BaseAgent
+from core.base_agent_abc import AgentCapability, BaseAgent
 from apps.ml.statistical_models import StatisticalAnomalyDetector
 from core.events.event_bus import EventBus
 from core.events.event_models import AnomalyDetectedEvent, DataProcessedEvent

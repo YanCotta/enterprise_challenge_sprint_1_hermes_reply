@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from apps.agents.base_agent import BaseAgent, AgentCapability
+from core.base_agent_abc import BaseAgent, AgentCapability
 from core.events.event_models import MaintenancePredictedEvent, MaintenanceScheduledEvent
 from data.schemas import MaintenanceRequest, OptimizedSchedule, ScheduleStatus
-from data.exceptions import EventPublishError # Import EventPublishError
+from data.exceptions import EventPublishError, AgentProcessingError # Import EventPublishError and AgentProcessingError
 
 logger = logging.getLogger(__name__)
 

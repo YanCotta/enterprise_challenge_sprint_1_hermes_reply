@@ -4,7 +4,7 @@ from datetime import datetime, timedelta # For historical data fetching
 from typing import Tuple, List, Any, Optional, Callable, Dict # Standard typing imports, added Callable and Dict
 
 # Core application imports - CRITICAL: Ensure these paths are correct for absolute imports
-from apps.agents.base_agent import BaseAgent
+from core.base_agent_abc import BaseAgent
 from core.events.event_bus import EventBus
 from core.database.crud.crud_sensor_reading import CRUDSensorReading # Instance expected
 from apps.rules.validation_rules import RuleEngine # Instance expected

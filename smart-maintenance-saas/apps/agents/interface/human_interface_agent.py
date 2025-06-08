@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Union
 
-from apps.agents.base_agent import BaseAgent, AgentCapability
+from core.base_agent_abc import BaseAgent, AgentCapability
 from core.events.event_models import HumanDecisionRequiredEvent, HumanDecisionResponseEvent
 from data.schemas import DecisionRequest, DecisionResponse, DecisionType
 

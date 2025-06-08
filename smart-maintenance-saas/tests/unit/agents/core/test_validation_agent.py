@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from apps.agents.core.validation_agent import ValidationAgent
 from core.events.event_models import AnomalyDetectedEvent, AnomalyValidatedEvent
 from data.schemas import AnomalyAlert, SensorReading, SensorType
-from apps.agents.base_agent import BaseAgent
+from core.base_agent_abc import BaseAgent
 
 logging.disable(logging.CRITICAL)
 
