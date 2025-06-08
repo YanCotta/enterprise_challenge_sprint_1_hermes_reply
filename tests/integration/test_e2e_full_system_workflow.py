@@ -62,10 +62,8 @@ async def test_full_workflow_from_ingestion_to_scheduling(coordinator: SystemCoo
     await coordinator.event_bus.publish(sensor_event)
 
     # Step 2: Wait for processing
-    # Increased sleep time to allow for full event propagation and processing.
-    # This is a simple way to wait; more robust methods like asyncio.Event or
-    # specific event listeners could be used in a more complex test.
-    await asyncio.sleep(10) # Wait for 10 seconds
+    # Wait for the event to be processed
+    await asyncio.wait_for(event_processed.wait(), timeout=10)
 
     # Step 3: Assert
     # Verify that the mock handler for MaintenanceScheduledEvent was called
