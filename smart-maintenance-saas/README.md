@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/Tests-209%2F209%20Passing-brightgreen.svg)](#running-tests)
+[![Tests](https://img.shields.io/badge/Tests-396%2F396%20Passing-brightgreen.svg)](#running-tests)
 [![Poetry](https://img.shields.io/badge/Poetry-Dependency%20Management-blue.svg)](https://python-poetry.org/)
 [![Code Style](https://img.shields.io/badge/Code%20Style-Black-black.svg)](https://github.com/psf/black)
 
@@ -12,7 +12,7 @@
 
 A robust, **event-driven, multi-agent backend** for an industrial predictive maintenance SaaS platform. This system provides a solid foundation for ingesting sensor data, detecting anomalies, validating alerts, predicting failures, and orchestrating maintenance workflows through a sophisticated agent-based architecture.
 
-**Current Status:** Major milestone reached - **Production-ready anomaly detection, validation, and predictive maintenance system** with comprehensive testing framework. All **209/209 tests passing**, including extensive unit and integration test suites. The system features a fully functional multi-stage anomaly processing pipeline with predictive capabilities:
+**Current Status:** Major milestone reached - **Production-ready anomaly detection, validation, and predictive maintenance system** with comprehensive testing framework. All **396/396 tests passing**, including extensive unit and integration test suites. The system features a fully functional multi-stage anomaly processing pipeline with predictive capabilities:
 
 1. **Data Acquisition:** Robust ingestion and validation of sensor readings
 2. **Anomaly Detection:** Dual-method detection using ML-based pattern recognition and statistical analysis
@@ -139,6 +139,7 @@ The Python project root is `smart-maintenance-saas/`, containing **47 core Pytho
 - **BaseAgent** - Abstract foundation providing lifecycle management, event handling, and capability registration
 - **AgentRegistry** - Singleton pattern for agent discovery and centralized management
 - **Type-safe agent communication** with full async support
+- **SystemCoordinator** (`apps/system_coordinator.py`): The central orchestrator for the agent ecosystem. It manages the lifecycle of all agents (initialization, startup, shutdown) and integrates them with the FastAPI application's lifespan events. This ensures that all agents are properly started when the application boots and gracefully stopped when it shuts down.
 
 ### ⚡ Event-Driven Architecture
 - **Custom EventBus** - High-performance asynchronous communication
@@ -234,6 +235,14 @@ The Python project root is `smart-maintenance-saas/`, containing **47 core Pytho
 - **Health check endpoints** - Application and database connectivity monitoring
 - **Async-native design** for maximum performance
 
+### 🔐 API Endpoints
+The system exposes the following main API endpoints for interaction:
+- **`POST /ingest`**: For ingesting sensor data into the system. Accepts sensor readings and publishes them for processing.
+- **`POST /reports/generate`**: To request the generation of a new maintenance report (e.g., anomaly summary, system health).
+- **`POST /decisions/respond`**: For submitting human feedback or decisions on anomalies or other system-prompted queries.
+
+All API endpoints are secured and require a valid `X-API-Key` in the HTTP header for authentication.
+
 ---
 
 ## Versão em Português Brasileiro (Sumário)
@@ -253,6 +262,7 @@ Para informações arquiteturais detalhadas e diagramas, por favor consulte o [D
 - 🎯 **Registro de capacidades** - descoberta dinâmica de funcionalidades.
 - ⚡ **Tratamento de eventos assíncrono** com implementações padrão.
 - 🏥 **Relatório de status de saúde** para monitoramento do sistema.
+- **SystemCoordinator** (`apps/system_coordinator.py`): O orquestrador central para o ecossistema de agentes. Ele gerencia o ciclo de vida de todos os agentes (inicialização, partida, parada) e os integra com os eventos de ciclo de vida da aplicação FastAPI. Isso garante que todos os agentes sejam iniciados corretamente quando a aplicação é iniciada e parados de forma elegante quando ela é desligada.
 
 ### DataAcquisitionAgent (`apps/agents/core/data_acquisition_agent.py`)
 **Papel & Responsabilidades**: Responsável pelo estágio inicial do pipeline de dados. Realiza a ingestão de dados brutos de sensores de várias fontes externas, executa validação estrutural e de regras de negócio usando `DataValidator`, enriquece os dados com informações contextuais (ex: detalhes de ativos) via `DataEnricher`, e então publica os dados processados para consumo downstream.
@@ -396,7 +406,15 @@ Para informações arquiteturais detalhadas e diagramas, por favor consulte o [D
 ### 📝 Configuração & Observabilidade
 - **Configurações Centralizadas** - Pydantic BaseSettings com suporte a variáveis de ambiente
 - **Logging JSON Estruturado** - Capacidades aprimoradas de debugging e monitoramento
-- **Testes Abrangentes** - **174/174 testes passando** garantindo estabilidade do sistema
+- **Testes Abrangentes** - **396/396 testes passando** garantindo estabilidade do sistema
+
+### 🔐 Endpoints da API
+O sistema expõe os seguintes endpoints principais da API para interação:
+- **`POST /ingest`**: Para ingerir dados de sensores no sistema. Aceita leituras de sensores e as publica para processamento.
+- **`POST /reports/generate`**: Para solicitar a geração de um novo relatório de manutenção (ex: resumo de anomalias, saúde do sistema).
+- **`POST /decisions/respond`**: Para submeter feedback humano ou decisões sobre anomalias ou outras questões solicitadas pelo sistema.
+
+Todos os endpoints da API são protegidos e requerem uma `X-API-Key` válida no cabeçalho HTTP para autenticação.
 
 ## Configuração e Instalação
 
@@ -459,10 +477,10 @@ poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
 poetry run pytest
 ```
 
-**Status Atual:** ✅ **209/209 testes passando** - demonstrando cobertura robusta de testes unitários e de integração para todos os componentes, incluindo os sistemas avançados de detecção de anomalias, validação e manutenção preditiva.
+**Status Atual:** ✅ **396/396 testes passando** - demonstrando cobertura robusta de testes unitários e de integração para todos os componentes, incluindo os sistemas avançados de detecção de anomalias, validação e manutenção preditiva.
 
 ### **NOVO: Estratégia de Testes Avançada**
-Nossa abordagem de testes garante confiabilidade e performance em todos os componentes do sistema, totalizando agora **209 testes**:
+Nossa abordagem de testes garante confiabilidade e performance em todos os componentes do sistema, totalizando agora **396 testes**:
 
 **Testes Unitários (65 testes):**
 - Validação de modelo estatístico com casos extremos (NaN, infinito, desvio padrão zero)
@@ -499,6 +517,9 @@ poetry run pytest --cov=apps --cov=core --cov=data
 |--------|----------|-------------|
 | `GET` | `/health` | Status geral de saúde da aplicação |
 | `GET` | `/health/db` | Status de conectividade do banco de dados |
+| `POST` | `/ingest` | Ingerir dados de sensores |
+| `POST` | `/reports/generate` | Gerar relatórios de manutenção |
+| `POST` | `/decisions/respond` | Submeter decisões/feedback humano |
 
 ## Implemented Agents & Their Roles
 

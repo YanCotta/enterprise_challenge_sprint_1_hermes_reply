@@ -29,6 +29,13 @@ class AnomalyDetectionAgent(BaseAgent):
     
     Uses both statistical methods and machine learning models (Isolation Forest)
     to identify unusual patterns in sensor readings.
+
+    Resilience Features:
+    - Graceful Degradation: If the primary ML models (e.g., Isolation Forest) fail to
+      load or predict, the agent can fall back to simpler statistical anomaly detection
+      methods or issue a warning, ensuring partial functionality.
+    - Event Publishing Retries: Implements a retry mechanism when publishing anomaly
+      events to the event bus, enhancing the reliability of critical notifications.
     """
 
     def __init__(self, agent_id: str, event_bus: EventBus, specific_settings: Optional[dict] = None):
@@ -46,6 +53,11 @@ class AnomalyDetectionAgent(BaseAgent):
         self.logger = logging.getLogger(f"{__name__}.{self.agent_id}")
         settings = specific_settings or {}
         
+        # Attempt to initialize ML models and statistical detectors.
+        # This block includes error handling for model loading and configuration.
+        # If a critical model (e.g., IsolationForest) fails to initialize,
+        # it might raise an MLModelError. However, the agent is designed
+        # to potentially degrade gracefully if statistical models are still available (see process method).
         try:
             self.scaler = StandardScaler()
             if_params = settings.get('isolation_forest_params', {})
@@ -55,26 +67,29 @@ class AnomalyDetectionAgent(BaseAgent):
             }
             final_if_params = {**default_if_params, **if_params}
             self.isolation_forest = IsolationForest(**final_if_params)
-            self.isolation_forest_fitted = False
+            self.isolation_forest_fitted = False # Flag to indicate if the model has been fitted
             
+            # Initialize statistical detector, which can also be a fallback
             stat_config = settings.get('statistical_detector_config', {})
             self.statistical_detector = StatisticalAnomalyDetector(config=stat_config)
             
+            # Configuration for default standard deviation for unknown sensors
             self.default_historical_std = settings.get('default_historical_std', 0.1)
             if self.default_historical_std <= 0:
+                # This is a configuration error that prevents proper fallback for new sensors.
                 raise ConfigurationError("default_historical_std must be positive")
 
         except ConfigurationError as ce: # Catch our specific config error first
             self.logger.error(f"Configuration error during AnomalyDetectionAgent init: {ce}", exc_info=True)
-            raise # Re-raise as it's a startup issue
-        except ValueError as ve: # Parameter validation errors should be propagated as-is
+            raise # Re-raise as it's a startup issue, critical for agent function
+        except ValueError as ve: # Parameter validation errors from model constructors
             self.logger.error(f"Parameter validation error during AnomalyDetectionAgent init: {ve}", exc_info=True)
-            raise # Re-raise as ValueError for parameter validation
+            raise # Re-raise, likely critical
         except Exception as e:
-            self.logger.error(f"Failed to initialize ML models or settings: {e}", exc_info=True)
-            # Wrap generic exception as MLModelError or ConfigurationError depending on context
-            # For this example, assuming it's more related to model setup if not ConfigurationError
-            raise MLModelError(f"Failed to initialize ML models: {e}", original_exception=e) from e
+            self.logger.error(f"Failed to initialize ML models or critical settings: {e}", exc_info=True)
+            # This error implies a significant issue with model setup.
+            # While the process method has fallback logic, core model initialization failure is severe.
+            raise MLModelError(f"Failed to initialize core ML models: {e}", original_exception=e) from e
         
         self.unknown_sensor_baselines: Dict[str, Dict[str, float]] = {}
         self.historical_data_store: Dict[str, Dict[str, float]] = {
@@ -354,27 +369,38 @@ class AnomalyDetectionAgent(BaseAgent):
             ) from e
 
     async def _publish_anomaly_event(self, event: AnomalyDetectedEvent) -> None:
-        """Publish anomaly event with retry logic."""
+        """
+        Publish an AnomalyDetectedEvent to the event bus with a retry mechanism.
+
+        This enhances reliability by attempting to resend the event in case of
+        transient failures during publishing.
+        """
         import asyncio
         
         _event_id_for_log = getattr(event, 'event_id', 'N/A')
-        max_retries = 3
-        retry_delay = 0.1
+        # Configuration for retry mechanism
+        max_retries = 3  # Total number of attempts (1 initial + 2 retries)
+        retry_delay = 0.1  # Delay in seconds between retries (e.g., 100ms)
+        # A more sophisticated strategy might use exponential backoff.
         
         for attempt in range(max_retries):
             try:
                 self.logger.info(f"Publishing AnomalyDetectedEvent (attempt {attempt + 1}/{max_retries}) for {_event_id_for_log}")
                 await self.event_bus.publish(event)
                 self.logger.debug(f"Successfully published AnomalyDetectedEvent: {_event_id_for_log}")
-                return
+                return # Successfully published, exit the loop
             except Exception as e:
                 self.logger.warning(f"Publish attempt {attempt + 1}/{max_retries} failed for AnomalyDetectedEvent {_event_id_for_log}: {e}")
                 if attempt < max_retries - 1:
+                    # If not the last attempt, wait before retrying
                     await asyncio.sleep(retry_delay)
                 else:
-                    self.logger.error(f"Failed to publish after {max_retries} attempts for AnomalyDetectedEvent {_event_id_for_log}: {e}")
+                    # Last attempt failed, log error and raise EventPublishError
+                    self.logger.error(f"Failed to publish AnomalyDetectedEvent after {max_retries} attempts for {_event_id_for_log}: {e}")
+                    # This error will be caught by the calling method (_handle_anomaly_detected)
+                    # which then decides whether to allow graceful degradation or propagate further.
                     raise EventPublishError(
-                        message=f"Failed to publish AnomalyDetectedEvent {_event_id_for_log} via event bus: {e}",
+                        message=f"Failed to publish AnomalyDetectedEvent {_event_id_for_log} via event bus after {max_retries} attempts: {e}",
                         original_exception=e
                     ) from e
     

@@ -20,6 +20,23 @@ from data.validators.agent_data_validator import DataValidator
 
 
 class DataAcquisitionAgent(BaseAgent):
+    """
+    The DataAcquisitionAgent is responsible for the initial handling of incoming sensor data.
+
+    Its primary functions include:
+    1.  Subscribing to `SensorDataReceivedEvent`s, which carry raw data from sensors.
+    2.  Validating the incoming raw data using a provided `DataValidator`.
+        If validation fails, it publishes a `DataProcessingFailedEvent`.
+    3.  Enriching the validated data using a provided `DataEnricher` (e.g., adding metadata,
+        converting units, etc.). If enrichment fails, it also publishes a
+        `DataProcessingFailedEvent`.
+    4.  If both validation and enrichment are successful, it publishes a
+        `DataProcessedEvent` containing the fully processed `SensorReading`.
+
+    This agent acts as the first crucial step in the data processing pipeline, ensuring
+    that data entering the system is well-formed and augmented with necessary information
+    before further analysis or storage.
+    """
     def __init__(
         self,
         agent_id: str,

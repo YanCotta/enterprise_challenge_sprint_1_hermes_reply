@@ -12,7 +12,41 @@ async def submit_decision(
     request: Request,
 ):
     """
-    Accepts a human decision response and publishes it to the event bus.
+    Submits a human operator's decision response to the system.
+
+    This endpoint is typically called after a human operator has reviewed a
+    `HumanDecisionRequiredEvent` (e.g., via a UI) and made a decision.
+    The decision is then published as a `HumanDecisionResponseEvent` onto the event bus
+    for other agents (like the OrchestratorAgent) to process.
+
+    This endpoint is secured by an API key.
+
+    Args:
+        decision_response (DecisionResponse): The human operator's decision. This should
+                                              conform to the `DecisionResponse` schema,
+                                              including fields like `request_id` (linking to
+                                              the original decision request), `decision`,
+                                              `justification`, `operator_id`, and optionally
+                                              `correlation_id`.
+        request (Request): The FastAPI request object, used to access the system coordinator
+                           and event bus.
+
+    Returns:
+        dict: A confirmation message including the status, event ID of the published
+              `HumanDecisionResponseEvent`, and the original `request_id` of the decision.
+              Example:
+              ```json
+              {
+                  "status": "success",
+                  "event_id": "some-uuid",
+                  "request_id": "decision-request-abc"
+              }
+              ```
+
+    Raises:
+        HTTPException:
+            - 500: If the system coordinator or event bus is not available.
+            - 500: If there's an error publishing the event to the event bus.
     """
     coordinator = request.app.state.coordinator
     if not coordinator:

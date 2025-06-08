@@ -13,7 +13,36 @@ async def ingest_sensor_data(
     request: Request,
 ):
     """
-    Accepts sensor data readings and publishes them to the event bus.
+    Ingests a single sensor data reading and publishes it to the event bus.
+
+    This endpoint is secured by an API key.
+
+    Args:
+        reading (SensorReadingCreate): The sensor data to ingest. This should conform to
+                                       the `SensorReadingCreate` schema, including fields
+                                       like `sensor_id`, `value`, `timestamp`, etc.
+                                       A `correlation_id` (UUID) can be optionally provided;
+                                       if not, one will be generated.
+        request (Request): The FastAPI request object, used to access the system coordinator
+                           and event bus.
+
+    Returns:
+        dict: A confirmation message including the status, event ID of the published
+              `SensorDataReceivedEvent`, the `correlation_id` used, and the `sensor_id`.
+              Example:
+              ```json
+              {
+                  "status": "event_published",
+                  "event_id": "some-uuid",
+                  "correlation_id": "some-uuid",
+                  "sensor_id": "sensor_123"
+              }
+              ```
+
+    Raises:
+        HTTPException:
+            - 500: If the system coordinator or event bus is not available.
+            - 500: If there's an error publishing the event to the event bus.
     """
     coordinator = request.app.state.coordinator
     if not coordinator:

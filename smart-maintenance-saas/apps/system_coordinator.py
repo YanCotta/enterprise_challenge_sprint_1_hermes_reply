@@ -124,7 +124,28 @@ def mock_db_session_factory() -> AsyncMock:
     return mock_session
 
 class SystemCoordinator:
+    """
+    The SystemCoordinator acts as the central nervous system for the entire agent ecosystem.
+
+    It is responsible for initializing, managing the lifecycle of, and coordinating the
+    various agents within the smart maintenance SaaS platform. This class is designed to
+    integrate seamlessly with FastAPI's lifespan events, specifically `startup` and
+    `shutdown`.
+
+    During startup, it instantiates all configured agents, calls their respective
+    `initialize` (if applicable, though current agents use `__init__` primarily) and `start`
+    methods, effectively bringing the system online. Conversely, during shutdown,
+    it ensures a graceful termination of all agents by invoking their `stop` methods.
+    """
     def __init__(self):
+        """
+        Initializes the SystemCoordinator.
+
+        This involves setting up the core event bus, preparing a dictionary to hold
+        all agent instances, and loading any necessary configurations (though
+        agent-specific configurations are typically passed during their instantiation).
+        It then proceeds to create instances of all predefined agents.
+        """
         logger.info("SystemCoordinator initializing...")
         self.event_bus: EventBus = EventBus()
 
@@ -196,6 +217,17 @@ class SystemCoordinator:
         return None
 
     async def startup_system(self):
+        """
+        Manages the startup sequence of all agents in the system.
+
+        This method is typically connected to the FastAPI `startup` event. It iterates
+        through the list of configured agents, which were instantiated in `__init__`.
+        For each agent, it calls its `start` method to perform any necessary
+        initialization (e.g., subscribing to event bus topics, starting background tasks).
+
+        Logs the successful startup of each agent or any errors encountered during
+        their startup process.
+        """
         logger.info("SystemCoordinator starting up all agents...")
         for agent in self.agents:
             try:
@@ -206,6 +238,18 @@ class SystemCoordinator:
         logger.info("All agents startup process initiated.")
 
     async def shutdown_system(self):
+        """
+        Manages the graceful shutdown sequence of all agents in the system.
+
+        This method is typically connected to the FastAPI `shutdown` event. It iterates
+        through the list of active agents, usually in the reverse order of their startup,
+        and calls their `stop` method. This allows agents to perform cleanup tasks
+        such as unsubscribing from event topics, releasing resources, or finishing
+        any ongoing processes.
+
+        Logs the successful shutdown of each agent or any errors encountered during
+        their shutdown process. Also handles the shutdown of the event bus itself.
+        """
         logger.info("SystemCoordinator shutting down all agents...")
         for agent in reversed(self.agents): # Stop in reverse order of start
             try:

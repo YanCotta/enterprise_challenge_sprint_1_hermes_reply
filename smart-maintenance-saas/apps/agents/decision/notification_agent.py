@@ -85,7 +85,24 @@ class ConsoleNotificationProvider(NotificationProvider):
 
 
 class NotificationAgent(BaseAgent):
-    """Agent for sending notifications based on system events."""
+    """
+    Agent responsible for generating and dispatching notifications based on system events.
+
+    This agent utilizes various notification providers (e.g., console, email, SMS)
+    to deliver messages. It subscribes to relevant events, such as
+    `MaintenanceScheduledEvent`, and formats notifications using a set of
+    predefined, detailed message templates. These templates aim to provide users
+    with richer and more contextual information.
+
+    Key features include:
+    - Multi-channel notification delivery.
+    - Use of detailed message templates for richer user information.
+    - Improved error handling: The agent is designed to be resilient, ensuring that
+      issues with individual notification channels or providers (e.g., a specific
+      email service being down) do not disrupt the agent's overall operation or
+      affect other notification channels. Failures are logged, and the agent
+      attempts to continue processing other notifications.
+    """
     
     def __init__(self, agent_id: str, event_bus: Any):
         super().__init__(agent_id, event_bus)
@@ -105,6 +122,15 @@ class NotificationAgent(BaseAgent):
         self.logger.info(f"Initialized {len(self.providers)} notification providers")
     
     def _initialize_templates(self) -> Dict[str, str]:
+        """
+        Initializes and loads notification message templates.
+
+        Currently, templates are defined inline. In a production system, these might be
+        loaded from configuration files or a database. This method now includes
+        new, more detailed templates to provide richer information to users.
+        If templates were loaded from external sources, this method would also
+        handle potential `ConfigurationError` exceptions during that process.
+        """
         # If templates were loaded from files, this could raise ConfigurationError
         return {
             "maintenance_scheduled": (
@@ -228,17 +254,32 @@ class NotificationAgent(BaseAgent):
         """Render template. Return error message on failure."""
         template = self.templates.get(template_id)
         if not template:
-            return f"No template found for {template_id}"
+            # This indicates a missing template, which is a configuration issue.
+            # Consider raising ConfigurationError or logging a critical error.
+            self.logger.error(f"Notification template '{template_id}' not found.")
+            return f"Error: Template '{template_id}' not found."
         try:
             return template.format(**template_data)
         except KeyError as e:
-            return f"Template rendering failed: KeyError {e}"
+            # This occurs if the template requires a key not present in template_data.
+            self.logger.error(f"Template rendering failed for '{template_id}': Missing key {e}.", exc_info=True)
+            return f"Error: Missing data for template '{template_id}': {e}."
     
     async def send_notification(self, request: NotificationRequest) -> NotificationResult:
-        """Send notification. Return failed result if no provider available."""
+        """
+        Sends a notification using the appropriate provider based on the request's channel.
+
+        This method incorporates improved error handling. If a provider is unavailable
+        for the requested channel, or if the provider itself encounters an issue
+        (e.g., `ServiceUnavailableError`), a `NotificationResult` indicating failure
+        is returned. Such errors are logged but do not cause the agent to crash,
+        allowing it to continue processing other notifications. Unexpected errors from
+        providers are wrapped in `ServiceUnavailableError`.
+        """
         provider = self.providers.get(request.channel)
         if not provider:
             error_msg = f"No provider available for channel {request.channel.value}"
+            self.logger.error(error_msg + f" for request {request.id}")
             return NotificationResult(
                 request_id=request.id, status=NotificationStatus.FAILED,
                 channel_used=request.channel, sent_at=datetime.now(timezone.utc),
@@ -247,17 +288,44 @@ class NotificationAgent(BaseAgent):
         
         self.logger.info(f"Sending notification {request.id} via {request.channel.value} to {request.recipient}")
         try:
-            # Provider's send method should handle its own errors and return NotificationResult,
-            # or raise specific exceptions like ServiceUnavailableError.
+            # The provider's send method is expected to handle its specific operational errors
+            # (e.g., network issues, authentication failures for external services) and
+            # return a NotificationResult. If it raises an unhandled exception,
+            # it's caught here and treated as a service unavailability.
             result = provider.send(request)
-        except SmartMaintenanceBaseException: # Let our specific exceptions pass through
-            raise
+        except ServiceUnavailableError as sua_err: # Catch specific provider unavailability
+            self.logger.error(f"Service unavailable for channel {request.channel.value} when sending {request.id}: {sua_err}", exc_info=False) # exc_info=False as it's in sua_err
+            # Return a FAILED result without re-raising, to prevent agent crash
+            return NotificationResult(
+                request_id=request.id, status=NotificationStatus.FAILED,
+                channel_used=request.channel, sent_at=datetime.now(timezone.utc),
+                error_message=str(sua_err), provider_response=getattr(sua_err, 'details', None)
+            )
+        except SmartMaintenanceBaseException as app_exc: # Other known application exceptions from provider
+            self.logger.error(f"Known application error from provider for channel {request.channel.value} on {request.id}: {app_exc}", exc_info=False)
+            # Re-raise if it's an exception that the agent's main loop should handle (e.g. config error)
+            # For now, let's assume most provider-originating app exceptions should also result in a FAILED status for this notification
+            # but not crash the whole agent. This behavior might need refinement based on specific exception types.
+            # If the exception is something like ConfigurationError from the provider, it might be better to re-raise.
+            # For this example, we'll treat it as a failure for this specific notification.
+            return NotificationResult(
+                request_id=request.id, status=NotificationStatus.FAILED,
+                channel_used=request.channel, sent_at=datetime.now(timezone.utc),
+                error_message=str(app_exc)
+            )
         except Exception as e: # Wrap unexpected provider errors
-            self.logger.error(f"Unexpected error from provider for channel {request.channel.value}: {e}", exc_info=True)
-            raise ServiceUnavailableError(
+            self.logger.error(f"Unexpected error from provider for channel {request.channel.value} on {request.id}: {e}", exc_info=True)
+            # This is an unexpected failure in the provider. We create a ServiceUnavailableError
+            # and then return a FAILED NotificationResult. We don't re-raise the error to prevent agent crash.
+            wrapped_error = ServiceUnavailableError(
                 f"Provider for channel {request.channel.value} failed unexpectedly: {str(e)}",
                 original_exception=e
-            ) from e
+            )
+            return NotificationResult(
+                request_id=request.id, status=NotificationStatus.FAILED,
+                channel_used=request.channel, sent_at=datetime.now(timezone.utc),
+                error_message=str(wrapped_error)
+            )
 
         if result.status == NotificationStatus.FAILED:
             self.logger.warning(f"Notification {request.id} failed: {result.error_message}")

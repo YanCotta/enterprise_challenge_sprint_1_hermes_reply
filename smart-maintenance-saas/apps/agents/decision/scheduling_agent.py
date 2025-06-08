@@ -52,7 +52,28 @@ mock_technicians = [
 
 class SchedulingAgent(BaseAgent):
     """
-    SchedulingAgent handles maintenance task scheduling based on predictions.
+    The SchedulingAgent is responsible for handling maintenance task scheduling.
+
+    It listens for `MaintenancePredictedEvent`s, which indicate a potential need
+    for maintenance based on predictions from other agents. Upon receiving such an
+    event, this agent:
+
+    1.  Creates a `MaintenanceRequest` based on the prediction details.
+    2.  Utilizes a (currently simplified) scheduling algorithm to find a suitable
+        time slot and assign an appropriate technician. This involves:
+        - Checking technician skills against request requirements.
+        - Using a `CalendarService` (mocked for now) to check technician availability.
+        - Selecting a technician based on availability and qualifications.
+    3.  If scheduling is successful, it publishes a `MaintenanceScheduledEvent`
+        with the details of the scheduled task, including the assigned technician,
+        start and end times.
+    4.  If scheduling fails (e.g., no qualified or available technicians), it logs
+        the failure. Future enhancements could involve publishing a
+        `SchedulingFailedEvent`.
+
+    The agent uses mock technician data and a simplified greedy approach for scheduling,
+    with plans to integrate more sophisticated optimization (e.g., using OR-Tools)
+    in the future.
     """
     
     def __init__(self, agent_id: str, event_bus: Any):
