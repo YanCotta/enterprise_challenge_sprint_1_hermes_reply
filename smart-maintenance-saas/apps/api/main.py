@@ -13,6 +13,8 @@ except ImportError:
     logging.basicConfig(level=logging.INFO)  # Basic fallback logging
     logging.info("setup_logging not found, using basicConfig for logging.")
 
+from contextlib import asynccontextmanager # Added import
+from apps.system_coordinator import SystemCoordinator # Added import
 
 from core.config.settings import settings
 
@@ -25,27 +27,36 @@ from core.database.session import get_async_db
 # Optional: Import routers if you have them (e.g., for Task 7)
 # from .routers import sensor_readings_router
 
-# Lifespan context manager for startup/shutdown events (optional, but good for resources)
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     # Startup: e.g., connect to DB, load ML models
-#     logging.info("Application startup...")
-#     # Example: You might want to check DB connection on startup, though /health/db is more for on-demand checks
-#     # try:
-#     #     async with async_engine.connect() as connection:
-#     #         await connection.execute(select(1))
-#     #     logging.info("Database connection successful on startup.")
-#     # except Exception as e:
-#     #     logging.error(f"Database connection failed on startup: {e}")
-#     yield
-#     # Shutdown: e.g., close DB connections gracefully
-#     logging.info("Application shutdown...")
-#     if async_engine:
-#         await async_engine.dispose()
+# Lifespan context manager for startup/shutdown events
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logging.info("Application startup: Initializing SystemCoordinator...")
+    coordinator = SystemCoordinator()
+    app.state.coordinator = coordinator
+    try:
+        await coordinator.startup_system()
+        logging.info("SystemCoordinator started successfully.")
+    except Exception as e:
+        logging.error(f"Error during SystemCoordinator startup: {e}", exc_info=True)
+        # Optionally, re-raise or handle to prevent app startup if critical
+
+    yield
+
+    # Shutdown
+    logging.info("Application shutdown: Shutting down SystemCoordinator...")
+    if hasattr(app.state, 'coordinator') and app.state.coordinator:
+        try:
+            await app.state.coordinator.shutdown_system()
+            logging.info("SystemCoordinator shutdown successfully.")
+        except Exception as e:
+            logging.error(f"Error during SystemCoordinator shutdown: {e}", exc_info=True)
+    else:
+        logging.warning("SystemCoordinator not found on app.state during shutdown.")
+    logging.info("Application shutdown sequence complete.")
 
 
 # Create FastAPI app instance
-# app = FastAPI(title="Smart Maintenance SaaS API", version="0.1.0", lifespan=lifespan)
 app = FastAPI(
     title=settings.PROJECT_NAME
     if hasattr(settings, "PROJECT_NAME")
@@ -54,6 +65,7 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
     if hasattr(settings, "API_V1_STR")
     else "/openapi.json",
+    lifespan=lifespan  # Add this
 )
 
 
