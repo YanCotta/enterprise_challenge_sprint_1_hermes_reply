@@ -4,15 +4,51 @@
 
 The Smart Maintenance SaaS platform employs a microservices-inspired, event-driven architecture centered around a multi-agent system. This design promotes modularity, scalability, and resilience. Core components communicate asynchronously via an Event Bus, allowing for decoupled services and flexible workflow orchestration.
 
+## 1.1. Enhanced Architecture Overview
+
+### SystemCoordinator: The Central Nervous System
+
+The **SystemCoordinator** serves as the central nervous system of our Smart Maintenance platform, acting as the critical bridge between the FastAPI application layer and the multi-agent ecosystem. This component is initialized during the FastAPI application startup and is responsible for managing the complete lifecycle of all agents within the system.
+
+**Key Architectural Role:**
+
+* **Centralized Agent Management:** The SystemCoordinator initializes, starts, and manages all specialized agents (DataAcquisitionAgent, AnomalyDetectionAgent, ValidationAgent, etc.) ensuring they are properly configured and operational.
+
+* **API Integration Point:** Rather than the API Gateway Layer communicating directly with individual agents, all interactions flow through the SystemCoordinator, providing a unified and controlled interface for external requests.
+
+* **Lifecycle Orchestration:** The SystemCoordinator handles the graceful startup and shutdown of the entire agent ecosystem, ensuring proper initialization order and clean resource management.
+
+* **System Health Management:** It provides centralized health monitoring and status reporting for the entire multi-agent system, making it easier to diagnose and manage system-wide issues.
+
+**Architectural Benefits:**
+
+This centralized approach simplifies system management, provides better control over agent interactions, and creates a clear separation of concerns between the web application layer (FastAPI) and the intelligent agent layer. The SystemCoordinator acts as the single point of responsibility for the agent ecosystem, making the system more maintainable and easier to scale.
+
 ## 2. Core Components
 
 ### 2.1. API Gateway (FastAPI)
 
 * **Purpose:** Serves as the primary entry point for all external interactions (UI, third-party systems).
-* **Responsibilities:** Request validation, authentication, authorization, routing to appropriate internal services/agents.
+* **Responsibilities:** Request validation, authentication, authorization, routing requests to the SystemCoordinator rather than directly to individual agents.
 * **Technology:** FastAPI.
+* **Integration:** The API Gateway now uses the SystemCoordinator to interact with the agent ecosystem, providing a centralized point of control and coordination.
 
-### 2.2. Event Bus
+### 2.2. SystemCoordinator
+
+* **Purpose:** Acts as the central nervous system of the Smart Maintenance platform, managing the entire agent ecosystem and serving as the primary interface between the API layer and the multi-agent system.
+* **Responsibilities:**
+  * Agent lifecycle management (initialization, startup, shutdown)
+  * Centralized access point for the API layer to interact with agents
+  * Coordination of agent interactions and workflow orchestration
+  * Health monitoring and status reporting for the entire agent system
+* **Implementation:** `apps.system_coordinator.SystemCoordinator`
+* **Key Features:**
+  * Initializes and manages all agents during FastAPI application startup
+  * Provides unified interface for agent interaction from API endpoints
+  * Handles graceful shutdown of all agents during application termination
+  * Maintains agent registry and facilitates agent discovery
+
+### 2.3. Event Bus
 
 * **Purpose:** Facilitates asynchronous communication between agents and other services.
 * **Responsibilities:** Manages event subscriptions and publications. Ensures reliable event delivery (initially in-memory, with plans for Kafka/Redis for persistence and scalability).
@@ -29,7 +65,7 @@ The Smart Maintenance SaaS platform employs a microservices-inspired, event-driv
   * `HumanDecisionRequiredEvent`
   * `HumanDecisionResponseEvent`
 
-### 2.3. Agent System
+### 2.4. Agent System
 
 The heart of the platform, consisting of specialized agents built upon a common base.
 
@@ -65,7 +101,7 @@ For detailed descriptions of each agent's roles and responsibilities, please see
   * `ReportingAgent`: Generates analytics reports and visualizations.
   * (More agents for learning, decision support, etc., will be detailed in the README as implemented.)
 
-### 2.4. Data Persistence Layer
+### 2.5. Data Persistence Layer
 
 * **Purpose:** Stores all relevant data, including sensor readings, asset information, anomalies, and maintenance tasks.
 * **Technologies:** The core data persistence technologies are detailed in the [Tech Stack](../README.md#tech-stack) section of the main project documentation.
@@ -74,18 +110,18 @@ For detailed descriptions of each agent's roles and responsibilities, please see
   * `AnomalyAlertORM`
   * `MaintenanceTaskORM`
 
-### 2.5. Configuration Management
+### 2.6. Configuration Management
 
 * **Purpose:** Manages application settings.
 * **Technology:** Pydantic `BaseSettings` (`core.config.settings.Settings`).
 * **Source:** Environment variables and `.env` files.
 
-### 2.6. Logging
+### 2.7. Logging
 
 * **Purpose:** Provides structured, centralized logging.
 * **Technology:** `python-json-logger` (`core.logging_config.py`).
 
-### 2.7. OrchestratorAgent - Central Workflow Coordinator
+### 2.8. OrchestratorAgent - Central Workflow Coordinator
 
 * **Purpose:** Acts as the central nervous system of the Smart Maintenance platform, orchestrating complex event-driven workflows and coordinating decision-making across all system agents.
 * **Key Responsibilities & Capabilities:** Manages end-to-end maintenance workflows, coordinates decision-making (human vs. automated), manages state, and facilitates cross-agent communication.
@@ -95,16 +131,17 @@ For detailed descriptions of each agent's roles and responsibilities, please see
 ## 3. Data Flow (Example: Sensor Data Ingestion & Anomaly Detection)
 
 1. **Ingestion:** External system (or simulator) sends sensor data to the `/api/v1/ingestion/sensor-reading/` endpoint on the FastAPI API Gateway.
-2. **API Handling:** The API Gateway validates the request and might publish a raw data event or directly call the `DataAcquisitionAgent`.
-3. **Data Acquisition:** The `DataAcquisitionAgent` receives the data.
+2. **API Handling:** The API Gateway validates the request and uses the SystemCoordinator to interact with the appropriate agents rather than calling them directly.
+3. **SystemCoordinator Routing:** The SystemCoordinator receives the request from the API Gateway and coordinates with the appropriate agents (in this case, the `DataAcquisitionAgent`) to process the incoming data.
+4. **Data Acquisition:** The `DataAcquisitionAgent` receives the data through the SystemCoordinator.
    * It validates, cleans, and potentially enriches the data (e.g., adding asset context).
    * It publishes a `SensorDataReceivedEvent` (or `DataProcessedEvent`) to the Event Bus.
    * It stores the processed sensor reading in the TimescaleDB via `CRUDSensorReading`.
-4. **Anomaly Detection:** An `AnomalyDetectionAgent`, subscribed to `SensorDataReceivedEvent` (or `DataProcessedEvent`), receives the new data.
+5. **Anomaly Detection:** An `AnomalyDetectionAgent`, subscribed to `SensorDataReceivedEvent` (or `DataProcessedEvent`), receives the new data.
    * It applies its anomaly detection algorithms (e.g., threshold checks, statistical models).
    * If an anomaly is detected, it publishes an `AnomalyDetectedEvent` to the Event Bus.
    * It stores the anomaly details in the database via `CRUDAnomalyAlert`.
-5. **Further Processing:** Other agents (e.g., `NotificationAgent`, `MaintenanceSchedulerAgent`) can subscribe to `AnomalyDetectedEvent` to trigger further actions like sending alerts or creating maintenance tasks.
+6. **Further Processing:** Other agents (e.g., `NotificationAgent`, `SchedulingAgent`) can subscribe to `AnomalyDetectedEvent` to trigger further actions like sending alerts or creating maintenance tasks.
 
 ### 3.1. Notification Flow (Maintenance Scheduling Events)
 
@@ -127,55 +164,86 @@ graph TD
     UI[User Interface / External Systems] --> API[API Gateway (FastAPI)]
 
     subgraph Backend Services
-        API --> EventBus[Event Bus]
-        API -->|Direct Calls| RA[Reporting Agent]
+        API --> SC[SystemCoordinator]
+        SC --> EventBus[Event Bus]
+        SC --> AgentRegistry[Agent Registry]
 
-        EventBus -->|Events| DAA[Data Acquisition Agent]
+        SC -->|Manages Lifecycle| DAA[Data Acquisition Agent]
+        SC -->|Manages Lifecycle| ADA[Anomaly Detection Agent]
+        SC -->|Manages Lifecycle| VA[Validation Agent]
+        SC -->|Manages Lifecycle| OA[Orchestrator Agent]
+        SC -->|Manages Lifecycle| PA[Prediction Agent]
+        SC -->|Manages Lifecycle| SA[Scheduling Agent]
+        SC -->|Manages Lifecycle| NA[Notification Agent]
+        SC -->|Manages Lifecycle| RA[Reporting Agent]
+        SC -->|Manages Lifecycle| LA[Learning Agent]
+        SC -->|Manages Lifecycle| HIA[Human Interface Agent]
+
+        EventBus -->|Events| DAA
         DAA -->|Store Data| DB[(TimescaleDB/PostgreSQL)]
         DAA -->|Publish Processed| EventBus
 
-        EventBus -->|Events| ADA[Anomaly Detection Agent]
+        EventBus -->|Events| ADA
         ADA -->|Store Anomalies| DB
         ADA -->|Publish Anomaly| EventBus
 
-        EventBus -->|Events| MSA[Maintenance Scheduler Agent]
-        MSA -->|Store Tasks| DB
-        MSA -->|Publish Task| EventBus
+        EventBus -->|Events| VA
+        VA -->|Validate Anomalies| EventBus
 
-        EventBus -->|Events| NA[Notification Agent]
+        EventBus -->|Events| OA
+        OA -->|Orchestrate Workflows| EventBus
+
+        EventBus -->|Events| PA
+        PA -->|Predict Failures| EventBus
+
+        EventBus -->|Events| SA
+        SA -->|Store Tasks| DB
+        SA -->|Publish Task| EventBus
+
+        EventBus -->|Events| NA
         NA -->|Send Notifications| NotificationProviders[Console/Email/SMS/WhatsApp]
 
-        EventBus -->|Events| HIA[Human Interface Agent]
+        EventBus -->|Events| HIA
         HIA -->|Simulate Human Decision| EventBus
+
+        EventBus -->|Events| LA
+        LA -->|Learn & Store Knowledge| VectorDB[(ChromaDB)]
 
         RA -->|Query Data| DB
         RA -->|Generate Reports| ReportOutput[Reports & Charts]
 
-        EventBus -->|Events| OtherAgents[...]
-
         BaseAgent[BaseAgent] -- Inherited by --> DAA
         BaseAgent -- Inherited by --> ADA
-        BaseAgent -- Inherited by --> MSA
+        BaseAgent -- Inherited by --> VA
+        BaseAgent -- Inherited by --> OA
+        BaseAgent -- Inherited by --> PA
+        BaseAgent -- Inherited by --> SA
         BaseAgent -- Inherited by --> NA
         BaseAgent -- Inherited by --> RA
+        BaseAgent -- Inherited by --> LA
         BaseAgent -- Inherited by --> HIA
-        BaseAgent -- Inherited by --> OtherAgents
 
-        AgentRegistry[Agent Registry] -- Manages --> DAA
+        AgentRegistry -- Manages --> DAA
         AgentRegistry -- Manages --> ADA
-        AgentRegistry -- Manages --> MSA
+        AgentRegistry -- Manages --> VA
+        AgentRegistry -- Manages --> OA
+        AgentRegistry -- Manages --> PA
+        AgentRegistry -- Manages --> SA
         AgentRegistry -- Manages --> NA
         AgentRegistry -- Manages --> RA
+        AgentRegistry -- Manages --> LA
         AgentRegistry -- Manages --> HIA
-        AgentRegistry -- Manages --> OtherAgents
     end
 
     style API fill:#f9f,stroke:#333,stroke-width:2px
+    style SC fill:#ff9999,stroke:#333,stroke-width:3px
     style EventBus fill:#ccf,stroke:#333,stroke-width:2px
     style DB fill:#lightgrey,stroke:#333,stroke-width:2px
+    style VectorDB fill:#lightgrey,stroke:#333,stroke-width:2px
     style BaseAgent fill:#e6ffcc,stroke:#333,stroke-width:1px
     style AgentRegistry fill:#ffe6cc,stroke:#333,stroke-width:1px
     style HIA fill:#ffccff,stroke:#333,stroke-width:2px
+    style OA fill:#ffccaa,stroke:#333,stroke-width:2px
 ```
 
 ### 4.2. Sequence Diagram: Sensor Data Ingestion & Anomaly Detection
