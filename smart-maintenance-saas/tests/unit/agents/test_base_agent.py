@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pytest
 
-from apps.agents.base_agent import AgentCapability, BaseAgent
+from core.base_agent_abc import AgentCapability, BaseAgent
 from core.events.event_bus import (  # Assuming EventBus is sync for mock, or use AsyncMock if it has async methods relevant here
     EventBus,
 )

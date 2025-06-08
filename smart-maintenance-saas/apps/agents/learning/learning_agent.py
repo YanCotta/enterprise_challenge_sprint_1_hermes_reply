@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from apps.agents.base_agent import BaseAgent, AgentCapability
+from core.base_agent_abc import BaseAgent, AgentCapability
 from core.events.event_models import SystemFeedbackReceivedEvent
 from data.schemas import FeedbackData, KnowledgeItem, LearningResult
 

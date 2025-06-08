@@ -3,7 +3,7 @@ import asyncio
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from apps.agents.base_agent import BaseAgent
+from core.base_agent_abc import BaseAgent
 from data.exceptions import WorkflowError, SmartMaintenanceBaseException, AgentProcessingError
 from core.events.event_bus import EventBus
 # Using a dictionary for generic event for testing to match BaseAgent.handle_event signature

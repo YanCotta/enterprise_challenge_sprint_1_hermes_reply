@@ -10,7 +10,7 @@ import logging
 from datetime import datetime, timezone # Ensure timezone is imported
 from typing import Any, Dict, List, Optional, Union
 
-from apps.agents.base_agent import BaseAgent, AgentCapability
+from core.base_agent_abc import BaseAgent, AgentCapability
 from core.config import settings # Import settings
 from core.events.event_models import (
     AnomalyValidatedEvent,

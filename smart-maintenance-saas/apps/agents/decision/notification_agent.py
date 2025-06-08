@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import ValidationError # Ensure ValidationError is imported
 
-from apps.agents.base_agent import AgentCapability, BaseAgent
+from core.base_agent_abc import AgentCapability, BaseAgent
 from core.events.event_models import MaintenanceScheduledEvent
 from data.schemas import NotificationChannel, NotificationRequest, NotificationResult, NotificationStatus
 from data.exceptions import (
