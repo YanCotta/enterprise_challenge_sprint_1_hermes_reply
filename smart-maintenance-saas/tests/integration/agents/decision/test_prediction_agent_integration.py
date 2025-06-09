@@ -19,7 +19,7 @@ from apps.agents.decision.prediction_agent import PredictionAgent
 from core.events.event_bus import EventBus
 from core.events.event_models import AnomalyValidatedEvent, MaintenancePredictedEvent
 from core.database.crud.crud_sensor_reading import CRUDSensorReading
-from data.schemas import SensorReading
+from data.schemas import SensorReading, SensorType
 
 
 # Disable logging during tests
@@ -110,9 +110,23 @@ class TestPredictionAgentIntegration(unittest.IsolatedAsyncioTestCase):
 
     async def test_end_to_end_prediction_workflow(self):
         """Test the complete prediction workflow from event to event."""
-        # Setup mock historical data
-        mock_historical_readings = self._create_historical_sensor_readings(30)
-        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = mock_historical_readings
+        # Setup mock historical data - use the method that returns Pydantic objects directly
+        mock_historical_readings = []
+        base_time = datetime.utcnow() - timedelta(days=30)
+        
+        for i in range(35):  # More than the minimum required
+            reading = SensorReading(
+                id=i,
+                sensor_id="test_sensor_123",
+                sensor_type=SensorType.TEMPERATURE,
+                value=20.0 + (i % 10),  # Values between 20-30
+                unit="C",
+                timestamp=base_time + timedelta(days=i),
+                quality=0.95
+            )
+            mock_historical_readings.append(reading)
+            
+        self.mock_crud_sensor_reading.get_sensor_readings_as_pydantic.return_value = mock_historical_readings
 
         # Create a valid anomaly event
         test_event = self._create_anomaly_validated_event()
@@ -129,47 +143,35 @@ class TestPredictionAgentIntegration(unittest.IsolatedAsyncioTestCase):
             handler=capture_published_event
         )
 
-        # Mock SensorReading.model_validate to return valid objects
-        with patch('data.schemas.SensorReading.model_validate') as mock_validate:
-            mock_validate.side_effect = lambda x: SensorReading(
-                id=x.id,
-                sensor_id=x.sensor_id,
-                sensor_type="temperature",
-                value=x.value,
-                unit="C",
-                timestamp=x.timestamp,
-                quality=0.95
-            )
-
-            # Mock Prophet to avoid actual ML computation in integration test
-            with patch('apps.agents.decision.prediction_agent.Prophet') as mock_prophet:
-                mock_model = Mock()
-                mock_prophet.return_value = mock_model
-                
-                # Mock fit method
-                mock_model.fit.return_value = None
-                
-                # Mock make_future_dataframe
-                import pandas as pd
-                future_df = pd.DataFrame({
-                    'ds': pd.date_range(start=datetime.utcnow(), periods=7, freq='D')
-                })
-                mock_model.make_future_dataframe.return_value = future_df
-                
-                # Mock predict method
-                forecast_df = pd.DataFrame({
-                    'ds': future_df['ds'],
-                    'yhat': [25.0] * 7,  # Predicted values
-                    'yhat_lower': [20.0] * 7,
-                    'yhat_upper': [30.0] * 7
-                })
-                mock_model.predict.return_value = forecast_df
-                
-                # Trigger the event processing
-                await self.event_bus.publish(test_event)
-                
-                # Wait a bit for async processing
-                await asyncio.sleep(0.1)
+        # Mock Prophet to avoid actual ML computation in integration test
+        with patch('apps.agents.decision.prediction_agent.Prophet') as mock_prophet:
+            mock_model = Mock()
+            mock_prophet.return_value = mock_model
+            
+            # Mock fit method
+            mock_model.fit.return_value = None
+            
+            # Mock make_future_dataframe
+            import pandas as pd
+            future_df = pd.DataFrame({
+                'ds': pd.date_range(start=datetime.utcnow(), periods=7, freq='D')
+            })
+            mock_model.make_future_dataframe.return_value = future_df
+            
+            # Mock predict method
+            forecast_df = pd.DataFrame({
+                'ds': future_df['ds'],
+                'yhat': [25.0] * 7,  # Predicted values
+                'yhat_lower': [20.0] * 7,
+                'yhat_upper': [30.0] * 7
+            })
+            mock_model.predict.return_value = forecast_df
+            
+            # Trigger the event processing
+            await self.event_bus.publish(test_event)
+            
+            # Wait a bit for async processing
+            await asyncio.sleep(0.1)
 
         # Verify that a MaintenancePredictedEvent was published
         self.assertEqual(len(published_events), 1)
