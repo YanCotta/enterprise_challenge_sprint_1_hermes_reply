@@ -65,10 +65,12 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         log_record["file"] = record.filename
         log_record["line"] = record.lineno
 
-        # Try to add correlation ID if available in thread local storage
+        # Ensure correlation_id is set
         correlation_id = getattr(record, "correlation_id", None)
-        if correlation_id:
-            log_record["correlation_id"] = correlation_id
+        if not correlation_id and "correlation_id" in message_dict:
+            correlation_id = message_dict.get("correlation_id")
+
+        log_record["correlation_id"] = correlation_id if correlation_id else None
 
         # Add process and thread info
         log_record["process"] = record.process
