@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database.orm_models import SensorReadingORM
 from data.schemas import (  # Assuming SensorReadingCreate is in schemas.py
     SensorReadingCreate,
+    SensorReading,
 )
 
 
@@ -34,6 +35,10 @@ class CRUDSensorReading:
         # Let's ensure timestamp is set if not provided.
         if orm_data.get("timestamp") is None:
             orm_data["timestamp"] = datetime.utcnow()
+
+        # Map Pydantic field names to ORM field names
+        if "metadata" in orm_data:
+            orm_data["sensor_metadata"] = orm_data.pop("metadata")
 
         db_obj = SensorReadingORM(**orm_data)
         db.add(db_obj)
@@ -77,6 +82,44 @@ class CRUDSensorReading:
         stmt = select(SensorReadingORM).where(SensorReadingORM.id == reading_id)
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+
+    def orm_to_pydantic(self, orm_obj: SensorReadingORM) -> SensorReading:
+        """
+        Convert ORM object to Pydantic model with proper field mapping.
+        """
+        
+        # Convert ORM to dict and map field names
+        orm_dict = {
+            "id": orm_obj.id,
+            "sensor_id": orm_obj.sensor_id,
+            "sensor_type": orm_obj.sensor_type,
+            "value": orm_obj.value,
+            "unit": orm_obj.unit,
+            "timestamp": orm_obj.timestamp,
+            "quality": orm_obj.quality,
+            "metadata": orm_obj.sensor_metadata or {},  # Map sensor_metadata to metadata
+            "ingestion_timestamp": orm_obj.created_at,
+        }
+        
+        return SensorReading.model_validate(orm_dict)
+
+    async def get_sensor_readings_as_pydantic(
+        self,
+        db: AsyncSession,
+        *,
+        sensor_id: str,
+        skip: int = 0,
+        limit: int = 100,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+    ) -> List[SensorReading]:
+        """
+        Retrieve sensor readings for a specific sensor_id as Pydantic models.
+        """
+        orm_readings = await self.get_sensor_readings_by_sensor_id(
+            db, sensor_id=sensor_id, skip=skip, limit=limit, start_time=start_time, end_time=end_time
+        )
+        return [self.orm_to_pydantic(orm_obj) for orm_obj in orm_readings]
 
 
 # Create an instance of the CRUD class for easy import and use elsewhere
