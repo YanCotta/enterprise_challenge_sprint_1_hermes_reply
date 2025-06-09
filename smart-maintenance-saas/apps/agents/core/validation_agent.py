@@ -144,8 +144,8 @@ class ValidationAgent(BaseAgent):
                 end_time=before_timestamp, # Match CRUD param name
                 limit=limit
             )
-            # Convert ORM objects to Pydantic SensorReading schemas
-            historical_readings = [SensorReading.model_validate(orm_obj) for orm_obj in historical_readings_orm if orm_obj]
+            # Convert ORM objects to Pydantic SensorReading schemas using helper method
+            historical_readings = [self.crud_sensor_reading.orm_to_pydantic(orm_obj) for orm_obj in historical_readings_orm if orm_obj]
             self.logger.info(
                 f"Fetched {len(historical_readings)} historical readings for sensor {sensor_id}.",
                 extra={"correlation_id": correlation_id}
