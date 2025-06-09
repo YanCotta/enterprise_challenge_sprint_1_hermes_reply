@@ -287,20 +287,14 @@ class PredictionAgent(BaseAgent):
             end_time = datetime.utcnow()
             start_time = end_time - timedelta(days=365)
             
-            historical_readings_orm = await self.crud_sensor_reading.get_sensor_readings_by_sensor_id(
+            # Use CRUD helper method to get Pydantic objects with correct field mapping
+            historical_readings = await self.crud_sensor_reading.get_sensor_readings_as_pydantic(
                 db=session,
                 sensor_id=sensor_id,
                 start_time=start_time,
                 end_time=end_time,
                 limit=limit
             )
-            
-            # Convert ORM objects to Pydantic SensorReading schemas
-            historical_readings = [
-                SensorReading.model_validate(orm_obj) 
-                for orm_obj in historical_readings_orm 
-                if orm_obj
-            ]
             
             self.logger.info(
                 f"Fetched {len(historical_readings)} historical readings for sensor {sensor_id} "
