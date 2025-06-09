@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 
 from sqlalchemy import func  # for server_default=func.now()
 from sqlalchemy import (
@@ -12,6 +13,7 @@ from sqlalchemy import (
     String,
     Text,
 )
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -81,6 +83,16 @@ class AnomalyAlertORM(Base):
     # sensor_reading = relationship("SensorReadingORM") # If FK is setup
 
 
+class MaintenanceTaskStatus(str, Enum):
+    """Enum for maintenance task status values"""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    PARTIALLY_COMPLETED = "partially_completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
 class MaintenanceTaskORM(Base):
     __tablename__ = "maintenance_tasks"
 
@@ -116,6 +128,28 @@ class MaintenanceTaskORM(Base):
     )
 
     # anomaly_alert = relationship("AnomalyAlertORM") # If FK is setup
+
+
+class MaintenanceLogORM(Base):
+    __tablename__ = "maintenance_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    task_id = Column(UUID(as_uuid=True), nullable=False, index=True)  # References maintenance_tasks.id
+    equipment_id = Column(String(255), nullable=False, index=True)
+    completion_date = Column(DateTime(timezone=True), nullable=False)
+    technician_id = Column(String(255), nullable=False)
+    notes = Column(Text, nullable=True)
+    status = Column(
+        SQLEnum(MaintenanceTaskStatus), 
+        default=MaintenanceTaskStatus.COMPLETED, 
+        nullable=False
+    )
+    actual_duration_hours = Column(Float, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 # Placeholder for a potential Sensor Hardware/Asset table
