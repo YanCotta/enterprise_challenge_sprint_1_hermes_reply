@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
-from apps.api.dependencies import get_api_key
+from fastapi import APIRouter, Request, HTTPException, Depends, Security
+from apps.api.dependencies import api_key_auth # Updated to use api_key_auth
 from data.schemas import ReportRequest, ReportResult
 # Assuming ReportingAgent might be found in a path like this, adjust if necessary
 # from apps.agents.reporting_agent import ReportingAgent
 
 router = APIRouter()
 
-@router.post("/generate", response_model=ReportResult, status_code=200, dependencies=[Depends(get_api_key)])
+@router.post("/generate", response_model=ReportResult, status_code=200, dependencies=[Security(api_key_auth, scopes=["reports:generate"])])
 async def generate_report_endpoint(
     report_request: ReportRequest,
     request: Request,

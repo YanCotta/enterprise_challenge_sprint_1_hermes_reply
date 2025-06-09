@@ -109,6 +109,32 @@ class SensorReadingBase(BaseModel):
 # if they were intended to be used with the new SensorReading model.
 # For now, they are left as is, as per the focused nature of the subtask.
 
+class ValidationStatus(str, Enum):
+    CREDIBLE_ANOMALY = "credible_anomaly"
+    FALSE_POSITIVE_SUSPECTED = "false_positive_suspected"
+    FURTHER_INVESTIGATION_NEEDED = "further_investigation_needed"
+
+class AnomalyType(str, Enum):
+    SPIKE = "spike"
+    DRIFT = "drift"
+    STUCK_AT_VALUE = "stuck_at_value"
+    LOW_VALUE = "low_value"
+    # For more dynamic descriptions from AnomalyDetectionAgent,
+    # they might remain strings or a more generic "OTHER" type could be added.
+    # For now, sticking to the primary examples.
+    ENSEMBLE_IF_STATISTICAL = "ensemble_anomaly_if_and_statistical" # Example for combined types
+    ISOLATION_FOREST = "isolation_forest_anomaly"
+    STATISTICAL_Z_SCORE = "statistical_z_score_violation" # Example for specific stat violation
+    STATISTICAL_THRESHOLD = "statistical_threshold_violation" # Example for specific stat violation
+    UNKNOWN = "unknown_anomaly_type"
+    OTHER = "other_type"
+
+
+class AnomalyStatus(str, Enum):
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+
 
 class AnomalyDetectionParameters(BaseModel):
     """Parameters for configuring anomaly detection for a sensor."""
@@ -121,7 +147,7 @@ class AnomalyDetectionParameters(BaseModel):
 class AnomalyAlert(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     sensor_id: str
-    anomaly_type: str  # e.g., "spike", "drift", "stuck_at_value"
+    anomaly_type: AnomalyType = Field(default=AnomalyType.UNKNOWN, description="Type of anomaly detected")
     severity: int = Field(ge=1, le=5)  # 1 (low) to 5 (critical)
     confidence: float = Field(ge=0, le=1)  # Confidence in the anomaly detection
     description: str
@@ -130,7 +156,7 @@ class AnomalyAlert(BaseModel):
     )  # e.g., {"current_value": 105.5, "baseline": 70.0}
     recommended_actions: List[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    status: str = "open"  # e.g., "open", "acknowledged", "resolved"
+    status: AnomalyStatus = Field(default=AnomalyStatus.OPEN, description="Status of the anomaly alert")
 
     class Config:
         from_attributes = True  # For Pydantic v2 ORM mode
@@ -156,8 +182,9 @@ class MaintenanceTask(BaseModel):
     task_type: str  # e.g., "inspection", "repair", "replacement", "calibration"
     description: Optional[str] = None  # Optional field for more details
     priority: int = Field(default=3, ge=1, le=5)  # 1 (highest) to 5 (lowest)
-    status: str = (
-        "pending"  # e.g., "pending", "in_progress", "completed", "cancelled", "on_hold"
+    status: MaintenanceTaskStatus = Field(
+        default=MaintenanceTaskStatus.PENDING,
+        description="Current status of the maintenance task",
     )
     estimated_duration_hours: Optional[float] = None
     actual_duration_hours: Optional[float] = None

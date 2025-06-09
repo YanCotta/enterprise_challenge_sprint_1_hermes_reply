@@ -276,7 +276,7 @@ class TestNotificationAgent:
         """Test template rendering with missing template."""
         result = notification_agent._render_template("nonexistent_template", {})
         
-        assert "No template found for nonexistent_template" in result
+        assert "Error: Template 'nonexistent_template' not found." in result
     
     def test_render_template_missing_data(self, notification_agent):
         """Test template rendering with missing data."""
@@ -284,7 +284,7 @@ class TestNotificationAgent:
         
         result = notification_agent._render_template("maintenance_scheduled", incomplete_data)
         
-        assert "Template rendering failed" in result or "KeyError" in result
+        assert "Error: Missing data for template 'maintenance_scheduled': 'technician_name'." in result
     
     @pytest.mark.asyncio
     async def test_send_notification_success(self, notification_agent):

@@ -486,6 +486,12 @@ class PredictionAgent(BaseAgent):
                 confidence_upper = failure_predictions.iloc[0]['yhat_upper']
                 time_to_failure = (failure_date - datetime.utcnow()).days
                 
+                # Ensure time_to_failure is non-negative (Pydantic validation requirement)
+                if time_to_failure < 0:
+                    # If failure is predicted in the past, treat as immediate failure
+                    time_to_failure = 1  # 1 day minimum for immediate maintenance
+                    failure_date = datetime.utcnow() + timedelta(days=1)
+                
                 # Calculate prediction confidence based on confidence interval width
                 confidence_width = confidence_upper - confidence_lower
                 relative_confidence = max(0.0, min(1.0, 1.0 - (confidence_width / failure_threshold)))

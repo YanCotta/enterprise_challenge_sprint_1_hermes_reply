@@ -4,7 +4,7 @@ import asyncio
 import logging
 import math
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Union
 import traceback
 
 import numpy as np
@@ -16,7 +16,7 @@ from core.base_agent_abc import AgentCapability, BaseAgent
 from apps.ml.statistical_models import StatisticalAnomalyDetector
 from core.events.event_bus import EventBus
 from core.events.event_models import AnomalyDetectedEvent, DataProcessedEvent
-from data.schemas import AnomalyAlert, SensorReading
+from data.schemas import AnomalyAlert, SensorReading, AnomalyType # Added AnomalyType
 from data.exceptions import (
     MLModelError, ConfigurationError, DataValidationException,
     AgentProcessingError, WorkflowError, EventPublishError, SmartMaintenanceBaseException
@@ -100,7 +100,8 @@ class AnomalyDetectionAgent(BaseAgent):
         self._validate_historical_data() # Can raise ConfigurationError
         
         self.logger.info(
-            f"AnomalyDetectionAgent initialized with ID: {self.agent_id}"
+            f"AnomalyDetectionAgent initialized with ID: {self.agent_id}",
+            extra={"correlation_id": "N/A"} # Correlation ID not available at init
         )
 
     def _validate_historical_data(self) -> None:
@@ -113,7 +114,10 @@ class AnomalyDetectionAgent(BaseAgent):
             if data['std'] < 0: # std == 0 might be valid in some edge cases, but negative is not
                 raise ConfigurationError(f"Standard deviation for {sensor_id} cannot be negative")
             if data['std'] == 0:
-                 self.logger.warning(f"Zero standard deviation for sensor {sensor_id} in historical data.")
+                 self.logger.warning(
+                     f"Zero standard deviation for sensor {sensor_id} in historical data.",
+                     extra={"correlation_id": "N/A"} # Correlation ID not available at this point
+                 )
 
 
     async def register_capabilities(self) -> None:
@@ -124,12 +128,18 @@ class AnomalyDetectionAgent(BaseAgent):
             output_types=[AnomalyDetectedEvent.__name__]
         )
         self.capabilities.append(capability)
-        self.logger.debug(f"Agent {self.agent_id} registered capability: {capability.name}")
+        self.logger.debug(
+            f"Agent {self.agent_id} registered capability: {capability.name}",
+            extra={"correlation_id": "N/A"} # Correlation ID not available at this point
+        )
 
     async def start(self) -> None:
         await super().start()
         await self.event_bus.subscribe(DataProcessedEvent.__name__, self.process)
-        self.logger.info(f"Agent {self.agent_id} subscribed to {DataProcessedEvent.__name__}.")
+        self.logger.info(
+            f"Agent {self.agent_id} subscribed to {DataProcessedEvent.__name__}.",
+            extra={"correlation_id": "N/A"} # Correlation ID not available at this point
+        )
 
     def _extract_features(self, reading: SensorReading) -> np.ndarray:
         # This method is simple; if it grew complex, it could raise AgentProcessingError.
@@ -142,11 +152,19 @@ class AnomalyDetectionAgent(BaseAgent):
         will be caught by BaseAgent.handle_event's try-except blocks.
         """
         _event_id_for_log = getattr(event, 'event_id', 'N/A')
-        self.logger.debug(f"Received event: {_event_id_for_log} with correlation_id: {getattr(event, 'correlation_id', 'N/A')}")
+        correlation_id = getattr(event, 'correlation_id', "N/A") # Extract correlation_id for logging
+
+        self.logger.debug(
+            f"Received event: {_event_id_for_log} with correlation_id: {correlation_id}",
+            extra={"correlation_id": correlation_id}
+        )
 
         if not isinstance(event, DataProcessedEvent):
             # This should ideally not happen if event bus and subscriptions are correct
-            self.logger.error(f"Expected DataProcessedEvent, got {type(event)}. This is a programming error.")
+            self.logger.error(
+                f"Expected DataProcessedEvent, got {type(event)}. This is a programming error.",
+                extra={"correlation_id": correlation_id}
+            )
             # Not raising custom error as it's more of an assertion/guard
             return
             
@@ -158,7 +176,11 @@ class AnomalyDetectionAgent(BaseAgent):
             try:
                 reading = SensorReading(**event.processed_data)
             except ValidationError as ve:
-                self.logger.error(f"Failed to parse sensor reading for event {_event_id_for_log}: {ve}", exc_info=True)
+                self.logger.error(
+                    f"Failed to parse sensor reading for event {_event_id_for_log}: {ve}",
+                    exc_info=True,
+                    extra={"correlation_id": correlation_id}
+                )
                 raise DataValidationException(
                     message=f"Invalid sensor data payload for event {_event_id_for_log}: {ve}",
                     errors=ve.errors(),
@@ -172,14 +194,18 @@ class AnomalyDetectionAgent(BaseAgent):
 
             self.logger.info(
                 f"Processing sensor reading: {reading.sensor_id}={reading.value} "
-                f"at {reading.timestamp} (type: {reading.sensor_type})"
+                f"at {reading.timestamp} (type: {reading.sensor_type})",
+                extra={"correlation_id": correlation_id}
             )
             
             try:
                 features = self._extract_features(reading)
                 if features.size == 0:
                     # This could be an AgentProcessingError if feature extraction is critical and fails partially
-                    self.logger.warning(f"No features extracted for sensor {reading.sensor_id}, skipping event {_event_id_for_log}")
+                    self.logger.warning(
+                        f"No features extracted for sensor {reading.sensor_id}, skipping event {_event_id_for_log}",
+                        extra={"correlation_id": correlation_id}
+                    )
                     return # Or raise AgentProcessingError if this is a hard failure
             except Exception as e: # Catch any unexpected error during feature extraction
                 raise AgentProcessingError(
@@ -195,56 +221,83 @@ class AnomalyDetectionAgent(BaseAgent):
             
             # Try ML models first
             try:
-                ml_prediction, ml_score = await self._process_ml_models(features, reading)
+                ml_prediction, ml_score = await self._process_ml_models(features, reading, correlation_id=correlation_id)
             except MLModelError as e:
-                self.logger.error(f"Isolation Forest prediction failed for {reading.sensor_id}: {e.original_exception}")
+                self.logger.error(
+                    f"Isolation Forest prediction failed for {reading.sensor_id}: {e.original_exception}",
+                    extra={"correlation_id": correlation_id}
+                )
                 ml_prediction, ml_score = 1, 0.0  # Default to "no anomaly" for ML
                 ml_failed = True
             
             # Try statistical method
             try:
-                stat_is_anomaly, stat_confidence, stat_desc = self._process_statistical_method(reading)
+                stat_is_anomaly, stat_confidence, stat_desc = self._process_statistical_method(reading, correlation_id=correlation_id)
             except MLModelError as e:
-                self.logger.error(f"Statistical detection failed for {reading.sensor_id}: {e.original_exception}")
+                self.logger.error(
+                    f"Statistical detection failed for {reading.sensor_id}: {e.original_exception}",
+                    extra={"correlation_id": correlation_id}
+                )
                 stat_is_anomaly, stat_confidence, stat_desc = False, 0.0, "statistical_failure"
                 stat_failed = True
                 
             # Log graceful degradation warnings
             if ml_failed and not stat_failed:
-                self.logger.warning(f"ML models failed for {reading.sensor_id}, using statistical method only")
+                self.logger.warning(
+                    f"ML models failed for {reading.sensor_id}, using statistical method only",
+                    extra={"correlation_id": correlation_id}
+                )
             elif stat_failed and not ml_failed:
-                self.logger.warning(f"Statistical method failed for {reading.sensor_id}, using ML method only")
+                self.logger.warning(
+                    f"Statistical method failed for {reading.sensor_id}, using ML method only",
+                    extra={"correlation_id": correlation_id}
+                )
             elif ml_failed and stat_failed:
-                self.logger.error(f"Both ML and statistical methods failed for {reading.sensor_id}, cannot proceed")
+                self.logger.error(
+                    f"Both ML and statistical methods failed for {reading.sensor_id}, cannot proceed",
+                    extra={"correlation_id": correlation_id}
+                )
                 raise MLModelError(f"All anomaly detection methods failed for {reading.sensor_id}")
 
             overall_is_anomaly, overall_confidence, overall_description = self._ensemble_decision(
-                ml_prediction, ml_score, stat_is_anomaly, stat_confidence, stat_desc
+                ml_prediction, ml_score, stat_is_anomaly, stat_confidence, stat_desc, correlation_id=correlation_id
             )
             
             self.logger.info(
                 f"Final decision for {reading.sensor_id} (event {_event_id_for_log}): "
                 f"anomaly={overall_is_anomaly}, confidence={overall_confidence:.4f}, "
-                f"type='{overall_description}'"
+                f"type='{overall_description}'",
+                extra={"correlation_id": correlation_id}
             )
             
             if overall_is_anomaly:
                 # _handle_anomaly_detected can raise WorkflowError or EventPublishError
                 await self._handle_anomaly_detected(
                     reading, event, overall_confidence, overall_description, ml_score,
-                    stat_is_anomaly, stat_confidence
+                    stat_is_anomaly, stat_confidence, correlation_id=correlation_id
                 )
             else:
-                self.logger.debug(f"No anomaly detected for sensor {reading.sensor_id} (event {_event_id_for_log})")
+                self.logger.debug(
+                    f"No anomaly detected for sensor {reading.sensor_id} (event {_event_id_for_log})",
+                    extra={"correlation_id": correlation_id}
+                )
             
         except (DataValidationException, MLModelError, AgentProcessingError, WorkflowError) as app_exc:
             # Re-raise application specific errors to be caught by BaseAgent.handle_event
             # Note: EventPublishError is handled gracefully in _handle_anomaly_detected, not re-raised here
-            self.logger.error(f"Application error in AnomalyDetectionAgent.process for event {_event_id_for_log}: {app_exc}", exc_info=False) # exc_info=False as it's already in app_exc
+            self.logger.error(
+                f"Application error in AnomalyDetectionAgent.process for event {_event_id_for_log}: {app_exc}",
+                exc_info=False, # exc_info=False as it's already in app_exc
+                extra={"correlation_id": correlation_id}
+            )
             raise
         except Exception as e:
             # Wrap unexpected errors in AgentProcessingError
-            self.logger.error(f"Generic unhandled error in AnomalyDetectionAgent.process for event {_event_id_for_log}: {e}", exc_info=True)
+            self.logger.error(
+                f"Generic unhandled error in AnomalyDetectionAgent.process for event {_event_id_for_log}: {e}",
+                exc_info=True,
+                extra={"correlation_id": correlation_id}
+            )
             raise AgentProcessingError(
                 message=f"Generic unhandled error processing event {_event_id_for_log}: {str(e)}",
                 original_exception=e
@@ -259,29 +312,37 @@ class AnomalyDetectionAgent(BaseAgent):
             raise DataValidationException(f"Sensor value '{reading.value}' is not a finite number for sensor {reading.sensor_id}")
         return True
 
-    async def _process_ml_models(self, features: np.ndarray, reading: SensorReading) -> Tuple[int, float]:
+    async def _process_ml_models(self, features: np.ndarray, reading: SensorReading, correlation_id: Optional[str] = None) -> Tuple[int, float]:
         """Process ML models. Raise MLModelError on failure."""
         try:
             scaled_features = self.scaler.fit_transform(features) # fit_transform might be an issue if only predicting one sample
             if not self.isolation_forest_fitted:
-                self.logger.info(f"Fitting Isolation Forest model on initial data for sensor {reading.sensor_id}")
+                self.logger.info(
+                    f"Fitting Isolation Forest model on initial data for sensor {reading.sensor_id}",
+                    extra={"correlation_id": correlation_id}
+                )
                 self.isolation_forest.fit(scaled_features) # Should ideally be fit on a larger dataset, not single instances
                 self.isolation_forest_fitted = True
             
             if_prediction = self.isolation_forest.predict(scaled_features)[0]
             if_score = self.isolation_forest.decision_function(scaled_features)[0]
             self.logger.info(
-                f"Isolation Forest for {reading.sensor_id}: pred={if_prediction}, score={if_score:.4f}"
+                f"Isolation Forest for {reading.sensor_id}: pred={if_prediction}, score={if_score:.4f}",
+                extra={"correlation_id": correlation_id}
             )
             return int(if_prediction), float(if_score)
         except Exception as e:
-            self.logger.error(f"ML model processing failed for {reading.sensor_id}: {e}", exc_info=True)
+            self.logger.error(
+                f"ML model processing failed for {reading.sensor_id}: {e}",
+                exc_info=True,
+                extra={"correlation_id": correlation_id}
+            )
             raise MLModelError(
                 message=f"Isolation Forest prediction failed for {reading.sensor_id}: {str(e)}",
                 original_exception=e
             ) from e
 
-    def _process_statistical_method(self, reading: SensorReading) -> Tuple[bool, float, str]:
+    def _process_statistical_method(self, reading: SensorReading, correlation_id: Optional[str] = None) -> Tuple[bool, float, str]:
         """Process statistical method. Raise MLModelError on failure (as it's part of the 'model')."""
         try:
             sensor_id = reading.sensor_id
@@ -294,26 +355,38 @@ class AnomalyDetectionAgent(BaseAgent):
             else:
                 hist_mean, hist_std = reading.value, self.default_historical_std
                 self.unknown_sensor_baselines[sensor_id] = {"mean": hist_mean, "std": hist_std}
-                self.logger.info(f"First encounter for {sensor_id}, baseline: mean={hist_mean:.4f}, std={hist_std:.4f}")
+                self.logger.info(
+                    f"First encounter for {sensor_id}, baseline: mean={hist_mean:.4f}, std={hist_std:.4f}",
+                    extra={"correlation_id": correlation_id}
+                )
             
             stat_is_anomaly, stat_confidence, stat_desc = self.statistical_detector.detect(
                 reading.value, hist_mean, hist_std
             )
             self.logger.info(
-                f"Statistical for {reading.sensor_id}: anom={stat_is_anomaly}, conf={stat_confidence:.4f}, desc='{stat_desc}'"
+                f"Statistical for {reading.sensor_id}: anom={stat_is_anomaly}, conf={stat_confidence:.4f}, desc='{stat_desc}'",
+                extra={"correlation_id": correlation_id}
             )
             return stat_is_anomaly, stat_confidence, stat_desc
         except ValueError as ve: # Specific error from statistical_detector
-            self.logger.error(f"Statistical detection validation error for {reading.sensor_id}: {ve}", exc_info=True)
+            self.logger.error(
+                f"Statistical detection validation error for {reading.sensor_id}: {ve}",
+                exc_info=True,
+                extra={"correlation_id": correlation_id}
+            )
             raise MLModelError(f"Statistical method validation error for {reading.sensor_id}: {str(ve)}", original_exception=ve) from ve
         except Exception as e:
-            self.logger.error(f"Statistical processing failed for {reading.sensor_id}: {e}", exc_info=True)
+            self.logger.error(
+                f"Statistical processing failed for {reading.sensor_id}: {e}",
+                exc_info=True,
+                extra={"correlation_id": correlation_id}
+            )
             raise MLModelError(f"Statistical method failed for {reading.sensor_id}: {str(e)}", original_exception=e) from e
 
     async def _handle_anomaly_detected(
         self, reading: SensorReading, event: DataProcessedEvent,
         overall_confidence: float, overall_description: str, if_score: float,
-        stat_is_anomaly: bool, stat_confidence: float
+        stat_is_anomaly: bool, stat_confidence: float, correlation_id: Optional[str] = None
     ) -> None:
         """Handle anomaly detection. Raise WorkflowError or EventPublishError on failure."""
         _event_id_for_log = getattr(event, 'event_id', 'N/A')
@@ -352,23 +425,35 @@ class AnomalyDetectionAgent(BaseAgent):
             )
             
             try:
-                await self._publish_anomaly_event(anomaly_detected_event) # Can raise EventPublishError
+                await self._publish_anomaly_event(anomaly_detected_event, correlation_id=correlation_id) # Can raise EventPublishError
             except EventPublishError as epe:
                 # For event publishing errors, log but don't propagate - allow graceful degradation
-                self.logger.error(f"Failed to create or publish AnomalyDetectedEvent for {_event_id_for_log}: {epe}", exc_info=False)
+                self.logger.error(
+                    f"Failed to create or publish AnomalyDetectedEvent for {_event_id_for_log}: {epe}",
+                    exc_info=False,
+                    extra={"correlation_id": correlation_id}
+                )
                 # Don't raise - continue gracefully
 
         except (DataValidationException) as app_exc: # Catch specific ones first (removed EventPublishError since we handle it above)
-            self.logger.error(f"Error in anomaly handling for event {_event_id_for_log}: {app_exc}", exc_info=False)
+            self.logger.error(
+                f"Error in anomaly handling for event {_event_id_for_log}: {app_exc}",
+                exc_info=False,
+                extra={"correlation_id": correlation_id}
+            )
             raise
         except Exception as e: # Catch any other error during this handling phase
-            self.logger.error(f"Generic error in _handle_anomaly_detected for event {_event_id_for_log}: {e}", exc_info=True)
+            self.logger.error(
+                f"Generic error in _handle_anomaly_detected for event {_event_id_for_log}: {e}",
+                exc_info=True,
+                extra={"correlation_id": correlation_id}
+            )
             raise WorkflowError(
                 message=f"Failed to handle detected anomaly for event {_event_id_for_log}: {str(e)}",
                 original_exception=e
             ) from e
 
-    async def _publish_anomaly_event(self, event: AnomalyDetectedEvent) -> None:
+    async def _publish_anomaly_event(self, event: AnomalyDetectedEvent, correlation_id: Optional[str] = None) -> None:
         """
         Publish an AnomalyDetectedEvent to the event bus with a retry mechanism.
 
@@ -385,60 +470,130 @@ class AnomalyDetectionAgent(BaseAgent):
         
         for attempt in range(max_retries):
             try:
-                self.logger.info(f"Publishing AnomalyDetectedEvent (attempt {attempt + 1}/{max_retries}) for {_event_id_for_log}")
+                self.logger.info(
+                    f"Publishing AnomalyDetectedEvent (attempt {attempt + 1}/{max_retries}) for {_event_id_for_log}",
+                    extra={"correlation_id": correlation_id}
+                )
                 await self.event_bus.publish(event)
-                self.logger.debug(f"Successfully published AnomalyDetectedEvent: {_event_id_for_log}")
+                self.logger.debug(
+                    f"Successfully published AnomalyDetectedEvent: {_event_id_for_log}",
+                    extra={"correlation_id": correlation_id}
+                )
                 return # Successfully published, exit the loop
             except Exception as e:
-                self.logger.warning(f"Publish attempt {attempt + 1}/{max_retries} failed for AnomalyDetectedEvent {_event_id_for_log}: {e}")
+                self.logger.warning(
+                    f"Publish attempt {attempt + 1}/{max_retries} failed for AnomalyDetectedEvent {_event_id_for_log}: {e}",
+                    extra={"correlation_id": correlation_id}
+                )
                 if attempt < max_retries - 1:
                     # If not the last attempt, wait before retrying
                     await asyncio.sleep(retry_delay)
                 else:
                     # Last attempt failed, log error and raise EventPublishError
-                    self.logger.error(f"Failed to publish AnomalyDetectedEvent after {max_retries} attempts for {_event_id_for_log}: {e}")
+                    self.logger.error(
+                        f"Failed to publish AnomalyDetectedEvent after {max_retries} attempts for {_event_id_for_log}: {e}",
+                        extra={"correlation_id": correlation_id}
+                    )
                     # This error will be caught by the calling method (_handle_anomaly_detected)
                     # which then decides whether to allow graceful degradation or propagate further.
                     raise EventPublishError(
                         message=f"Failed to publish AnomalyDetectedEvent {_event_id_for_log} via event bus after {max_retries} attempts: {e}",
                         original_exception=e
                     ) from e
-    
-    def _ensemble_decision(
+
+    def _calculate_ensemble_metrics(
         self, if_prediction: int, if_score: float,
         stat_is_anomaly: bool, stat_confidence: float, stat_desc: str
-    ) -> Tuple[bool, float, str]:
-        # This method's logic is mostly decision-making, less prone to external exceptions
-        # unless there are numerical issues, which should be caught by the caller if severe.
+    ) -> Tuple[bool, float, Union[AnomalyType, str]]:
+        """
+        Calculates the overall anomaly status, confidence, and description based on
+        Isolation Forest (IF) and statistical method outputs.
+
+        Args:
+            if_prediction: Prediction from Isolation Forest (-1 for anomaly, 1 for normal).
+            if_score: Anomaly score from Isolation Forest.
+            stat_is_anomaly: Boolean indicating if statistical method found an anomaly.
+            stat_confidence: Confidence score from the statistical method.
+            stat_desc: Description from the statistical method (e.g., "z_score_violation").
+
+        Returns:
+            A tuple containing:
+                - bool: True if an overall anomaly is detected, False otherwise.
+                - float: The final confidence score (0.0 to 1.0).
+                - Union[AnomalyType, str]: The final anomaly description, using AnomalyType enum
+                  where possible, or "normal" if no anomaly.
+        """
         is_anomaly = (if_prediction == -1) or stat_is_anomaly
         if if_prediction == -1:
-            normalized_score = max(-1.0, min(1.0, if_score))
-            if_confidence = 0.5 + 0.5 * (1.0 - normalized_score) / 2.0
-            if_confidence = max(0.5, min(1.0, if_confidence))
-        else:
-            if_confidence = 0.1
-        
+            # Normalize IF score: typical scores are <=0 for anomalies.
+            # We want higher confidence for scores further from 0.
+            # A simple approach: 0.5 base + adjustment. More negative scores -> higher confidence.
+            # This normalization depends on the typical range of if_score for anomalies.
+            # Assuming if_score for anomalies is often between -0.5 and 0.
+            # And for normal points, it's > 0.
+            # Let's try to map it to [0.5, 1.0] for anomalies.
+            normalized_score = max(-1.0, min(0.0, if_score)) # Cap score for safety
+            if_confidence = 0.5 + (abs(normalized_score) * 0.5) # e.g. if_score -0.2 -> 0.5 + 0.1 = 0.6; if_score -0.5 -> 0.5 + 0.25 = 0.75
+            if_confidence = max(0.5, min(1.0, if_confidence)) # Ensure it's within a sensible range for anomaly confidence
+        else: # Not an IF anomaly
+            if_confidence = 0.1 # Low confidence if IF doesn't flag it
+
         final_confidence_score = 0.0
-        if if_prediction == -1 and stat_is_anomaly:
+        if if_prediction == -1 and stat_is_anomaly: # Both agree
             final_confidence_score = (0.6 * if_confidence + 0.4 * stat_confidence)
-        elif if_prediction == -1:
+        elif if_prediction == -1: # Only IF anomaly
             final_confidence_score = if_confidence * 0.8
-        elif stat_is_anomaly:
+        elif stat_is_anomaly: # Only statistical anomaly
             final_confidence_score = stat_confidence * 0.8
         
-        final_confidence_score = max(0.0, min(1.0, final_confidence_score))
-        
-        final_anomaly_description = "normal"
-        if if_prediction == -1 and stat_is_anomaly:
-            final_anomaly_description = f"ensemble_anomaly_if_and_{stat_desc}"
+        final_confidence_score = max(0.0, min(1.0, final_confidence_score)) # Clamp to [0,1]
+
+        final_anomaly_description: Union[AnomalyType, str] = AnomalyType.UNKNOWN
+        if not is_anomaly:
+            final_anomaly_description = "normal"
+        elif if_prediction == -1 and stat_is_anomaly:
+            if "z_score" in stat_desc:
+                final_anomaly_description = AnomalyType.ENSEMBLE_IF_STATISTICAL
+            elif "threshold" in stat_desc:
+                final_anomaly_description = AnomalyType.ENSEMBLE_IF_STATISTICAL
+            else:
+                final_anomaly_description = AnomalyType.ENSEMBLE_IF_STATISTICAL
         elif if_prediction == -1:
-            final_anomaly_description = "isolation_forest_anomaly"
+            final_anomaly_description = AnomalyType.ISOLATION_FOREST
         elif stat_is_anomaly:
-            final_anomaly_description = f"statistical_{stat_desc}"
+            if "z_score" in stat_desc:
+                final_anomaly_description = AnomalyType.STATISTICAL_Z_SCORE
+            elif "threshold" in stat_desc:
+                final_anomaly_description = AnomalyType.STATISTICAL_THRESHOLD
+            else:
+                final_anomaly_description = AnomalyType.UNKNOWN
+
+        return is_anomaly, final_confidence_score, final_anomaly_description
+
+    def _ensemble_decision(
+        self, if_prediction: int, if_score: float,
+        stat_is_anomaly: bool, stat_confidence: float, stat_desc: str, correlation_id: Optional[str] = None
+    ) -> Tuple[bool, float, Union[AnomalyType, str]]:
+        """
+        Determines overall anomaly status by combining Isolation Forest and statistical results.
+        Logs the ensemble decision details.
+        """
+        is_anomaly, final_confidence_score, final_anomaly_description = self._calculate_ensemble_metrics(
+            if_prediction, if_score, stat_is_anomaly, stat_confidence, stat_desc
+        )
+
+        # Determine IF confidence for logging, even if not used directly in final_confidence_score when stat_is_anomaly is false
+        if if_prediction == -1:
+            normalized_score = max(-1.0, min(0.0, if_score))
+            log_if_confidence = 0.5 + (abs(normalized_score) * 0.5)
+            log_if_confidence = max(0.5, min(1.0, log_if_confidence))
+        else:
+            log_if_confidence = 0.1
 
         self.logger.debug(
-            f"Ensemble: if_pred={if_prediction}, if_score={if_score:.4f}, if_conf={if_confidence:.4f}, "
+            f"Ensemble: if_pred={if_prediction}, if_score={if_score:.4f}, if_conf={log_if_confidence:.4f}, "
             f"stat_anom={stat_is_anomaly}, stat_conf={stat_confidence:.4f} -> "
-            f"final_anom={is_anomaly}, final_conf={final_confidence_score:.4f}, desc='{final_anomaly_description}'"
+            f"final_anom={is_anomaly}, final_conf={final_confidence_score:.4f}, desc='{final_anomaly_description}'",
+            extra={"correlation_id": correlation_id}
         )
         return is_anomaly, final_confidence_score, final_anomaly_description

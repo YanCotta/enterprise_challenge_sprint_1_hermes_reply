@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
-from apps.api.dependencies import get_api_key
+from fastapi import APIRouter, Request, HTTPException, Depends, Security
+from apps.api.dependencies import api_key_auth # Updated to use api_key_auth
 from data.schemas import DecisionResponse
 from core.events.event_models import HumanDecisionResponseEvent
 from core.events.event_bus import EventBus
 
 router = APIRouter()
 
-@router.post("/submit", status_code=201, dependencies=[Depends(get_api_key)])
+@router.post("/submit", status_code=201, dependencies=[Security(api_key_auth, scopes=["tasks:update"])])
 async def submit_decision(
     decision_response: DecisionResponse,
     request: Request,
