@@ -402,6 +402,29 @@ class ScheduleMaintenanceCommand(BaseEventModel):
     )
 
 
+class MaintenanceCompletedEvent(BaseEventModel):
+    """
+    Event indicating that a maintenance task has been completed.
+
+    Attributes:
+        task_id: The unique identifier of the completed maintenance task.
+        equipment_id: The identifier of the equipment that was maintained.
+        technician_id: The identifier of the technician who completed the task.
+        completion_date: The date and time when the maintenance was completed.
+        status: The completion status (e.g., "completed", "partially_completed", "failed").
+        notes: Optional notes about the maintenance completion.
+        actual_duration_hours: The actual time taken to complete the task in hours.
+    """
+
+    task_id: str = Field(..., description="Unique identifier of the completed maintenance task.")
+    equipment_id: str = Field(..., description="Identifier of the equipment that was maintained.")
+    technician_id: str = Field(..., description="Identifier of the technician who completed the task.")
+    completion_date: datetime = Field(..., description="Date and time when the maintenance was completed.")
+    status: str = Field(..., description="Completion status of the maintenance task.")
+    notes: Optional[str] = Field(default=None, description="Optional notes about the maintenance completion.")
+    actual_duration_hours: Optional[float] = Field(default=None, description="Actual time taken to complete the task in hours.")
+
+
 # Example of how to use these models (for testing purposes, can be removed or commented out):
 # if __name__ == "__main__":
 #     sensor_event = SensorDataReceivedEvent(
