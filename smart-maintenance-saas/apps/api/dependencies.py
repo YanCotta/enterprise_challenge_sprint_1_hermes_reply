@@ -1,44 +1,39 @@
-from fastapi import Security, HTTPException, status
+from fastapi import Security, HTTPException, status, Depends, SecurityScopes
 from fastapi.security.api_key import APIKeyHeader
 from core.config.settings import settings
 
-API_KEY_NAME = "X-API-Key"
+API_KEY_NAME = "X-API-Key" # Ensure this matches the client-side header name
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
-async def get_api_key(api_key_header_value: str = Security(api_key_header)):
+async def api_key_auth(
+    security_scopes: SecurityScopes,
+    api_key_header_value: str = Security(api_key_header) # Corrected: api_key_header_value
+):
     """
-    FastAPI dependency to validate an API key provided in the `X-API-Key` HTTP header.
-
-    This function serves as a security measure for API endpoints. It retrieves the
-    API key sent by a client in the `X-API-Key` header and compares it against
-    the `EXPECTED_API_KEY` defined in the application's settings (`core.config.settings.API_KEY`).
-
-    Args:
-        api_key_header_value (str): The value of the `X-API-Key` header, injected by FastAPI's
-                                    security dependency system.
-
-    Raises:
-        HTTPException:
-            - status.HTTP_403_FORBIDDEN: If the `X-API-Key` header is missing.
-            - status.HTTP_403_FORBIDDEN: If the provided API key does not match the
-                                         `EXPECTED_API_KEY`.
-
-    Returns:
-        str: The validated API key if it is correct. This return value can be used
-             by the endpoint if needed, though often the act of not raising an
-             exception is sufficient proof of authentication.
+    FastAPI dependency to validate an API key and placeholder for RBAC scope checking.
     """
-    if not api_key_header_value:
+    # This is a basic API key check.
+    # TODO: Enhance with actual RBAC, checking security_scopes against user/client permissions.
+    if not api_key_header_value: # Corrected: check api_key_header_value
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authenticated: X-API-Key header missing."
+            detail="Not authenticated: API key required." # Updated detail
         )
 
     expected_api_key = settings.API_KEY
-
-    if api_key_header_value != expected_api_key:
+    if api_key_header_value != expected_api_key: # Corrected: compare api_key_header_value
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid API Key."
+            detail="Could not validate credentials: Invalid API key." # Updated detail
         )
-    return api_key_header_value # Or True, or some other indicator of success
+
+    # Placeholder for scope logging/awareness
+    if security_scopes.scopes:
+        # In a real app, you'd use a proper logger here
+        print(f"Required scopes: {security_scopes.scopes}")
+        # Here you would add logic to check if the token (API key) has these scopes.
+        # For now, we just log them.
+
+    # Return a dictionary that could be used by the endpoint if needed,
+    # e.g., to access user details or validated scopes.
+    return {"api_key": api_key_header_value, "scopes": security_scopes.scopes}

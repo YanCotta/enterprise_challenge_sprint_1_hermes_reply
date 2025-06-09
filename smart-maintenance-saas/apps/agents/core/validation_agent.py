@@ -112,7 +112,7 @@ class ValidationAgent(BaseAgent):
     ) -> Tuple[List[SensorReading], Optional[str]]:
         '''Helper to fetch historical sensor readings using a DB session from the factory.
         Returns tuple of (readings_list, error_message)'''
-        self.logger.debug(f"Fetching historical data for sensor {sensor_id} before {before_timestamp}")
+        self.logger.debug(f"Fetching historical data for sensor {sensor_id} before {before_timestamp}. If processing multiple events in batch in the future, consider modifying this to a bulk query.")
 
         if not self.db_session_factory:
             error_msg = "Cannot fetch historical data: Database session factory not provided to ValidationAgent."
@@ -122,6 +122,9 @@ class ValidationAgent(BaseAgent):
         session: Optional[AsyncSession] = None
         try:
             session = self.db_session_factory() # Obtain a new session
+            # TODO: If ValidationAgent is updated to process batches of AnomalyDetectedEvent,
+            # this historical data fetching logic should be revised to perform a bulk query
+            # for all relevant sensor_ids to optimize database interaction.
             historical_readings_orm = await self.crud_sensor_reading.get_sensor_readings_by_sensor_id(
                 db=session, # Pass the active session
                 sensor_id=sensor_id,

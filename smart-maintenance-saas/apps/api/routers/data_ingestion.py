@@ -1,13 +1,13 @@
 import uuid
-from fastapi import APIRouter, Request, HTTPException, Depends
-from apps.api.dependencies import get_api_key
+from fastapi import APIRouter, Request, HTTPException, Depends, Security
+from apps.api.dependencies import api_key_auth # Updated to use api_key_auth
 from data.schemas import SensorReadingCreate
 from core.events.event_models import SensorDataReceivedEvent
 from core.events.event_bus import EventBus
 
 router = APIRouter()
 
-@router.post("/ingest", status_code=200, dependencies=[Depends(get_api_key)])
+@router.post("/ingest", status_code=200, dependencies=[Security(api_key_auth, scopes=["data:ingest"])])
 async def ingest_sensor_data(
     reading: SensorReadingCreate,
     request: Request,

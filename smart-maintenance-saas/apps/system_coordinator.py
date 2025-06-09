@@ -1,4 +1,5 @@
 import logging
+import asyncio # Make sure asyncio is imported
 from typing import List, Callable, Optional, Dict, Any # Added Dict, Any for specific_settings
 from datetime import datetime
 from unittest.mock import AsyncMock
@@ -229,13 +230,18 @@ class SystemCoordinator:
         their startup process.
         """
         logger.info("SystemCoordinator starting up all agents...")
+        startup_tasks = []
         for agent in self.agents:
-            try:
-                await agent.start()
+            startup_tasks.append(agent.start())
+
+        results = await asyncio.gather(*startup_tasks, return_exceptions=True)
+
+        for agent, result in zip(self.agents, results):
+            if isinstance(result, Exception):
+                logger.error(f"Error starting agent {agent.agent_id}: {result}", exc_info=result)
+            else:
                 logger.info(f"Agent {agent.agent_id} started successfully.")
-            except Exception as e:
-                logger.error(f"Error starting agent {agent.agent_id}: {e}", exc_info=True)
-        logger.info("All agents startup process initiated.")
+        logger.info("All agents startup process initiated concurrently.")
 
     async def shutdown_system(self):
         """
