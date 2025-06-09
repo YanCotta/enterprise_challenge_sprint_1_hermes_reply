@@ -9,10 +9,10 @@ from core.events.event_bus import EventBus
 from core.database.crud.crud_sensor_reading import CRUDSensorReading # Instance expected
 from apps.rules.validation_rules import RuleEngine # Instance expected
 from core.events.event_models import AnomalyDetectedEvent, AnomalyValidatedEvent
-from data.schemas import AnomalyAlert, SensorReading # Pydantic models for parsing
+from data.schemas import AnomalyAlert, SensorReading, ValidationStatus # Pydantic models for parsing, Added ValidationStatus
 
 # Import AsyncSession for type hinting if a session factory is used
-from sqlalchemy.ext.asyncio import AsyncSession 
+from sqlalchemy.ext.asyncio import AsyncSession
 
 class ValidationAgent(BaseAgent):
     """
@@ -65,7 +65,8 @@ class ValidationAgent(BaseAgent):
             f"ValidationAgent '{self.agent_id}' initialized. "
             f"Input: {self.input_event_type}, Output: {self.output_event_type}. "
             f"DB Session Factory provided: {self.db_session_factory is not None}. "
-            f"Settings: {self.settings}"
+            f"Settings: {self.settings}",
+            extra={"correlation_id": "N/A"} # Correlation ID not available at init
         )
 
     @property
@@ -76,7 +77,8 @@ class ValidationAgent(BaseAgent):
     async def register_capabilities(self):
         '''Declares the agent's capabilities.'''
         self.logger.info(
-            f"Agent {self.agent_id}: Declaring capability - Consumes: {self.input_event_type}, Produces: {self.output_event_type}"
+            f"Agent {self.agent_id}: Declaring capability - Consumes: {self.input_event_type}, Produces: {self.output_event_type}",
+            extra={"correlation_id": "N/A"} # Correlation ID not available at this point
         )
         # Actual registration logic might be in BaseAgent or handled by an external registry.
 
@@ -88,10 +90,14 @@ class ValidationAgent(BaseAgent):
                 event_type_name=self.input_event_type, handler=self.process
             )
             self.logger.info(
-                f"Agent {self.agent_id} started and subscribed to '{self.input_event_type}'."
+                f"Agent {self.agent_id} started and subscribed to '{self.input_event_type}'.",
+                extra={"correlation_id": "N/A"} # Correlation ID not available at this point
             )
         else:
-            self.logger.error(f"Agent {self.agent_id} cannot start: EventBus not provided.")
+            self.logger.error(
+                f"Agent {self.agent_id} cannot start: EventBus not provided.",
+                extra={"correlation_id": "N/A"} # Correlation ID not available at this point
+            )
 
 
     async def stop(self):
@@ -101,22 +107,29 @@ class ValidationAgent(BaseAgent):
                 event_type_name=self.input_event_type, handler=self.process
             )
             self.logger.info(
-                f"Agent {self.agent_id} stopped and unsubscribed from '{self.input_event_type}'."
+                f"Agent {self.agent_id} stopped and unsubscribed from '{self.input_event_type}'.",
+                extra={"correlation_id": "N/A"} # Correlation ID not available at this point
             )
         else:
-            self.logger.warning(f"Agent {self.agent_id} cannot stop gracefully: EventBus not provided during init.")
+            self.logger.warning(
+                f"Agent {self.agent_id} cannot stop gracefully: EventBus not provided during init.",
+                extra={"correlation_id": "N/A"} # Correlation ID not available at this point
+            )
 
 
     async def _fetch_historical_data(
-        self, sensor_id: str, before_timestamp: datetime, limit: int = 20
+        self, sensor_id: str, before_timestamp: datetime, limit: int = 20, correlation_id: Optional[str] = None
     ) -> Tuple[List[SensorReading], Optional[str]]:
         '''Helper to fetch historical sensor readings using a DB session from the factory.
         Returns tuple of (readings_list, error_message)'''
-        self.logger.debug(f"Fetching historical data for sensor {sensor_id} before {before_timestamp}. If processing multiple events in batch in the future, consider modifying this to a bulk query.")
+        self.logger.debug(
+            f"Fetching historical data for sensor {sensor_id} before {before_timestamp}. If processing multiple events in batch in the future, consider modifying this to a bulk query.",
+            extra={"correlation_id": correlation_id}
+        )
 
         if not self.db_session_factory:
             error_msg = "Cannot fetch historical data: Database session factory not provided to ValidationAgent."
-            self.logger.error(error_msg)
+            self.logger.error(error_msg, extra={"correlation_id": correlation_id})
             return [], error_msg
 
         session: Optional[AsyncSession] = None
@@ -133,11 +146,18 @@ class ValidationAgent(BaseAgent):
             )
             # Convert ORM objects to Pydantic SensorReading schemas
             historical_readings = [SensorReading.model_validate(orm_obj) for orm_obj in historical_readings_orm if orm_obj]
-            self.logger.info(f"Fetched {len(historical_readings)} historical readings for sensor {sensor_id}.")
+            self.logger.info(
+                f"Fetched {len(historical_readings)} historical readings for sensor {sensor_id}.",
+                extra={"correlation_id": correlation_id}
+            )
             return historical_readings, None
         except Exception as e:
             error_msg = "Historical data fetch failed."
-            self.logger.error(f"Error fetching historical data for sensor {sensor_id}: {e}", exc_info=True)
+            self.logger.error(
+                f"Error fetching historical data for sensor {sensor_id}: {e}",
+                exc_info=True,
+                extra={"correlation_id": correlation_id}
+            )
             return [], error_msg
         finally:
             if session and hasattr(session, 'close'):
@@ -145,11 +165,14 @@ class ValidationAgent(BaseAgent):
                     await session.close() # Ensure session is closed
                 else:
                     session.close()
-                self.logger.debug("Database session closed after fetching historical data.")
+                self.logger.debug(
+                    "Database session closed after fetching historical data.",
+                    extra={"correlation_id": correlation_id}
+                )
 
 
     def _perform_historical_validation(
-        self, alert: AnomalyAlert, reading: SensorReading, historical_readings: List[SensorReading], error_message: Optional[str] = None
+        self, alert: AnomalyAlert, reading: SensorReading, historical_readings: List[SensorReading], error_message: Optional[str] = None, correlation_id: Optional[str] = None
     ) -> Tuple[float, List[str]]:
         '''Performs validation based on historical context.'''
         historical_confidence_adjustment = 0.0
@@ -157,12 +180,18 @@ class ValidationAgent(BaseAgent):
 
         if error_message:
             historical_reasons.append(error_message)
-            self.logger.debug(f"Historical validation: Error fetching data: {error_message}")
+            self.logger.debug(
+                f"Historical validation: Error fetching data: {error_message}",
+                extra={"correlation_id": correlation_id}
+            )
             return historical_confidence_adjustment, historical_reasons
 
         if not historical_readings:
             historical_reasons.append("No historical readings available for context.")
-            self.logger.debug("Historical validation: No historical data.")
+            self.logger.debug(
+                "Historical validation: No historical data.",
+                extra={"correlation_id": correlation_id}
+            )
             return historical_confidence_adjustment, historical_reasons
 
         # Rule 1: Recent Value Stability (settings-driven)
@@ -192,19 +221,31 @@ class ValidationAgent(BaseAgent):
                         historical_confidence_adjustment += jump_adj
                         reason = f"Anomaly (value: {current_value}) deviates significantly from a recently stable baseline (avg: {avg_recent_value:.2f}, std_dev: {std_dev_recent:.2f})."
                         historical_reasons.append(reason)
-                        self.logger.debug(f"Historical Rule (Jump from Stable) triggered: {reason}")
+                        self.logger.debug(
+                            f"Historical Rule (Jump from Stable) triggered: {reason}",
+                            extra={"correlation_id": correlation_id}
+                        )
                     else:
                         historical_confidence_adjustment += minor_dev_adj
                         reason = f"Recent value stability: Anomaly (value: {current_value}) is a minor deviation from a recently stable baseline (avg: {avg_recent_value:.2f}, std_dev: {std_dev_recent:.2f})."
                         historical_reasons.append(reason)
-                        self.logger.debug(f"Historical Rule (Minor Deviation from Stable) triggered: {reason}")
+                        self.logger.debug(
+                            f"Historical Rule (Minor Deviation from Stable) triggered: {reason}",
+                            extra={"correlation_id": correlation_id}
+                        )
                 else: # Not stable
                     historical_confidence_adjustment += volatile_adj
                     reason = f"Anomaly (value: {current_value}) occurred during a period of volatile readings (avg: {avg_recent_value:.2f}, std_dev: {std_dev_recent:.2f}). Less adjustment made."
                     historical_reasons.append(reason)
-                    self.logger.debug(f"Historical Rule (Volatile Baseline) triggered: {reason}")
+                    self.logger.debug(
+                        f"Historical Rule (Volatile Baseline) triggered: {reason}",
+                        extra={"correlation_id": correlation_id}
+                    )
             else:
-                self.logger.warning(f"Cannot apply historical stability rule: reading value '{current_value}' is not numeric.")
+                self.logger.warning(
+                    f"Cannot apply historical stability rule: reading value '{current_value}' is not numeric.",
+                    extra={"correlation_id": correlation_id}
+                )
 
         # Rule 2: Recurring Anomaly Type (Simplified)
         recurring_anomaly_diff_factor = self.settings.get("recurring_anomaly_diff_factor", 0.2)
@@ -234,13 +275,19 @@ class ValidationAgent(BaseAgent):
                     historical_confidence_adjustment += recurring_anomaly_penalty
                     reason = f"Recurring anomaly pattern detected in historical data."
                     historical_reasons.append(reason)
-                    self.logger.debug(f"Historical Rule (Recurring Anomaly Pattern) triggered: {anomalous_historical_jumps}/{total_historical_readings - 1} ({anomaly_ratio:.2%}) anomalous jumps exceed threshold of {recurring_anomaly_threshold_pct:.0%}")
+                    self.logger.debug(
+                        f"Historical Rule (Recurring Anomaly Pattern) triggered: {anomalous_historical_jumps}/{total_historical_readings - 1} ({anomaly_ratio:.2%}) anomalous jumps exceed threshold of {recurring_anomaly_threshold_pct:.0%}",
+                        extra={"correlation_id": correlation_id}
+                    )
 
         # Only add generic message if no specific historical rules triggered and we have historical data
         if not historical_reasons and not error_message and historical_readings:
             historical_reasons.append("No significant historical patterns affected confidence based on implemented rules.")
         
-        self.logger.debug(f"Historical validation complete. Adjustment: {historical_confidence_adjustment}, Reasons: {historical_reasons}")
+        self.logger.debug(
+            f"Historical validation complete. Adjustment: {historical_confidence_adjustment}, Reasons: {historical_reasons}",
+            extra={"correlation_id": correlation_id}
+        )
         return historical_confidence_adjustment, historical_reasons
 
     async def process(self, event: AnomalyDetectedEvent):
@@ -261,41 +308,59 @@ class ValidationAgent(BaseAgent):
         self.logger.info(
             f"Processing AnomalyDetectedEvent (ID: {getattr(event, 'event_id', 'N/A')}) "
             f"for sensor {getattr(event.anomaly_details, 'sensor_id', 'N/A') if isinstance(event.anomaly_details, dict) else getattr(event, 'sensor_id', 'N/A')} " # Check anomaly_details first
-            f"(Correlation ID: {log_correlation_id})."
+            f"(Correlation ID: {log_correlation_id}).",
+            extra={"correlation_id": log_correlation_id}
         )
 
         try:
             # 1. Parse event data into Pydantic models
             # AnomalyDetectedEvent has .anomaly_details and .triggering_data (both Dict[str, Any])
             if not isinstance(event.anomaly_details, dict) or not isinstance(event.triggering_data, dict):
-                self.logger.error(f"Event {getattr(event, 'event_id', 'N/A')} has invalid payload structure. "
-                                  f"anomaly_details or triggering_data is not a dict. Skipping. (Corr ID: {log_correlation_id})")
+                self.logger.error(
+                    f"Event {getattr(event, 'event_id', 'N/A')} has invalid payload structure. "
+                    f"anomaly_details or triggering_data is not a dict. Skipping. (Corr ID: {log_correlation_id})",
+                    extra={"correlation_id": log_correlation_id}
+                )
                 return
 
             parsed_alert = AnomalyAlert(**event.anomaly_details)
             parsed_reading = SensorReading(**event.triggering_data)
 
-            self.logger.debug(f"Parsed AnomalyAlert (Corr ID: {log_correlation_id}): {parsed_alert.model_dump_json(indent=2, exclude_none=True)}")
-            self.logger.debug(f"Parsed SensorReading (Corr ID: {log_correlation_id}): {parsed_reading.model_dump_json(indent=2, exclude_none=True)}")
+            self.logger.debug(
+                f"Parsed AnomalyAlert (Corr ID: {log_correlation_id}): {parsed_alert.model_dump_json(indent=2, exclude_none=True)}",
+                extra={"correlation_id": log_correlation_id}
+            )
+            self.logger.debug(
+                f"Parsed SensorReading (Corr ID: {log_correlation_id}): {parsed_reading.model_dump_json(indent=2, exclude_none=True)}",
+                extra={"correlation_id": log_correlation_id}
+            )
 
             # 2. Call RuleEngine
+            # Assuming rule_engine.evaluate_rules might also benefit from correlation_id if it logs internally
             rule_adj, rule_reasons = await self.rule_engine.evaluate_rules(
-                alert=parsed_alert, reading=parsed_reading
+                alert=parsed_alert, reading=parsed_reading # Consider passing correlation_id if rule_engine is adapted
             )
-            self.logger.debug(f"Rule engine (Corr ID: {log_correlation_id}): Adjustment={rule_adj}, Reasons='{'; '.join(rule_reasons)}'")
+            self.logger.debug(
+                f"Rule engine (Corr ID: {log_correlation_id}): Adjustment={rule_adj}, Reasons='{'; '.join(rule_reasons)}'",
+                extra={"correlation_id": log_correlation_id}
+            )
 
             # 3. Historical Context Validation
             historical_check_limit = self.settings.get("historical_check_limit", 20)
             historical_readings, fetch_error = await self._fetch_historical_data(
                 sensor_id=parsed_alert.sensor_id,
                 before_timestamp=parsed_reading.timestamp,
-                limit=historical_check_limit
+                limit=historical_check_limit,
+                correlation_id=log_correlation_id
             )
             
             hist_adj, hist_reasons = self._perform_historical_validation(
-                alert=parsed_alert, reading=parsed_reading, historical_readings=historical_readings, error_message=fetch_error
+                alert=parsed_alert, reading=parsed_reading, historical_readings=historical_readings, error_message=fetch_error, correlation_id=log_correlation_id
             )
-            self.logger.debug(f"Historical validation (Corr ID: {log_correlation_id}): Adjustment={hist_adj}, Reasons='{'; '.join(hist_reasons)}'")
+            self.logger.debug(
+                f"Historical validation (Corr ID: {log_correlation_id}): Adjustment={hist_adj}, Reasons='{'; '.join(hist_reasons)}'",
+                extra={"correlation_id": log_correlation_id}
+            )
 
             # 4. Final Confidence & Status
             final_confidence = parsed_alert.confidence + rule_adj + hist_adj
@@ -304,11 +369,11 @@ class ValidationAgent(BaseAgent):
             credible_threshold = self.settings.get("credible_threshold", 0.7)
             false_positive_threshold = self.settings.get("false_positive_threshold", 0.4)
 
-            validation_status = "further_investigation_needed"
+            validation_status: ValidationStatus = ValidationStatus.FURTHER_INVESTIGATION_NEEDED
             if final_confidence >= credible_threshold:
-                validation_status = "credible_anomaly"
+                validation_status = ValidationStatus.CREDIBLE_ANOMALY
             elif final_confidence < false_positive_threshold:
-                validation_status = "false_positive_suspected"
+                validation_status = ValidationStatus.FALSE_POSITIVE_SUSPECTED
             
             all_reasons = [r for r in rule_reasons + hist_reasons if r not in [
                 "No rule-based adjustments applied.", 
@@ -327,14 +392,15 @@ class ValidationAgent(BaseAgent):
 
             self.logger.info(
                 f"Validation result for sensor {parsed_alert.sensor_id} (Corr ID: {log_correlation_id}): "
-                f"Final Confidence={final_confidence:.2f}, Status='{validation_status}'"
+                f"Final Confidence={final_confidence:.2f}, Status='{validation_status}'",
+                extra={"correlation_id": log_correlation_id}
             )
 
             # 5. Publish AnomalyValidatedEvent
             validated_event_payload = {
                 "original_anomaly_alert_payload": event.anomaly_details,
                 "triggering_reading_payload": event.triggering_data,
-                "validation_status": validation_status,
+                "validation_status": validation_status.value, # Ensure string value is passed if event model expects string
                 "final_confidence": final_confidence,
                 "validation_reasons": all_reasons,
                 "agent_id": self.agent_id,
@@ -351,10 +417,14 @@ class ValidationAgent(BaseAgent):
                 await self.event_bus.publish(validated_event)
                 self.logger.info(
                     f"Published AnomalyValidatedEvent {getattr(validated_event, 'event_id', 'N/A')} "
-                    f"for sensor {parsed_alert.sensor_id} (Corr ID: {log_correlation_id})."
+                    f"for sensor {parsed_alert.sensor_id} (Corr ID: {log_correlation_id}).",
+                    extra={"correlation_id": log_correlation_id}
                 )
             else:
-                self.logger.error(f"Cannot publish AnomalyValidatedEvent: EventBus not available. (Corr ID: {log_correlation_id})")
+                self.logger.error(
+                    f"Cannot publish AnomalyValidatedEvent: EventBus not available. (Corr ID: {log_correlation_id})",
+                    extra={"correlation_id": log_correlation_id}
+                )
 
 
         except Exception as e:
@@ -362,5 +432,6 @@ class ValidationAgent(BaseAgent):
                 f"Unhandled error processing AnomalyDetectedEvent {getattr(event, 'event_id', 'N/A')} "
                 f"(Sensor: {getattr(parsed_alert, 'sensor_id', 'N/A') if 'parsed_alert' in locals() else getattr(event.anomaly_details, 'sensor_id', 'N/A') if isinstance(event.anomaly_details, dict) else 'N/A'}, Correlation ID: {log_correlation_id}): {e}",
                 exc_info=True,
+                extra={"correlation_id": log_correlation_id}
             )
             # Consider publishing a specific error event or using a dead-letter mechanism.
