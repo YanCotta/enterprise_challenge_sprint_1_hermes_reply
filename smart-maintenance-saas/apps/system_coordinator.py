@@ -2,7 +2,6 @@ import logging
 import asyncio # Make sure asyncio is imported
 from typing import List, Callable, Optional, Dict, Any # Added Dict, Any for specific_settings
 from datetime import datetime
-from unittest.mock import AsyncMock
 from data.schemas import SensorReading, SensorReadingCreate, AnomalyAlert, SensorType
 
 # Event Bus
@@ -24,154 +23,20 @@ from apps.agents.interface.human_interface_agent import HumanInterfaceAgent
 from apps.agents.decision.notification_agent import NotificationAgent
 from apps.agents.decision.reporting_agent import ReportingAgent
 from apps.agents.learning.learning_agent import LearningAgent
+from apps.agents.decision.maintenance_log_agent import MaintenanceLogAgent
 
-# Database related imports (for mock type hints)
+# Real Service Imports
+from data.validators.agent_data_validator import DataValidator
+from data.processors.agent_data_enricher import DataEnricher
+from core.database.crud.crud_sensor_reading import crud_sensor_reading as CRUDSensorReading
+from core.database.crud.crud_maintenance_log import crud_maintenance_log as CRUDMaintenanceLog
+from apps.rules.validation_rules import RuleEngine
+from core.database.session import AsyncSessionLocal
+
+# Database related imports
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Mock dependency type hints (will be defined or imported later)
-# from apps.mocks import MockDataValidator, MockDataEnricher, MockCRUDSensorReading, MockRuleEngine # If mocks are in a separate file
-
 logger = logging.getLogger(__name__)
-
-# Define Mock Classes
-class MockDataValidator:
-    def validate(self, data: Dict[str, Any], correlation_id: Optional[str] = None) -> Dict[str, Any]:
-        logger.info(f"MockDataValidator: Validating data for correlation_id {correlation_id}")
-        # Return a dict that SensorReadingCreate can parse
-        return {
-            "sensor_id": data.get("sensor_id", "mock_sensor_id"),
-            "value": data.get("value", 0.0),
-            "timestamp": data.get("timestamp", datetime.utcnow().isoformat()),
-            "sensor_type": data.get("sensor_type", SensorType.TEMPERATURE.value),
-            "unit": data.get("unit", "C"),
-            "correlation_id": correlation_id
-        }
-
-class MockDataEnricher:
-    def enrich(self, data_to_enrich: Dict[str, Any]) -> SensorReading:
-        logger.info(f"MockDataEnricher: Enriching data for {data_to_enrich.get('correlation_id')}")
-        ts_str = data_to_enrich.get("timestamp")
-        ts_obj = datetime.fromisoformat(ts_str) if isinstance(ts_str, str) else datetime.utcnow()
-        st_str = data_to_enrich.get("sensor_type", SensorType.TEMPERATURE.value)
-        st_enum = SensorType(st_str) if isinstance(st_str, str) else SensorType.TEMPERATURE
-        return SensorReading(
-            sensor_id=data_to_enrich.get("sensor_id", "mock_sensor_id"),
-            value=data_to_enrich.get("value", 0.0),
-            timestamp=ts_obj,
-            sensor_type=st_enum,
-            unit=data_to_enrich.get("unit", "C"),
-            quality=0.9,
-            correlation_id=data_to_enrich.get("correlation_id"),
-            metadata={"enriched_by": "MockDataEnricher"},
-            ingestion_timestamp=datetime.utcnow()
-        )
-
-class MockCRUDSensorReading:
-    def __init__(self):
-        self._stored_readings = []  # Store readings for testing
-        
-        # Pre-populate with some baseline historical data for E2E testing
-        self._populate_baseline_data()
-    
-    def _populate_baseline_data(self):
-        """Populate with baseline historical data for E2E testing."""
-        from datetime import timedelta
-        import uuid
-        
-        # Create some historical readings for the E2E test sensor
-        base_time = datetime.utcnow() - timedelta(days=30)
-        
-        for i in range(10):  # Create 10 historical readings
-            reading_data = {
-                'sensor_id': 'temp_sensor_e2e_001',
-                'value': 50.0 + (i % 3) * 0.5,  # Values around 50.0-51.0
-                'timestamp': base_time + timedelta(hours=i*2),
-                'sensor_type': SensorType.TEMPERATURE,
-                'unit': 'C',
-                'quality': 1.0,
-                'metadata': {},
-                'ingestion_timestamp': base_time + timedelta(hours=i*2)
-            }
-            self._stored_readings.append(SensorReading(**reading_data))
-        
-        logger.info(f"MockCRUDSensorReading: Pre-populated with {len(self._stored_readings)} baseline readings")
-    
-    async def get_sensor_readings_by_sensor_id(
-        self, db: Any, sensor_id: str, start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None, limit: Optional[int] = None
-    ) -> List[SensorReading]:
-        logger.info(f"MockCRUDSensorReading: Getting readings for sensor_id {sensor_id}")
-        
-        # Filter readings by sensor_id
-        filtered_readings = [r for r in self._stored_readings if r.sensor_id == sensor_id]
-        
-        # Apply time filters if provided
-        if start_time:
-            filtered_readings = [r for r in filtered_readings if r.timestamp >= start_time]
-        if end_time:
-            filtered_readings = [r for r in filtered_readings if r.timestamp <= end_time]
-        
-        # Apply limit if provided
-        if limit:
-            filtered_readings = filtered_readings[-limit:]  # Get most recent readings
-        
-        logger.info(f"MockCRUDSensorReading: Returning {len(filtered_readings)} readings for sensor_id {sensor_id}")
-        return filtered_readings
-
-    async def create_sensor_reading(self, db: Any, reading_data: Dict[str, Any]) -> Optional[SensorReading]:
-        logger.info(f"MockCRUDSensorReading: Creating reading: {reading_data}")
-        try:
-            # Ensure timestamp is datetime object
-            if 'timestamp' in reading_data and isinstance(reading_data['timestamp'], str):
-                reading_data['timestamp'] = datetime.fromisoformat(reading_data['timestamp'])
-            elif 'timestamp' not in reading_data: # Add default if missing
-                reading_data['timestamp'] = datetime.utcnow()
-
-            # Ensure sensor_type is SensorType enum
-            if 'sensor_type' in reading_data and isinstance(reading_data['sensor_type'], str):
-                reading_data['sensor_type'] = SensorType(reading_data['sensor_type'])
-            elif 'sensor_type' not in reading_data: # Add default if missing
-                 reading_data['sensor_type'] = SensorType.TEMPERATURE
-
-
-            # Ensure other SensorReading fields are present or have defaults
-            reading_data.setdefault('sensor_id', 'default_sensor')
-            reading_data.setdefault('value', 0.0)
-            # 'unit' can be optional or have a default based on SensorType
-            if reading_data['sensor_type'] == SensorType.TEMPERATURE and 'unit' not in reading_data:
-                reading_data['unit'] = 'C'
-            elif reading_data['sensor_type'] == SensorType.PRESSURE and 'unit' not in reading_data:
-                reading_data['unit'] = 'kPa'
-            elif reading_data['sensor_type'] == SensorType.VIBRATION and 'unit' not in reading_data:
-                reading_data['unit'] = 'mm/s'
-            # Add other defaults as necessary based on SensorReading model
-            reading_data.setdefault('quality', 1.0) # Default quality
-            reading_data.setdefault('metadata', {}) # Default metadata
-            reading_data.setdefault('ingestion_timestamp', datetime.utcnow())
-
-            sensor_reading = SensorReading(**reading_data)
-            
-            # Store the reading for testing purposes
-            self._stored_readings.append(sensor_reading)
-            logger.info(f"MockCRUDSensorReading: Stored reading, total count: {len(self._stored_readings)}")
-            
-            return sensor_reading
-        except Exception as e:
-            logger.error(f"MockCRUDSensorReading: Error creating SensorReading from data {reading_data}: {e}", exc_info=True)
-            return None
-
-class MockRuleEngine:
-    async def evaluate_rules(self, alert: AnomalyAlert, reading: SensorReading) -> tuple[float, list[str]]:
-        logger.info(f"MockRuleEngine: Evaluating rules for alert {alert.id if alert else 'N/A'} and reading from sensor {reading.sensor_id if reading else 'N/A'}")
-        return 0.0, ["mock_rule_reason"]
-
-def mock_db_session_factory() -> AsyncMock:
-    logger.info("mock_db_session_factory: Creating mock AsyncSession")
-    mock_session = AsyncMock(spec=AsyncSession)
-    mock_session.commit = AsyncMock()
-    mock_session.rollback = AsyncMock()
-    mock_session.close = AsyncMock()
-    return mock_session
 
 class SystemCoordinator:
     """
@@ -199,17 +64,20 @@ class SystemCoordinator:
         logger.info("SystemCoordinator initializing...")
         self.event_bus: EventBus = EventBus()
 
-        mock_validator = MockDataValidator()
-        mock_enricher = MockDataEnricher()
-        mock_crud_sensor = MockCRUDSensorReading()
-        mock_rule_engine = MockRuleEngine()
+        # Database session factory
+        self.db_session_factory = lambda: AsyncSessionLocal()
+
+        # Instantiate real services
+        data_validator = DataValidator()
+        data_enricher = DataEnricher()
+        rule_engine = RuleEngine()
 
         self.agents: List[BaseAgent] = [
             DataAcquisitionAgent(
                 agent_id="data_acquisition_agent_01",
                 event_bus=self.event_bus,
-                validator=mock_validator,
-                enricher=mock_enricher
+                validator=data_validator,
+                enricher=data_enricher
             ),
             AnomalyDetectionAgent(
                 agent_id="anomaly_detection_agent_01",
@@ -219,16 +87,16 @@ class SystemCoordinator:
             ValidationAgent(
                 agent_id="validation_agent_01",
                 event_bus=self.event_bus,
-                crud_sensor_reading=mock_crud_sensor,
-                rule_engine=mock_rule_engine,
-                db_session_factory=mock_db_session_factory,
+                crud_sensor_reading=CRUDSensorReading,
+                rule_engine=rule_engine,
+                db_session_factory=self.db_session_factory,
                 specific_settings={}
             ),
             PredictionAgent(
                 agent_id="prediction_agent_01",
                 event_bus=self.event_bus,
-                crud_sensor_reading=mock_crud_sensor,
-                db_session_factory=mock_db_session_factory,
+                crud_sensor_reading=CRUDSensorReading,
+                db_session_factory=self.db_session_factory,
                 specific_settings={}
             ),
             OrchestratorAgent(
@@ -254,6 +122,12 @@ class SystemCoordinator:
             LearningAgent(
                 agent_id="learning_agent_01",
                 event_bus=self.event_bus
+            ),
+            MaintenanceLogAgent(
+                agent_id="maintenance_log_agent_01",
+                event_bus=self.event_bus,
+                crud_maintenance_log=CRUDMaintenanceLog,
+                db_session_factory=self.db_session_factory
             )
         ]
         logger.info(f"SystemCoordinator initialized with {len(self.agents)} agents and event bus.")
