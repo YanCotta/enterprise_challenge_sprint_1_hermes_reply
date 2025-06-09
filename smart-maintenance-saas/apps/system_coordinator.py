@@ -67,12 +67,56 @@ class MockDataEnricher:
         )
 
 class MockCRUDSensorReading:
+    def __init__(self):
+        self._stored_readings = []  # Store readings for testing
+        
+        # Pre-populate with some baseline historical data for E2E testing
+        self._populate_baseline_data()
+    
+    def _populate_baseline_data(self):
+        """Populate with baseline historical data for E2E testing."""
+        from datetime import timedelta
+        import uuid
+        
+        # Create some historical readings for the E2E test sensor
+        base_time = datetime.utcnow() - timedelta(days=30)
+        
+        for i in range(10):  # Create 10 historical readings
+            reading_data = {
+                'sensor_id': 'temp_sensor_e2e_001',
+                'value': 50.0 + (i % 3) * 0.5,  # Values around 50.0-51.0
+                'timestamp': base_time + timedelta(hours=i*2),
+                'sensor_type': SensorType.TEMPERATURE,
+                'unit': 'C',
+                'quality': 1.0,
+                'metadata': {},
+                'ingestion_timestamp': base_time + timedelta(hours=i*2)
+            }
+            self._stored_readings.append(SensorReading(**reading_data))
+        
+        logger.info(f"MockCRUDSensorReading: Pre-populated with {len(self._stored_readings)} baseline readings")
+    
     async def get_sensor_readings_by_sensor_id(
         self, db: Any, sensor_id: str, start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None, limit: Optional[int] = None
     ) -> List[SensorReading]:
         logger.info(f"MockCRUDSensorReading: Getting readings for sensor_id {sensor_id}")
-        return []
+        
+        # Filter readings by sensor_id
+        filtered_readings = [r for r in self._stored_readings if r.sensor_id == sensor_id]
+        
+        # Apply time filters if provided
+        if start_time:
+            filtered_readings = [r for r in filtered_readings if r.timestamp >= start_time]
+        if end_time:
+            filtered_readings = [r for r in filtered_readings if r.timestamp <= end_time]
+        
+        # Apply limit if provided
+        if limit:
+            filtered_readings = filtered_readings[-limit:]  # Get most recent readings
+        
+        logger.info(f"MockCRUDSensorReading: Returning {len(filtered_readings)} readings for sensor_id {sensor_id}")
+        return filtered_readings
 
     async def create_sensor_reading(self, db: Any, reading_data: Dict[str, Any]) -> Optional[SensorReading]:
         logger.info(f"MockCRUDSensorReading: Creating reading: {reading_data}")
@@ -105,8 +149,13 @@ class MockCRUDSensorReading:
             reading_data.setdefault('metadata', {}) # Default metadata
             reading_data.setdefault('ingestion_timestamp', datetime.utcnow())
 
-
-            return SensorReading(**reading_data)
+            sensor_reading = SensorReading(**reading_data)
+            
+            # Store the reading for testing purposes
+            self._stored_readings.append(sensor_reading)
+            logger.info(f"MockCRUDSensorReading: Stored reading, total count: {len(self._stored_readings)}")
+            
+            return sensor_reading
         except Exception as e:
             logger.error(f"MockCRUDSensorReading: Error creating SensorReading from data {reading_data}: {e}", exc_info=True)
             return None

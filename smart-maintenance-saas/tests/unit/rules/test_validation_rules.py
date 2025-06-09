@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import uuid
 
 from apps.rules.validation_rules import RuleEngine
-from data.schemas import AnomalyAlert, SensorReading, SensorType
+from data.schemas import AnomalyAlert, SensorReading, SensorType, AnomalyType, AnomalyStatus # Added AnomalyType and AnomalyStatus
 
 
 @pytest.fixture
@@ -12,21 +12,24 @@ def anomaly_alert_factory():
         confidence: float,
         created_at: datetime = None,
         description: str = "Test Alert",
-        anomaly_type: str = "spike", # Added default
-        severity: int = 3 # Added default
+        anomaly_type: AnomalyType = AnomalyType.UNKNOWN, # Changed to use Enum and a default
+        severity: int = 3, # Added default
+        sensor_id: str = None, # Added sensor_id
+        evidence: dict = None, # Added evidence
+        recommended_actions: list = None, # Added recommended_actions
+        status: AnomalyStatus = AnomalyStatus.OPEN # Changed to use enum
     ) -> AnomalyAlert:
         return AnomalyAlert(
             id=uuid.uuid4(),
-            sensor_id=str(uuid.uuid4()), # Cast to string
+            sensor_id=sensor_id or str(uuid.uuid4()), # Use provided or generate
             created_at=created_at or datetime.now(timezone.utc),
             description=description,
             confidence=confidence,
-            anomaly_type=anomaly_type, # Pass to model
-            severity=severity, # Pass to model
-            evidence={}, # Schema has evidence: Dict[str, Any]
-            recommended_actions=[], # Schema has recommended_actions: List[str]
-            status="open", # Schema default is "open"
-            # assignee and comments are not in the schema
+            anomaly_type=anomaly_type,
+            severity=severity,
+            evidence=evidence or {},
+            recommended_actions=recommended_actions or [],
+            status=status,
         )
     return _factory
 
@@ -63,14 +66,14 @@ async def test_low_original_confidence_triggered(
     """Test that the 'Low Original Confidence' rule is triggered when confidence < 0.3."""
     alert_confidence = 0.2
     # Ensure other rules that might affect adjustment are not triggered by default values
-    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type="other_anomaly")
+    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type=AnomalyType.DRIFT) # Use Enum that won't trigger Rule 3
     reading = sensor_reading_factory() # Default reading is temperature 25C, quality 1.0
 
     adjustment, reasons = await rule_engine.evaluate_rules(alert, reading)
 
     # Rule 1: -0.1
     # Rule 2 (Poor Data Quality) not triggered (quality=1.0)
-    # Rule 3 (Temp Spike Value Check) not triggered (anomaly_type="other_anomaly")
+    # Rule 3 (Temp/Spike/Low Value checks) not triggered (anomaly_type=DRIFT)
     assert -0.1 == pytest.approx(adjustment, abs=1e-9)
     expected_reason = f"Initial alert confidence ({alert.confidence:.2f}) is below threshold (0.3)."
     assert expected_reason in reasons
@@ -82,7 +85,7 @@ async def test_low_original_confidence_not_triggered(
     """Test that the 'Low Original Confidence' rule is NOT triggered when confidence >= 0.3."""
     alert_confidence = 0.4
     # Ensure other rules that might affect adjustment are not triggered by default values
-    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type="other_anomaly")
+    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type=AnomalyType.DRIFT) # Use Enum
     reading = sensor_reading_factory() # Default reading is temperature 25C, quality 1.0
 
     adjustment, reasons = await rule_engine.evaluate_rules(alert, reading)
@@ -105,8 +108,8 @@ async def test_poor_data_quality_triggered(
     """Test that the 'Poor Data Quality' rule is triggered when reading.quality < 0.5."""
     # Ensure other rules are not triggered:
     # - Alert confidence >= 0.3 (e.g., 0.5)
-    # - Anomaly type that doesn't trigger temperature rules (e.g., "other_type")
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="other_type")
+    # - Anomaly type that doesn\'t trigger temperature rules (e.g., "other_type")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.UNKNOWN) # Use Enum
     
     # Trigger this rule
     reading_quality = 0.4
@@ -127,7 +130,7 @@ async def test_poor_data_quality_not_triggered(
 ):
     """Test that the 'Poor Data Quality' rule is NOT triggered when reading.quality >= 0.5."""
     # Ensure other rules are not triggered:
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="other_type")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.UNKNOWN) # Use Enum
     
     # Do not trigger this rule
     reading_quality = 0.6
@@ -154,7 +157,7 @@ async def test_temp_spike_value_below_threshold_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test Rule 3: Temp spike, value < 40°C, rule IS triggered."""
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="spike")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.SPIKE) # Use Enum
     reading_value = 35.0
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.TEMPERATURE, value=reading_value
@@ -177,7 +180,7 @@ async def test_temp_spike_value_above_threshold_not_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test Rule 3: Temp spike, value >= 40°C, rule NOT triggered."""
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="spike")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.SPIKE) # Use Enum
     reading_value = 45.0
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.TEMPERATURE, value=reading_value
@@ -201,8 +204,7 @@ async def test_temp_low_value_above_threshold_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test Rule 3: Temp low_value, value > 0°C, rule IS triggered."""
-    alert_anomaly_type = "low_value"
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=alert_anomaly_type)
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.LOW_VALUE)
     reading_value = 5.0
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.TEMPERATURE, value=reading_value
@@ -226,8 +228,7 @@ async def test_temp_low_value_below_threshold_not_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test Rule 3: Temp low_value, value <= 0°C, rule NOT triggered."""
-    alert_anomaly_type = "low_value"
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=alert_anomaly_type)
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.LOW_VALUE)
     reading_value = -5.0
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.TEMPERATURE, value=reading_value
@@ -250,7 +251,7 @@ async def test_interaction_no_rules_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test that no rules are triggered and adjustment is 0.0."""
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="other_type")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.UNKNOWN)
     # Use a non-temperature sensor to avoid Rule 3, or set temp value outside Rule 3 trigger ranges
     reading = sensor_reading_factory(quality=0.8, sensor_type=SensorType.VIBRATION, value=30) 
     
@@ -265,7 +266,7 @@ async def test_interaction_only_low_confidence_triggered(
 ):
     """Test only 'Low Original Confidence' rule is triggered."""
     alert_confidence = 0.2
-    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type="other_type")
+    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type=AnomalyType.UNKNOWN)
     reading = sensor_reading_factory(quality=0.8, sensor_type=SensorType.VIBRATION, value=30)
 
     adjustment, reasons = await rule_engine.evaluate_rules(alert, reading)
@@ -280,7 +281,7 @@ async def test_interaction_only_poor_quality_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test only 'Poor Data Quality' rule is triggered."""
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="other_type")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.UNKNOWN)
     reading_quality = 0.4
     reading = sensor_reading_factory(quality=reading_quality, sensor_type=SensorType.VIBRATION, value=30)
 
@@ -296,7 +297,7 @@ async def test_interaction_only_temp_spike_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test only 'Value vs. Type-Specific Threshold' (Spike) rule is triggered."""
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="spike")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.SPIKE)
     reading_value = 35.0
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.TEMPERATURE, value=reading_value
@@ -318,7 +319,7 @@ async def test_interaction_low_confidence_and_poor_quality_triggered(
 ):
     """Test 'Low Original Confidence' AND 'Poor Data Quality' rules are triggered."""
     alert_confidence = 0.2
-    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type="other_type")
+    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type=AnomalyType.UNKNOWN)
     reading_quality = 0.4
     reading = sensor_reading_factory(quality=reading_quality, sensor_type=SensorType.VIBRATION, value=30)
 
@@ -337,8 +338,7 @@ async def test_interaction_all_rules_triggered_temp_spike(
 ):
     """Test all three rule types are triggered (Low Confidence, Poor Quality, Temp Spike)."""
     alert_confidence = 0.2
-    alert_anomaly_type = "spike"
-    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type=alert_anomaly_type)
+    alert = anomaly_alert_factory(confidence=alert_confidence, anomaly_type=AnomalyType.SPIKE)
     
     reading_quality = 0.4
     reading_value = 35.0
@@ -380,7 +380,7 @@ async def test_edge_low_confidence(
     test_confidence, triggered, expected_adjustment
 ):
     """Test edge conditions for the Low Original Confidence rule."""
-    alert = anomaly_alert_factory(confidence=test_confidence, anomaly_type="other_type")
+    alert = anomaly_alert_factory(confidence=test_confidence, anomaly_type=AnomalyType.UNKNOWN)
     # Ensure other rules are not triggered
     reading = sensor_reading_factory(quality=0.8, sensor_type=SensorType.VIBRATION, value=30) 
     
@@ -412,7 +412,7 @@ async def test_edge_poor_quality(
 ):
     """Test edge conditions for the Poor Data Quality rule."""
     # Ensure other rules are not triggered
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="other_type")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.UNKNOWN)
     reading = sensor_reading_factory(quality=test_quality, sensor_type=SensorType.VIBRATION, value=30)
 
     adjustment, reasons = await rule_engine.evaluate_rules(alert, reading)
@@ -443,7 +443,7 @@ async def test_edge_temp_spike_value(
 ):
     """Test edge conditions for the Temperature/Spike rule."""
     # Ensure other rules are not triggered
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="spike")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.SPIKE)
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.TEMPERATURE, value=test_value
     )
@@ -479,7 +479,7 @@ async def test_edge_temp_low_value(
 ):
     """Test edge conditions for the Temperature/Low Value rule."""
     # Ensure other rules are not triggered
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="low_value")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.LOW_VALUE)
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.TEMPERATURE, value=test_value
     )
@@ -505,8 +505,7 @@ async def test_temp_low_value_not_temperature_sensor_not_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test Rule 3: Low_value alert, but not a temperature sensor, rule NOT triggered."""
-    alert_anomaly_type = "low_value"
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=alert_anomaly_type)
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.LOW_VALUE)
     reading_value = 5.0 # Value that would trigger if it were temperature
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.VIBRATION, value=reading_value
@@ -531,8 +530,7 @@ async def test_temp_low_value_not_low_value_anomaly_not_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test Rule 3: Temperature sensor, value > 0°C, but not a low_value anomaly, rule NOT triggered."""
-    alert_anomaly_type = "other_type" # Not "low_value"
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=alert_anomaly_type)
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.OTHER) # Not "low_value"
     reading_value = 5.0
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.TEMPERATURE, value=reading_value
@@ -553,7 +551,7 @@ async def test_temp_spike_not_temperature_sensor_not_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test Rule 3: Spike alert, but not a temperature sensor, rule NOT triggered."""
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="spike")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.SPIKE)
     reading_value = 35.0 # Value that would trigger if it were temperature
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.VIBRATION, value=reading_value
@@ -580,7 +578,7 @@ async def test_temp_spike_not_spike_anomaly_not_triggered(
     anomaly_alert_factory, sensor_reading_factory, rule_engine
 ):
     """Test Rule 3: Temperature sensor, value < 40°C, but not a spike anomaly, rule NOT triggered."""
-    alert = anomaly_alert_factory(confidence=0.5, anomaly_type="other_type")
+    alert = anomaly_alert_factory(confidence=0.5, anomaly_type=AnomalyType.UNKNOWN)
     reading_value = 35.0
     reading = sensor_reading_factory(
         quality=0.8, sensor_type=SensorType.TEMPERATURE, value=reading_value

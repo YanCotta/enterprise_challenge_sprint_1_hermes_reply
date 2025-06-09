@@ -50,8 +50,8 @@ class RuleEngine:
         # Rule 3: Value vs. Type-Specific Broad Threshold Check (Example for Temperature)
         # This is a simplified example. Real rules would be more sophisticated and configurable.
         # SensorReading schema has: sensor_type: SensorType, value: float
-        # AnomalyAlert schema has: anomaly_type: str (e.g., "spike", "drift")
-        if reading.sensor_type == "temperature": # Assumes SensorType is an Enum or string
+        # AnomalyAlert schema has: anomaly_type: AnomalyType (enum)
+        if reading.sensor_type == "temperature": # Assumes SensorType is an Enum with string value
             # Example: If it's a 'spike' alert but the value is not extremely high for a temperature sensor,
             # it might be a minor fluctuation rather than a critical anomaly.
             # This rule is quite subjective and for demonstration.
@@ -64,7 +64,7 @@ class RuleEngine:
                 rule_reasons.append(reason)
                 self.logger.debug(f"Rule 3 (Temp Spike Value Check) triggered: {reason}")
             elif alert.anomaly_type == "low_value" and reading.value > 0: # Example for low value alert
-                 rule_based_confidence_adjustment -=0.05
+                 rule_based_confidence_adjustment -= 0.05
                  reason = (
                     f"Temperature low_value alert ({alert.anomaly_type}) for a value ({reading.value}°C) "
                     f"that is not critically low (> 0°C)."

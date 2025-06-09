@@ -4,7 +4,7 @@ import asyncio
 import logging
 import math
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Union
 import traceback
 
 import numpy as np
@@ -500,12 +500,7 @@ class AnomalyDetectionAgent(BaseAgent):
                         message=f"Failed to publish AnomalyDetectedEvent {_event_id_for_log} via event bus after {max_retries} attempts: {e}",
                         original_exception=e
                     ) from e
-from typing import Any, Dict, List, Tuple, Optional, Union # Ensure Union is imported for type hints
-import traceback
 
-import numpy as np
-from sklearn.ensemble import IsolationForest
-    
     def _calculate_ensemble_metrics(
         self, if_prediction: int, if_score: float,
         stat_is_anomaly: bool, stat_confidence: float, stat_desc: str

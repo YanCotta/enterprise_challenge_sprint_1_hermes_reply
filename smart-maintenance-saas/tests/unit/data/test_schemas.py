@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 import uuid
 
-from smart_maintenance_saas.data.schemas import (
+from data.schemas import (
     AnomalyAlert,
     AnomalyType,
     AnomalyStatus,
@@ -22,7 +22,8 @@ class TestAnomalyAlertEnumUsage:
             # status will use default AnomalyStatus.OPEN
         )
         assert alert.anomaly_type == AnomalyType.SPIKE
-        assert isinstance(alert.anomaly_type, AnomalyType)
+        # With use_enum_values=True, the field value becomes a string
+        assert alert.anomaly_type == "spike"
 
     def test_anomaly_alert_accepts_anomaly_type_string(self):
         alert = AnomalyAlert(
@@ -32,8 +33,9 @@ class TestAnomalyAlertEnumUsage:
             confidence=0.7,
             description="Test drift alert",
         )
-        assert alert.anomaly_type == AnomalyType.DRIFT
-        assert isinstance(alert.anomaly_type, AnomalyType)
+        assert alert.anomaly_type == AnomalyType.DRIFT # Corrected assertion
+        # With use_enum_values=True, the field value becomes a string
+        assert alert.anomaly_type == "drift"
 
     def test_anomaly_alert_serialization_anomaly_type(self):
         alert = AnomalyAlert(
@@ -56,7 +58,8 @@ class TestAnomalyAlertEnumUsage:
             status=AnomalyStatus.ACKNOWLEDGED,
         )
         assert alert.status == AnomalyStatus.ACKNOWLEDGED
-        assert isinstance(alert.status, AnomalyStatus)
+        # With use_enum_values=True, the field value becomes a string
+        assert alert.status == "acknowledged"
 
     def test_anomaly_alert_accepts_anomaly_status_string(self):
         alert = AnomalyAlert(
@@ -67,8 +70,9 @@ class TestAnomalyAlertEnumUsage:
             description="Test resolved alert",
             status="resolved", # String value
         )
-        assert alert.status == AnomalyStatus.RESOLVED
-        assert isinstance(alert.status, AnomalyStatus)
+        assert alert.status == AnomalyStatus.RESOLVED # Corrected assertion
+        # With use_enum_values=True, the field value becomes a string
+        assert alert.status == "resolved"
 
     def test_anomaly_alert_serialization_status(self):
         alert = AnomalyAlert(
@@ -112,7 +116,8 @@ class TestMaintenanceTaskEnumUsage:
             status=MaintenanceTaskStatus.IN_PROGRESS,
         )
         assert task.status == MaintenanceTaskStatus.IN_PROGRESS
-        assert isinstance(task.status, MaintenanceTaskStatus)
+        # With use_enum_values=True, the field value becomes a string
+        assert task.status == "in_progress"
 
     def test_maintenance_task_accepts_status_string(self):
         task = MaintenanceTask(
@@ -120,8 +125,9 @@ class TestMaintenanceTaskEnumUsage:
             task_type="repair",
             status="completed", # String value
         )
-        assert task.status == MaintenanceTaskStatus.COMPLETED
-        assert isinstance(task.status, MaintenanceTaskStatus)
+        assert task.status == MaintenanceTaskStatus.COMPLETED # Corrected assertion
+        # With use_enum_values=True, the field value becomes a string
+        assert task.status == "completed"
 
     def test_maintenance_task_serialization_status(self):
         task = MaintenanceTask(

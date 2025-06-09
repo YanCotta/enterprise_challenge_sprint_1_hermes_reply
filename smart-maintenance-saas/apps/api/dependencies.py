@@ -1,4 +1,5 @@
-from fastapi import Security, HTTPException, status, Depends, SecurityScopes
+from fastapi import Security, HTTPException, status, Depends
+from fastapi.security import SecurityScopes
 from fastapi.security.api_key import APIKeyHeader
 from core.config.settings import settings
 

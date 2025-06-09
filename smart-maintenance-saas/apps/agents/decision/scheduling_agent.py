@@ -7,7 +7,7 @@ using optimization algorithms (currently simplified greedy approach, with OR-Too
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
 from core.base_agent_abc import BaseAgent, AgentCapability
@@ -106,13 +106,14 @@ class SchedulingAgent(BaseAgent):
             extra={"correlation_id": "N/A"}
         )
     
-    async def handle_maintenance_predicted_event(self, event_type: str, event_data_or_obj) -> None:
-        event_obj = event_data_or_obj if isinstance(event_data_or_obj, MaintenancePredictedEvent) else MaintenancePredictedEvent(**event_data_or_obj)
+    async def handle_maintenance_predicted_event(self, event_type_name: str, event_data: dict) -> None:
+        # Convert the event data dict to a MaintenancePredictedEvent object
+        event_obj = MaintenancePredictedEvent(**event_data)
         equipment_id = event_obj.equipment_id
         correlation_id = getattr(event_obj, 'correlation_id', "N/A") # Extract correlation_id
 
         self.logger.info(
-            f"Received {event_type} for equipment {equipment_id}",
+            f"Received MaintenancePredictedEvent for equipment {equipment_id}",
             extra={"correlation_id": correlation_id}
         )
         
@@ -403,13 +404,13 @@ class SchedulingAgent(BaseAgent):
         # If data is a MaintenancePredictedEvent, route it (though it's usually handled by direct subscription)
         if isinstance(data, MaintenancePredictedEvent):
             # correlation_id will be extracted within handle_maintenance_predicted_event
-            await self.handle_maintenance_predicted_event(MaintenancePredictedEvent.__name__, data)
+            await self.handle_maintenance_predicted_event(data)
             return None # Explicitly return None as it's handled
         elif isinstance(data, dict) and "time_to_failure_days" in data and "equipment_id" in data: # Heuristic for dict
              try:
                 event_obj = MaintenancePredictedEvent(**data)
                 # correlation_id will be extracted within handle_maintenance_predicted_event from event_obj
-                await self.handle_maintenance_predicted_event(MaintenancePredictedEvent.__name__, event_obj)
+                await self.handle_maintenance_predicted_event(event_obj)
                 return None
              except Exception as e: # Catch Pydantic validation or other errors
                  self.logger.error(

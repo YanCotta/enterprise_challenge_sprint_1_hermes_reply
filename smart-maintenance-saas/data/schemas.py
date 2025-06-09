@@ -118,6 +118,7 @@ class AnomalyType(str, Enum):
     SPIKE = "spike"
     DRIFT = "drift"
     STUCK_AT_VALUE = "stuck_at_value"
+    LOW_VALUE = "low_value"
     # For more dynamic descriptions from AnomalyDetectionAgent,
     # they might remain strings or a more generic "OTHER" type could be added.
     # For now, sticking to the primary examples.
@@ -126,6 +127,7 @@ class AnomalyType(str, Enum):
     STATISTICAL_Z_SCORE = "statistical_z_score_violation" # Example for specific stat violation
     STATISTICAL_THRESHOLD = "statistical_threshold_violation" # Example for specific stat violation
     UNKNOWN = "unknown_anomaly_type"
+    OTHER = "other_type"
 
 
 class AnomalyStatus(str, Enum):
