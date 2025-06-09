@@ -526,6 +526,45 @@ class SystemState(BaseModel):
         json_encoders = {datetime: lambda dt: dt.isoformat()}
 
 
+# Maintenance Log schemas
+
+class MaintenanceLogCreate(BaseModel):
+    """
+    Schema for creating a new maintenance log entry.
+    """
+    
+    task_id: uuid.UUID = Field(..., description="Unique identifier of the maintenance task")
+    equipment_id: str = Field(..., description="Identifier of the equipment that was maintained")
+    completion_date: datetime = Field(..., description="Date and time when the maintenance was completed")
+    technician_id: str = Field(..., description="Identifier of the technician who completed the task")
+    notes: Optional[str] = Field(default=None, description="Optional notes about the maintenance completion")
+    status: MaintenanceTaskStatus = Field(
+        default=MaintenanceTaskStatus.COMPLETED, 
+        description="Completion status of the maintenance task"
+    )
+    actual_duration_hours: Optional[float] = Field(
+        default=None, 
+        description="Actual time taken to complete the task in hours"
+    )
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat(), uuid.UUID: str}
+
+
+class MaintenanceLog(MaintenanceLogCreate):
+    """
+    Schema for a complete maintenance log, including database fields.
+    """
+    
+    id: uuid.UUID = Field(..., description="Unique identifier for the maintenance log")
+    created_at: datetime = Field(..., description="When the log entry was created")
+    updated_at: datetime = Field(..., description="When the log entry was last updated")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat(), uuid.UUID: str}
+        from_attributes = True  # For SQLAlchemy ORM compatibility
+
+
 # Ensure all necessary imports are at the top
 # (Pydantic, datetime, Enum, typing modules are already imported)
 
