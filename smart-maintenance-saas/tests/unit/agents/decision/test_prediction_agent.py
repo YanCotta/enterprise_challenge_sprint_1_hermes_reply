@@ -15,7 +15,7 @@ import pandas as pd
 
 from apps.agents.decision.prediction_agent import PredictionAgent
 from core.events.event_models import AnomalyValidatedEvent, MaintenancePredictedEvent
-from data.schemas import SensorReading
+from data.schemas import SensorReading, SensorType
 
 # Disable logging during tests
 logging.disable(logging.CRITICAL)
@@ -245,32 +245,30 @@ class TestPredictionAgent(unittest.IsolatedAsyncioTestCase):
 
     async def test_fetch_historical_data_success(self):
         """Test successful historical data fetching."""
-        # Create simple objects that are truthy (not Mock objects)
-        # Use a simple class that will pass the truthiness check
-        class FakeORMObject:
-            def __init__(self, id_val):
-                self.id = id_val
-                
-        mock_orm_readings = [FakeORMObject(i) for i in range(20)]
-        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = mock_orm_readings
+        # Setup mock responses - the method returns Pydantic objects directly
+        mock_readings = [
+            SensorReading(
+                id=i, 
+                sensor_id="test_sensor", 
+                sensor_type=SensorType.TEMPERATURE, 
+                value=25.0 + i,
+                unit="C", 
+                timestamp=datetime.utcnow() - timedelta(hours=i), 
+                quality=1.0
+            ) for i in range(20)
+        ]
         
-        # Patch the SensorReading.model_validate method
-        with patch('data.schemas.SensorReading.model_validate') as mock_validate:
-            mock_validate.side_effect = lambda x: SensorReading(
-                id=1, sensor_id="test", sensor_type="temperature", value=25.0,  # Fixed: use valid enum value
-                unit="C", timestamp=datetime.utcnow(), quality=1.0
-            )
-            
-            readings, error = await self.agent._fetch_historical_data_for_prediction(
-                sensor_id="test_sensor", limit=100
-            )
-            
-            self.assertEqual(len(readings), 20)
-            self.assertIsNone(error)
-            # Verify that model_validate was called for each ORM object
-            self.assertEqual(mock_validate.call_count, 20)
-            self.assertIsNone(error)
-            self.mock_db_session.close.assert_called_once()
+        # Mock the get_sensor_readings_as_pydantic method
+        self.mock_crud_sensor_reading.get_sensor_readings_as_pydantic.return_value = mock_readings
+        
+        readings, error = await self.agent._fetch_historical_data_for_prediction(
+            sensor_id="test_sensor", limit=100
+        )
+        
+        self.assertEqual(len(readings), 20)
+        self.assertIsNone(error)
+        self.mock_crud_sensor_reading.get_sensor_readings_as_pydantic.assert_called_once()
+        self.mock_db_session.close.assert_called_once()
 
     async def test_fetch_historical_data_no_session_factory(self):
         """Test historical data fetching without session factory."""
@@ -289,7 +287,7 @@ class TestPredictionAgent(unittest.IsolatedAsyncioTestCase):
 
     async def test_fetch_historical_data_database_error(self):
         """Test historical data fetching with database error."""
-        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.side_effect = Exception("DB Error")
+        self.mock_crud_sensor_reading.get_sensor_readings_as_pydantic.side_effect = Exception("DB Error")
         
         readings, error = await self.agent._fetch_historical_data_for_prediction("test_sensor")
         
@@ -476,49 +474,43 @@ class TestPredictionAgent(unittest.IsolatedAsyncioTestCase):
     @patch('apps.agents.decision.prediction_agent.Prophet')
     async def test_process_full_pipeline_success(self, mock_prophet_class):
         """Test the complete processing pipeline."""
-        # Setup mocks
+        # Setup mocks - use the correct method that returns Pydantic objects
         mock_readings = self._create_mock_sensor_readings(50)
-        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = [Mock() for _ in range(50)]
+        self.mock_crud_sensor_reading.get_sensor_readings_as_pydantic.return_value = mock_readings
         
-        with patch('data.schemas.SensorReading.model_validate') as mock_validate:
-            mock_validate.side_effect = mock_readings
-            
-            # Setup Prophet mock
-            mock_model = MagicMock()
-            mock_prophet_class.return_value = mock_model
-            
-            forecast_data = {
-                'ds': pd.date_range(start=datetime.utcnow(), periods=30, freq='D'),
-                'yhat': [25.0 + i * 0.1 for i in range(30)],
-                'yhat_lower': [20.0 + i * 0.1 for i in range(30)],
-                'yhat_upper': [30.0 + i * 0.1 for i in range(30)]
-            }
-            mock_forecast = pd.DataFrame(forecast_data)
-            mock_model.predict.return_value = mock_forecast
-            
-            # Process event
-            event = self._create_anomaly_validated_event()
-            await self.agent.process(event)
-            
-            # Verify event was published
-            self.mock_event_bus.publish.assert_called_once()
-            published_event = self.mock_event_bus.publish.call_args.args[0]
-            self.assertIsInstance(published_event, MaintenancePredictedEvent)
+        # Setup Prophet mock
+        mock_model = MagicMock()
+        mock_prophet_class.return_value = mock_model
+        
+        forecast_data = {
+            'ds': pd.date_range(start=datetime.utcnow(), periods=30, freq='D'),
+            'yhat': [25.0 + i * 0.1 for i in range(30)],
+            'yhat_lower': [20.0 + i * 0.1 for i in range(30)],
+            'yhat_upper': [30.0 + i * 0.1 for i in range(30)]
+        }
+        mock_forecast = pd.DataFrame(forecast_data)
+        mock_model.predict.return_value = mock_forecast
+        
+        # Process event
+        event = self._create_anomaly_validated_event()
+        await self.agent.process(event)
+        
+        # Verify event was published
+        self.mock_event_bus.publish.assert_called_once()
+        published_event = self.mock_event_bus.publish.call_args.args[0]
+        self.assertIsInstance(published_event, MaintenancePredictedEvent)
 
     async def test_process_insufficient_data(self):
         """Test processing with insufficient historical data."""
         # Setup minimal data (less than min_historical_points)
         mock_readings = self._create_mock_sensor_readings(5)
-        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = [Mock() for _ in range(5)]
+        self.mock_crud_sensor_reading.get_sensor_readings_as_pydantic.return_value = mock_readings
         
-        with patch('data.schemas.SensorReading.model_validate') as mock_validate:
-            mock_validate.side_effect = mock_readings
-            
-            event = self._create_anomaly_validated_event()
-            await self.agent.process(event)
-            
-            # Should not publish any event due to insufficient data
-            self.mock_event_bus.publish.assert_not_called()
+        event = self._create_anomaly_validated_event()
+        await self.agent.process(event)
+        
+        # Should not publish any event due to insufficient data
+        self.mock_event_bus.publish.assert_not_called()
 
     async def test_process_low_confidence_anomaly(self):
         """Test processing low confidence anomaly (should be skipped)."""
