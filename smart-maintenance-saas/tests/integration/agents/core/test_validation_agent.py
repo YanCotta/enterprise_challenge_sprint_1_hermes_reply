@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 import asyncio
 from datetime import datetime, timedelta
 import uuid
@@ -39,11 +39,11 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.event_bus = MockEventBus()  # Use the custom MockEventBus
-        self.mock_crud_sensor_reading = AsyncMock()
+        self.mock_crud_sensor_reading = Mock()  # Use regular Mock instead of AsyncMock
         self.rule_engine = RuleEngine()  # Real RuleEngine
 
         # Default return values for mocks
-        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = []
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id = AsyncMock(return_value=[])
 
         # Create a mock session factory that returns a mock session
         def mock_session_factory():
@@ -138,25 +138,44 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
             anomaly_details, triggering_data, correlation_id="credible_corr_01"
         )
 
-        # Mock historical data to be benign
-        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = [
-            SensorReading(  # SensorReading is imported
+        # Mock historical data to be benign - we need to mock both the async call and the ORM conversion
+        mock_orm_readings = [
+            Mock(
                 sensor_id=anomaly_details["sensor_id"],
                 value=98.0,
-                timestamp=self.default_ts - timedelta(hours=1),  # timedelta is imported
-                sensor_type="temperature",  # Use lowercase enum value
-                unit="C",  # Add required unit field
+                timestamp=self.default_ts - timedelta(hours=1),
+                sensor_type="temperature",
+                unit="C",
                 quality=1.0,
             ),
-            SensorReading(  # SensorReading is imported
+            Mock(
                 sensor_id=anomaly_details["sensor_id"],
                 value=99.0,
-                timestamp=self.default_ts - timedelta(hours=2),  # timedelta is imported
-                sensor_type="temperature",  # Use lowercase enum value
-                unit="C",  # Add required unit field
+                timestamp=self.default_ts - timedelta(hours=2),
+                sensor_type="temperature",
+                unit="C",
                 quality=1.0,
             ),
         ]
+        
+        # Set up the async mock properly - AsyncMock needs return_value for direct returns
+        async def mock_get_readings(*args, **kwargs):
+            return mock_orm_readings
+        
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.side_effect = mock_get_readings
+        
+        # Mock the ORM to Pydantic conversion
+        def mock_orm_to_pydantic(orm_obj):
+            return SensorReading(
+                sensor_id=orm_obj.sensor_id,
+                value=orm_obj.value,
+                timestamp=orm_obj.timestamp,
+                sensor_type=orm_obj.sensor_type,
+                unit=orm_obj.unit,
+                quality=orm_obj.quality,
+            )
+        
+        self.mock_crud_sensor_reading.orm_to_pydantic.side_effect = mock_orm_to_pydantic
 
         await self.event_bus.publish(detected_event)
 
@@ -289,9 +308,37 @@ class TestValidationAgentIntegration(unittest.IsolatedAsyncioTestCase):
                 quality=1.0,
             ),
         ]
-        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = (
-            historical_data
-        )
+        
+        # Create mock ORM objects that will be converted to Pydantic objects
+        mock_orm_readings = []
+        for reading in historical_data:
+            mock_orm_readings.append(Mock(
+                sensor_id=reading.sensor_id,
+                value=reading.value,
+                timestamp=reading.timestamp,
+                sensor_type=reading.sensor_type,
+                unit=reading.unit,
+                quality=reading.quality,
+            ))
+        
+        # Set up the async mock properly
+        async def mock_get_readings(*args, **kwargs):
+            return mock_orm_readings
+        
+        self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.side_effect = mock_get_readings
+        
+        # Mock the ORM to Pydantic conversion
+        def mock_orm_to_pydantic(orm_obj):
+            return SensorReading(
+                sensor_id=orm_obj.sensor_id,
+                value=orm_obj.value,
+                timestamp=orm_obj.timestamp,
+                sensor_type=orm_obj.sensor_type,
+                unit=orm_obj.unit,
+                quality=orm_obj.quality,
+            )
+        
+        self.mock_crud_sensor_reading.orm_to_pydantic.side_effect = mock_orm_to_pydantic
 
         # Initial confidence is borderline, e.g., 0.45. Historical context pushes it down.
         anomaly_details = self._get_default_anomaly_details(
