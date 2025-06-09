@@ -7,7 +7,7 @@ using optimization algorithms (currently simplified greedy approach, with OR-Too
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from core.base_agent_abc import BaseAgent, AgentCapability
@@ -106,11 +106,26 @@ class SchedulingAgent(BaseAgent):
             extra={"correlation_id": "N/A"}
         )
     
-    async def handle_maintenance_predicted_event(self, event_type_name: str, event_data: dict) -> None:
-        # Convert the event data dict to a MaintenancePredictedEvent object
-        event_obj = MaintenancePredictedEvent(**event_data)
-        equipment_id = event_obj.equipment_id
-        correlation_id = getattr(event_obj, 'correlation_id', "N/A") # Extract correlation_id
+    async def handle_maintenance_predicted_event(self, event_type_or_event: Union[str, MaintenancePredictedEvent], event_data: Optional[MaintenancePredictedEvent] = None) -> None:
+        # Support both old pattern (event_type + event_data) and new pattern (event object only)
+        if isinstance(event_type_or_event, MaintenancePredictedEvent):
+            # New pattern: event object passed directly
+            event_obj = event_type_or_event
+        else:
+            # Old pattern: event_type string + event_data
+            event_obj = event_data
+        
+        if event_obj is None:
+            self.logger.error("No event data provided to handle_maintenance_predicted_event")
+            return
+        
+        # Handle both object and dict types
+        if isinstance(event_obj, dict):
+            equipment_id = event_obj.get('equipment_id')
+            correlation_id = event_obj.get('correlation_id', "N/A")
+        else:
+            equipment_id = event_obj.equipment_id
+            correlation_id = getattr(event_obj, 'correlation_id', "N/A")
 
         self.logger.info(
             f"Received MaintenancePredictedEvent for equipment {equipment_id}",
@@ -147,45 +162,65 @@ class SchedulingAgent(BaseAgent):
             )
             raise # Re-raise to be handled by BaseAgent's error handling logic
     
-    def _create_maintenance_request(self, prediction_event: MaintenancePredictedEvent) -> MaintenanceRequest:
+    def _create_maintenance_request(self, prediction_event) -> MaintenanceRequest:
+        # Handle both dict and object types
+        if isinstance(prediction_event, dict):
+            time_to_failure_days = prediction_event.get('time_to_failure_days', 90)
+            maintenance_type = prediction_event.get('maintenance_type', 'preventive')
+            equipment_id = prediction_event.get('equipment_id', '')
+            predicted_failure_date = prediction_event.get('predicted_failure_date')
+            if isinstance(predicted_failure_date, str):
+                predicted_failure_date = datetime.fromisoformat(predicted_failure_date.replace('Z', '+00:00'))
+        else:
+            time_to_failure_days = prediction_event.time_to_failure_days
+            maintenance_type = prediction_event.maintenance_type
+            equipment_id = prediction_event.equipment_id
+            predicted_failure_date = prediction_event.predicted_failure_date
+        
         # Calculate priority based on time to failure
-        if prediction_event.time_to_failure_days <= 7:
+        if time_to_failure_days <= 7:
             priority = 1  # High priority
-        elif prediction_event.time_to_failure_days <= 30:
+        elif time_to_failure_days <= 30:
             priority = 2  # Medium priority  
-        elif prediction_event.time_to_failure_days <= 90:
+        elif time_to_failure_days <= 90:
             priority = 3  # Low priority
         else:
             priority = 4  # Very low priority
         
         # Calculate duration based on maintenance type
-        if prediction_event.maintenance_type == "corrective":
+        if maintenance_type == "corrective":
             estimated_duration = 4.0  # Corrective maintenance takes longer
-        elif prediction_event.maintenance_type == "preventive":
+        elif maintenance_type == "preventive":
             estimated_duration = 2.0  # Preventive maintenance is quicker
         else:
             estimated_duration = 2.0  # Default
             
         # Map equipment type to required skills
-        equipment_id = prediction_event.equipment_id.lower()
-        if "hvac" in equipment_id:
+        equipment_id_lower = equipment_id.lower()
+        if "hvac" in equipment_id_lower:
             required_skills = ["hvac", "mechanical"]
-        elif "pump" in equipment_id:
+        elif "pump" in equipment_id_lower:
             required_skills = ["mechanical", "hydraulics"]
-        elif "motor" in equipment_id:
+        elif "motor" in equipment_id_lower:
             required_skills = ["electrical", "mechanical"]
         else:
             required_skills = ["mechanical"]  # Default fallback
         
-        preferred_deadline = prediction_event.predicted_failure_date - timedelta(days=max(1, prediction_event.time_to_failure_days * 0.1))
+        preferred_deadline = predicted_failure_date - timedelta(days=max(1, time_to_failure_days * 0.1))
+        # Handle both dict and object types for prediction_event
+        if isinstance(prediction_event, dict):
+            predicted_failure_date = prediction_event.get('predicted_failure_date')
+        else:
+            predicted_failure_date = getattr(prediction_event, 'predicted_failure_date', None)
+        
         preferred_start = datetime.utcnow() + timedelta(days=1)
         
         return MaintenanceRequest(
-            id=str(uuid4()), equipment_id=prediction_event.equipment_id,
-            maintenance_type=prediction_event.maintenance_type, priority=priority,
+            id=str(uuid4()), equipment_id=equipment_id,
+            maintenance_type=maintenance_type, priority=priority,
             estimated_duration_hours=estimated_duration, required_skills=required_skills,
             preferred_time_window_start=preferred_start, preferred_time_window_end=preferred_deadline,
-            deadline=prediction_event.predicted_failure_date, parts_needed=[]
+            deadline=predicted_failure_date, parts_needed=[]
         )
 
     def _find_best_qualified_technician(self, maintenance_request: MaintenanceRequest, technicians: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
@@ -345,14 +380,24 @@ class SchedulingAgent(BaseAgent):
         score = technician["availability_score"] * 0.5 + min(technician["experience_years"] / 10.0, 1.0) * 0.5
         return min(score, 1.0)
     
-    async def _publish_maintenance_scheduled_event(self, original_event: MaintenancePredictedEvent, schedule: OptimizedSchedule, correlation_id: Optional[str] = None) -> None:
+    async def _publish_maintenance_scheduled_event(self, original_event, schedule: OptimizedSchedule, correlation_id: Optional[str] = None) -> None:
         """Publish a MaintenanceScheduledEvent using the event bus directly."""
         try:
+            # Handle both dict and object types
+            if isinstance(original_event, dict):
+                original_event_id = original_event.get('event_id')
+                equipment_id = original_event.get('equipment_id')
+                original_correlation_id = original_event.get('correlation_id')
+            else:
+                original_event_id = original_event.event_id
+                equipment_id = original_event.equipment_id
+                original_correlation_id = original_event.correlation_id
+            
             # Create the event object instance
             event_data_object = MaintenanceScheduledEvent(
-                original_prediction_event_id=original_event.event_id,
+                original_prediction_event_id=original_event_id,
                 schedule_details=schedule.model_dump(), # Use model_dump() for Pydantic V2+
-                equipment_id=original_event.equipment_id,
+                equipment_id=equipment_id,
                 assigned_technician_id=schedule.assigned_technician_id,
                 scheduled_start_time=schedule.scheduled_start_time,
                 scheduled_end_time=schedule.scheduled_end_time,
@@ -361,7 +406,7 @@ class SchedulingAgent(BaseAgent):
                 constraints_satisfied=schedule.constraints_satisfied or [],
                 constraints_violated=schedule.constraints_violated or [],
                 agent_id=self.agent_id,
-                correlation_id=original_event.correlation_id
+                correlation_id=original_correlation_id
             )
             
             # Convert to dictionary for _publish_event
@@ -369,19 +414,22 @@ class SchedulingAgent(BaseAgent):
             
             if self.event_bus:
                 await self._publish_event("MaintenanceScheduledEvent", event_data_dict) # _publish_event likely needs correlation_id too
+                equipment_id = original_event.get('equipment_id') if isinstance(original_event, dict) else original_event.equipment_id
                 self.logger.info(
-                    f"Published MaintenanceScheduledEvent for equipment {original_event.equipment_id}",
+                    f"Published MaintenanceScheduledEvent for equipment {equipment_id}",
                     extra={"correlation_id": correlation_id}
                 )
             else:
+                equipment_id = original_event.get('equipment_id') if isinstance(original_event, dict) else original_event.equipment_id
                 self.logger.warning(
-                    f"Event bus not available. Cannot publish MaintenanceScheduledEvent for {original_event.equipment_id}",
+                    f"Event bus not available. Cannot publish MaintenanceScheduledEvent for {equipment_id}",
                     extra={"correlation_id": correlation_id}
                 )
                 # Consider raising ConfigurationError if event bus is essential
         except Exception as e:
+            equipment_id = original_event.get('equipment_id') if isinstance(original_event, dict) else original_event.equipment_id
             self.logger.error(
-                f"Error publishing MaintenanceScheduledEvent for eq {original_event.equipment_id}: {e}",
+                f"Error publishing MaintenanceScheduledEvent for eq {equipment_id}: {e}",
                 exc_info=True,
                 extra={"correlation_id": correlation_id}
             )
