@@ -253,7 +253,7 @@ class TestSchedulingAgentIntegration:
             assert len(scheduled_events) == 3
             
             # Verify each event has correct equipment ID
-            equipment_ids = {event_data["equipment_id"] for _, event_data in scheduled_events}
+            equipment_ids = {event_data.equipment_id for _, event_data in scheduled_events}
             expected_ids = {"test_equipment_000", "test_equipment_001", "test_equipment_002"}
             assert equipment_ids == expected_ids
     
@@ -356,6 +356,6 @@ class TestSchedulingAgentIntegration:
             assert len(scheduled_events) == 5
             
             # Verify all equipment IDs are present
-            equipment_ids = {event_data["equipment_id"] for _, event_data in scheduled_events}
+            equipment_ids = {event_data.equipment_id for _, event_data in scheduled_events}
             expected_ids = {f"concurrent_equipment_{i}" for i in range(5)}
             assert equipment_ids == expected_ids
