@@ -1,5 +1,13 @@
 # Structured JSON Logging
 
+## 📚 Documentation Links
+
+- **[Backend README](../README.md)** - Main documentation and Docker deployment
+- **[System Architecture](../docs/SYSTEM_AND_ARCHITECTURE.md)** - Complete system overview
+- **[Project Overview](../../README.md)** - High-level project information
+
+---
+
 This module provides structured JSON logging for the Smart Maintenance SaaS application. It configures the Python standard logging system to output logs in JSON format with consistent fields, making them easier to parse and analyze with log management systems.
 
 ## Key Features
