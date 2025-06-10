@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-maintenance-backend
+  namespace: default
+  labels:
+    app: smart-maintenance-backend
+    version: v1.0.0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: smart-maintenance-backend
+  template:
+    metadata:
+      labels:
+        app: smart-maintenance-backend
+        version: v1.0.0
+    spec:
+      containers:
+      - name: smart-maintenance-backend
+        image: smart-maintenance-saas:latest
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: smart-maintenance-secrets
+              key: database-url
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smart-maintenance-secrets
+              key: api-key
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: smart-maintenance-config
+              key: redis-url
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: smart-maintenance-config
+              key: kafka-bootstrap-servers
+        - name: USE_OR_TOOLS_SCHEDULER
+          valueFrom:
+            configMapKeyRef:
+              name: smart-maintenance-config
+              key: use-or-tools-scheduler
+              optional: true
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+      securityContext:
+        fsGroup: 1000
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smart-maintenance-config
+  namespace: default
+data:
+  redis-url: "redis://redis-service:6379"
+  kafka-bootstrap-servers: "kafka-service:9092"
+  use-or-tools-scheduler: "false"
+  log-level: "INFO"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: smart-maintenance-secrets
+  namespace: default
+type: Opaque
+data:
+  # Base64 encoded values - replace with actual production values
+  database-url: cG9zdGdyZXNxbDovL3VzZXI6cGFzc3dvcmRAcG9zdGdyZXMtc2VydmljZTo1NDMyL3NtYXJ0X21haW50ZW5hbmNlX2Ri
+  api-key: eW91cl9wcm9kdWN0aW9uX2FwaV9rZXlfaGVyZQ==
