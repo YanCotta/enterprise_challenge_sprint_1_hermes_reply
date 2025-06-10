@@ -21,6 +21,23 @@ A robust, event-driven, multi-agent backend for an industrial predictive mainten
 
 **Current Status:** The system is fully functional, with a complete end-to-end workflow from data ingestion to maintenance scheduling and logging. All core agents are implemented and integrated through an event-driven architecture.
 
+## 🚀 Recent Updates
+
+### Enhanced Streamlit UI & Async Fix (June 2025)
+
+**Key Improvements:**
+- **🔧 Resolved Async/Await Issue**: Fixed critical thread-blocking problems in `/api/v1/reports/generate` endpoint using ThreadPoolExecutor
+- **🎨 Enhanced UI Components**: Improved Streamlit interface with better formatting, success indicators, and metadata displays
+- **📊 Advanced Report Generation**: Added support for multiple report types, output formats (JSON/text), date ranges, and chart generation
+- **🖼️ Visual Charts**: Proper base64 image decoding and display for matplotlib-generated charts
+- **🛡️ Better Error Handling**: Comprehensive error messages and graceful degradation
+
+**Technical Details:**
+- Reports endpoint now uses `asyncio.loop.run_in_executor()` with ThreadPoolExecutor for non-blocking operations
+- Enhanced UI with date pickers, format selectors, and chart options
+- All 249 unit tests pass with no regressions
+- Fully functional integration between FastAPI backend and Streamlit frontend
+
 ## Tech Stack
 
 - **Core:** Python 3.11+, FastAPI, Pydantic v2
@@ -124,10 +141,14 @@ The system includes a comprehensive web-based control panel built with Streamlit
 ### Features
 
 - **Manual Data Ingestion**: Submit sensor readings with real-time validation
-- **Report Generation**: Generate system health, anomaly summaries, and maintenance overviews
+- **Advanced Report Generation**: Create detailed reports with customizable options:
+  - Multiple report types: performance_summary, anomaly_summary, maintenance_summary, system_health
+  - Selectable output formats: JSON or text
+  - Date range selection for historical analysis
+  - Optional chart generation with base64-encoded visualizations
 - **Human Decision Simulation**: Submit maintenance approval/rejection decisions
 - **System Health Monitoring**: Real-time backend connectivity and status checks
-- **Quick Actions**: One-click test data generation and health checks
+- **Enhanced User Experience**: Improved formatting, metadata displays, and error handling
 
 ### Starting the Control Panel
 
@@ -151,9 +172,11 @@ The system includes a comprehensive web-based control panel built with Streamlit
 - Submit button validates and sends data to backend
 
 **Report Generation:**
-- Select report type: anomaly_summary, maintenance_overview, system_health
-- Generate button creates comprehensive reports with metadata
-- View report content and charts (when available)
+- Select report type: performance_summary, anomaly_summary, maintenance_summary, system_health
+- Choose output format: JSON (structured data) or text (human-readable)
+- Set date range for historical analysis (default: last 30 days)
+- Enable/disable chart generation for visual insights
+- View formatted report content with metadata and charts (when available)
 
 **Human Decisions:**
 - Enter request ID for maintenance decisions
@@ -163,7 +186,14 @@ The system includes a comprehensive web-based control panel built with Streamlit
 **System Monitoring:**
 - Sidebar shows real-time backend status
 - Quick actions for testing and health checks
-- Error handling with descriptive messages
+- Enhanced error handling with descriptive messages
+
+### Technical Improvements
+
+- **Async/Await Resolution**: Fixed thread-blocking issues in the reports endpoint using ThreadPoolExecutor for non-blocking operations
+- **Enhanced UI Components**: Better formatting, success indicators, and collapsible metadata sections
+- **Real Chart Support**: Proper base64 image decoding and display for matplotlib-generated charts
+- **Improved Error Handling**: Comprehensive error messages and graceful degradation
 
 ## Running Tests
 
