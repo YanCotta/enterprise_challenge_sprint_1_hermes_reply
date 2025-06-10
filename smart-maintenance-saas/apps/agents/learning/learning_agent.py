@@ -8,12 +8,18 @@ from core.events.event_models import SystemFeedbackReceivedEvent
 from data.schemas import FeedbackData, KnowledgeItem, LearningResult
 
 # Import dependencies with error handling
+import os
+
 try:
+    # Check if ChromaDB is disabled via environment variable
+    if os.getenv('DISABLE_CHROMADB', '').lower() == 'true':
+        raise ImportError("ChromaDB disabled via DISABLE_CHROMADB environment variable")
     import chromadb
     CHROMADB_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     CHROMADB_AVAILABLE = False
     chromadb = None
+    print(f"ChromaDB not available: {e}")
 
 try:
     from sentence_transformers import SentenceTransformer
