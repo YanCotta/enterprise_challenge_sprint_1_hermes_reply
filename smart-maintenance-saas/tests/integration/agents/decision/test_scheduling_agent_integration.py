@@ -1,8 +1,20 @@
 """
 Integration tests for the SchedulingAgent.
 
-Tests the full integration of the SchedulingAgent with the event bus system,
-including event subscription, publishing, and end-to-end workflows.
+Tests the full integration of the SchedulingAgent with the event bus system            # Verify that a MaintenanceScheduledEvent was published
+            scheduled_events = [
+                (event_type, event_data) for event_type, event_data in published_events
+                if event_type == "MaintenanceScheduledEvent"
+            ]
+            
+            assert len(scheduled_events) == 1
+            event_type, event_data = scheduled_events[0]
+            
+            # Verify event data (event_data is now a MaintenanceScheduledEvent object)
+            assert event_data.equipment_id == "integration_test_pump_001"
+            assert event_data.assigned_technician_id == "tech_002"
+            assert event_data.scheduled_start_time is not None
+            assert event_data.scheduled_end_time is not Noneent subscription, publishing, and end-to-end workflows.
 """
 
 import pytest
@@ -94,9 +106,17 @@ class TestSchedulingAgentIntegration:
         
         # Mock the event bus publish method to capture events
         original_publish = event_bus.publish
-        async def mock_publish(event_type, event_data):
-            published_events.append((event_type, event_data))
-            return await original_publish(event_type, event_data)
+        async def mock_publish(event_type_or_object, data_payload_arg=None):
+            if data_payload_arg is None:
+                # Pattern 1: event object
+                event_obj = event_type_or_object
+                event_type_name = event_obj.__class__.__name__
+                published_events.append((event_type_name, event_obj))
+            else:
+                # Pattern 2: explicit event type and data
+                event_type_name = str(event_type_or_object)
+                published_events.append((event_type_name, data_payload_arg))
+            return await original_publish(event_type_or_object, data_payload_arg)
         
         event_bus.publish = mock_publish
         
@@ -122,13 +142,13 @@ class TestSchedulingAgentIntegration:
             assert len(scheduled_events) == 1
             event_type, event_data = scheduled_events[0]
             
-            # Verify event data
-            assert event_data["equipment_id"] == "integration_test_pump_001"
-            assert event_data["assigned_technician_id"] is not None
-            assert event_data["scheduled_start_time"] is not None
-            assert event_data["scheduled_end_time"] is not None
-            assert event_data["scheduling_method"] == "greedy"
-            assert event_data["agent_id"] == "integration_test_scheduling_agent"
+            # Verify event data (event_data is now a MaintenanceScheduledEvent object)
+            assert event_data.equipment_id == "integration_test_pump_001"
+            assert event_data.assigned_technician_id is not None
+            assert event_data.scheduled_start_time is not None
+            assert event_data.scheduled_end_time is not None
+            assert event_data.scheduling_method == "greedy"
+            assert event_data.agent_id == "integration_test_scheduling_agent"
     
     @pytest.mark.asyncio
     async def test_end_to_end_failed_scheduling(self, event_bus, scheduling_agent, sample_prediction_event):
@@ -138,9 +158,17 @@ class TestSchedulingAgentIntegration:
         
         # Mock the event bus publish method to capture events
         original_publish = event_bus.publish
-        async def mock_publish(event_type, event_data):
-            published_events.append((event_type, event_data))
-            return await original_publish(event_type, event_data)
+        async def mock_publish(event_type_or_object, data_payload_arg=None):
+            if data_payload_arg is None:
+                # Pattern 1: event object
+                event_obj = event_type_or_object
+                event_type_name = event_obj.__class__.__name__
+                published_events.append((event_type_name, event_obj))
+            else:
+                # Pattern 2: explicit event type and data
+                event_type_name = str(event_type_or_object)
+                published_events.append((event_type_name, data_payload_arg))
+            return await original_publish(event_type_or_object, data_payload_arg)
         
         event_bus.publish = mock_publish
         
@@ -171,9 +199,17 @@ class TestSchedulingAgentIntegration:
         
         # Mock the event bus publish method to capture events
         original_publish = event_bus.publish
-        async def mock_publish(event_type, event_data):
-            published_events.append((event_type, event_data))
-            return await original_publish(event_type, event_data)
+        async def mock_publish(event_type_or_object, data_payload_arg=None):
+            if data_payload_arg is None:
+                # Pattern 1: event object
+                event_obj = event_type_or_object
+                event_type_name = event_obj.__class__.__name__
+                published_events.append((event_type_name, event_obj))
+            else:
+                # Pattern 2: explicit event type and data
+                event_type_name = str(event_type_or_object)
+                published_events.append((event_type_name, data_payload_arg))
+            return await original_publish(event_type_or_object, data_payload_arg)
         
         event_bus.publish = mock_publish
         
@@ -268,9 +304,17 @@ class TestSchedulingAgentIntegration:
         
         # Mock the event bus publish method to capture events
         original_publish = event_bus.publish
-        async def mock_publish(event_type, event_data):
-            published_events.append((event_type, event_data))
-            return await original_publish(event_type, event_data)
+        async def mock_publish(event_type_or_object, data_payload_arg=None):
+            if data_payload_arg is None:
+                # Pattern 1: event object
+                event_obj = event_type_or_object
+                event_type_name = event_obj.__class__.__name__
+                published_events.append((event_type_name, event_obj))
+            else:
+                # Pattern 2: explicit event type and data
+                event_type_name = str(event_type_or_object)
+                published_events.append((event_type_name, data_payload_arg))
+            return await original_publish(event_type_or_object, data_payload_arg)
         
         event_bus.publish = mock_publish
         
