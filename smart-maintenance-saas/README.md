@@ -84,11 +84,13 @@ All endpoints are secured and require a valid `X-API-Key` in the header.
 
 ### Prerequisites
 
-- Python 3.11+
-- Poetry
 - Docker and Docker Compose
+- Python 3.11+ (for local development)
+- Poetry (for local development)
 
-### Installation and Setup
+### Quick Start with Docker (Recommended)
+
+The simplest way to run the complete Smart Maintenance SaaS system:
 
 1. **Clone the repository:**
 
@@ -97,42 +99,74 @@ All endpoints are secured and require a valid `X-API-Key` in the header.
     cd smart-maintenance-saas
     ```
 
-2. **Install dependencies:**
+2. **Start the complete system:**
+
+    ```bash
+    docker compose up -d
+    ```
+
+3. **Access the applications:**
+   - **Streamlit UI:** [http://localhost:8501](http://localhost:8501) - Web-based control panel
+   - **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs) - Swagger UI
+   - **Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
+
+4. **Verify system status:**
+
+    ```bash
+    docker compose ps
+    ```
+
+    All services should show as "healthy":
+    - `smart_maintenance_db` - TimescaleDB database
+    - `smart_maintenance_api` - FastAPI backend
+    - `smart_maintenance_ui` - Streamlit interface
+
+### Docker Image Details
+
+- **Image:** `smart-maintenance-saas:latest`
+- **Size:** ~12.7GB (includes full ML/data science stack)
+- **Base:** Python 3.11 with Poetry, FastAPI, Streamlit, TimescaleDB
+- **Health Checks:** All services include comprehensive health monitoring
+- **Networking:** Container-to-container communication optimized
+
+### Alternative: Local Development Setup
+
+For development and debugging:
+
+1. **Install dependencies:**
 
     ```bash
     poetry install
     ```
 
-3. **Set up the environment:**
+2. **Set up the environment:**
 
     ```bash
     cp .env.example .env
     # Review and update .env if necessary
     ```
 
-4. **Start the database:**
+3. **Start only the database:**
 
     ```bash
-    docker-compose up -d
+    docker compose up -d db
     ```
 
-5. **Run database migrations:**
+4. **Run database migrations:**
 
     ```bash
     poetry run alembic upgrade head
     ```
 
-## Running the Application
-
-- **Start the API server:**
+5. **Start services separately:**
 
     ```bash
+    # API Server
     poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
+    
+    # Streamlit UI (in another terminal)
+    poetry run streamlit run ui/streamlit_app.py --server.port 8501
     ```
-
-- **Access the API documentation:**
-  - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
-  - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ## Control Panel UI (Streamlit)
 
@@ -150,28 +184,20 @@ The system includes a comprehensive web-based control panel built with Streamlit
 - **System Health Monitoring**: Real-time backend connectivity and status checks
 - **Enhanced User Experience**: Improved formatting, metadata displays, and error handling
 
-### Starting the Control Panel
+### Accessing the Control Panel
 
-1. **Ensure the backend is running** (see "Running the Application" above)
-
-2. **Start the Streamlit app:**
-
-    ```bash
-    poetry run streamlit run ui/streamlit_app.py --server.port 8501
-    ```
-
-3. **Access the Control Panel:**
-   - Open your browser to [http://localhost:8501](http://localhost:8501)
-   - The UI will automatically check backend connectivity
+With Docker deployment, the Streamlit UI is automatically available at [http://localhost:8501](http://localhost:8501) when you run `docker compose up -d`.
 
 ### Using the Control Panel
 
 **Data Ingestion:**
+
 - Enter sensor details (ID, value, type, unit)
 - Supported sensor types: temperature, vibration, pressure
 - Submit button validates and sends data to backend
 
 **Report Generation:**
+
 - Select report type: performance_summary, anomaly_summary, maintenance_summary, system_health
 - Choose output format: JSON (structured data) or text (human-readable)
 - Set date range for historical analysis (default: last 30 days)
@@ -179,11 +205,13 @@ The system includes a comprehensive web-based control panel built with Streamlit
 - View formatted report content with metadata and charts (when available)
 
 **Human Decisions:**
+
 - Enter request ID for maintenance decisions
 - Choose approve/reject with justification
 - Simulates human operator decision workflow
 
 **System Monitoring:**
+
 - Sidebar shows real-time backend status
 - Quick actions for testing and health checks
 - Enhanced error handling with descriptive messages
@@ -249,6 +277,66 @@ The SchedulingAgent correctly receives `MaintenancePredictedEvent` and creates m
 The failing test does not impact the system's core functionality or deployment readiness.
 
 ## Running Tests
+
+The system includes a comprehensive test suite with multiple types of tests organized in the `tests/` directory:
+
+### Test Organization
+
+```text
+tests/
+├── api/                    # API-specific tests
+│   └── test_actual_api.py  # Real API endpoint testing
+├── e2e/                    # End-to-end system tests  
+│   ├── final_system_test.py    # Complete system validation
+│   └── test_ui_functionality.py # UI integration testing
+├── unit/                   # Component unit tests
+├── integration/           # Service integration tests
+└── conftest.py           # Shared test configuration
+```
+
+### Running Different Test Types
+
+**Complete Test Suite:**
+```bash
+poetry run pytest
+```
+
+**API Tests Only:**
+```bash
+poetry run pytest tests/api/
+```
+
+**End-to-End Tests:**
+```bash
+poetry run pytest tests/e2e/
+```
+
+**Quick System Validation:**
+```bash
+# Run the comprehensive final system test
+python tests/e2e/final_system_test.py
+```
+
+### Docker-Based Testing
+
+You can also run tests within the Docker environment:
+
+```bash
+# Start the system
+docker compose up -d
+
+# Run tests in the API container
+docker exec smart_maintenance_api python tests/e2e/final_system_test.py
+
+# Run pytest inside container
+docker exec smart_maintenance_api pytest
+```
+
+### Test Files Description
+
+- **`final_system_test.py`**: Comprehensive end-to-end validation that tests the complete workflow from UI interactions to API responses
+- **`test_actual_api.py`**: Direct API endpoint testing with real HTTP requests
+- **`test_ui_functionality.py`**: UI integration testing focusing on the Streamlit interface
 
 To run the full test suite, use the following command:
 
