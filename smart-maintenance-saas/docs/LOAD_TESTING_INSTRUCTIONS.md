@@ -1,5 +1,17 @@
 # Load Testing Instructions for Smart Maintenance SaaS
 
+## 📚 Documentation Navigation
+
+This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
+
+- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
+- **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
+- **[API Documentation](./api.md)** - Complete REST API reference and usage examples  
+- **[Backend README](../README.md)** - Getting started guide and technical overview
+- **[Project Overview](../../README.md)** - High-level project description and objectives
+
+---
+
 ## Overview
 This document provides comprehensive instructions for running load tests against the Smart Maintenance SaaS API using Locust.
 
