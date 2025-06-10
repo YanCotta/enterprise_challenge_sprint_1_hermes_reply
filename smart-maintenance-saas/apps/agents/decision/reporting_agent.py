@@ -10,7 +10,7 @@ import io
 import json
 import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 import random
 
@@ -49,7 +49,7 @@ class AnalyticsEngine:
         logger.info(f"Analyzing data for report type: {report_request.report_type}")
         
         # Mock time range
-        end_time = report_request.time_range_end or datetime.utcnow()
+        end_time = report_request.time_range_end or datetime.now(timezone.utc)
         start_time = report_request.time_range_start or (end_time - timedelta(days=30))
         
         # Generate mock data based on report type
@@ -253,7 +253,7 @@ class ReportingAgent(BaseAgent):
                 report_type=report_request.report_type,
                 format=report_request.format,
                 content=content,
-                generated_at=datetime.utcnow(),
+                generated_at=datetime.now(timezone.utc),
                 charts_encoded=charts_encoded,
                 metadata={
                     "parameters": report_request.parameters,
@@ -277,7 +277,7 @@ class ReportingAgent(BaseAgent):
                 report_type=report_request.report_type,
                 format=report_request.format,
                 content="",
-                generated_at=datetime.utcnow(),
+                generated_at=datetime.now(timezone.utc),
                 charts_encoded={},
                 metadata={},
                 error_message=str(e)
@@ -324,7 +324,7 @@ ANOMALY SUMMARY REPORT
 
 📈 Chart Data Available: {"Yes" if data.get('chart_data') else "No"}
 
-Generated on: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
+Generated on: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC
         """.strip()
 
     def _generate_maintenance_text_report(self, data: Dict[str, Any]) -> str:
@@ -358,7 +358,7 @@ MAINTENANCE OVERVIEW REPORT
 
 📈 Chart Data Available: {"Yes" if data.get('chart_data') else "No"}
 
-Generated on: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
+Generated on: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC
         """.strip()
 
     def _generate_system_health_text_report(self, data: Dict[str, Any]) -> str:
@@ -384,7 +384,7 @@ SYSTEM HEALTH REPORT
 
 📈 Chart Data Available: {"Yes" if data.get('chart_data') else "No"}
 
-Generated on: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
+Generated on: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC
         """.strip()
 
     def _generate_default_text_report(self, data: Dict[str, Any]) -> str:
@@ -397,7 +397,7 @@ Report Type: {data.get('report_type', 'Unknown')}
 Data Points: {data.get('data_points', 'N/A')}
 Processing Time: {data.get('processing_time_ms', 'N/A')} ms
 
-Generated on: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
+Generated on: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC
         """.strip()
 
     def _generate_chart(self, chart_data: Dict[str, Any]) -> Optional[str]:
