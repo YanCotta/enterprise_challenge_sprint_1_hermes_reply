@@ -7,11 +7,13 @@ import streamlit as st
 import requests
 import json
 import base64
+import os
+import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
 
 # Configuration
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 API_KEY = "your_default_api_key"
 HEADERS = {
     "X-API-Key": API_KEY,
@@ -48,7 +50,7 @@ def make_api_request(method: str, endpoint: str, data: Dict[Any, Any] = None) ->
     except requests.exceptions.ConnectionError:
         return {
             "success": False, 
-            "error": "Connection failed. Make sure the backend server is running on http://localhost:8000"
+            "error": f"Connection failed. Make sure the backend server is running on {API_BASE_URL}"
         }
     except requests.exceptions.Timeout:
         return {"success": False, "error": "Request timed out"}
@@ -91,13 +93,19 @@ def main():
             submit_data = st.form_submit_button("📤 Submit Data", use_container_width=True)
             
             if submit_data:
-                # Prepare the data payload
+                # Prepare the data payload with correct schema
                 payload = {
-                    "sensor_id": sensor_id,
-                    "value": value,
+                    "sensor_id": sensor_id,  # Required
+                    "value": value,  # Required
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "sensor_type": sensor_type,
                     "unit": unit,
-                    "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
+                    "quality": 0.95,  # Default quality value
+                    "correlation_id": str(uuid.uuid4()),  # Generate UUID
+                    "metadata": {
+                        "source": "hermes_control_panel",
+                        "operator": "manual_input"
+                    }
                 }
                 
                 # Make the API request
@@ -227,13 +235,16 @@ def main():
             submit_decision = st.form_submit_button("✅ Submit Decision", use_container_width=True)
             
             if submit_decision:
-                # Prepare the decision payload
+                # Prepare the decision payload with correct schema
                 payload = {
-                    "request_id": request_id,
-                    "decision": decision,
+                    "request_id": request_id,  # Required
+                    "decision": decision,  # Required
+                    "operator_id": "hermes_control_panel_user",  # Required
                     "justification": justification,
-                    "operator_id": "hermes_control_panel",
-                    "decided_at": datetime.now(timezone.utc).isoformat() + "Z"
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "confidence": 0.9,  # Default confidence
+                    "additional_notes": f"Submitted via Hermes Control Panel at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    "correlation_id": str(uuid.uuid4())
                 }
                 
                 # Make the API request
@@ -278,9 +289,12 @@ def main():
             test_payload = {
                 "sensor_id": f"TEST_SENSOR_{datetime.now().strftime('%H%M%S')}",
                 "value": 42.0,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "sensor_type": "temperature",
                 "unit": "°C",
-                "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
+                "quality": 0.95,
+                "correlation_id": str(uuid.uuid4()),
+                "metadata": {"source": "test_button"}
             }
             
             result = make_api_request("POST", "/api/v1/data/ingest", test_payload)
