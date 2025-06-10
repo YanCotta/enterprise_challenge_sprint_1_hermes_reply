@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     # Agents
     agent_communication_timeout: int = 30
 
+    # Scheduling
+    USE_OR_TOOLS_SCHEDULER: bool = Field(default=False, description="Enable advanced OR-Tools constraint programming scheduler")
+
     # ML
     model_registry_path: str = "./models"
 
