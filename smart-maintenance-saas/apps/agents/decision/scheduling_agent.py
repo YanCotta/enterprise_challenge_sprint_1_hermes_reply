@@ -130,9 +130,11 @@ class SchedulingAgent(BaseAgent):
         if isinstance(event_obj, dict):
             equipment_id = event_obj.get('equipment_id')
             correlation_id = event_obj.get('correlation_id', "N/A")
+            prediction_event = MaintenancePredictedEvent(**event_obj)
         else:
             equipment_id = event_obj.equipment_id
             correlation_id = getattr(event_obj, 'correlation_id', "N/A")
+            prediction_event = event_obj
 
         self.logger.info(
             f"Received MaintenancePredictedEvent for equipment {equipment_id}",
@@ -140,7 +142,7 @@ class SchedulingAgent(BaseAgent):
         )
         
         try:
-            maintenance_request = self._create_maintenance_request(event_obj) # correlation_id not directly needed here
+            maintenance_request = self._create_maintenance_request(prediction_event) # correlation_id not directly needed here
             self.logger.info(
                 f"Created maintenance request {maintenance_request.id} for equipment {maintenance_request.equipment_id}",
                 extra={"correlation_id": correlation_id}
@@ -220,7 +222,9 @@ class SchedulingAgent(BaseAgent):
         else:
             predicted_failure_date = getattr(prediction_event, 'predicted_failure_date', None)
         
+        # Set preferred start to next business day at 8 AM
         preferred_start = datetime.utcnow() + timedelta(days=1)
+        preferred_start = preferred_start.replace(hour=8, minute=0, second=0, microsecond=0)
         
         return MaintenanceRequest(
             id=str(uuid4()), equipment_id=equipment_id,
@@ -613,8 +617,13 @@ class SchedulingAgent(BaseAgent):
                 original_correlation_id = original_event.get('correlation_id')
             else:
                 original_event_id = original_event.event_id
-                equipment_id = original_event.equipment_id
-                original_correlation_id = original_event.correlation_id
+                equipment_id = getattr(original_event, 'equipment_id', None)
+                original_correlation_id = getattr(original_event, 'correlation_id', None)
+
+            if equipment_id is None:
+                # Attempt to get it from schedule_details if it's a dict
+                if isinstance(schedule.schedule_details, dict):
+                    equipment_id = schedule.schedule_details.get("equipment_id")
             
             # Create the event object instance
             event_data_object = MaintenanceScheduledEvent(
