@@ -102,12 +102,22 @@ async def test_authorized_generate_report_basic_check():
         format="json",
         parameters={"detail_level": "summary"}
     ).model_dump()
-    async with httpx.AsyncClient(app=app, base_url=BASE_URL) as client:
-        response = await client.post("/api/v1/reports/generate", headers=headers, json=json_body)
-    # Assuming the endpoint returns 200 on success if the agent call is not mocked
-    # or if the agent itself returns a valid ReportResult.
-    # This might need adjustment based on unmocked agent behavior or if it processes an error.
-    # For now, let's keep 200. If it fails, it indicates an issue with the endpoint itself or unmocked agent.
+    
+    # Mock the sync wrapper function instead of the agent method
+    expected_result = ReportResult(
+        report_id="test_report_123",
+        report_type="basic_check_report",
+        format="json",
+        content="{'status': 'success'}",
+        generated_at=datetime.datetime.utcnow(),
+        charts_encoded={},
+        metadata={"test": True}
+    )
+    
+    with patch('apps.api.routers.reporting._generate_report_sync', return_value=expected_result):
+        async with httpx.AsyncClient(app=app, base_url=BASE_URL) as client:
+            response = await client.post("/api/v1/reports/generate", headers=headers, json=json_body)
+    
     assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
 
 
@@ -179,31 +189,31 @@ async def test_generate_report_calls_agent_and_returns_result():
         metadata={"source": "test_mock"}
     )
 
-    # Set the return value for this test
-    app.state.coordinator.reporting_agent.generate_report.return_value = expected_report_result
+    # Mock the sync wrapper function instead of the agent method directly
+    with patch('apps.api.routers.reporting._generate_report_sync', return_value=expected_report_result) as mock_sync:
+        async with httpx.AsyncClient(app=app, base_url=BASE_URL) as client:
+            response = await client.post(
+                "/api/v1/reports/generate",
+                headers=headers,
+                json=report_request_payload.model_dump() # Send Pydantic model as dict
+            )
 
-    async with httpx.AsyncClient(app=app, base_url=BASE_URL) as client:
-        response = await client.post(
-            "/api/v1/reports/generate",
-            headers=headers,
-            json=report_request_payload.model_dump() # Send Pydantic model as dict
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
 
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
+        # Check that the sync wrapper was called
+        mock_sync.assert_called_once()
 
-    app.state.coordinator.reporting_agent.generate_report.assert_called_once()
+        # Check the arguments passed to the sync wrapper
+        call_args = mock_sync.call_args
+        assert call_args is not None
+        passed_agent, passed_report_request_arg = call_args[0]
 
-    # Check the arguments passed to the mocked agent method
-    call_args = app.state.coordinator.reporting_agent.generate_report.call_args
-    assert call_args is not None
-    passed_report_request_arg = call_args[0][0]
+        assert isinstance(passed_report_request_arg, ReportRequest), \
+            f"Agent was called with type {type(passed_report_request_arg)}, expected ReportRequest"
 
-    assert isinstance(passed_report_request_arg, ReportRequest), \
-        f"Agent was called with type {type(passed_report_request_arg)}, expected ReportRequest"
-
-    assert passed_report_request_arg.report_type == report_request_payload.report_type
-    assert passed_report_request_arg.format == report_request_payload.format
-    assert passed_report_request_arg.parameters == report_request_payload.parameters
+        assert passed_report_request_arg.report_type == report_request_payload.report_type
+        assert passed_report_request_arg.format == report_request_payload.format
+        assert passed_report_request_arg.parameters == report_request_payload.parameters
 
     # Check the response from the endpoint
     # Pydantic models in FastAPI response are automatically converted to JSON
