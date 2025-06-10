@@ -4,10 +4,12 @@
 
 This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
 
-- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
+- **[Backend README](../README.md)** - Docker deployment and getting started guide
+- **[Deployment Status](./DEPLOYMENT_STATUS.md)** - Current deployment status and container information
 - **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
+- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
 - **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
-- **[Backend README](../README.md)** - Getting started guide and technical overview
+- **[Test Documentation](../tests/README.md)** - Test organization and execution guide
 - **[Project Overview](../../README.md)** - High-level project description and objectives
 
 ---
@@ -16,11 +18,24 @@ This document is part of the Smart Maintenance SaaS documentation suite. For com
 
 The Smart Maintenance SaaS API provides a comprehensive RESTful interface for industrial predictive maintenance operations. The API is built with FastAPI and follows OpenAPI 3.0 standards, offering automatic documentation and validation.
 
-**Base URL**: `http://localhost:8000` (development)  
+**Base URL**: `http://localhost:8000` (Docker deployment)  
 **API Version**: v1  
+**Production Status**: ✅ Ready  
 **Documentation**: 
 - Interactive API Docs: `http://localhost:8000/docs`
 - ReDoc Documentation: `http://localhost:8000/redoc`
+
+## Quick Start with Docker
+
+```bash
+# Start the complete system
+docker compose up -d
+
+# Access points
+# API: http://localhost:8000
+# UI: http://localhost:8501
+# Docs: http://localhost:8000/docs
+```
 
 ## Control Panel UI
 
@@ -31,7 +46,7 @@ For easy interaction with the API, a Streamlit-based control panel is available 
 - **System health monitoring** and connectivity checks
 - **Quick testing tools** for rapid API exploration
 
-Start the control panel with: `poetry run streamlit run ui/streamlit_app.py --server.port 8501`
+When using Docker: The UI is automatically available at `http://localhost:8501` when you run `docker compose up -d`.
 
 See the [Backend README](../README.md#control-panel-ui-streamlit) for detailed usage instructions.
 
