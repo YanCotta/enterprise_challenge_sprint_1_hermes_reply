@@ -117,6 +117,54 @@ All endpoints are secured and require a valid `X-API-Key` in the header.
   - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
   - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
+## Control Panel UI (Streamlit)
+
+The system includes a comprehensive web-based control panel built with Streamlit that provides an intuitive interface for interacting with the Smart Maintenance backend.
+
+### Features
+
+- **Manual Data Ingestion**: Submit sensor readings with real-time validation
+- **Report Generation**: Generate system health, anomaly summaries, and maintenance overviews
+- **Human Decision Simulation**: Submit maintenance approval/rejection decisions
+- **System Health Monitoring**: Real-time backend connectivity and status checks
+- **Quick Actions**: One-click test data generation and health checks
+
+### Starting the Control Panel
+
+1. **Ensure the backend is running** (see "Running the Application" above)
+
+2. **Start the Streamlit app:**
+
+    ```bash
+    poetry run streamlit run ui/streamlit_app.py --server.port 8501
+    ```
+
+3. **Access the Control Panel:**
+   - Open your browser to [http://localhost:8501](http://localhost:8501)
+   - The UI will automatically check backend connectivity
+
+### Using the Control Panel
+
+**Data Ingestion:**
+- Enter sensor details (ID, value, type, unit)
+- Supported sensor types: temperature, vibration, pressure
+- Submit button validates and sends data to backend
+
+**Report Generation:**
+- Select report type: anomaly_summary, maintenance_overview, system_health
+- Generate button creates comprehensive reports with metadata
+- View report content and charts (when available)
+
+**Human Decisions:**
+- Enter request ID for maintenance decisions
+- Choose approve/reject with justification
+- Simulates human operator decision workflow
+
+**System Monitoring:**
+- Sidebar shows real-time backend status
+- Quick actions for testing and health checks
+- Error handling with descriptive messages
+
 ## Running Tests
 
 To run the full test suite, use the following command:
