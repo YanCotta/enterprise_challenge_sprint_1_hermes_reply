@@ -1,5 +1,17 @@
 # Smart Maintenance SaaS - Backend
 
+## 📚 Documentation Navigation
+
+This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
+
+- **[Performance Baseline](./docs/PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
+- **[System and Architecture](./docs/SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
+- **[API Documentation](./docs/api.md)** - Complete REST API reference and usage examples  
+- **[Load Testing Instructions](./docs/LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
+- **[Project Overview](../README.md)** - High-level project description and objectives
+
+---
+
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 [![Tests Passing](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](#running-tests)
