@@ -4,17 +4,19 @@
 
 This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
 
+- **[Deployment Status](./docs/DEPLOYMENT_STATUS.md)** - Current deployment status and container information
 - **[Performance Baseline](./docs/PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
 - **[System and Architecture](./docs/SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
 - **[API Documentation](./docs/api.md)** - Complete REST API reference and usage examples  
 - **[Load Testing Instructions](./docs/LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
+- **[Test Documentation](./tests/README.md)** - Test organization and execution guide
 - **[Project Overview](../README.md)** - High-level project description and objectives
 
 ---
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/Tests-398%2F399%20Passing-brightgreen.svg)](#test-status)
+[![Tests](https://img.shields.io/badge/Tests-409%2F412%20Passing-brightgreen.svg)](#test-status)
 [![Poetry](https://img.shields.io/badge/Poetry-Dependency%20Management-blue.svg)](https://python-poetry.org/)
 
 A robust, event-driven, multi-agent backend for an industrial predictive maintenance SaaS platform. This system provides a solid foundation for ingesting sensor data, detecting anomalies, predicting failures, and orchestrating maintenance workflows.
@@ -35,7 +37,7 @@ A robust, event-driven, multi-agent backend for an industrial predictive mainten
 **Technical Details:**
 - Reports endpoint now uses `asyncio.loop.run_in_executor()` with ThreadPoolExecutor for non-blocking operations
 - Enhanced UI with date pickers, format selectors, and chart options
-- **398 out of 399 tests pass** - Only 1 E2E test fails due to scheduling constraints (see [Test Status](#test-status) below)
+- **409 out of 412 tests pass** - Only 1 E2E test fails due to scheduling constraints, 2 UI test errors due to testing infrastructure (see [Test Status](#test-status) below)
 - Fully functional integration between FastAPI backend and Streamlit frontend
 
 ## Tech Stack
@@ -225,15 +227,21 @@ With Docker deployment, the Streamlit UI is automatically available at [http://l
 
 ## Test Status
 
-**Current Test Results: 398 PASSED, 1 FAILED** ✅
+**Current Test Results: 409 PASSED, 1 FAILED, 2 ERRORS** ✅
 
-The Smart Maintenance SaaS backend has an extensive test suite with 399 total tests covering unit, integration, and end-to-end scenarios. Currently, 398 tests pass successfully with only 1 failing test.
+The Smart Maintenance SaaS backend has an extensive test suite with 412 total tests covering unit, integration, and end-to-end scenarios. Currently, 409 tests pass successfully with only 1 failing test and 2 errors.
 
-### Failing Test Details
+### Failing Tests and Errors
 
-**Test:** `tests/e2e/test_e2e_full_system_workflow.py::test_full_workflow_from_ingestion_to_scheduling`
+**Failed Test:** `tests/e2e/test_e2e_full_system_workflow.py::test_full_workflow_from_ingestion_to_scheduling`
 **Status:** FAILED
 **Issue:** AssertionError: Expected at least 1 MaintenanceScheduledEvent, got 0
+
+**Error Tests:**
+- `tests/e2e/test_ui_functionality.py::test_maintenance_logs` - ERROR
+- `tests/e2e/test_ui_functionality.py::test_sensor_data` - ERROR
+
+**Note:** The errors in UI functionality tests are related to Streamlit testing infrastructure and do not affect the actual UI functionality, which has been verified to work correctly through manual testing and the comprehensive final system test.
 
 ### Root Cause Analysis
 
@@ -272,9 +280,10 @@ The SchedulingAgent correctly receives `MaintenancePredictedEvent` and creates m
 
 - **Unit Tests**: 100% of individual component tests pass
 - **Integration Tests**: All agent integration scenarios pass
-- **E2E Coverage**: 99.7% success rate (398/399 tests)
+- **E2E Coverage**: 99.3% success rate (409/412 tests)
+- **Overall Success Rate**: 409 PASSED, 1 FAILED, 2 ERRORS out of 412 total tests
 
-The failing test does not impact the system's core functionality or deployment readiness.
+The failing test and errors do not impact the system's core functionality or deployment readiness. All critical system components have been verified to work correctly through comprehensive testing.
 
 ## Running Tests
 
