@@ -1,5 +1,17 @@
 # Smart Maintenance SaaS - API Documentation
 
+## 📚 Documentation Navigation
+
+This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
+
+- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
+- **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
+- **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
+- **[Backend README](../README.md)** - Getting started guide and technical overview
+- **[Project Overview](../../README.md)** - High-level project description and objectives
+
+---
+
 ## Overview
 
 The Smart Maintenance SaaS API provides a comprehensive RESTful interface for industrial predictive maintenance operations. The API is built with FastAPI and follows OpenAPI 3.0 standards, offering automatic documentation and validation.
