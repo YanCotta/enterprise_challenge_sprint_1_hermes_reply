@@ -6,7 +6,7 @@ This script defines a combined user class that performs both:
 2. Lower-frequency report generation requests (weight=1 each)
 
 Usage:
-    locust -f locustfile_fixed.py --host=http://localhost:8000
+    locust -f locustfile.py --host=http://localhost:8000
 
 The script dynamically generates realistic sensor data and report requests,
 providing comprehensive load testing for the database-integrated API.
