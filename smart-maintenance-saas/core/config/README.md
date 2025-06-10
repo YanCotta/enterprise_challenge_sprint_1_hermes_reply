@@ -1,5 +1,13 @@
 # Configuration Management
 
+## 📚 Documentation Links
+
+- **[Backend README](../../README.md)** - Main documentation and Docker deployment
+- **[Deployment Status](../../docs/DEPLOYMENT_STATUS.md)** - Current system status
+- **[Project Overview](../../../README.md)** - High-level project information
+
+---
+
 This module provides a centralized configuration system for the Smart Maintenance SaaS application using Pydantic's `BaseSettings`.
 
 ## Usage
