@@ -1,5 +1,17 @@
 # Smart Maintenance SaaS - System and Architecture
 
+## 📚 Documentation Navigation
+
+This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
+
+- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
+- **[API Documentation](./api.md)** - Complete REST API reference and usage examples  
+- **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
+- **[Backend README](../README.md)** - Getting started guide and technical overview
+- **[Project Overview](../../README.md)** - High-level project description and objectives
+
+---
+
 ## 1. Introduction
 
 This document provides a comprehensive overview of the system architecture for the Smart Maintenance SaaS platform. The platform is designed as a cloud-native, multi-agent system that leverages an event-driven architecture to deliver a modular, scalable, and resilient solution for predictive maintenance in the industrial sector.
@@ -351,7 +363,7 @@ Esta lista de verificação fornece uma análise transparente das funcionalidade
 | **API & Gateway** | FastAPI, GraphQL, Hub WebSocket. | FastAPI (apenas REST API). A API é funcional com endpoints para ingestão, relatórios e decisões. | **Boa decisão.** Implementar GraphQL e WebSockets seria um esforço significativo. Uma API REST padrão é mais que suficiente para a funcionalidade principal e entregáveis. Mantenha assim. |
 | **Event Streaming** | Apache Kafka, Redis Streams, Event Sourcing. | `EventBus` customizado em memória. Seu `core/events/event_bus.py` é um sistema pub/sub assíncrono personalizado. | **Excelente trade-off.** Este é o desvio arquitetural mais significativo, e foi a escolha certa. Uma configuração completa do Kafka é complexa. Seu event bus personalizado alcança o desacoplamento necessário para os agentes funcionarem de maneira orientada a eventos, que era o objetivo principal. |
 | **Agent Workflow** | Temporal.io, LangGraph, Service Mesh. | Orquestração implícita via `OrchestratorAgent` e assinaturas diretas de eventos entre agentes. | **Escolha pragmática.** Como o Kafka, um motor de workflow completo como Temporal.io é desnecessário para este sprint. Seu `OrchestratorAgent` serve efetivamente a este propósito para o escopo atual. |
-| **ML: Previsão** | Prophet e LSTM para previsão combinada. | Apenas Prophet. O `PredictionAgent` está totalmente implementado usando a biblioteca Prophet. | **Suficiente e forte.** Prophet é um modelo de previsão poderoso por si só. Adicionar LSTM aumentaria a complexidade para ganhos potencialmente marginais neste prazo. O que você tem é robusto e atende ao objetivo de predição. |
+| **ML: Previsão** | Prophet e LSTM para previsão combinada. | Prophet apenas. O `PredictionAgent` está totalmente implementado usando a biblioteca Prophet. | **Suficiente e forte.** Prophet é um modelo de previsão poderoso por si só. Adicionar LSTM aumentaria a complexidade para ganhos potencialmente marginais neste prazo. O que você tem é robusto e atende ao objetivo de predição. |
 | **ML: Detecção de Anomalias** | Scikit-learn (IsolationForest), Modelos Estatísticos, Autoencoder, métodos Ensemble. | Scikit-learn (IsolationForest) e Modelos Estatísticos estão totalmente implementados no `AnomalyDetectionAgent` com um método de decisão ensemble. | **Totalmente alinhado.** Você implementou com sucesso o núcleo do sistema de detecção de anomalias planejado. Autoencoders são complexos e não necessários para um protótipo funcional. |
 | **ML: Aprendizado (RAG)** | RAG com ChromaDB e MLflow para MLOps. | RAG com ChromaDB e SentenceTransformers está implementado no `LearningAgent`. MLflow não é usado. | **Excelente trabalho.** Implementar a parte RAG é uma funcionalidade importante. MLflow é uma ferramenta MLOps para rastreamento de experimentos e não é crítica para a funcionalidade principal do backend. Foi correto omiti-lo. |
 | **Agendamento** | OR-Tools para otimização com restrições. | A dependência `ortools` está no `pyproject.toml`, mas o `SchedulingAgent` usa uma lógica "greedy" simplificada. O código OR-Tools está comentado. | **Parcialmente implementado.** Esta é a única área onde a implementação está incompleta, mas a base está estabelecida. Dados os constrangimentos de tempo, sua abordagem greedy é um placeholder funcional. |
