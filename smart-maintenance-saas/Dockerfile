@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for Smart Maintenance SaaS
-# Stage 1: Builder - Install dependencies and build the application
+# Stage 1: Builder - Install dependencies
 FROM python:3.11-slim-bullseye AS builder
 
 # Set environment variables
@@ -16,9 +16,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry
-RUN pip install poetry==1.7.1
+RUN pip install poetry==1.8.3
 
-# Configure Poetry
+# Configure Poetry to create venv in project
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VENV_IN_PROJECT=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
@@ -29,14 +29,14 @@ WORKDIR /app
 # Copy dependency files
 COPY pyproject.toml poetry.lock ./
 
-# Install dependencies
-RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
+# Create virtual environment and install dependencies
+RUN poetry config virtualenvs.create true && \
+    poetry config virtualenvs.in-project true && \
+    poetry install --only=main --no-root && \
+    rm -rf $POETRY_CACHE_DIR
 
-# Copy application code
-COPY . .
-
-# Install the application
-RUN poetry install --only=main
+# Verify that .venv was created
+RUN ls -la /app/.venv && echo "Virtual environment created successfully"
 
 # Stage 2: Production - Create slim final image
 FROM python:3.11-slim-bullseye AS production
@@ -44,11 +44,13 @@ FROM python:3.11-slim-bullseye AS production
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app"
 
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \
     postgresql-client \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
