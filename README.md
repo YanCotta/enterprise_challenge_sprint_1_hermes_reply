@@ -1,5 +1,17 @@
 # Smart Maintenance SaaS
 
+## 📚 Documentation Navigation
+
+This document provides a high-level overview of the Smart Maintenance SaaS project. For detailed technical information, please refer to:
+
+- **[Performance Baseline](./smart-maintenance-saas/docs/PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
+- **[System and Architecture](./smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
+- **[API Documentation](./smart-maintenance-saas/docs/api.md)** - Complete REST API reference and usage examples  
+- **[Load Testing Instructions](./smart-maintenance-saas/docs/LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
+- **[Backend README](./smart-maintenance-saas/README.md)** - Getting started guide and technical overview
+
+---
+
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-In%20Development-orange)](.)
 
