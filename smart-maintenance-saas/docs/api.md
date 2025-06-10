@@ -448,19 +448,19 @@ Ingests sensor data into the Smart Maintenance system and triggers the event-dri
 
 ### POST /api/v1/reports/generate
 
-Generates maintenance and system health reports using the ReportingAgent.
+Generates maintenance and system health reports using the ReportingAgent with enhanced async processing.
 
 **Required Scope:** `reports:generate`
 
 **Request Body:**
 ```json
 {
-  "report_type": "anomaly_summary",
-  "format": "json",
+  "report_type": "performance_summary",
+  "format": "text",
   "time_range_start": "2025-06-01T00:00:00Z",
   "time_range_end": "2025-06-10T23:59:59Z",
   "parameters": {
-    "include_predictions": true,
+    "include_details": true,
     "severity_threshold": "medium"
   },
   "include_charts": true
@@ -471,39 +471,61 @@ Generates maintenance and system health reports using the ReportingAgent.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `report_type` | string | Yes | Type of report ("anomaly_summary", "maintenance_overview", "system_health", "custom") |
+| `report_type` | string | Yes | Type of report (see available types below) |
 | `format` | string | No | Output format ("json", "text", default: "json") |
 | `time_range_start` | datetime | No | Start time for report data (UTC) |
 | `time_range_end` | datetime | No | End time for report data (UTC) |
 | `parameters` | object | No | Additional report-specific parameters |
-| `include_charts` | boolean | No | Whether to include charts (default: true) |
+| `include_charts` | boolean | No | Whether to include matplotlib charts (default: true) |
 
 **Available Report Types:**
 
+- `performance_summary` - Overall system performance metrics and KPIs
 - `anomaly_summary` - Summary of detected anomalies and their status
-- `maintenance_overview` - Overview of scheduled and completed maintenance
-- `system_health` - Overall system health and performance metrics
+- `maintenance_summary` - Summary of maintenance activities and schedules  
+- `system_health` - Comprehensive system health and status report
 - `equipment_status` - Status report for specific equipment
 - `prediction_accuracy` - Machine learning model performance metrics
-- `custom` - Custom report based on parameters
+
+**Enhanced Features:**
+
+- **Async Processing**: Uses ThreadPoolExecutor to prevent blocking on matplotlib and analytics operations
+- **Visual Charts**: Automatically generates base64-encoded PNG charts when `include_charts=true`
+- **Multiple Formats**: JSON for structured data, text for human-readable reports
+- **Rich Metadata**: Includes generation time, data points analyzed, and analytics summary
 
 **Response (200):**
 ```json
 {
-  "report_id": "report_12345678",
-  "report_type": "anomaly_summary",
-  "format": "json",
-  "content": "{\"summary\": {\"total_anomalies\": 5, \"critical\": 1, \"warnings\": 4}, \"details\": [...]}",
-  "generated_at": "2025-06-10T14:30:00Z",
+  "report_id": "report-a1b2c3d4",
+  "report_type": "performance_summary",
+  "format": "text",
+  "content": "REPORT SUMMARY\n=============\n\nReport Type: performance_summary\nData Points: 285\nProcessing Time: 12.38 ms\n\nGenerated on: 2025-06-10 14:45:00 UTC",
+  "generated_at": "2025-06-10T14:45:00.313548+00:00",
   "charts_encoded": {
-    "anomaly_trend": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
-    "severity_distribution": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+    "main_chart": "iVBORw0KGgoAAAANSUhEUgAAAoAAAAHgCAYAAAA..."
   },
   "metadata": {
-    "generation_time_ms": 1250,
-    "data_points_analyzed": 10000
-  }
+    "parameters": {
+      "include_details": true
+    },
+    "time_range_start": "2025-06-01T00:00:00+00:00",
+    "time_range_end": "2025-06-10T23:59:59+00:00",
+    "include_charts": true,
+    "analytics_summary": {
+      "data_points": 285,
+      "has_chart_data": true
+    }
+  },
+  "error_message": null
 }
+```
+
+**Technical Implementation:**
+
+- **Thread Pool Processing**: Reports are generated in a separate thread to avoid blocking the async event loop
+- **Chart Generation**: Uses matplotlib with Agg backend for server-side chart generation
+- **Error Handling**: Comprehensive error reporting with correlation IDs for debugging
 ```
 
 **Error Responses:**
