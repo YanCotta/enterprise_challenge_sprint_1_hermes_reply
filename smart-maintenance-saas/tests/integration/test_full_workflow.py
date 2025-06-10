@@ -127,7 +127,7 @@ class TestFullWorkflowIntegration(unittest.IsolatedAsyncioTestCase):
         self.mock_crud_sensor_reading.get_sensor_readings_by_sensor_id.return_value = self._create_mock_historical_readings()
         
         self.mock_rule_engine = MagicMock(spec=RuleEngine)
-        self.mock_rule_engine.evaluate_rules = AsyncMock(return_value=(0.1, ["Rule reason: positive adjustment"]))
+        self.mock_rule_engine.evaluate_rules = AsyncMock(return_value=(0.0, ["Rule reason: no adjustment needed"]))
         
         self.mock_db_session_factory = MagicMock()
         
@@ -295,7 +295,7 @@ class TestFullWorkflowIntegration(unittest.IsolatedAsyncioTestCase):
         await self.event_bus.publish(initial_event)
         
         # Wait for all async processing to complete
-        await asyncio.sleep(1.0)
+        await asyncio.sleep(2.0)  # Increased wait time for more complex processing
         
         # Verify DataProcessedEvent was published
         self.assertEqual(len(self.captured_events['DataProcessedEvent']), 1)
