@@ -651,7 +651,13 @@ class SchedulingAgent(BaseAgent):
                 )
                 # Consider raising ConfigurationError if event bus is essential
         except Exception as e:
-            equipment_id = original_event.get('equipment_id') if isinstance(original_event, dict) else original_event.equipment_id
+            # Extract equipment_id safely for error reporting
+            equipment_id = "unknown"
+            if isinstance(original_event, dict):
+                equipment_id = original_event.get('equipment_id', 'unknown')
+            elif hasattr(original_event, 'equipment_id'):
+                equipment_id = original_event.equipment_id
+                
             self.logger.error(
                 f"Error publishing MaintenanceScheduledEvent for eq {equipment_id}: {e}",
                 exc_info=True,
@@ -659,7 +665,7 @@ class SchedulingAgent(BaseAgent):
             )
             # Wrap and re-raise as EventPublishError
             raise EventPublishError(
-                message=f"Failed to publish MaintenanceScheduledEvent for {original_event.equipment_id}: {str(e)}",
+                message=f"Failed to publish MaintenanceScheduledEvent for {equipment_id}: {str(e)}",
                 original_exception=e
             ) from e
     
