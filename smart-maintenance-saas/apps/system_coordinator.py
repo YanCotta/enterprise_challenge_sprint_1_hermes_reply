@@ -12,6 +12,7 @@ from core.base_agent_abc import BaseAgent
 
 # Agent Imports
 from apps.agents.core.data_acquisition_agent import DataAcquisitionAgent
+import os
 from apps.agents.core.anomaly_detection_agent import AnomalyDetectionAgent
 from apps.agents.core.validation_agent import ValidationAgent
 # from apps.agents.core.prediction_agent import PredictionAgent # Path was decision/prediction_agent.py
@@ -22,7 +23,19 @@ from apps.agents.interface.human_interface_agent import HumanInterfaceAgent
 # from apps.agents.interface.notification_agent import NotificationAgent # Path was decision/notification_agent.py
 from apps.agents.decision.notification_agent import NotificationAgent
 from apps.agents.decision.reporting_agent import ReportingAgent
-from apps.agents.learning.learning_agent import LearningAgent
+
+# Conditionally import LearningAgent only if ChromaDB is not disabled
+if os.getenv('DISABLE_CHROMADB', '').lower() != 'true':
+    try:
+        from apps.agents.learning.learning_agent import LearningAgent
+        LEARNING_AGENT_AVAILABLE = True
+    except ImportError:
+        LEARNING_AGENT_AVAILABLE = False
+        LearningAgent = None
+else:
+    LEARNING_AGENT_AVAILABLE = False
+    LearningAgent = None
+
 from apps.agents.decision.maintenance_log_agent import MaintenanceLogAgent
 
 # Real Service Imports
@@ -119,10 +132,6 @@ class SystemCoordinator:
                 agent_id="reporting_agent_01",
                 event_bus=self.event_bus
             ),
-            LearningAgent(
-                agent_id="learning_agent_01",
-                event_bus=self.event_bus
-            ),
             MaintenanceLogAgent(
                 agent_id="maintenance_log_agent_01",
                 event_bus=self.event_bus,
@@ -130,6 +139,18 @@ class SystemCoordinator:
                 db_session_factory=self.db_session_factory
             )
         ]
+        
+        # Conditionally add LearningAgent if ChromaDB is available
+        if LEARNING_AGENT_AVAILABLE and LearningAgent is not None:
+            self.agents.append(
+                LearningAgent(
+                    agent_id="learning_agent_01",
+                    event_bus=self.event_bus
+                )
+            )
+        else:
+            logger.warning("LearningAgent is disabled due to ChromaDB being unavailable or disabled")
+            
         logger.info(f"SystemCoordinator initialized with {len(self.agents)} agents and event bus.")
 
     @property
