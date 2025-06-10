@@ -10,8 +10,14 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
+try:
+    from ortools.sat.python import cp_model
+except ImportError:
+    cp_model = None
+
 from core.base_agent_abc import BaseAgent, AgentCapability
 from core.events.event_models import MaintenancePredictedEvent, MaintenanceScheduledEvent
+from core.config.settings import settings
 from data.schemas import MaintenanceRequest, OptimizedSchedule, ScheduleStatus
 from data.exceptions import EventPublishError, AgentProcessingError # Import EventPublishError and AgentProcessingError
 
@@ -82,6 +88,7 @@ class SchedulingAgent(BaseAgent):
         super().__init__(agent_id, event_bus)
         self.logger = logging.getLogger(f"{__name__}.{agent_id}")
         self.calendar_service = CalendarService()
+        self.settings = settings  # Add settings reference for feature flag access
         self.logger.info(f"SchedulingAgent {agent_id} initialized", extra={"correlation_id": "N/A"})
     
     async def start(self) -> None:
@@ -322,10 +329,41 @@ class SchedulingAgent(BaseAgent):
         return None
 
     async def schedule_maintenance_task(self, maintenance_request: MaintenanceRequest, correlation_id: Optional[str] = None) -> OptimizedSchedule:
+        """
+        Route to appropriate scheduling algorithm based on configuration.
+        """
         self.logger.info(
             f"Scheduling maintenance request {maintenance_request.id}",
             extra={"correlation_id": correlation_id}
         )
+        
+        try:
+            # Route to appropriate scheduler based on feature flag
+            if settings.USE_OR_TOOLS_SCHEDULER and cp_model is not None:
+                self.logger.debug(
+                    f"Using OR-Tools scheduler for request {maintenance_request.id}",
+                    extra={"correlation_id": correlation_id}
+                )
+                return await self._schedule_with_or_tools([maintenance_request], correlation_id)
+            else:
+                self.logger.debug(
+                    f"Using greedy scheduler for request {maintenance_request.id}",
+                    extra={"correlation_id": correlation_id}
+                )
+                return await self._schedule_with_greedy_algorithm(maintenance_request, correlation_id)
+                
+        except Exception as e:
+            self.logger.error(
+                f"Error scheduling maintenance request {maintenance_request.id}: {e}",
+                exc_info=True,
+                extra={"correlation_id": correlation_id}
+            )
+            raise AgentProcessingError(f"Scheduling sub-process failed for request {maintenance_request.id}: {str(e)}", original_exception=e) from e
+
+    async def _schedule_with_greedy_algorithm(self, maintenance_request: MaintenanceRequest, correlation_id: Optional[str] = None) -> OptimizedSchedule:
+        """
+        Original greedy scheduling algorithm (preserved for stability).
+        """
         try:
             # Using mock_technicians directly as per the existing code structure
             best_technician = self._find_best_qualified_technician(maintenance_request, mock_technicians)
@@ -368,12 +406,197 @@ class SchedulingAgent(BaseAgent):
 
         except Exception as e:
             self.logger.error(
-                f"Error scheduling maintenance request {maintenance_request.id}: {e}",
+                f"Error in greedy scheduling for request {maintenance_request.id}: {e}",
                 exc_info=True,
                 extra={"correlation_id": correlation_id}
             )
-            # Let this exception propagate to be handled by handle_maintenance_predicted_event's try-except
-            raise AgentProcessingError(f"Scheduling sub-process failed for request {maintenance_request.id}: {str(e)}", original_exception=e) from e # Import AgentProcessingError
+            raise AgentProcessingError(f"Greedy scheduling failed for request {maintenance_request.id}: {str(e)}", original_exception=e) from e
+
+    async def _schedule_with_or_tools(self, maintenance_requests: List[MaintenanceRequest], correlation_id: Optional[str] = None) -> OptimizedSchedule:
+        """
+        Advanced constraint programming scheduler using OR-Tools.
+        
+        This method creates an optimization model that:
+        1. Models each maintenance task as an interval variable
+        2. Ensures tasks are only assigned to technicians with required skills
+        3. Prevents overlapping assignments for the same technician
+        4. Optimizes for scheduling high-priority tasks
+        """
+        if cp_model is None:
+            self.logger.error("OR-Tools not available, falling back to greedy algorithm", extra={"correlation_id": correlation_id})
+            return await self._schedule_with_greedy_algorithm(maintenance_requests[0], correlation_id)
+        
+        self.logger.info(f"Starting OR-Tools optimization for {len(maintenance_requests)} requests", extra={"correlation_id": correlation_id})
+        
+        try:
+            # Create the model
+            model = cp_model.CpModel()
+            
+            # Time horizon in hours (next 7 days, 8 hours per day)
+            horizon = 7 * 8  # 56 hours
+            time_slots_per_hour = 4  # 15-minute intervals
+            max_time = int(horizon * time_slots_per_hour)
+            
+            # Get qualified technicians for each request
+            request_technicians = {}
+            for request in maintenance_requests:
+                qualified_techs = [
+                    tech for tech in mock_technicians
+                    if any(skill in tech["skills"] for skill in (request.required_skills or []))
+                ]
+                request_technicians[request.id] = qualified_techs
+                
+                if not qualified_techs:
+                    self.logger.warning(f"No qualified technicians for request {request.id}", extra={"correlation_id": correlation_id})
+                    return OptimizedSchedule(
+                        request_id=request.id,
+                        status=ScheduleStatus.FAILED_TO_SCHEDULE,
+                        constraints_violated=["no_qualified_technicians"],
+                        scheduling_notes="No technicians available with required skills."
+                    )
+            
+            # Create optional intervals with assignment constraints
+            task_intervals = {}
+            task_start_vars = {}
+            task_end_vars = {}
+            task_assignments = {}
+            
+            for request in maintenance_requests:
+                # Task duration in time slots (default 2 hours = 8 slots)
+                duration = int(getattr(request, 'estimated_duration_hours', 2) * time_slots_per_hour)
+                
+                for tech in request_technicians[request.id]:
+                    # Assignment variable (1 if task is assigned to this technician)
+                    assignment_var = model.NewBoolVar(f"assign_{request.id}_{tech['id']}")
+                    task_assignments[(request.id, tech['id'])] = assignment_var
+                    
+                    # Create start and end variables
+                    start_var = model.NewIntVar(0, int(max_time - duration), f"start_{request.id}_{tech['id']}")
+                    end_var = model.NewIntVar(duration, int(max_time), f"end_{request.id}_{tech['id']}")
+                    
+                    task_start_vars[(request.id, tech['id'])] = start_var
+                    task_end_vars[(request.id, tech['id'])] = end_var
+                    
+                    # Create optional interval - only present when assigned
+                    interval_var = model.NewOptionalIntervalVar(
+                        start_var, 
+                        duration, 
+                        end_var,
+                        assignment_var,  # Only present when assigned
+                        f"interval_{request.id}_{tech['id']}"
+                    )
+                    task_intervals[(request.id, tech['id'])] = interval_var
+            
+            # Constraint: Each task is assigned to exactly one technician
+            for request in maintenance_requests:
+                qualified_techs = request_technicians[request.id]
+                if qualified_techs:
+                    model.AddExactlyOne([
+                        task_assignments[(request.id, tech['id'])]
+                        for tech in qualified_techs
+                    ])
+            
+            # Constraint: No overlapping tasks for the same technician
+            for tech in mock_technicians:
+                tech_intervals = []
+                for request in maintenance_requests:
+                    if tech in request_technicians[request.id]:
+                        interval = task_intervals[(request.id, tech['id'])]
+                        tech_intervals.append(interval)
+                
+                # Optional intervals automatically handle presence/absence
+                if len(tech_intervals) > 1:
+                    model.AddNoOverlap(tech_intervals)
+            
+            # Objective: Maximize weighted sum of scheduled high-priority tasks
+            objective_terms = []
+            for request in maintenance_requests:
+                priority_weight = getattr(request, 'priority_weight', 1.0)
+                for tech in request_technicians[request.id]:
+                    tech_experience_weight = min(tech['experience_years'] / 10.0, 1.0)
+                    total_weight = int(priority_weight * tech_experience_weight * 100)  # Scale to integer
+                    objective_terms.append(task_assignments[(request.id, tech['id'])] * total_weight)
+            
+            if objective_terms:
+                model.Maximize(sum(objective_terms))
+            
+            # Solve the model
+            solver = cp_model.CpSolver()
+            solver.parameters.max_time_in_seconds = 10.0  # Limit solving time
+            
+            status = solver.Solve(model)
+            
+            if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
+                # Extract solution for the first request (single request optimization)
+                request = maintenance_requests[0]
+                
+                for tech in request_technicians[request.id]:
+                    if solver.Value(task_assignments[(request.id, tech['id'])]):
+                        # Found assignment
+                        start_slot = solver.Value(task_start_vars[(request.id, tech['id'])])
+                        end_slot = solver.Value(task_end_vars[(request.id, tech['id'])])
+                        
+                        # Convert slots back to datetime
+                        now = datetime.now()
+                        start_time = now + timedelta(minutes=start_slot * 15)  # 15-minute slots
+                        end_time = now + timedelta(minutes=end_slot * 15)
+                        
+                        # Adjust to business hours (8 AM to 6 PM, weekdays only)
+                        start_time = self._adjust_to_business_hours(start_time)
+                        end_time = start_time + timedelta(hours=getattr(request, 'estimated_duration_hours', 2))
+                        
+                        optimization_score = solver.ObjectiveValue() / (len(maintenance_requests) * 100)
+                        
+                        self.logger.info(
+                            f"OR-Tools scheduled request {request.id} to technician {tech['id']} from {start_time} to {end_time}",
+                            extra={"correlation_id": correlation_id}
+                        )
+                        
+                        return OptimizedSchedule(
+                            request_id=request.id,
+                            status=ScheduleStatus.SCHEDULED,
+                            assigned_technician_id=tech['id'],
+                            scheduled_start_time=start_time,
+                            scheduled_end_time=end_time,
+                            optimization_score=optimization_score,
+                            constraints_satisfied=["technician_skills_match", "no_overlapping_assignments", "within_time_horizon"],
+                            scheduling_notes=f"Optimized using OR-Tools constraint programming (status: {solver.StatusName(status)})"
+                        )
+                
+                # No assignment found for the request
+                return OptimizedSchedule(
+                    request_id=maintenance_requests[0].id,
+                    status=ScheduleStatus.FAILED_TO_SCHEDULE,
+                    constraints_violated=["optimization_failed"],
+                    scheduling_notes="OR-Tools found no feasible assignment."
+                )
+            
+            else:
+                self.logger.warning(f"OR-Tools optimization failed with status: {solver.StatusName(status)}", extra={"correlation_id": correlation_id})
+                # Fall back to greedy algorithm
+                return await self._schedule_with_greedy_algorithm(maintenance_requests[0], correlation_id)
+                
+        except Exception as e:
+            self.logger.error(f"Error in OR-Tools scheduling: {e}", exc_info=True, extra={"correlation_id": correlation_id})
+            # Fall back to greedy algorithm
+            return await self._schedule_with_greedy_algorithm(maintenance_requests[0], correlation_id)
+
+    def _adjust_to_business_hours(self, dt: datetime) -> datetime:
+        """Adjust datetime to business hours (8 AM to 6 PM, Monday to Friday)."""
+        # Move to next business day if weekend
+        while dt.weekday() >= 5:  # Saturday = 5, Sunday = 6
+            dt = dt.replace(hour=8, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        
+        # Adjust to business hours
+        if dt.hour < 8:
+            dt = dt.replace(hour=8, minute=0, second=0, microsecond=0)
+        elif dt.hour >= 18:
+            dt = dt.replace(hour=8, minute=0, second=0, microsecond=0) + timedelta(days=1)
+            # Check again if it's weekend
+            while dt.weekday() >= 5:
+                dt += timedelta(days=1)
+        
+        return dt
     
     def _calculate_optimization_score(self, request: MaintenanceRequest, technician: Dict[str, Any], start_time: datetime, end_time: datetime) -> float:
         # Simplified scoring
@@ -413,7 +636,8 @@ class SchedulingAgent(BaseAgent):
             event_data_dict = event_data_object.model_dump()
             
             if self.event_bus:
-                await self._publish_event("MaintenanceScheduledEvent", event_data_dict) # _publish_event likely needs correlation_id too
+                # Publish the event object directly instead of using _publish_event with dictionary
+                await self.event_bus.publish(event_data_object)
                 equipment_id = original_event.get('equipment_id') if isinstance(original_event, dict) else original_event.equipment_id
                 self.logger.info(
                     f"Published MaintenanceScheduledEvent for equipment {equipment_id}",
