@@ -4,10 +4,12 @@
 
 This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
 
-- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
+- **[Backend README](../README.md)** - Docker deployment and getting started guide
+- **[Deployment Status](./DEPLOYMENT_STATUS.md)** - Current deployment status and container information
 - **[API Documentation](./api.md)** - Complete REST API reference and usage examples  
+- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
 - **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
-- **[Backend README](../README.md)** - Getting started guide and technical overview
+- **[Test Documentation](../tests/README.md)** - Test organization and execution guide
 - **[Project Overview](../../README.md)** - High-level project description and objectives
 
 ---
