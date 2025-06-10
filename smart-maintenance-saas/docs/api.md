@@ -22,6 +22,19 @@ The Smart Maintenance SaaS API provides a comprehensive RESTful interface for in
 - Interactive API Docs: `http://localhost:8000/docs`
 - ReDoc Documentation: `http://localhost:8000/redoc`
 
+## Control Panel UI
+
+For easy interaction with the API, a Streamlit-based control panel is available at `http://localhost:8501`. The control panel provides:
+
+- **Visual forms** for all API endpoints
+- **Real-time validation** and error handling  
+- **System health monitoring** and connectivity checks
+- **Quick testing tools** for rapid API exploration
+
+Start the control panel with: `poetry run streamlit run ui/streamlit_app.py --server.port 8501`
+
+See the [Backend README](../README.md#control-panel-ui-streamlit) for detailed usage instructions.
+
 ## Authentication
 
 Currently, the API operates without authentication for development purposes. In production, implement proper authentication mechanisms such as JWT tokens or API keys.
