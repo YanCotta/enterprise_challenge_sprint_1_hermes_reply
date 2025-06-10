@@ -4,10 +4,12 @@
 
 This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
 
+- **[Backend README](../README.md)** - Docker deployment and getting started guide
+- **[Deployment Status](./DEPLOYMENT_STATUS.md)** - Current deployment status and container information
 - **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
 - **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
 - **[API Documentation](./api.md)** - Complete REST API reference and usage examples  
-- **[Backend README](../README.md)** - Getting started guide and technical overview
+- **[Test Documentation](../tests/README.md)** - Test organization and execution guide
 - **[Project Overview](../../README.md)** - High-level project description and objectives
 
 ---
@@ -15,18 +17,28 @@ This document is part of the Smart Maintenance SaaS documentation suite. For com
 ## Overview
 This document provides comprehensive instructions for running load tests against the Smart Maintenance SaaS API using Locust.
 
-## Prerequisites
+## Quick Start with Docker
 
-1. **Install Dependencies**: Ensure Locust is installed in your environment:
+1. **Start the Complete System**:
    ```bash
    cd smart-maintenance-saas
-   poetry install  # Locust should already be installed
+   docker compose up -d
    ```
 
-2. **Start the API Server**: The API must be running before starting load tests:
+2. **Verify System Health**:
    ```bash
-   poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
+   curl http://localhost:8000/health
+   # Expected: {"status":"healthy"}
    ```
+
+3. **Run Load Tests**:
+   ```bash
+   # Using containerized system
+   poetry install  # Install test dependencies
+   poetry run locust -f locustfile.py --host=http://localhost:8000
+   ```
+
+## Alternative: Local Development Setup
 
 3. **Database Setup**: Ensure PostgreSQL is running and tables are migrated:
    ```bash
