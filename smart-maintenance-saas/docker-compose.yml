@@ -1,6 +1,56 @@
-version: '3.8'
-
 services:
+  # FastAPI Backend Service
+  api:
+    # build: .  # Commented out to use pre-built image
+    image: smart-maintenance-saas:latest
+    container_name: smart_maintenance_api
+    ports:
+      - "8000:8000"  # FastAPI backend
+    environment:
+      - DATABASE_URL=postgresql://smart_user:strong_password@db:5432/smart_maintenance_db
+      - PYTHONPATH=/app
+      - DISABLE_CHROMADB=true  # Disable ChromaDB for now due to SQLite version
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs  # Mount logs directory
+    command: ["sh", "-c", "uvicorn apps.api.main:app --host 0.0.0.0 --port 8000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Streamlit UI Service
+  ui:
+    image: smart-maintenance-saas:latest
+    container_name: smart_maintenance_ui
+    ports:
+      - "8501:8501"  # Streamlit UI
+    environment:
+      - DATABASE_URL=postgresql://smart_user:strong_password@db:5432/smart_maintenance_db
+      - PYTHONPATH=/app
+      - API_BASE_URL=http://api:8000  # Internal communication with API
+    depends_on:
+      api:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs  # Mount logs directory
+    command: ["streamlit", "run", "ui/streamlit_app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Database Service
   db:
     image: timescale/timescaledb:latest-pg15
     container_name: smart_maintenance_db
