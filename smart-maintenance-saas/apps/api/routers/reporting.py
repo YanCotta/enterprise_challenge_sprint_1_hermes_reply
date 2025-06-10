@@ -60,10 +60,9 @@ async def generate_report_endpoint(
         if not reporting_agent:
             raise HTTPException(status_code=500, detail="Reporting agent not available on coordinator.")
 
-        # The generate_report method in ReportingAgent needs to be an async method
-        # or run in a thread pool if it's synchronous and IO-bound.
-        # For now, assuming it can be awaited or is fast enough.
-        report_result: ReportResult = await reporting_agent.generate_report(report_request)
+        # The generate_report method in ReportingAgent is synchronous
+        # For now, calling it directly
+        report_result: ReportResult = reporting_agent.generate_report(report_request)
 
         if report_result is None:
             raise HTTPException(status_code=500, detail="Report generation failed or returned no result.")
