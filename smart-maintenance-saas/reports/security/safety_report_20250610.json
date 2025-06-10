@@ -1,0 +1,4564 @@
+
+
++===========================================================================================================================================================================================+
+
+
+DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
+
+
+We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
+
+
++===========================================================================================================================================================================================+
+
+
+{
+    "report_meta": {
+        "scan_target": "environment",
+        "scanned": [
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/bin",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3/dist-packages",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/dist-packages",
+            "/usr/lib/python3.12",
+            "/usr/lib/python312.zip",
+            "/usr/lib/python3.12/lib-dynload",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/local/lib/python3.12/dist-packages"
+        ],
+        "scanned_full_path": [
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/bin",
+            "/usr/lib/python312.zip",
+            "/usr/lib/python3.12",
+            "/usr/lib/python3.12/lib-dynload",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/local/lib/python3.12/dist-packages",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3/dist-packages",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/dist-packages",
+            "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+        ],
+        "target_languages": [
+            "python"
+        ],
+        "policy_file": null,
+        "policy_file_source": "local",
+        "audit_and_monitor": false,
+        "api_key": false,
+        "account": "",
+        "local_database_path": null,
+        "safety_version": "3.5.2",
+        "timestamp": "2025-06-10 11:07:26",
+        "packages_found": 225,
+        "vulnerabilities_found": 7,
+        "vulnerabilities_ignored": 0,
+        "remediations_recommended": 0,
+        "telemetry": {
+            "safety_options": {
+                "json": {
+                    "--json": 1
+                }
+            },
+            "safety_version": "3.5.2",
+            "safety_source": "cli",
+            "os_type": "Linux",
+            "os_release": "6.11.0-26-generic",
+            "os_description": "Linux-6.11.0-26-generic-x86_64-with-glibc2.39",
+            "python_version": "3.12.3",
+            "safety_command": "check"
+        },
+        "git": {
+            "branch": "main",
+            "tag": "",
+            "commit": "5ef0cf5e352bd8efac65d0eeb5405ec69c143c5a",
+            "dirty": "True",
+            "origin": "https://github.com/YanCotta/enterprise_challenge_sprint_1_hermes_reply.git"
+        },
+        "project": null,
+        "json_version": "1.1",
+        "remediations_attempted": 0,
+        "remediations_completed": 0,
+        "remediation_mode": "NON_INTERACTIVE"
+    },
+    "scanned_packages": {
+        "brotli": {
+            "name": "brotli",
+            "version": "1.1.0",
+            "requirements": [
+                {
+                    "raw": "brotli==1.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "brotli",
+                    "specifier": "==1.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "flask-login": {
+            "name": "flask-login",
+            "version": "0.6.3",
+            "requirements": [
+                {
+                    "raw": "flask-login==0.6.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "flask-login",
+                    "specifier": "==0.6.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "markupsafe": {
+            "name": "markupsafe",
+            "version": "3.0.2",
+            "requirements": [
+                {
+                    "raw": "markupsafe==3.0.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "markupsafe",
+                    "specifier": "==3.0.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pyjwt": {
+            "name": "pyjwt",
+            "version": "2.9.0",
+            "requirements": [
+                {
+                    "raw": "pyjwt==2.9.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyjwt",
+                    "specifier": "==2.9.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pyyaml": {
+            "name": "pyyaml",
+            "version": "6.0.2",
+            "requirements": [
+                {
+                    "raw": "pyyaml==6.0.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyyaml",
+                    "specifier": "==6.0.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "absl-py": {
+            "name": "absl-py",
+            "version": "2.3.0",
+            "requirements": [
+                {
+                    "raw": "absl-py==2.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "absl-py",
+                    "specifier": "==2.3.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "aiosqlite": {
+            "name": "aiosqlite",
+            "version": "0.21.0",
+            "requirements": [
+                {
+                    "raw": "aiosqlite==0.21.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "aiosqlite",
+                    "specifier": "==0.21.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "alembic": {
+            "name": "alembic",
+            "version": "1.16.1",
+            "requirements": [
+                {
+                    "raw": "alembic==1.16.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "alembic",
+                    "specifier": "==1.16.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "annotated-types": {
+            "name": "annotated-types",
+            "version": "0.7.0",
+            "requirements": [
+                {
+                    "raw": "annotated-types==0.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "annotated-types",
+                    "specifier": "==0.7.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "anyio": {
+            "name": "anyio",
+            "version": "3.7.1",
+            "requirements": [
+                {
+                    "raw": "anyio==3.7.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "anyio",
+                    "specifier": "==3.7.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "asgiref": {
+            "name": "asgiref",
+            "version": "3.8.1",
+            "requirements": [
+                {
+                    "raw": "asgiref==3.8.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "asgiref",
+                    "specifier": "==3.8.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "asyncpg": {
+            "name": "asyncpg",
+            "version": "0.30.0",
+            "requirements": [
+                {
+                    "raw": "asyncpg==0.30.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "asyncpg",
+                    "specifier": "==0.30.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "authlib": {
+            "name": "authlib",
+            "version": "1.6.0",
+            "requirements": [
+                {
+                    "raw": "authlib==1.6.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "authlib",
+                    "specifier": "==1.6.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "backoff": {
+            "name": "backoff",
+            "version": "2.2.1",
+            "requirements": [
+                {
+                    "raw": "backoff==2.2.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "backoff",
+                    "specifier": "==2.2.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "bandit": {
+            "name": "bandit",
+            "version": "1.8.3",
+            "requirements": [
+                {
+                    "raw": "bandit==1.8.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "bandit",
+                    "specifier": "==1.8.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "bcrypt": {
+            "name": "bcrypt",
+            "version": "4.3.0",
+            "requirements": [
+                {
+                    "raw": "bcrypt==4.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "bcrypt",
+                    "specifier": "==4.3.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "bidict": {
+            "name": "bidict",
+            "version": "0.23.1",
+            "requirements": [
+                {
+                    "raw": "bidict==0.23.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "bidict",
+                    "specifier": "==0.23.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "black": {
+            "name": "black",
+            "version": "23.12.1",
+            "requirements": [
+                {
+                    "raw": "black==23.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "black",
+                    "specifier": "==23.12.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "blinker": {
+            "name": "blinker",
+            "version": "1.9.0",
+            "requirements": [
+                {
+                    "raw": "blinker==1.9.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "blinker",
+                    "specifier": "==1.9.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "build": {
+            "name": "build",
+            "version": "1.2.2.post1",
+            "requirements": [
+                {
+                    "raw": "build==1.2.2.post1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "build",
+                    "specifier": "==1.2.2.post1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "cachetools": {
+            "name": "cachetools",
+            "version": "5.5.2",
+            "requirements": [
+                {
+                    "raw": "cachetools==5.5.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cachetools",
+                    "specifier": "==5.5.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "certifi": {
+            "name": "certifi",
+            "version": "2025.4.26",
+            "requirements": [
+                {
+                    "raw": "certifi==2025.4.26",
+                    "extras": [],
+                    "marker": null,
+                    "name": "certifi",
+                    "specifier": "==2025.4.26",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "cffi": {
+            "name": "cffi",
+            "version": "1.17.1",
+            "requirements": [
+                {
+                    "raw": "cffi==1.17.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cffi",
+                    "specifier": "==1.17.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "cfgv": {
+            "name": "cfgv",
+            "version": "3.4.0",
+            "requirements": [
+                {
+                    "raw": "cfgv==3.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cfgv",
+                    "specifier": "==3.4.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "charset-normalizer": {
+            "name": "charset-normalizer",
+            "version": "3.4.2",
+            "requirements": [
+                {
+                    "raw": "charset-normalizer==3.4.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "charset-normalizer",
+                    "specifier": "==3.4.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "chroma-hnswlib": {
+            "name": "chroma-hnswlib",
+            "version": "0.7.3",
+            "requirements": [
+                {
+                    "raw": "chroma-hnswlib==0.7.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "chroma-hnswlib",
+                    "specifier": "==0.7.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "chromadb": {
+            "name": "chromadb",
+            "version": "0.4.24",
+            "requirements": [
+                {
+                    "raw": "chromadb==0.4.24",
+                    "extras": [],
+                    "marker": null,
+                    "name": "chromadb",
+                    "specifier": "==0.4.24",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "click": {
+            "name": "click",
+            "version": "8.1.8",
+            "requirements": [
+                {
+                    "raw": "click==8.1.8",
+                    "extras": [],
+                    "marker": null,
+                    "name": "click",
+                    "specifier": "==8.1.8",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "cmdstanpy": {
+            "name": "cmdstanpy",
+            "version": "1.2.5",
+            "requirements": [
+                {
+                    "raw": "cmdstanpy==1.2.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cmdstanpy",
+                    "specifier": "==1.2.5",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "coloredlogs": {
+            "name": "coloredlogs",
+            "version": "15.0.1",
+            "requirements": [
+                {
+                    "raw": "coloredlogs==15.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "coloredlogs",
+                    "specifier": "==15.0.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "configargparse": {
+            "name": "configargparse",
+            "version": "1.7.1",
+            "requirements": [
+                {
+                    "raw": "configargparse==1.7.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "configargparse",
+                    "specifier": "==1.7.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "contourpy": {
+            "name": "contourpy",
+            "version": "1.3.2",
+            "requirements": [
+                {
+                    "raw": "contourpy==1.3.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "contourpy",
+                    "specifier": "==1.3.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "coverage": {
+            "name": "coverage",
+            "version": "7.8.2",
+            "requirements": [
+                {
+                    "raw": "coverage==7.8.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "coverage",
+                    "specifier": "==7.8.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "cryptography": {
+            "name": "cryptography",
+            "version": "45.0.4",
+            "requirements": [
+                {
+                    "raw": "cryptography==45.0.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cryptography",
+                    "specifier": "==45.0.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "cycler": {
+            "name": "cycler",
+            "version": "0.12.1",
+            "requirements": [
+                {
+                    "raw": "cycler==0.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cycler",
+                    "specifier": "==0.12.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "deprecation": {
+            "name": "deprecation",
+            "version": "2.1.0",
+            "requirements": [
+                {
+                    "raw": "deprecation==2.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "deprecation",
+                    "specifier": "==2.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "distlib": {
+            "name": "distlib",
+            "version": "0.3.9",
+            "requirements": [
+                {
+                    "raw": "distlib==0.3.9",
+                    "extras": [],
+                    "marker": null,
+                    "name": "distlib",
+                    "specifier": "==0.3.9",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "distro": {
+            "name": "distro",
+            "version": "1.9.0",
+            "requirements": [
+                {
+                    "raw": "distro==1.9.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "distro",
+                    "specifier": "==1.9.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "docker": {
+            "name": "docker",
+            "version": "7.1.0",
+            "requirements": [
+                {
+                    "raw": "docker==7.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "docker",
+                    "specifier": "==7.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "dparse": {
+            "name": "dparse",
+            "version": "0.6.4",
+            "requirements": [
+                {
+                    "raw": "dparse==0.6.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "dparse",
+                    "specifier": "==0.6.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "durationpy": {
+            "name": "durationpy",
+            "version": "0.10",
+            "requirements": [
+                {
+                    "raw": "durationpy==0.10",
+                    "extras": [],
+                    "marker": null,
+                    "name": "durationpy",
+                    "specifier": "==0.10",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "factory-boy": {
+            "name": "factory-boy",
+            "version": "3.3.3",
+            "requirements": [
+                {
+                    "raw": "factory-boy==3.3.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "factory-boy",
+                    "specifier": "==3.3.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "faker": {
+            "name": "faker",
+            "version": "37.3.0",
+            "requirements": [
+                {
+                    "raw": "faker==37.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "faker",
+                    "specifier": "==37.3.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "fastapi": {
+            "name": "fastapi",
+            "version": "0.104.1",
+            "requirements": [
+                {
+                    "raw": "fastapi==0.104.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "fastapi",
+                    "specifier": "==0.104.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "filelock": {
+            "name": "filelock",
+            "version": "3.16.1",
+            "requirements": [
+                {
+                    "raw": "filelock==3.16.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "filelock",
+                    "specifier": "==3.16.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "flake8": {
+            "name": "flake8",
+            "version": "6.1.0",
+            "requirements": [
+                {
+                    "raw": "flake8==6.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "flake8",
+                    "specifier": "==6.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "flask": {
+            "name": "flask",
+            "version": "3.1.1",
+            "requirements": [
+                {
+                    "raw": "flask==3.1.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "flask",
+                    "specifier": "==3.1.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "flask-cors": {
+            "name": "flask-cors",
+            "version": "6.0.0",
+            "requirements": [
+                {
+                    "raw": "flask-cors==6.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "flask-cors",
+                    "specifier": "==6.0.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "flatbuffers": {
+            "name": "flatbuffers",
+            "version": "25.2.10",
+            "requirements": [
+                {
+                    "raw": "flatbuffers==25.2.10",
+                    "extras": [],
+                    "marker": null,
+                    "name": "flatbuffers",
+                    "specifier": "==25.2.10",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "fonttools": {
+            "name": "fonttools",
+            "version": "4.58.2",
+            "requirements": [
+                {
+                    "raw": "fonttools==4.58.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "fonttools",
+                    "specifier": "==4.58.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "fsspec": {
+            "name": "fsspec",
+            "version": "2025.5.1",
+            "requirements": [
+                {
+                    "raw": "fsspec==2025.5.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "fsspec",
+                    "specifier": "==2025.5.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "gevent": {
+            "name": "gevent",
+            "version": "25.5.1",
+            "requirements": [
+                {
+                    "raw": "gevent==25.5.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "gevent",
+                    "specifier": "==25.5.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "geventhttpclient": {
+            "name": "geventhttpclient",
+            "version": "2.3.3",
+            "requirements": [
+                {
+                    "raw": "geventhttpclient==2.3.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "geventhttpclient",
+                    "specifier": "==2.3.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "google-auth": {
+            "name": "google-auth",
+            "version": "2.40.3",
+            "requirements": [
+                {
+                    "raw": "google-auth==2.40.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "google-auth",
+                    "specifier": "==2.40.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "googleapis-common-protos": {
+            "name": "googleapis-common-protos",
+            "version": "1.70.0",
+            "requirements": [
+                {
+                    "raw": "googleapis-common-protos==1.70.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "googleapis-common-protos",
+                    "specifier": "==1.70.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "greenlet": {
+            "name": "greenlet",
+            "version": "3.2.3",
+            "requirements": [
+                {
+                    "raw": "greenlet==3.2.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "greenlet",
+                    "specifier": "==3.2.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "grpcio": {
+            "name": "grpcio",
+            "version": "1.73.0",
+            "requirements": [
+                {
+                    "raw": "grpcio==1.73.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "grpcio",
+                    "specifier": "==1.73.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "h11": {
+            "name": "h11",
+            "version": "0.16.0",
+            "requirements": [
+                {
+                    "raw": "h11==0.16.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "h11",
+                    "specifier": "==0.16.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "hf-xet": {
+            "name": "hf-xet",
+            "version": "1.1.3",
+            "requirements": [
+                {
+                    "raw": "hf-xet==1.1.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "hf-xet",
+                    "specifier": "==1.1.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "holidays": {
+            "name": "holidays",
+            "version": "0.74",
+            "requirements": [
+                {
+                    "raw": "holidays==0.74",
+                    "extras": [],
+                    "marker": null,
+                    "name": "holidays",
+                    "specifier": "==0.74",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "httpcore": {
+            "name": "httpcore",
+            "version": "1.0.9",
+            "requirements": [
+                {
+                    "raw": "httpcore==1.0.9",
+                    "extras": [],
+                    "marker": null,
+                    "name": "httpcore",
+                    "specifier": "==1.0.9",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "httptools": {
+            "name": "httptools",
+            "version": "0.6.4",
+            "requirements": [
+                {
+                    "raw": "httptools==0.6.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "httptools",
+                    "specifier": "==0.6.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "httpx": {
+            "name": "httpx",
+            "version": "0.25.2",
+            "requirements": [
+                {
+                    "raw": "httpx==0.25.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "httpx",
+                    "specifier": "==0.25.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "huggingface-hub": {
+            "name": "huggingface-hub",
+            "version": "0.32.4",
+            "requirements": [
+                {
+                    "raw": "huggingface-hub==0.32.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "huggingface-hub",
+                    "specifier": "==0.32.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "humanfriendly": {
+            "name": "humanfriendly",
+            "version": "10.0",
+            "requirements": [
+                {
+                    "raw": "humanfriendly==10.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "humanfriendly",
+                    "specifier": "==10.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "identify": {
+            "name": "identify",
+            "version": "2.6.12",
+            "requirements": [
+                {
+                    "raw": "identify==2.6.12",
+                    "extras": [],
+                    "marker": null,
+                    "name": "identify",
+                    "specifier": "==2.6.12",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "idna": {
+            "name": "idna",
+            "version": "3.10",
+            "requirements": [
+                {
+                    "raw": "idna==3.10",
+                    "extras": [],
+                    "marker": null,
+                    "name": "idna",
+                    "specifier": "==3.10",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "immutabledict": {
+            "name": "immutabledict",
+            "version": "4.2.1",
+            "requirements": [
+                {
+                    "raw": "immutabledict==4.2.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "immutabledict",
+                    "specifier": "==4.2.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "importlib-metadata": {
+            "name": "importlib-metadata",
+            "version": "8.7.0",
+            "requirements": [
+                {
+                    "raw": "importlib-metadata==8.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "importlib-metadata",
+                    "specifier": "==8.7.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "importlib-resources": {
+            "name": "importlib-resources",
+            "version": "6.5.2",
+            "requirements": [
+                {
+                    "raw": "importlib-resources==6.5.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "importlib-resources",
+                    "specifier": "==6.5.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "iniconfig": {
+            "name": "iniconfig",
+            "version": "2.1.0",
+            "requirements": [
+                {
+                    "raw": "iniconfig==2.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "iniconfig",
+                    "specifier": "==2.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "isort": {
+            "name": "isort",
+            "version": "5.13.2",
+            "requirements": [
+                {
+                    "raw": "isort==5.13.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "isort",
+                    "specifier": "==5.13.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "itsdangerous": {
+            "name": "itsdangerous",
+            "version": "2.2.0",
+            "requirements": [
+                {
+                    "raw": "itsdangerous==2.2.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "itsdangerous",
+                    "specifier": "==2.2.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "jinja2": {
+            "name": "jinja2",
+            "version": "3.1.6",
+            "requirements": [
+                {
+                    "raw": "jinja2==3.1.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jinja2",
+                    "specifier": "==3.1.6",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "joblib": {
+            "name": "joblib",
+            "version": "1.5.1",
+            "requirements": [
+                {
+                    "raw": "joblib==1.5.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "joblib",
+                    "specifier": "==1.5.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "kafka-python": {
+            "name": "kafka-python",
+            "version": "2.2.11",
+            "requirements": [
+                {
+                    "raw": "kafka-python==2.2.11",
+                    "extras": [],
+                    "marker": null,
+                    "name": "kafka-python",
+                    "specifier": "==2.2.11",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "kiwisolver": {
+            "name": "kiwisolver",
+            "version": "1.4.8",
+            "requirements": [
+                {
+                    "raw": "kiwisolver==1.4.8",
+                    "extras": [],
+                    "marker": null,
+                    "name": "kiwisolver",
+                    "specifier": "==1.4.8",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "kubernetes": {
+            "name": "kubernetes",
+            "version": "33.1.0",
+            "requirements": [
+                {
+                    "raw": "kubernetes==33.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "kubernetes",
+                    "specifier": "==33.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "locust": {
+            "name": "locust",
+            "version": "2.37.10",
+            "requirements": [
+                {
+                    "raw": "locust==2.37.10",
+                    "extras": [],
+                    "marker": null,
+                    "name": "locust",
+                    "specifier": "==2.37.10",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "locust-cloud": {
+            "name": "locust-cloud",
+            "version": "1.23.1",
+            "requirements": [
+                {
+                    "raw": "locust-cloud==1.23.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "locust-cloud",
+                    "specifier": "==1.23.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "mako": {
+            "name": "mako",
+            "version": "1.3.10",
+            "requirements": [
+                {
+                    "raw": "mako==1.3.10",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mako",
+                    "specifier": "==1.3.10",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "markdown-it-py": {
+            "name": "markdown-it-py",
+            "version": "3.0.0",
+            "requirements": [
+                {
+                    "raw": "markdown-it-py==3.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "markdown-it-py",
+                    "specifier": "==3.0.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "marshmallow": {
+            "name": "marshmallow",
+            "version": "4.0.0",
+            "requirements": [
+                {
+                    "raw": "marshmallow==4.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "marshmallow",
+                    "specifier": "==4.0.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "matplotlib": {
+            "name": "matplotlib",
+            "version": "3.10.3",
+            "requirements": [
+                {
+                    "raw": "matplotlib==3.10.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "matplotlib",
+                    "specifier": "==3.10.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "mccabe": {
+            "name": "mccabe",
+            "version": "0.7.0",
+            "requirements": [
+                {
+                    "raw": "mccabe==0.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mccabe",
+                    "specifier": "==0.7.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "mdurl": {
+            "name": "mdurl",
+            "version": "0.1.2",
+            "requirements": [
+                {
+                    "raw": "mdurl==0.1.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mdurl",
+                    "specifier": "==0.1.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "mmh3": {
+            "name": "mmh3",
+            "version": "5.1.0",
+            "requirements": [
+                {
+                    "raw": "mmh3==5.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mmh3",
+                    "specifier": "==5.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "mpmath": {
+            "name": "mpmath",
+            "version": "1.3.0",
+            "requirements": [
+                {
+                    "raw": "mpmath==1.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mpmath",
+                    "specifier": "==1.3.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "msgpack": {
+            "name": "msgpack",
+            "version": "1.1.0",
+            "requirements": [
+                {
+                    "raw": "msgpack==1.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "msgpack",
+                    "specifier": "==1.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "mypy": {
+            "name": "mypy",
+            "version": "1.16.0",
+            "requirements": [
+                {
+                    "raw": "mypy==1.16.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mypy",
+                    "specifier": "==1.16.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "mypy-extensions": {
+            "name": "mypy-extensions",
+            "version": "1.1.0",
+            "requirements": [
+                {
+                    "raw": "mypy-extensions==1.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mypy-extensions",
+                    "specifier": "==1.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "networkx": {
+            "name": "networkx",
+            "version": "3.5",
+            "requirements": [
+                {
+                    "raw": "networkx==3.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "networkx",
+                    "specifier": "==3.5",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nltk": {
+            "name": "nltk",
+            "version": "3.9.1",
+            "requirements": [
+                {
+                    "raw": "nltk==3.9.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nltk",
+                    "specifier": "==3.9.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nodeenv": {
+            "name": "nodeenv",
+            "version": "1.9.1",
+            "requirements": [
+                {
+                    "raw": "nodeenv==1.9.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nodeenv",
+                    "specifier": "==1.9.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "numpy": {
+            "name": "numpy",
+            "version": "1.26.4",
+            "requirements": [
+                {
+                    "raw": "numpy==1.26.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "numpy",
+                    "specifier": "==1.26.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cublas-cu12": {
+            "name": "nvidia-cublas-cu12",
+            "version": "12.6.4.1",
+            "requirements": [
+                {
+                    "raw": "nvidia-cublas-cu12==12.6.4.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cublas-cu12",
+                    "specifier": "==12.6.4.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cuda-cupti-cu12": {
+            "name": "nvidia-cuda-cupti-cu12",
+            "version": "12.6.80",
+            "requirements": [
+                {
+                    "raw": "nvidia-cuda-cupti-cu12==12.6.80",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cuda-cupti-cu12",
+                    "specifier": "==12.6.80",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cuda-nvrtc-cu12": {
+            "name": "nvidia-cuda-nvrtc-cu12",
+            "version": "12.6.77",
+            "requirements": [
+                {
+                    "raw": "nvidia-cuda-nvrtc-cu12==12.6.77",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cuda-nvrtc-cu12",
+                    "specifier": "==12.6.77",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cuda-runtime-cu12": {
+            "name": "nvidia-cuda-runtime-cu12",
+            "version": "12.6.77",
+            "requirements": [
+                {
+                    "raw": "nvidia-cuda-runtime-cu12==12.6.77",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cuda-runtime-cu12",
+                    "specifier": "==12.6.77",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cudnn-cu12": {
+            "name": "nvidia-cudnn-cu12",
+            "version": "9.5.1.17",
+            "requirements": [
+                {
+                    "raw": "nvidia-cudnn-cu12==9.5.1.17",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cudnn-cu12",
+                    "specifier": "==9.5.1.17",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cufft-cu12": {
+            "name": "nvidia-cufft-cu12",
+            "version": "11.3.0.4",
+            "requirements": [
+                {
+                    "raw": "nvidia-cufft-cu12==11.3.0.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cufft-cu12",
+                    "specifier": "==11.3.0.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cufile-cu12": {
+            "name": "nvidia-cufile-cu12",
+            "version": "1.11.1.6",
+            "requirements": [
+                {
+                    "raw": "nvidia-cufile-cu12==1.11.1.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cufile-cu12",
+                    "specifier": "==1.11.1.6",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-curand-cu12": {
+            "name": "nvidia-curand-cu12",
+            "version": "10.3.7.77",
+            "requirements": [
+                {
+                    "raw": "nvidia-curand-cu12==10.3.7.77",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-curand-cu12",
+                    "specifier": "==10.3.7.77",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cusolver-cu12": {
+            "name": "nvidia-cusolver-cu12",
+            "version": "11.7.1.2",
+            "requirements": [
+                {
+                    "raw": "nvidia-cusolver-cu12==11.7.1.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cusolver-cu12",
+                    "specifier": "==11.7.1.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cusparse-cu12": {
+            "name": "nvidia-cusparse-cu12",
+            "version": "12.5.4.2",
+            "requirements": [
+                {
+                    "raw": "nvidia-cusparse-cu12==12.5.4.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cusparse-cu12",
+                    "specifier": "==12.5.4.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-cusparselt-cu12": {
+            "name": "nvidia-cusparselt-cu12",
+            "version": "0.6.3",
+            "requirements": [
+                {
+                    "raw": "nvidia-cusparselt-cu12==0.6.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-cusparselt-cu12",
+                    "specifier": "==0.6.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-nccl-cu12": {
+            "name": "nvidia-nccl-cu12",
+            "version": "2.26.2",
+            "requirements": [
+                {
+                    "raw": "nvidia-nccl-cu12==2.26.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-nccl-cu12",
+                    "specifier": "==2.26.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-nvjitlink-cu12": {
+            "name": "nvidia-nvjitlink-cu12",
+            "version": "12.6.85",
+            "requirements": [
+                {
+                    "raw": "nvidia-nvjitlink-cu12==12.6.85",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-nvjitlink-cu12",
+                    "specifier": "==12.6.85",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "nvidia-nvtx-cu12": {
+            "name": "nvidia-nvtx-cu12",
+            "version": "12.6.77",
+            "requirements": [
+                {
+                    "raw": "nvidia-nvtx-cu12==12.6.77",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nvidia-nvtx-cu12",
+                    "specifier": "==12.6.77",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "oauthlib": {
+            "name": "oauthlib",
+            "version": "3.2.2",
+            "requirements": [
+                {
+                    "raw": "oauthlib==3.2.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "oauthlib",
+                    "specifier": "==3.2.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "onnxruntime": {
+            "name": "onnxruntime",
+            "version": "1.22.0",
+            "requirements": [
+                {
+                    "raw": "onnxruntime==1.22.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "onnxruntime",
+                    "specifier": "==1.22.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-api": {
+            "name": "opentelemetry-api",
+            "version": "1.34.1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-api==1.34.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-api",
+                    "specifier": "==1.34.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-exporter-otlp-proto-common": {
+            "name": "opentelemetry-exporter-otlp-proto-common",
+            "version": "1.34.1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-exporter-otlp-proto-common==1.34.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-exporter-otlp-proto-common",
+                    "specifier": "==1.34.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-exporter-otlp-proto-grpc": {
+            "name": "opentelemetry-exporter-otlp-proto-grpc",
+            "version": "1.34.1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-exporter-otlp-proto-grpc==1.34.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-exporter-otlp-proto-grpc",
+                    "specifier": "==1.34.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-instrumentation": {
+            "name": "opentelemetry-instrumentation",
+            "version": "0.55b1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-instrumentation==0.55b1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-instrumentation",
+                    "specifier": "==0.55b1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-instrumentation-asgi": {
+            "name": "opentelemetry-instrumentation-asgi",
+            "version": "0.55b1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-instrumentation-asgi==0.55b1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-instrumentation-asgi",
+                    "specifier": "==0.55b1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-instrumentation-fastapi": {
+            "name": "opentelemetry-instrumentation-fastapi",
+            "version": "0.55b1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-instrumentation-fastapi==0.55b1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-instrumentation-fastapi",
+                    "specifier": "==0.55b1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-proto": {
+            "name": "opentelemetry-proto",
+            "version": "1.34.1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-proto==1.34.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-proto",
+                    "specifier": "==1.34.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-sdk": {
+            "name": "opentelemetry-sdk",
+            "version": "1.34.1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-sdk==1.34.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-sdk",
+                    "specifier": "==1.34.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-semantic-conventions": {
+            "name": "opentelemetry-semantic-conventions",
+            "version": "0.55b1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-semantic-conventions==0.55b1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-semantic-conventions",
+                    "specifier": "==0.55b1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "opentelemetry-util-http": {
+            "name": "opentelemetry-util-http",
+            "version": "0.55b1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-util-http==0.55b1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-util-http",
+                    "specifier": "==0.55b1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "orjson": {
+            "name": "orjson",
+            "version": "3.10.18",
+            "requirements": [
+                {
+                    "raw": "orjson==3.10.18",
+                    "extras": [],
+                    "marker": null,
+                    "name": "orjson",
+                    "specifier": "==3.10.18",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "ortools": {
+            "name": "ortools",
+            "version": "9.12.4544",
+            "requirements": [
+                {
+                    "raw": "ortools==9.12.4544",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ortools",
+                    "specifier": "==9.12.4544",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "overrides": {
+            "name": "overrides",
+            "version": "7.7.0",
+            "requirements": [
+                {
+                    "raw": "overrides==7.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "overrides",
+                    "specifier": "==7.7.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "packaging": {
+            "name": "packaging",
+            "version": "25.0",
+            "requirements": [
+                {
+                    "raw": "packaging==25.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "packaging",
+                    "specifier": "==25.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pandas": {
+            "name": "pandas",
+            "version": "2.3.0",
+            "requirements": [
+                {
+                    "raw": "pandas==2.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pandas",
+                    "specifier": "==2.3.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pathspec": {
+            "name": "pathspec",
+            "version": "0.12.1",
+            "requirements": [
+                {
+                    "raw": "pathspec==0.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pathspec",
+                    "specifier": "==0.12.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pbr": {
+            "name": "pbr",
+            "version": "6.1.1",
+            "requirements": [
+                {
+                    "raw": "pbr==6.1.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pbr",
+                    "specifier": "==6.1.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pillow": {
+            "name": "pillow",
+            "version": "11.2.1",
+            "requirements": [
+                {
+                    "raw": "pillow==11.2.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pillow",
+                    "specifier": "==11.2.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pip": {
+            "name": "pip",
+            "version": "24.0",
+            "requirements": [
+                {
+                    "raw": "pip==24.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pip",
+                    "specifier": "==24.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "platformdirs": {
+            "name": "platformdirs",
+            "version": "4.3.8",
+            "requirements": [
+                {
+                    "raw": "platformdirs==4.3.8",
+                    "extras": [],
+                    "marker": null,
+                    "name": "platformdirs",
+                    "specifier": "==4.3.8",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pluggy": {
+            "name": "pluggy",
+            "version": "1.6.0",
+            "requirements": [
+                {
+                    "raw": "pluggy==1.6.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pluggy",
+                    "specifier": "==1.6.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "posthog": {
+            "name": "posthog",
+            "version": "4.6.2",
+            "requirements": [
+                {
+                    "raw": "posthog==4.6.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "posthog",
+                    "specifier": "==4.6.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pre-commit": {
+            "name": "pre-commit",
+            "version": "3.8.0",
+            "requirements": [
+                {
+                    "raw": "pre-commit==3.8.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pre-commit",
+                    "specifier": "==3.8.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "prophet": {
+            "name": "prophet",
+            "version": "1.1.7",
+            "requirements": [
+                {
+                    "raw": "prophet==1.1.7",
+                    "extras": [],
+                    "marker": null,
+                    "name": "prophet",
+                    "specifier": "==1.1.7",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "protobuf": {
+            "name": "protobuf",
+            "version": "5.29.5",
+            "requirements": [
+                {
+                    "raw": "protobuf==5.29.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "protobuf",
+                    "specifier": "==5.29.5",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "psutil": {
+            "name": "psutil",
+            "version": "6.1.1",
+            "requirements": [
+                {
+                    "raw": "psutil==6.1.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "psutil",
+                    "specifier": "==6.1.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "psycopg2-binary": {
+            "name": "psycopg2-binary",
+            "version": "2.9.10",
+            "requirements": [
+                {
+                    "raw": "psycopg2-binary==2.9.10",
+                    "extras": [],
+                    "marker": null,
+                    "name": "psycopg2-binary",
+                    "specifier": "==2.9.10",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pulsar-client": {
+            "name": "pulsar-client",
+            "version": "3.7.0",
+            "requirements": [
+                {
+                    "raw": "pulsar-client==3.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pulsar-client",
+                    "specifier": "==3.7.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pyasn1": {
+            "name": "pyasn1",
+            "version": "0.6.1",
+            "requirements": [
+                {
+                    "raw": "pyasn1==0.6.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyasn1",
+                    "specifier": "==0.6.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pyasn1-modules": {
+            "name": "pyasn1-modules",
+            "version": "0.4.2",
+            "requirements": [
+                {
+                    "raw": "pyasn1-modules==0.4.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyasn1-modules",
+                    "specifier": "==0.4.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pycodestyle": {
+            "name": "pycodestyle",
+            "version": "2.11.1",
+            "requirements": [
+                {
+                    "raw": "pycodestyle==2.11.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pycodestyle",
+                    "specifier": "==2.11.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pycparser": {
+            "name": "pycparser",
+            "version": "2.22",
+            "requirements": [
+                {
+                    "raw": "pycparser==2.22",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pycparser",
+                    "specifier": "==2.22",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pydantic": {
+            "name": "pydantic",
+            "version": "2.9.2",
+            "requirements": [
+                {
+                    "raw": "pydantic==2.9.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic",
+                    "specifier": "==2.9.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pydantic-core": {
+            "name": "pydantic-core",
+            "version": "2.23.4",
+            "requirements": [
+                {
+                    "raw": "pydantic-core==2.23.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic-core",
+                    "specifier": "==2.23.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pydantic-settings": {
+            "name": "pydantic-settings",
+            "version": "2.9.1",
+            "requirements": [
+                {
+                    "raw": "pydantic-settings==2.9.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic-settings",
+                    "specifier": "==2.9.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pyflakes": {
+            "name": "pyflakes",
+            "version": "3.1.0",
+            "requirements": [
+                {
+                    "raw": "pyflakes==3.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyflakes",
+                    "specifier": "==3.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pygments": {
+            "name": "pygments",
+            "version": "2.19.1",
+            "requirements": [
+                {
+                    "raw": "pygments==2.19.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pygments",
+                    "specifier": "==2.19.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pyparsing": {
+            "name": "pyparsing",
+            "version": "3.2.3",
+            "requirements": [
+                {
+                    "raw": "pyparsing==3.2.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyparsing",
+                    "specifier": "==3.2.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pypika": {
+            "name": "pypika",
+            "version": "0.48.9",
+            "requirements": [
+                {
+                    "raw": "pypika==0.48.9",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pypika",
+                    "specifier": "==0.48.9",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pyproject-hooks": {
+            "name": "pyproject-hooks",
+            "version": "1.2.0",
+            "requirements": [
+                {
+                    "raw": "pyproject-hooks==1.2.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyproject-hooks",
+                    "specifier": "==1.2.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pytest": {
+            "name": "pytest",
+            "version": "7.4.4",
+            "requirements": [
+                {
+                    "raw": "pytest==7.4.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest",
+                    "specifier": "==7.4.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pytest-asyncio": {
+            "name": "pytest-asyncio",
+            "version": "0.21.2",
+            "requirements": [
+                {
+                    "raw": "pytest-asyncio==0.21.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-asyncio",
+                    "specifier": "==0.21.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pytest-cov": {
+            "name": "pytest-cov",
+            "version": "4.1.0",
+            "requirements": [
+                {
+                    "raw": "pytest-cov==4.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-cov",
+                    "specifier": "==4.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pytest-env": {
+            "name": "pytest-env",
+            "version": "1.1.3",
+            "requirements": [
+                {
+                    "raw": "pytest-env==1.1.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-env",
+                    "specifier": "==1.1.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pytest-mock": {
+            "name": "pytest-mock",
+            "version": "3.14.1",
+            "requirements": [
+                {
+                    "raw": "pytest-mock==3.14.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-mock",
+                    "specifier": "==3.14.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "python-dateutil": {
+            "name": "python-dateutil",
+            "version": "2.9.0.post0",
+            "requirements": [
+                {
+                    "raw": "python-dateutil==2.9.0.post0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-dateutil",
+                    "specifier": "==2.9.0.post0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "python-dotenv": {
+            "name": "python-dotenv",
+            "version": "1.1.0",
+            "requirements": [
+                {
+                    "raw": "python-dotenv==1.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-dotenv",
+                    "specifier": "==1.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "python-engineio": {
+            "name": "python-engineio",
+            "version": "4.12.2",
+            "requirements": [
+                {
+                    "raw": "python-engineio==4.12.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-engineio",
+                    "specifier": "==4.12.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "python-json-logger": {
+            "name": "python-json-logger",
+            "version": "2.0.7",
+            "requirements": [
+                {
+                    "raw": "python-json-logger==2.0.7",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-json-logger",
+                    "specifier": "==2.0.7",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "python-socketio": {
+            "name": "python-socketio",
+            "version": "5.13.0",
+            "requirements": [
+                {
+                    "raw": "python-socketio==5.13.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-socketio",
+                    "specifier": "==5.13.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pytz": {
+            "name": "pytz",
+            "version": "2025.2",
+            "requirements": [
+                {
+                    "raw": "pytz==2025.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytz",
+                    "specifier": "==2025.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pyzmq": {
+            "name": "pyzmq",
+            "version": "26.4.0",
+            "requirements": [
+                {
+                    "raw": "pyzmq==26.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyzmq",
+                    "specifier": "==26.4.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "redis": {
+            "name": "redis",
+            "version": "5.3.0",
+            "requirements": [
+                {
+                    "raw": "redis==5.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "redis",
+                    "specifier": "==5.3.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "regex": {
+            "name": "regex",
+            "version": "2024.11.6",
+            "requirements": [
+                {
+                    "raw": "regex==2024.11.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "regex",
+                    "specifier": "==2024.11.6",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "requests": {
+            "name": "requests",
+            "version": "2.32.4",
+            "requirements": [
+                {
+                    "raw": "requests==2.32.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "requests",
+                    "specifier": "==2.32.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "requests-oauthlib": {
+            "name": "requests-oauthlib",
+            "version": "2.0.0",
+            "requirements": [
+                {
+                    "raw": "requests-oauthlib==2.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "requests-oauthlib",
+                    "specifier": "==2.0.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "rich": {
+            "name": "rich",
+            "version": "14.0.0",
+            "requirements": [
+                {
+                    "raw": "rich==14.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "rich",
+                    "specifier": "==14.0.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "rsa": {
+            "name": "rsa",
+            "version": "4.9.1",
+            "requirements": [
+                {
+                    "raw": "rsa==4.9.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "rsa",
+                    "specifier": "==4.9.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "ruamel.yaml": {
+            "name": "ruamel.yaml",
+            "version": "0.18.14",
+            "requirements": [
+                {
+                    "raw": "ruamel.yaml==0.18.14",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ruamel.yaml",
+                    "specifier": "==0.18.14",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "ruamel.yaml.clib": {
+            "name": "ruamel.yaml.clib",
+            "version": "0.2.12",
+            "requirements": [
+                {
+                    "raw": "ruamel.yaml.clib==0.2.12",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ruamel.yaml.clib",
+                    "specifier": "==0.2.12",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "safetensors": {
+            "name": "safetensors",
+            "version": "0.5.3",
+            "requirements": [
+                {
+                    "raw": "safetensors==0.5.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "safetensors",
+                    "specifier": "==0.5.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "safety": {
+            "name": "safety",
+            "version": "3.5.2",
+            "requirements": [
+                {
+                    "raw": "safety==3.5.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "safety",
+                    "specifier": "==3.5.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "safety-schemas": {
+            "name": "safety-schemas",
+            "version": "0.0.14",
+            "requirements": [
+                {
+                    "raw": "safety-schemas==0.0.14",
+                    "extras": [],
+                    "marker": null,
+                    "name": "safety-schemas",
+                    "specifier": "==0.0.14",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "scikit-learn": {
+            "name": "scikit-learn",
+            "version": "1.7.0",
+            "requirements": [
+                {
+                    "raw": "scikit-learn==1.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "scikit-learn",
+                    "specifier": "==1.7.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "scipy": {
+            "name": "scipy",
+            "version": "1.15.3",
+            "requirements": [
+                {
+                    "raw": "scipy==1.15.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "scipy",
+                    "specifier": "==1.15.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "sentence-transformers": {
+            "name": "sentence-transformers",
+            "version": "2.7.0",
+            "requirements": [
+                {
+                    "raw": "sentence-transformers==2.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sentence-transformers",
+                    "specifier": "==2.7.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "setuptools": {
+            "name": "setuptools",
+            "version": "80.9.0",
+            "requirements": [
+                {
+                    "raw": "setuptools==80.9.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "setuptools",
+                    "specifier": "==80.9.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "shellingham": {
+            "name": "shellingham",
+            "version": "1.5.4",
+            "requirements": [
+                {
+                    "raw": "shellingham==1.5.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "shellingham",
+                    "specifier": "==1.5.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "simple-websocket": {
+            "name": "simple-websocket",
+            "version": "1.1.0",
+            "requirements": [
+                {
+                    "raw": "simple-websocket==1.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "simple-websocket",
+                    "specifier": "==1.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "six": {
+            "name": "six",
+            "version": "1.17.0",
+            "requirements": [
+                {
+                    "raw": "six==1.17.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "six",
+                    "specifier": "==1.17.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "smart-maintenance-saas": {
+            "name": "smart-maintenance-saas",
+            "version": "0.1.0",
+            "requirements": [
+                {
+                    "raw": "smart-maintenance-saas==0.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "smart-maintenance-saas",
+                    "specifier": "==0.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "sniffio": {
+            "name": "sniffio",
+            "version": "1.3.1",
+            "requirements": [
+                {
+                    "raw": "sniffio==1.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sniffio",
+                    "specifier": "==1.3.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "sqlalchemy": {
+            "name": "sqlalchemy",
+            "version": "2.0.41",
+            "requirements": [
+                {
+                    "raw": "sqlalchemy==2.0.41",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sqlalchemy",
+                    "specifier": "==2.0.41",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "stanio": {
+            "name": "stanio",
+            "version": "0.5.1",
+            "requirements": [
+                {
+                    "raw": "stanio==0.5.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "stanio",
+                    "specifier": "==0.5.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "starlette": {
+            "name": "starlette",
+            "version": "0.27.0",
+            "requirements": [
+                {
+                    "raw": "starlette==0.27.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "starlette",
+                    "specifier": "==0.27.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "stevedore": {
+            "name": "stevedore",
+            "version": "5.4.1",
+            "requirements": [
+                {
+                    "raw": "stevedore==5.4.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "stevedore",
+                    "specifier": "==5.4.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "sympy": {
+            "name": "sympy",
+            "version": "1.14.0",
+            "requirements": [
+                {
+                    "raw": "sympy==1.14.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sympy",
+                    "specifier": "==1.14.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "tenacity": {
+            "name": "tenacity",
+            "version": "9.1.2",
+            "requirements": [
+                {
+                    "raw": "tenacity==9.1.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tenacity",
+                    "specifier": "==9.1.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "testcontainers": {
+            "name": "testcontainers",
+            "version": "3.7.1",
+            "requirements": [
+                {
+                    "raw": "testcontainers==3.7.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "testcontainers",
+                    "specifier": "==3.7.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "threadpoolctl": {
+            "name": "threadpoolctl",
+            "version": "3.6.0",
+            "requirements": [
+                {
+                    "raw": "threadpoolctl==3.6.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "threadpoolctl",
+                    "specifier": "==3.6.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "tokenizers": {
+            "name": "tokenizers",
+            "version": "0.21.1",
+            "requirements": [
+                {
+                    "raw": "tokenizers==0.21.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tokenizers",
+                    "specifier": "==0.21.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "tomlkit": {
+            "name": "tomlkit",
+            "version": "0.13.3",
+            "requirements": [
+                {
+                    "raw": "tomlkit==0.13.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tomlkit",
+                    "specifier": "==0.13.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "torch": {
+            "name": "torch",
+            "version": "2.7.1",
+            "requirements": [
+                {
+                    "raw": "torch==2.7.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "torch",
+                    "specifier": "==2.7.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "tqdm": {
+            "name": "tqdm",
+            "version": "4.67.1",
+            "requirements": [
+                {
+                    "raw": "tqdm==4.67.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tqdm",
+                    "specifier": "==4.67.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "transformers": {
+            "name": "transformers",
+            "version": "4.52.4",
+            "requirements": [
+                {
+                    "raw": "transformers==4.52.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "transformers",
+                    "specifier": "==4.52.4",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "triton": {
+            "name": "triton",
+            "version": "3.3.1",
+            "requirements": [
+                {
+                    "raw": "triton==3.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "triton",
+                    "specifier": "==3.3.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "typer": {
+            "name": "typer",
+            "version": "0.16.0",
+            "requirements": [
+                {
+                    "raw": "typer==0.16.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typer",
+                    "specifier": "==0.16.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "typing-extensions": {
+            "name": "typing-extensions",
+            "version": "4.14.0",
+            "requirements": [
+                {
+                    "raw": "typing-extensions==4.14.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typing-extensions",
+                    "specifier": "==4.14.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "typing-inspection": {
+            "name": "typing-inspection",
+            "version": "0.4.1",
+            "requirements": [
+                {
+                    "raw": "typing-inspection==0.4.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typing-inspection",
+                    "specifier": "==0.4.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "tzdata": {
+            "name": "tzdata",
+            "version": "2025.2",
+            "requirements": [
+                {
+                    "raw": "tzdata==2025.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tzdata",
+                    "specifier": "==2025.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "urllib3": {
+            "name": "urllib3",
+            "version": "2.4.0",
+            "requirements": [
+                {
+                    "raw": "urllib3==2.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "urllib3",
+                    "specifier": "==2.4.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "uvicorn": {
+            "name": "uvicorn",
+            "version": "0.24.0.post1",
+            "requirements": [
+                {
+                    "raw": "uvicorn==0.24.0.post1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "uvicorn",
+                    "specifier": "==0.24.0.post1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "uvloop": {
+            "name": "uvloop",
+            "version": "0.21.0",
+            "requirements": [
+                {
+                    "raw": "uvloop==0.21.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "uvloop",
+                    "specifier": "==0.21.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "virtualenv": {
+            "name": "virtualenv",
+            "version": "20.31.2",
+            "requirements": [
+                {
+                    "raw": "virtualenv==20.31.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "virtualenv",
+                    "specifier": "==20.31.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "watchfiles": {
+            "name": "watchfiles",
+            "version": "1.0.5",
+            "requirements": [
+                {
+                    "raw": "watchfiles==1.0.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "watchfiles",
+                    "specifier": "==1.0.5",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "websocket-client": {
+            "name": "websocket-client",
+            "version": "1.8.0",
+            "requirements": [
+                {
+                    "raw": "websocket-client==1.8.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "websocket-client",
+                    "specifier": "==1.8.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "websockets": {
+            "name": "websockets",
+            "version": "15.0.1",
+            "requirements": [
+                {
+                    "raw": "websockets==15.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "websockets",
+                    "specifier": "==15.0.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "werkzeug": {
+            "name": "werkzeug",
+            "version": "3.1.3",
+            "requirements": [
+                {
+                    "raw": "werkzeug==3.1.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "werkzeug",
+                    "specifier": "==3.1.3",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "wrapt": {
+            "name": "wrapt",
+            "version": "1.17.2",
+            "requirements": [
+                {
+                    "raw": "wrapt==1.17.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "wrapt",
+                    "specifier": "==1.17.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "wsproto": {
+            "name": "wsproto",
+            "version": "1.2.0",
+            "requirements": [
+                {
+                    "raw": "wsproto==1.2.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "wsproto",
+                    "specifier": "==1.2.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "zipp": {
+            "name": "zipp",
+            "version": "3.23.0",
+            "requirements": [
+                {
+                    "raw": "zipp==3.23.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "zipp",
+                    "specifier": "==3.23.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "zope.event": {
+            "name": "zope.event",
+            "version": "5.0",
+            "requirements": [
+                {
+                    "raw": "zope.event==5.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "zope.event",
+                    "specifier": "==5.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "zope.interface": {
+            "name": "zope.interface",
+            "version": "7.2",
+            "requirements": [
+                {
+                    "raw": "zope.interface==7.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "zope.interface",
+                    "specifier": "==7.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "autocommand": {
+            "name": "autocommand",
+            "version": "2.2.2",
+            "requirements": [
+                {
+                    "raw": "autocommand==2.2.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "autocommand",
+                    "specifier": "==2.2.2",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "backports.tarfile": {
+            "name": "backports.tarfile",
+            "version": "1.2.0",
+            "requirements": [
+                {
+                    "raw": "backports.tarfile==1.2.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "backports.tarfile",
+                    "specifier": "==1.2.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "inflect": {
+            "name": "inflect",
+            "version": "7.3.1",
+            "requirements": [
+                {
+                    "raw": "inflect==7.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "inflect",
+                    "specifier": "==7.3.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "jaraco.collections": {
+            "name": "jaraco.collections",
+            "version": "5.1.0",
+            "requirements": [
+                {
+                    "raw": "jaraco.collections==5.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.collections",
+                    "specifier": "==5.1.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "jaraco.context": {
+            "name": "jaraco.context",
+            "version": "5.3.0",
+            "requirements": [
+                {
+                    "raw": "jaraco.context==5.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.context",
+                    "specifier": "==5.3.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "jaraco.functools": {
+            "name": "jaraco.functools",
+            "version": "4.0.1",
+            "requirements": [
+                {
+                    "raw": "jaraco.functools==4.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.functools",
+                    "specifier": "==4.0.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "jaraco.text": {
+            "name": "jaraco.text",
+            "version": "3.12.1",
+            "requirements": [
+                {
+                    "raw": "jaraco.text==3.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.text",
+                    "specifier": "==3.12.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "more-itertools": {
+            "name": "more-itertools",
+            "version": "10.3.0",
+            "requirements": [
+                {
+                    "raw": "more-itertools==10.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "more-itertools",
+                    "specifier": "==10.3.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "tomli": {
+            "name": "tomli",
+            "version": "2.0.1",
+            "requirements": [
+                {
+                    "raw": "tomli==2.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tomli",
+                    "specifier": "==2.0.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "typeguard": {
+            "name": "typeguard",
+            "version": "4.3.0",
+            "requirements": [
+                {
+                    "raw": "typeguard==4.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typeguard",
+                    "specifier": "==4.3.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "wheel": {
+            "name": "wheel",
+            "version": "0.45.1",
+            "requirements": [
+                {
+                    "raw": "wheel==0.45.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "wheel",
+                    "specifier": "==0.45.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        }
+    },
+    "affected_packages": {
+        "starlette": {
+            "name": "starlette",
+            "version": "0.27.0",
+            "requirements": [
+                {
+                    "raw": "starlette==0.27.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "starlette",
+                    "specifier": "==0.27.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.1.0",
+                "0.10.0",
+                "0.10.1",
+                "0.10.2",
+                "0.10.3",
+                "0.10.4",
+                "0.10.5",
+                "0.10.6",
+                "0.10.7",
+                "0.1.1",
+                "0.1.10",
+                "0.11.0",
+                "0.1.11",
+                "0.11.1",
+                "0.1.12",
+                "0.11.2",
+                "0.1.13",
+                "0.11.3",
+                "0.1.14",
+                "0.11.4",
+                "0.1.15",
+                "0.1.16",
+                "0.1.17",
+                "0.1.2",
+                "0.12.0",
+                "0.12.0b1",
+                "0.12.0b2",
+                "0.12.0b3",
+                "0.12.1",
+                "0.12.10",
+                "0.12.11",
+                "0.12.12",
+                "0.12.13",
+                "0.12.2",
+                "0.12.3",
+                "0.12.4",
+                "0.12.5",
+                "0.12.6",
+                "0.12.7",
+                "0.12.8",
+                "0.12.9",
+                "0.1.3",
+                "0.13.0",
+                "0.13.1",
+                "0.13.2",
+                "0.13.3",
+                "0.13.4",
+                "0.13.5",
+                "0.13.6",
+                "0.13.7",
+                "0.13.8",
+                "0.1.4",
+                "0.14.0",
+                "0.14.1",
+                "0.14.2",
+                "0.1.5",
+                "0.15.0",
+                "0.1.6",
+                "0.16.0",
+                "0.1.7",
+                "0.17.0",
+                "0.17.1",
+                "0.1.8",
+                "0.18.0",
+                "0.1.9",
+                "0.19.0",
+                "0.19.1",
+                "0.2.0",
+                "0.20.0",
+                "0.20.1",
+                "0.20.2",
+                "0.20.3",
+                "0.20.4",
+                "0.2.1",
+                "0.21.0",
+                "0.2.2",
+                "0.22.0",
+                "0.2.3",
+                "0.23.0",
+                "0.23.1",
+                "0.24.0",
+                "0.25.0",
+                "0.26.0",
+                "0.26.0.post1",
+                "0.26.1",
+                "0.27.0",
+                "0.28.0",
+                "0.29.0",
+                "0.3.0",
+                "0.30.0",
+                "0.3.1",
+                "0.31.0",
+                "0.31.1",
+                "0.3.2",
+                "0.32.0",
+                "0.32.0.post1",
+                "0.3.3",
+                "0.33.0",
+                "0.3.4",
+                "0.34.0",
+                "0.3.5",
+                "0.35.0",
+                "0.35.1",
+                "0.3.6",
+                "0.36.0",
+                "0.36.1",
+                "0.36.2",
+                "0.36.3",
+                "0.3.7",
+                "0.37.0",
+                "0.37.1",
+                "0.37.2",
+                "0.38.0",
+                "0.38.1",
+                "0.38.2",
+                "0.38.3",
+                "0.38.4",
+                "0.38.5",
+                "0.38.6",
+                "0.39.0",
+                "0.39.1",
+                "0.39.2",
+                "0.4.0",
+                "0.4.1",
+                "0.4.2",
+                "0.5.0",
+                "0.5.1",
+                "0.5.2",
+                "0.5.3",
+                "0.5.4",
+                "0.5.5",
+                "0.6.0",
+                "0.6.1",
+                "0.6.2",
+                "0.6.3",
+                "0.7.0",
+                "0.7.1",
+                "0.7.2",
+                "0.7.3",
+                "0.7.4",
+                "0.8.0",
+                "0.8.1",
+                "0.8.2",
+                "0.8.3",
+                "0.8.4",
+                "0.8.5",
+                "0.8.6",
+                "0.8.7",
+                "0.8.8",
+                "0.9.0",
+                "0.9.1",
+                "0.9.10",
+                "0.9.11",
+                "0.9.2",
+                "0.9.3",
+                "0.9.4",
+                "0.9.5",
+                "0.9.6",
+                "0.9.7",
+                "0.9.8",
+                "0.9.9"
+            ],
+            "secure_versions": [
+                "0.47.0",
+                "0.46.2",
+                "0.46.1",
+                "0.46.0",
+                "0.45.3",
+                "0.45.2",
+                "0.45.1",
+                "0.45.0",
+                "0.44.0",
+                "0.43.0",
+                "0.42.0",
+                "0.41.3",
+                "0.41.2",
+                "0.41.1",
+                "0.41.0",
+                "0.40.0"
+            ],
+            "latest_version_without_known_vulnerabilities": "0.47.0",
+            "latest_version": "0.47.0",
+            "more_info_url": "https://data.safetycli.com/p/pypi/starlette/97c/"
+        },
+        "sentence-transformers": {
+            "name": "sentence-transformers",
+            "version": "2.7.0",
+            "requirements": [
+                {
+                    "raw": "sentence-transformers==2.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sentence-transformers",
+                    "specifier": "==2.7.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.1.0",
+                "0.2.0",
+                "0.2.1",
+                "0.2.2",
+                "0.2.3",
+                "0.2.4",
+                "0.2.4.1",
+                "0.2.5",
+                "0.2.5.1",
+                "0.2.6",
+                "0.2.6.1",
+                "0.2.6.2",
+                "0.3.0",
+                "0.3.1",
+                "0.3.2",
+                "0.3.3",
+                "0.3.4",
+                "0.3.5",
+                "0.3.5.1",
+                "0.3.6",
+                "0.3.7",
+                "0.3.7.1",
+                "0.3.7.2",
+                "0.3.8",
+                "0.3.9",
+                "0.4.0",
+                "0.4.1",
+                "0.4.1.1",
+                "0.4.1.2",
+                "1.0.0",
+                "1.0.1",
+                "1.0.2",
+                "1.0.3",
+                "1.0.4",
+                "1.1.0",
+                "1.1.1",
+                "1.2.0",
+                "1.2.1",
+                "2.0.0",
+                "2.1.0",
+                "2.2.0",
+                "2.2.1",
+                "2.2.2",
+                "2.3.0",
+                "2.3.1",
+                "2.4.0",
+                "2.5.0",
+                "2.5.1",
+                "2.6.0",
+                "2.6.1",
+                "2.7.0",
+                "3.0.0",
+                "3.0.1"
+            ],
+            "secure_versions": [
+                "4.1.0",
+                "4.0.2",
+                "4.0.1",
+                "4.0.0",
+                "3.4.1",
+                "3.4.0",
+                "3.3.1",
+                "3.3.0",
+                "3.2.1",
+                "3.2.0",
+                "3.1.1",
+                "3.1.0"
+            ],
+            "latest_version_without_known_vulnerabilities": "4.1.0",
+            "latest_version": "4.1.0",
+            "more_info_url": "https://data.safetycli.com/p/pypi/sentence-transformers/97c/"
+        },
+        "pip": {
+            "name": "pip",
+            "version": "24.0",
+            "requirements": [
+                {
+                    "raw": "pip==24.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pip",
+                    "specifier": "==24.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.2",
+                "0.2.1",
+                "0.3",
+                "0.3.1",
+                "0.4",
+                "0.5",
+                "0.5.1",
+                "0.6",
+                "0.6.1",
+                "0.6.2",
+                "0.6.3",
+                "0.7",
+                "0.7.1",
+                "0.7.2",
+                "0.8",
+                "0.8.1",
+                "0.8.2",
+                "0.8.3",
+                "1.0",
+                "10.0.0",
+                "10.0.0b1",
+                "10.0.0b2",
+                "10.0.1",
+                "1.0.1",
+                "1.0.2",
+                "1.1",
+                "1.2",
+                "1.2.1",
+                "1.3",
+                "1.3.1",
+                "1.4",
+                "1.4.1",
+                "1.5",
+                "1.5.1",
+                "1.5.2",
+                "1.5.3",
+                "1.5.4",
+                "1.5.5",
+                "1.5.6",
+                "18.0",
+                "18.1",
+                "19.0",
+                "19.0.1",
+                "19.0.2",
+                "19.0.3",
+                "19.1",
+                "19.1.1",
+                "19.2",
+                "19.2.1",
+                "19.2.2",
+                "19.2.3",
+                "19.3",
+                "19.3.1",
+                "20.0",
+                "20.0.1",
+                "20.0.2",
+                "20.1",
+                "20.1.1",
+                "20.1b1",
+                "20.2",
+                "20.2.1",
+                "20.2.2",
+                "20.2.3",
+                "20.2.4",
+                "20.2b1",
+                "20.3",
+                "20.3.1",
+                "20.3.2",
+                "20.3.3",
+                "20.3.4",
+                "20.3b1",
+                "21.0",
+                "21.0.1",
+                "21.1",
+                "21.1.1",
+                "21.1.2",
+                "21.1.3",
+                "21.2",
+                "21.2.1",
+                "21.2.2",
+                "21.2.3",
+                "21.2.4",
+                "21.3",
+                "21.3.1",
+                "22.0",
+                "22.0.1",
+                "22.0.2",
+                "22.0.3",
+                "22.0.4",
+                "22.1",
+                "22.1.1",
+                "22.1.2",
+                "22.1b1",
+                "22.2",
+                "22.2.1",
+                "22.2.2",
+                "22.3",
+                "22.3.1",
+                "23.0",
+                "23.0.1",
+                "23.1",
+                "23.1.1",
+                "23.1.2",
+                "23.2",
+                "23.2.1",
+                "23.3",
+                "23.3.1",
+                "23.3.2",
+                "24.0",
+                "24.1",
+                "24.1.1",
+                "24.1.2",
+                "24.1b1",
+                "24.1b2",
+                "24.2",
+                "24.3",
+                "24.3.1",
+                "6.0",
+                "6.0.1",
+                "6.0.2",
+                "6.0.3",
+                "6.0.4",
+                "6.0.5",
+                "6.0.6",
+                "6.0.7",
+                "6.0.8",
+                "6.1.0",
+                "6.1.1",
+                "7.0.0",
+                "7.0.1",
+                "7.0.2",
+                "7.0.3",
+                "7.1.0",
+                "7.1.1",
+                "7.1.2",
+                "8.0.0",
+                "8.0.1",
+                "8.0.2",
+                "8.0.3",
+                "8.1.0",
+                "8.1.1",
+                "8.1.2",
+                "9.0.0",
+                "9.0.1",
+                "9.0.2",
+                "9.0.3"
+            ],
+            "secure_versions": [
+                "25.1.1",
+                "25.1",
+                "25.0.1",
+                "25.0"
+            ],
+            "latest_version_without_known_vulnerabilities": "25.1.1",
+            "latest_version": "25.1.1",
+            "more_info_url": "https://data.safetycli.com/p/pypi/pip/97c/"
+        },
+        "black": {
+            "name": "black",
+            "version": "23.12.1",
+            "requirements": [
+                {
+                    "raw": "black==23.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "black",
+                    "specifier": "==23.12.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "18.3a0",
+                "18.3a1",
+                "18.3a2",
+                "18.3a3",
+                "18.3a4",
+                "18.4a0",
+                "18.4a1",
+                "18.4a2",
+                "18.4a3",
+                "18.4a4",
+                "18.5b0",
+                "18.5b1",
+                "18.6b0",
+                "18.6b1",
+                "18.6b2",
+                "18.6b3",
+                "18.6b4",
+                "18.9b0",
+                "19.10b0",
+                "19.3b0",
+                "20.8b0",
+                "20.8b1",
+                "21.10b0",
+                "21.11b0",
+                "21.11b1",
+                "21.12b0",
+                "21.4b0",
+                "21.4b1",
+                "21.4b2",
+                "21.5b0",
+                "21.5b1",
+                "21.5b2",
+                "21.6b0",
+                "21.7b0",
+                "21.8b0",
+                "21.9b0",
+                "22.1.0",
+                "22.10.0",
+                "22.12.0",
+                "22.3.0",
+                "22.6.0",
+                "22.8.0",
+                "23.1.0",
+                "23.10.0",
+                "23.10.1",
+                "23.11.0",
+                "23.12.0",
+                "23.12.1",
+                "23.1a1",
+                "23.3.0",
+                "23.7.0",
+                "23.9.0",
+                "23.9.1",
+                "24.1.0",
+                "24.1.1",
+                "24.1a1",
+                "24.2.0"
+            ],
+            "secure_versions": [
+                "25.1.0",
+                "24.10.0",
+                "24.8.0",
+                "24.4.2",
+                "24.4.1",
+                "24.4.0",
+                "24.3.0"
+            ],
+            "latest_version_without_known_vulnerabilities": "25.1.0",
+            "latest_version": "25.1.0",
+            "more_info_url": "https://data.safetycli.com/p/pypi/black/97c/"
+        },
+        "anyio": {
+            "name": "anyio",
+            "version": "3.7.1",
+            "requirements": [
+                {
+                    "raw": "anyio==3.7.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "anyio",
+                    "specifier": "==3.7.1",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "1.0.0",
+                "1.0.0a1",
+                "1.0.0a2",
+                "1.0.0b1",
+                "1.0.0b2",
+                "1.0.0rc1",
+                "1.0.0rc2",
+                "1.1.0",
+                "1.2.0",
+                "1.2.1",
+                "1.2.2",
+                "1.2.3",
+                "1.3.0",
+                "1.3.1",
+                "1.4.0",
+                "2.0.0",
+                "2.0.0b1",
+                "2.0.0b2",
+                "2.0.0rc1",
+                "2.0.0rc2",
+                "2.0.1",
+                "2.0.2",
+                "2.1.0",
+                "2.2.0",
+                "3.0.0",
+                "3.0.0rc1",
+                "3.0.0rc2",
+                "3.0.0rc3",
+                "3.0.0rc4",
+                "3.0.1",
+                "3.1.0",
+                "3.2.0",
+                "3.2.1",
+                "3.3.0",
+                "3.3.1",
+                "3.3.2",
+                "3.3.3",
+                "3.3.4",
+                "3.4.0",
+                "3.5.0",
+                "3.6.0",
+                "3.6.1",
+                "3.6.2",
+                "3.7.0",
+                "3.7.0rc1",
+                "3.7.1",
+                "4.0.0",
+                "4.0.0rc1",
+                "4.1.0",
+                "4.2.0",
+                "4.3.0"
+            ],
+            "secure_versions": [
+                "4.9.0",
+                "4.8.0",
+                "4.7.0",
+                "4.6.2.post1",
+                "4.6.2",
+                "4.6.1",
+                "4.6.0",
+                "4.5.2",
+                "4.5.1",
+                "4.5.0",
+                "4.4.0"
+            ],
+            "latest_version_without_known_vulnerabilities": "4.9.0",
+            "latest_version": "4.9.0",
+            "more_info_url": "https://data.safetycli.com/p/pypi/anyio/97c/"
+        },
+        "pyjwt": {
+            "name": "pyjwt",
+            "version": "2.9.0",
+            "requirements": [
+                {
+                    "raw": "pyjwt==2.9.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyjwt",
+                    "specifier": "==2.9.0",
+                    "url": null,
+                    "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.1.1",
+                "0.1.2",
+                "0.1.3",
+                "0.1.4",
+                "0.1.5",
+                "0.1.6",
+                "0.1.7",
+                "0.1.8",
+                "0.1.9",
+                "0.2.0",
+                "0.2.1",
+                "0.2.3",
+                "0.3.0",
+                "0.3.1",
+                "0.3.2",
+                "0.4.0",
+                "0.4.1",
+                "0.4.2",
+                "0.4.3",
+                "1.0.0",
+                "1.0.1",
+                "1.1.0",
+                "1.3.0",
+                "1.4.0",
+                "1.4.1",
+                "1.4.2",
+                "1.5.0",
+                "1.5.1",
+                "1.5.2",
+                "1.5.3",
+                "1.6.0",
+                "1.6.1",
+                "1.6.3",
+                "1.6.4",
+                "1.7.0",
+                "1.7.1",
+                "2.0.0",
+                "2.0.0a1",
+                "2.0.0a2",
+                "2.0.1",
+                "2.1.0",
+                "2.10.0",
+                "2.2.0",
+                "2.3.0",
+                "2.4.0",
+                "2.5.0",
+                "2.6.0",
+                "2.7.0",
+                "2.8.0",
+                "2.9.0"
+            ],
+            "secure_versions": [
+                "2.10.1"
+            ],
+            "latest_version_without_known_vulnerabilities": "2.10.1",
+            "latest_version": "2.10.1",
+            "more_info_url": "https://data.safetycli.com/p/pypi/pyjwt/97c/"
+        }
+    },
+    "announcements": [],
+    "vulnerabilities": [
+        {
+            "vulnerability_id": "73725",
+            "package_name": "starlette",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<0.40.0"
+            ],
+            "all_vulnerable_specs": [
+                "<0.40.0"
+            ],
+            "analyzed_version": "0.27.0",
+            "analyzed_requirement": {
+                "raw": "starlette==0.27.0",
+                "extras": [],
+                "marker": null,
+                "name": "starlette",
+                "specifier": "==0.27.0",
+                "url": null,
+                "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+            },
+            "advisory": "Affected versions of the Starlette framework are vulnerable to Denial of Service (DoS) attacks due to the lack of restrictions on multipart part sizes. The vulnerability resides in the MultiPartParser class, which previously did not enforce size limits on incoming data. This issue is mitigated by introducing a max_part_size constraint and raises exceptions when limits are exceeded.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-47874",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/73725/97c"
+        },
+        {
+            "vulnerability_id": "68094",
+            "package_name": "starlette",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<=0.36.1"
+            ],
+            "all_vulnerable_specs": [
+                "<=0.36.1"
+            ],
+            "analyzed_version": "0.27.0",
+            "analyzed_requirement": {
+                "raw": "starlette==0.27.0",
+                "extras": [],
+                "marker": null,
+                "name": "starlette",
+                "specifier": "==0.27.0",
+                "url": null,
+                "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+            },
+            "advisory": "When using form data, `python-multipart` employs a Regular Expression to parse the HTTP `Content-Type` header. This creates a vulnerability where an attacker can send a specially crafted `Content-Type` option, causing significant CPU resource consumption and indefinitely stalling the server by locking the main event loop, rendering the server unable to process further requests. This issue particularly affects FastAPI servers parsing form data, leading to a Denial of Service (DoS) condition when the number of malicious requests exceeds the number of available server workers. However, this vulnerability does not impact the processing of JSON data through the `/submit_json` endpoint. It is specific to a defined set of versions of FastAPI and `python-multipart` when handling form data.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/68094/97c"
+        },
+        {
+            "vulnerability_id": "73169",
+            "package_name": "sentence-transformers",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<3.1.0"
+            ],
+            "all_vulnerable_specs": [
+                "<3.1.0"
+            ],
+            "analyzed_version": "2.7.0",
+            "analyzed_requirement": {
+                "raw": "sentence-transformers==2.7.0",
+                "extras": [],
+                "marker": null,
+                "name": "sentence-transformers",
+                "specifier": "==2.7.0",
+                "url": null,
+                "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+            },
+            "advisory": "Sentence-transformers affected versions are vulnerable to arbitrary code execution when loading PyTorch model files. The `torch.load()` function, used without the `weights_only=True` parameter, could deserialize malicious Python objects from manipulated model files. This vulnerability potentially allows attackers to execute arbitrary code on the system.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/73169/97c"
+        },
+        {
+            "vulnerability_id": "75180",
+            "package_name": "pip",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<25.0"
+            ],
+            "all_vulnerable_specs": [
+                "<25.0"
+            ],
+            "analyzed_version": "24.0",
+            "analyzed_requirement": {
+                "raw": "pip==24.0",
+                "extras": [],
+                "marker": null,
+                "name": "pip",
+                "specifier": "==24.0",
+                "url": null,
+                "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+            },
+            "advisory": "Pip solves a security vulnerability that previously allowed maliciously crafted wheel files to execute unauthorized code during installation.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/75180/97c"
+        },
+        {
+            "vulnerability_id": "66742",
+            "package_name": "black",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<24.3.0"
+            ],
+            "all_vulnerable_specs": [
+                "<24.3.0"
+            ],
+            "analyzed_version": "23.12.1",
+            "analyzed_requirement": {
+                "raw": "black==23.12.1",
+                "extras": [],
+                "marker": null,
+                "name": "black",
+                "specifier": "==23.12.1",
+                "url": null,
+                "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+            },
+            "advisory": "Affected versions of Black are vulnerable to Regular Expression Denial of Service (ReDoS) via the lines_with_leading_tabs_expanded function in the strings.py file. An attacker could exploit this vulnerability by crafting a malicious input that causes a denial of service.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-21503",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/66742/97c"
+        },
+        {
+            "vulnerability_id": "71199",
+            "package_name": "anyio",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<4.4.0"
+            ],
+            "all_vulnerable_specs": [
+                "<4.4.0"
+            ],
+            "analyzed_version": "3.7.1",
+            "analyzed_requirement": {
+                "raw": "anyio==3.7.1",
+                "extras": [],
+                "marker": null,
+                "name": "anyio",
+                "specifier": "==3.7.1",
+                "url": null,
+                "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+            },
+            "advisory": "Anyio version 4.4.0 addresses a thread race condition in `_eventloop.get_asynclib()` that caused crashes when multiple event loops of the same backend were running in separate threads and simultaneously attempted to use AnyIO for the first time. This fix ensures more stable and reliable performance in multi-threaded environments.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/71199/97c"
+        },
+        {
+            "vulnerability_id": "74429",
+            "package_name": "pyjwt",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<2.10.1"
+            ],
+            "all_vulnerable_specs": [
+                "<2.10.1"
+            ],
+            "analyzed_version": "2.9.0",
+            "analyzed_requirement": {
+                "raw": "pyjwt==2.9.0",
+                "extras": [],
+                "marker": null,
+                "name": "pyjwt",
+                "specifier": "==2.9.0",
+                "url": null,
+                "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+            },
+            "advisory": "Affected versions of pyjwt are vulnerable to Partial Comparison (CWE-187). This flaw allows attackers to bypass issuer (iss) verification by providing partial matches, potentially granting unauthorized access. The vulnerability arises in the decode method of api_jwt.py, where issuer validation incorrectly treats strings as sequences, leading to partial matches (e.g., \"abc\" being accepted for \"__abc__\"). Exploiting this requires crafting JWTs with partially matching iss claims, which is straightforward.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-53861",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/74429/97c"
+        }
+    ],
+    "ignored_vulnerabilities": [],
+    "remediations": {
+        "starlette": {
+            "requirements": {
+                "==0.27.0": {
+                    "vulnerabilities_found": 2,
+                    "version": "0.27.0",
+                    "requirement": {
+                        "raw": "starlette==0.27.0",
+                        "extras": [],
+                        "marker": null,
+                        "name": "starlette",
+                        "specifier": "==0.27.0",
+                        "url": null,
+                        "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                    },
+                    "more_info_url": "https://data.safetycli.com/p/pypi/starlette/97c/"
+                }
+            },
+            "current_version": null,
+            "vulnerabilities_found": null,
+            "recommended_version": null,
+            "other_recommended_versions": [],
+            "more_info_url": null
+        },
+        "sentence-transformers": {
+            "requirements": {
+                "==2.7.0": {
+                    "vulnerabilities_found": 1,
+                    "version": "2.7.0",
+                    "requirement": {
+                        "raw": "sentence-transformers==2.7.0",
+                        "extras": [],
+                        "marker": null,
+                        "name": "sentence-transformers",
+                        "specifier": "==2.7.0",
+                        "url": null,
+                        "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                    },
+                    "more_info_url": "https://data.safetycli.com/p/pypi/sentence-transformers/97c/"
+                }
+            },
+            "current_version": null,
+            "vulnerabilities_found": null,
+            "recommended_version": null,
+            "other_recommended_versions": [],
+            "more_info_url": null
+        },
+        "pip": {
+            "requirements": {
+                "==24.0": {
+                    "vulnerabilities_found": 1,
+                    "version": "24.0",
+                    "requirement": {
+                        "raw": "pip==24.0",
+                        "extras": [],
+                        "marker": null,
+                        "name": "pip",
+                        "specifier": "==24.0",
+                        "url": null,
+                        "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                    },
+                    "more_info_url": "https://data.safetycli.com/p/pypi/pip/97c/"
+                }
+            },
+            "current_version": null,
+            "vulnerabilities_found": null,
+            "recommended_version": null,
+            "other_recommended_versions": [],
+            "more_info_url": null
+        },
+        "black": {
+            "requirements": {
+                "==23.12.1": {
+                    "vulnerabilities_found": 1,
+                    "version": "23.12.1",
+                    "requirement": {
+                        "raw": "black==23.12.1",
+                        "extras": [],
+                        "marker": null,
+                        "name": "black",
+                        "specifier": "==23.12.1",
+                        "url": null,
+                        "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                    },
+                    "more_info_url": "https://data.safetycli.com/p/pypi/black/97c/"
+                }
+            },
+            "current_version": null,
+            "vulnerabilities_found": null,
+            "recommended_version": null,
+            "other_recommended_versions": [],
+            "more_info_url": null
+        },
+        "anyio": {
+            "requirements": {
+                "==3.7.1": {
+                    "vulnerabilities_found": 1,
+                    "version": "3.7.1",
+                    "requirement": {
+                        "raw": "anyio==3.7.1",
+                        "extras": [],
+                        "marker": null,
+                        "name": "anyio",
+                        "specifier": "==3.7.1",
+                        "url": null,
+                        "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                    },
+                    "more_info_url": "https://data.safetycli.com/p/pypi/anyio/97c/"
+                }
+            },
+            "current_version": null,
+            "vulnerabilities_found": null,
+            "recommended_version": null,
+            "other_recommended_versions": [],
+            "more_info_url": null
+        },
+        "pyjwt": {
+            "requirements": {
+                "==2.9.0": {
+                    "vulnerabilities_found": 1,
+                    "version": "2.9.0",
+                    "requirement": {
+                        "raw": "pyjwt==2.9.0",
+                        "extras": [],
+                        "marker": null,
+                        "name": "pyjwt",
+                        "specifier": "==2.9.0",
+                        "url": null,
+                        "found": "/home/yan/Documents/Git/enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas/venv/lib/python3.12/site-packages"
+                    },
+                    "more_info_url": "https://data.safetycli.com/p/pypi/pyjwt/97c/"
+                }
+            },
+            "current_version": null,
+            "vulnerabilities_found": null,
+            "recommended_version": null,
+            "other_recommended_versions": [],
+            "more_info_url": null
+        }
+    },
+    "remediations_results": {
+        "vulnerabilities_fixed": [],
+        "remediations_applied": {},
+        "remediations_skipped": {}
+    }
+}
+
+
++===========================================================================================================================================================================================+
+
+
+DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
+
+
+We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
+
+
++===========================================================================================================================================================================================+
+
+
