@@ -36,6 +36,7 @@ matplotlib = "^3.10.3"
 chromadb = "^0.4.22" # Vector database for RAG capabilities
 sentence-transformers = "^2.2.2" # For text embeddings in RAG
 locust = "^2.37.10"
+streamlit = "^1.45.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
