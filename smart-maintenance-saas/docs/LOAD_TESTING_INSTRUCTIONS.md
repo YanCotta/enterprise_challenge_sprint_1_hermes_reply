@@ -5,9 +5,11 @@
 This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
 
 - **[Backend README](../README.md)** - Docker deployment and getting started guide
+- **[System Screenshots](./SYSTEM_SCREENSHOTS.md)** - Complete visual system walkthrough with screenshots
+- **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
+- **[Future Roadmap](./FUTURE_ROADMAP.md)** - Strategic vision and planned enhancements
 - **[Deployment Status](./DEPLOYMENT_STATUS.md)** - Current deployment status and container information
 - **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
-- **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
 - **[API Documentation](./api.md)** - Complete REST API reference and usage examples  
 - **[Test Documentation](../tests/README.md)** - Test organization and execution guide
 - **[Project Overview](../../README.md)** - High-level project description and objectives
