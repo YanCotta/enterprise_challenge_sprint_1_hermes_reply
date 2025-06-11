@@ -43,6 +43,7 @@ docs/
 examples/
 scripts/
 tests/
+locustfile.py
 
 # Logs
 logs/

@@ -38,7 +38,10 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create true && \
     poetry config virtualenvs.in-project true && \
     poetry install --only=main --no-root && \
-    rm -rf $POETRY_CACHE_DIR
+    rm -rf $POETRY_CACHE_DIR && \
+    # Clean up unnecessary files to save space
+    find /app/.venv -name "*.pyc" -delete && \
+    find /app/.venv -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
 # Verify that .venv was created
 RUN ls -la /app/.venv && echo "Virtual environment created successfully"
@@ -74,15 +77,15 @@ RUN groupadd --gid 1000 appuser \
 # Set work directory
 WORKDIR /app
 
-# Copy virtual environment from builder stage
-COPY --from=builder /app/.venv /app/.venv
+# Copy virtual environment from builder stage (with proper ownership)
+COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 
-# Copy application code
+# Copy application code with proper ownership from the start
 COPY --chown=appuser:appuser . .
 
-# Create necessary directories
+# Create necessary directories with proper ownership
 RUN mkdir -p /app/logs /app/data /app/reports && \
-    chown -R appuser:appuser /app
+    chown appuser:appuser /app/logs /app/data /app/reports
 
 # Switch to non-root user
 USER appuser
