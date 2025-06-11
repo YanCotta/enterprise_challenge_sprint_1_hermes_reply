@@ -1,5 +1,7 @@
 # Smart Maintenance SaaS - System and Architecture
 
+> **🇧🇷 Para usuários brasileiros:** [Clique aqui para pular para a versão em português](#6-arquitetura-do-sistema-português)
+
 ## 📚 Documentation Navigation
 
 This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
@@ -24,11 +26,11 @@ This document provides a comprehensive overview of the system architecture for t
 
 The primary goal of this project is to create a sophisticated backend system that can:
 
-* **Ingest and Process Real-Time IoT Data:** Handle high volumes of sensor data from industrial equipment.
-* **Detect and Validate Anomalies:** Use a combination of machine learning and statistical models to identify potential issues and validate them to reduce false positives.
-* **Predict Failures:** Forecast potential equipment failures and estimate the time to failure (TTF).
-* **Automate Maintenance Workflows:** Orchestrate the entire maintenance lifecycle, from anomaly detection to scheduling and logging completed tasks.
-* **Learn and Adapt:** Continuously improve its performance by learning from system feedback and historical data.
+- **Ingest and Process Real-Time IoT Data:** Handle high volumes of sensor data from industrial equipment.
+- **Detect and Validate Anomalies:** Use a combination of machine learning and statistical models to identify potential issues and validate them to reduce false positives.
+- **Predict Failures:** Forecast potential equipment failures and estimate the time to failure (TTF).
+- **Automate Maintenance Workflows:** Orchestrate the entire maintenance lifecycle, from anomaly detection to scheduling and logging completed tasks.
+- **Learn and Adapt:** Continuously improve its performance by learning from system feedback and historical data.
 
 ---
 
@@ -83,22 +85,22 @@ graph TD
     end
 
     subgraph "Backend System"
-        API[API Gateway (FastAPI)]
+        API[API Gateway - FastAPI]
         EventBus[Event Bus]
         SystemCoordinator[System Coordinator]
 
         subgraph "Agents"
-            DAA[Data Acquisition]
-            ADA[Anomaly Detection]
-            VA[Validation]
-            Orch[Orchestrator]
-            PA[Prediction]
-            SA[Scheduling]
-            NA[Notification]
-            HIA[Human Interface]
-            RA[Reporting]
-            LA[Learning]
-            MLA[Maintenance Log]
+            DAA[Data Acquisition Agent]
+            ADA[Anomaly Detection Agent]
+            VA[Validation Agent]
+            Orch[Orchestrator Agent]
+            PA[Prediction Agent]
+            SA[Scheduling Agent]
+            NA[Notification Agent]
+            HIA[Human Interface Agent]
+            RA[Reporting Agent]
+            LA[Learning Agent]
+            MLA[Maintenance Log Agent]
         end
 
         subgraph "Data Persistence"
@@ -109,41 +111,41 @@ graph TD
 
     UI --> API
     API --> SystemCoordinator
-    SystemCoordinator -- Manages --> DAA
-    SystemCoordinator -- Manages --> ADA
-    SystemCoordinator -- Manages --> VA
-    SystemCoordinator -- Manages --> Orch
-    SystemCoordinator -- Manages --> PA
-    SystemCoordinator -- Manages --> SA
-    SystemCoordinator -- Manages --> NA
-    SystemCoordinator -- Manages --> HIA
-    SystemCoordinator -- Manages --> RA
-    SystemCoordinator -- Manages --> LA
-    SystemCoordinator -- Manages --> MLA
+    SystemCoordinator -.-> DAA
+    SystemCoordinator -.-> ADA
+    SystemCoordinator -.-> VA
+    SystemCoordinator -.-> Orch
+    SystemCoordinator -.-> PA
+    SystemCoordinator -.-> SA
+    SystemCoordinator -.-> NA
+    SystemCoordinator -.-> HIA
+    SystemCoordinator -.-> RA
+    SystemCoordinator -.-> LA
+    SystemCoordinator -.-> MLA
 
-    DAA -- Publishes to --> EventBus
-    EventBus -- Triggers --> ADA
-    ADA -- Publishes to --> EventBus
-    EventBus -- Triggers --> VA
-    VA -- Publishes to --> EventBus
-    EventBus -- Triggers --> Orch
-    Orch -- Publishes to --> EventBus
-    EventBus -- Triggers --> PA
-    EventBus -- Triggers --> HIA
-    PA -- Publishes to --> EventBus
-    HIA -- Publishes to --> EventBus
-    EventBus -- Triggers --> SA
-    SA -- Publishes to --> EventBus
-    EventBus -- Triggers --> NA
-    EventBus -- Triggers --> MLA
+    DAA --> EventBus
+    EventBus --> ADA
+    ADA --> EventBus
+    EventBus --> VA
+    VA --> EventBus
+    EventBus --> Orch
+    Orch --> EventBus
+    EventBus --> PA
+    EventBus --> HIA
+    PA --> EventBus
+    HIA --> EventBus
+    EventBus --> SA
+    SA --> EventBus
+    EventBus --> NA
+    EventBus --> MLA
 
-    DAA -- Stores Data --> DB
-    VA -- Reads Data --> DB
-    PA -- Reads Data --> DB
-    MLA -- Stores Logs --> DB
-    LA -- Stores/Retrieves --> VDB
-    RA -- Reads Data --> DB
-    RA -- Reads Data --> VDB
+    DAA --> DB
+    VA --> DB
+    PA --> DB
+    MLA --> DB
+    LA --> VDB
+    RA --> DB
+    RA --> VDB
 ```
 
 ### 2.4. Data Flow
@@ -197,9 +199,9 @@ Our machine learning implementation is solid and aligns well with the project's 
 
 **Advantages of Our EventBus Implementation:**
 
-* **Low Latency:** In-memory communication is faster than networked messaging solutions.
-* **Simplicity:** Less operational complexity compared to external messaging systems.
-* **Rapid Development:** Enables quick prototyping and iteration.
+- **Low Latency:** In-memory communication is faster than networked messaging solutions.
+- **Simplicity:** Less operational complexity compared to external messaging systems.
+- **Rapid Development:** Enables quick prototyping and iteration.
 
 ### 3.4. Future Vision
 
@@ -229,13 +231,23 @@ Our machine learning implementation is solid and aligns well with the project's 
 
 Este documento fornece uma visão geral abrangente da arquitetura de sistema para a plataforma Smart Maintenance SaaS. A plataforma foi projetada como um sistema multi-agente nativo da nuvem, que utiliza uma arquitetura orientada a eventos para fornecer uma solução modular, escalável e resiliente para manutenção preditiva no setor industrial.
 
-### 4.2. Arquitetura e Componentes
+### 6.2. Objetivos do Projeto
+
+O objetivo principal deste projeto é criar um sistema backend sofisticado que possa:
+
+- **Ingerir e Processar Dados IoT em Tempo Real:** Lidar com grandes volumes de dados de sensores de equipamentos industriais.
+- **Detectar e Validar Anomalias:** Usar uma combinação de aprendizado de máquina e modelos estatísticos para identificar problemas potenciais e validá-los para reduzir falsos positivos.
+- **Prever Falhas:** Prever falhas potenciais de equipamentos e estimar o tempo até a falha (TTF).
+- **Automatizar Fluxos de Trabalho de Manutenção:** Orquestrar todo o ciclo de vida da manutenção, desde a detecção de anomalias até o agendamento e registro de tarefas concluídas.
+- **Aprender e Adaptar:** Melhorar continuamente seu desempenho aprendendo com o feedback do sistema e dados históricos.
+
+### 6.3. Arquitetura e Componentes Principais
 
 A arquitetura é projetada em torno de um sistema multi-agente, onde agentes especializados executam tarefas específicas. Esses agentes se comunicam de forma assíncrona através de um Barramento de Eventos (Event Bus), criando um sistema desacoplado e altamente escalável.
 
-#### a. API Gateway (FastAPI)
+#### a. Gateway da API (FastAPI)
 
-O API Gateway, construído com FastAPI, é o ponto de entrada principal para todas as interações externas. Ele lida com as requisições da API, autenticação e as encaminha para os serviços apropriados dentro do sistema.
+O Gateway da API, construído com FastAPI, é o ponto de entrada principal para todas as interações externas. Ele lida com as requisições da API, autenticação e as encaminha para os serviços apropriados dentro do sistema.
 
 #### b. Coordenador do Sistema (SystemCoordinator)
 
@@ -253,23 +265,23 @@ Este é o núcleo da plataforma, consistindo em vários agentes especializados q
 
 Um banco de dados PostgreSQL com a extensão TimescaleDB é usado para a persistência de dados. O TimescaleDB é otimizado para dados de séries temporais, tornando-o ideal para armazenar leituras de sensores.
 
-### 6.2. Descrição dos Agentes
+### 6.4. Descrição dos Agentes
 
 | Agente | Papel e Responsabilidades |
 | ------ | ------------------------- |
 | **DataAcquisitionAgent** | Ingesta dados brutos de sensores, valida sua estrutura e qualidade, enriquece-os com contexto adicional e os publica para processamento posterior. |
-| **AnomalyDetectionAgent** | Inscreve-se para receber dados processados e utiliza uma abordagem de método duplo (Isolation Forest e modelos estatísticos) para detectar anomalias. Ele calcula uma pontuação de confiança para cada anomalia potencial. |
-| **ValidationAgent** | Recebe anomalias detectadas e as valida aplicando um motor de regras e analisando o contexto histórico para reduzir falsos positivos. Ele ajusta a pontuação de confiança e atribui um status de validação. |
-| **OrchestratorAgent** | O coordenador central do fluxo de trabalho. Ele ouve eventos de vários agentes e toma decisões sobre os próximos passos, como escalar para um humano ou acionar ações automatizadas, como o agendamento de manutenção. |
+| **AnomalyDetectionAgent** | Inscreve-se para receber dados processados e utiliza uma abordagem de método duplo (Isolation Forest e modelos estatísticos) para detectar anomalias. Calcula uma pontuação de confiança para cada anomalia potencial. |
+| **ValidationAgent** | Recebe anomalias detectadas e as valida aplicando um motor de regras e analisando o contexto histórico para reduzir falsos positivos. Ajusta a pontuação de confiança e atribui um status de validação. |
+| **OrchestratorAgent** | O coordenador central do fluxo de trabalho. Ouve eventos de vários agentes e toma decisões sobre os próximos passos, como escalar para um humano ou acionar ações automatizadas, como o agendamento de manutenção. |
 | **PredictionAgent** | Utiliza a biblioteca de aprendizado de máquina Prophet para analisar dados históricos de uma anomalia validada e prever o Tempo Até a Falha (TTF). Gera recomendações de manutenção com base em suas previsões. |
 | **SchedulingAgent** | Pega as previsões de manutenção e agenda as tarefas necessárias. Utiliza um algoritmo de otimização simplificado para atribuir técnicos e encontrar horários disponíveis. |
 | **NotificationAgent** | Envia notificações para técnicos e partes interessadas sobre manutenções agendadas e outros eventos importantes do sistema. |
-| **HumanInterfaceAgent** | Gerencia os pontos de decisão humano-no-ciclo. Ele simula a interação humana para decisões críticas que requerem aprovação ou entrada que não pode ser totalmente automatizada. |
+| **HumanInterfaceAgent** | Gerencia os pontos de decisão humano-no-ciclo. Simula a interação humana para decisões críticas que requerem aprovação ou entrada que não pode ser totalmente automatizada. |
 | **ReportingAgent** | Gera relatórios analíticos, visualizações e insights acionáveis relacionados às operações de manutenção, saúde do equipamento e desempenho do sistema. |
-| **LearningAgent** | Implementa um sistema de Geração Aumentada por Recuperação (RAG) usando ChromaDB e SentenceTransformers. Ele aprende com o feedback do sistema e os registros de manutenção para fornecer insights com reconhecimento de contexto e melhorar a precisão do sistema ao longo do tempo. |
+| **LearningAgent** | Implementa um sistema de Geração Aumentada por Recuperação (RAG) usando ChromaDB e SentenceTransformers. Aprende com o feedback do sistema e os registros de manutenção para fornecer insights com reconhecimento de contexto e melhorar a precisão do sistema ao longo do tempo. |
 | **MaintenanceLogAgent** | Inscreve-se em eventos de conclusão de manutenção e registra os detalhes no banco de dados, fechando o ciclo do fluxo de trabalho de manutenção e fornecendo um registro histórico de todas as atividades de manutenção. |
 
-### 6.3. Diagrama da Arquitetura do Sistema
+### 6.5. Diagrama da Arquitetura do Sistema
 
 ```mermaid
 graph TD
@@ -278,22 +290,22 @@ graph TD
     end
 
     subgraph "Sistema Backend"
-        API[API Gateway (FastAPI)]
-        EventBus[Event Bus]
+        API[Gateway da API - FastAPI]
+        EventBus[Barramento de Eventos]
         SystemCoordinator[Coordenador do Sistema]
 
         subgraph "Agentes"
-            DAA[Data Acquisition]
-            ADA[Anomaly Detection]
-            VA[Validation]
-            Orch[Orchestrator]
-            PA[Prediction]
-            SA[Scheduling]
-            NA[Notification]
-            HIA[Human Interface]
-            RA[Reporting]
-            LA[Learning]
-            MLA[Maintenance Log]
+            DAA[Agente de Aquisição de Dados]
+            ADA[Agente de Detecção de Anomalias]
+            VA[Agente de Validação]
+            Orch[Agente Orquestrador]
+            PA[Agente de Previsão]
+            SA[Agente de Agendamento]
+            NA[Agente de Notificação]
+            HIA[Agente de Interface Humana]
+            RA[Agente de Relatórios]
+            LA[Agente de Aprendizado]
+            MLA[Agente de Log de Manutenção]
         end
 
         subgraph "Persistência de Dados"
@@ -304,46 +316,46 @@ graph TD
 
     UI --> API
     API --> SystemCoordinator
-    SystemCoordinator -- Manages --> DAA
-    SystemCoordinator -- Manages --> ADA
-    SystemCoordinator -- Manages --> VA
-    SystemCoordinator -- Manages --> Orch
-    SystemCoordinator -- Manages --> PA
-    SystemCoordinator -- Manages --> SA
-    SystemCoordinator -- Manages --> NA
-    SystemCoordinator -- Manages --> HIA
-    SystemCoordinator -- Manages --> RA
-    SystemCoordinator -- Manages --> LA
-    SystemCoordinator -- Manages --> MLA
+    SystemCoordinator -.-> DAA
+    SystemCoordinator -.-> ADA
+    SystemCoordinator -.-> VA
+    SystemCoordinator -.-> Orch
+    SystemCoordinator -.-> PA
+    SystemCoordinator -.-> SA
+    SystemCoordinator -.-> NA
+    SystemCoordinator -.-> HIA
+    SystemCoordinator -.-> RA
+    SystemCoordinator -.-> LA
+    SystemCoordinator -.-> MLA
 
-    DAA -- Publishes to --> EventBus
-    EventBus -- Triggers --> ADA
-    ADA -- Publishes to --> EventBus
-    EventBus -- Triggers --> VA
-    VA -- Publishes to --> EventBus
-    EventBus -- Triggers --> Orch
-    Orch -- Publishes to --> EventBus
-    EventBus -- Triggers --> PA
-    EventBus -- Triggers --> HIA
-    PA -- Publishes to --> EventBus
-    HIA -- Publishes to --> EventBus
-    EventBus -- Triggers --> SA
-    SA -- Publishes to --> EventBus
-    EventBus -- Triggers --> NA
-    EventBus -- Triggers --> MLA
+    DAA --> EventBus
+    EventBus --> ADA
+    ADA --> EventBus
+    EventBus --> VA
+    VA --> EventBus
+    EventBus --> Orch
+    Orch --> EventBus
+    EventBus --> PA
+    EventBus --> HIA
+    PA --> EventBus
+    HIA --> EventBus
+    EventBus --> SA
+    SA --> EventBus
+    EventBus --> NA
+    EventBus --> MLA
 
-    DAA -- Stores Data --> DB
-    VA -- Reads Data --> DB
-    PA -- Reads Data --> DB
-    MLA -- Stores Logs --> DB
-    LA -- Stores/Retrieves --> VDB
-    RA -- Reads Data --> DB
-    RA -- Reads Data --> VDB
+    DAA --> DB
+    VA --> DB
+    PA --> DB
+    MLA --> DB
+    LA --> VDB
+    RA --> DB
+    RA --> VDB
 ```
 
-### 6.4. Fluxo de Dados
+### 6.6. Fluxo de Dados
 
-1. **Ingestão:** Os dados do sensor são enviados para o API Gateway e ingeridos pelo DataAcquisitionAgent.
+1. **Ingestão:** Os dados do sensor são enviados para o Gateway da API e ingeridos pelo DataAcquisitionAgent.
 2. **Processamento:** Os dados são validados, enriquecidos e armazenados no TimescaleDB. Um evento DataProcessedEvent é publicado.
 3. **Detecção de Anomalias:** O AnomalyDetectionAgent detecta anomalias potenciais e publica um AnomalyDetectedEvent.
 4. **Validação:** O ValidationAgent valida a anomalia e publica um AnomalyValidatedEvent.
@@ -356,9 +368,9 @@ graph TD
 
 ---
 
-## 5. Decisões Arquiteturais e Melhorias Futuras
+## 7. Decisões Arquiteturais e Melhorias Futuras (Português)
 
-### 5.1. Evolução do Projeto: Plano vs. Implementação
+### 7.1. Evolução do Projeto: Plano vs. Implementação
 
 Esta lista de verificação fornece uma análise transparente das funcionalidades e tecnologias delineadas no "Plano Backend Hermes" inicial versus o que foi efetivamente implementado no código durante o sprint de 14 dias. A coluna "Opinião do Desenvolvedor Sênior" oferece uma justificativa para as decisões arquiteturais que foram tomadas.
 
@@ -373,7 +385,7 @@ Esta lista de verificação fornece uma análise transparente das funcionalidade
 | **Agendamento** | OR-Tools para otimização com restrições. | A dependência `ortools` está no `pyproject.toml`, mas o `SchedulingAgent` usa uma lógica "greedy" simplificada. O código OR-Tools está comentado. | **Parcialmente implementado.** Esta é a única área onde a implementação está incompleta, mas a base está estabelecida. Dados os constrangimentos de tempo, sua abordagem greedy é um placeholder funcional. |
 | **Bancos de Dados** | TimescaleDB, Vector DB (Chroma), Redis. | TimescaleDB e ChromaDB são ambos usados. Redis está instalado mas não usado ativamente para cache ou rate-limiting ainda. | **Excelente.** Você implementou as duas tecnologias de banco de dados mais críticas e inovadoras do plano. Cache Redis é uma otimização que pode ser adicionada depois. |
 
-### 5.2. Aprofundamento na Implementação de Machine Learning
+### 7.2. Aprofundamento na Implementação de Machine Learning
 
 Nossa implementação de machine learning é sólida e se alinha bem com os objetivos do projeto.
 
@@ -381,7 +393,7 @@ Nossa implementação de machine learning é sólida e se alinha bem com os obje
 
 **Previsão:** Implementamos o `PredictionAgent` usando o `Prophet` do Facebook. Prophet é uma excelente escolha para tarefas de previsão empresarial como manutenção preditiva porque é resiliente a dados faltantes, lida automaticamente bem com tendências e sazonalidade, e é fácil de configurar. Embora o plano original também mencionasse redes LSTM, focar apenas no Prophet foi uma decisão estratégica sábia para garantir que um agente de previsão funcional e confiável fosse entregue dentro do prazo de 14 dias.
 
-### 5.3. Justificativa para o Framework Agêntico Atual
+### 7.3. Justificativa para o Framework Agêntico Atual
 
 **Por que Escolhemos uma Arquitetura Multi-Agente:**
 
@@ -392,11 +404,11 @@ Nossa implementação de machine learning é sólida e se alinha bem com os obje
 
 **Vantagens da Nossa Implementação EventBus:**
 
-* **Baixa Latência:** Comunicação em memória é mais rápida que soluções de rede.
-* **Simplicidade:** Menos complexidade operacional comparado a sistemas de mensageria externos.
-* **Desenvolvimento Rápido:** Permite prototipagem e iteração rápidas.
+- **Baixa Latência:** Comunicação em memória é mais rápida que soluções de rede.
+- **Simplicidade:** Menos complexidade operacional comparado a sistemas de mensageria externos.
+- **Desenvolvimento Rápido:** Permite prototipagem e iteração rápidas.
 
-### 5.4. Visão Futura
+### 7.4. Visão Futura
 
 **Melhorias de Curto Prazo (1-3 meses):**
 
