@@ -12,8 +12,8 @@ from core.events.event_models import SensorDataReceivedEvent, MaintenanceSchedul
 from data.schemas import SensorType, SensorReadingCreate # For creating realistic sensor data
 from core.database.crud.crud_sensor_reading import crud_sensor_reading
 
-# Mark all tests in this file as asyncio
-pytestmark = pytest.mark.asyncio
+# Mark all tests in this file as asyncio and e2e
+pytestmark = [pytest.mark.asyncio, pytest.mark.e2e]
 
 class TestSystemCoordinator(SystemCoordinator):
     """Test version of SystemCoordinator that uses a test database session factory."""
