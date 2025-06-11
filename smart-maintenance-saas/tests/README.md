@@ -1,5 +1,13 @@
 # Testing Strategy for Smart Maintenance SaaS
 
+📖 **Quick Navigation**
+
+- [📚 Main Documentation](../README.md) | [🏗️ System Architecture](../docs/SYSTEM_AND_ARCHITECTURE.md) | [📸 System Screenshots](../docs/SYSTEM_SCREENSHOTS.md)
+- [🚀 Future Roadmap](../docs/FUTURE_ROADMAP.md) | [🚀 Deployment Status](../docs/DEPLOYMENT_STATUS.md) | [⚡ Performance Baseline](../docs/PERFORMANCE_BASELINE.md)
+- [📈 Load Testing](../docs/LOAD_TESTING_INSTRUCTIONS.md) | [🔧 API Documentation](../docs/api.md)
+
+---
+
 This directory contains tests for the Smart Maintenance SaaS application. The testing strategy is designed to ensure code quality and prevent regressions while keeping tests fast and reliable.
 
 ## 📊 Current Test Status
