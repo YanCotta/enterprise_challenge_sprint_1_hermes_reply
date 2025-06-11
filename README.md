@@ -34,10 +34,12 @@ This document provides a high-level overview of the Smart Maintenance SaaS proje
 
 [![Proprietary License](https://img.shields.io/badge/License-Proprietary-red.svg)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](.)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](.)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-Available-blue)](https://hub.docker.com/r/your-username/smart-maintenance-saas)
 [![Tests](https://img.shields.io/badge/Tests-409%20Passed-brightgreen)](.)
 
 A cutting-edge Predictive Maintenance solution powered by a personalised Multi-Agent AI System - **Now Production Ready!**
+
+📦 **Docker Image Available:** Pre-built images are automatically published to [Docker Hub](https://hub.docker.com/r/your-username/smart-maintenance-saas) via GitHub Actions CI/CD.
 
 ---
 
