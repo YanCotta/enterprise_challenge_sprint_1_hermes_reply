@@ -14,7 +14,7 @@ This document provides a high-level overview of the Smart Maintenance SaaS proje
 
 ---
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+[![Proprietary License](https://img.shields.io/badge/License-Proprietary-red.svg)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](.)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](.)
 [![Tests](https://img.shields.io/badge/Tests-409%20Passed-brightgreen)](.)
