@@ -1,136 +1,171 @@
 # Future Roadmap - Smart Maintenance SaaS
 
-📖 **Quick Navigation**
+📖 **Quick Navigation** | **[🇧🇷 Português](#roteiro-futuro---português)**
 
 - [📚 Main Documentation](../README.md) | [🏗️ System Architecture](./SYSTEM_AND_ARCHITECTURE.md) | [📸 System Screenshots](./SYSTEM_SCREENSHOTS.md)
 - [🚀 Deployment Status](./DEPLOYMENT_STATUS.md) | [⚡ Performance Baseline](./PERFORMANCE_BASELINE.md) | [📈 Load Testing](./LOAD_TESTING_INSTRUCTIONS.md)
-- [🔧 API Documentation](./api.md) | [🧪 Testing Guide](../tests/README.md)
+- [🔧 API Documentation](./api.md) | [🧪 Testing Guide](../tests/README.md) | [⚙️ Configuration](../core/config/README.md) | [📝 Logging](../core/logging_config.md)
 
 ---
 
 This document outlines the strategic vision and planned enhancements for the Smart Maintenance SaaS system, building upon the solid foundation established during the initial development sprint.
 
-## Planned Architectural Enhancements
+## Status de Implementação Atual (Sprint 1 - Concluído)
 
-### CrewAI Integration
+### ✅ **Infraestrutura de Agentes Implementada**
 
-**Concept**: CrewAI is a framework for orchestrating role-playing, autonomous AI agents that work together as a coordinated crew to accomplish complex tasks through collaborative workflows.
+O sistema atual implementa com sucesso uma arquitetura multi-agente abrangente com os seguintes agentes:
 
-**Implementation Benefits**:
-- **Complex Task Orchestration**: Enable sophisticated multi-agent workflows where different agents take on specialized roles (e.g., diagnostic specialist, scheduling coordinator, resource optimizer)
-- **Role-Based Collaboration**: Agents can be assigned specific roles with defined responsibilities, improving task specialization and reducing conflicts
-- **Sequential and Parallel Processing**: Support for both sequential workflows (where one agent's output feeds into another) and parallel processing for independent tasks
-- **Enhanced Decision Making**: Multiple agents can collaborate on complex maintenance decisions, bringing different perspectives and expertise to bear
-- **Workflow Templates**: Create reusable crew templates for common maintenance scenarios (emergency response, preventive maintenance planning, equipment lifecycle management)
+1. **DataAcquisitionAgent** - Gerencia ingestão e validação de dados de sensores
+2. **AnomalyDetectionAgent** - Detecção de anomalias baseada em ML usando modelos estatísticos e Isolation Forest
+3. **ValidationAgent** - Validação de anomalias consciente do contexto usando motores de regras e análise histórica
+4. **PredictionAgent** - Previsões de tempo até falha usando biblioteca ML Facebook Prophet
+5. **OrchestratorAgent** - Coordenação central de fluxo de trabalho com roteamento inteligente de decisões
+6. **SchedulingAgent** - Agendamento de tarefas de manutenção com otimização de atribuição de técnicos
+7. **HumanInterfaceAgent** - Pontos de decisão humana simulados no circuito
+8. **NotificationAgent** - Sistema de notificação multi-canal
+9. **ReportingAgent** - Capacidades de análise e relatórios
+10. **MaintenanceLogAgent** - Rastreamento de histórico de manutenção e conformidade
 
-**Use Cases**:
-- Emergency response crews combining anomaly detection, risk assessment, and resource allocation agents
-- Maintenance planning crews involving predictive analytics, scheduling optimization, and resource management
-- Quality assurance crews with inspection agents, compliance checkers, and reporting specialists
+### ✅ **Recursos Principais Entregues**
 
-### A2A (Agent-to-Agent) Communication
+- **Arquitetura Orientada a Eventos**: EventBus personalizado com mensageria pub/sub
+- **Integração com Banco de Dados**: PostgreSQL com SQLAlchemy async ORM
+- **Testes Abrangentes**: Cobertura de testes unitários, integração e end-to-end
+- **Implantação Docker**: Containerizado com orquestração docker-compose
+- **Camada de API**: Endpoints REST FastAPI com documentação OpenAPI
+- **Monitoramento de Performance**: Infraestrutura de teste de carga e métricas baseline
+- **Gerenciamento de Configuração**: Configurações baseadas em ambiente com validação
 
-**Concept**: Direct, synchronous communication channels between agents that bypass the event bus for real-time, bidirectional exchanges requiring immediate responses.
+### ✅ **Capacidades Avançadas**
 
-**Implementation Benefits**:
-- **Real-Time Coordination**: Enable instant communication for time-critical scenarios where event bus latency is unacceptable
-- **Synchronous Workflows**: Support for request-response patterns where agents need immediate feedback or confirmation
-- **Reduced Overhead**: Direct communication eliminates event bus processing overhead for simple agent interactions
-- **Enhanced Collaboration**: Agents can engage in "conversations" to negotiate resources, share context, or coordinate complex actions
-- **Circuit Breaker Patterns**: Implement fallback mechanisms when direct communication fails, reverting to event bus communication
+- **Roteamento Inteligente de Decisões**: OrchestratorAgent implementa lógica sofisticada para auto-aprovação vs. revisão humana
+- **Previsões Alimentadas por ML**: Previsão de séries temporais baseada em Prophet para predição de falha de equipamentos
+- **Validação Consciente do Contexto**: Análise de tendências históricas e validação de anomalias baseada em regras
+- **Agendamento Otimizado**: Correspondência de habilidades de técnicos e algoritmos de otimização de recursos
+- **Monitoramento Abrangente**: Verificações de saúde, IDs de correlação e rastreamento distribuído
 
-**Implementation Patterns**:
-- **gRPC Channels**: High-performance, typed communication between agents
-- **WebSocket Connections**: Real-time bidirectional communication for streaming data
-- **REST API Endpoints**: Simple request-response patterns for agent services
-- **Message Queues**: Direct point-to-point messaging with guaranteed delivery
+## Melhorias Arquiteturais Planejadas
 
-**Use Cases**:
-- Anomaly detection agent requesting immediate context from historical data agent
-- Scheduling agent negotiating resource availability with multiple resource management agents
-- Decision agent requesting real-time input from multiple specialist agents before making critical decisions
+### Integração CrewAI
 
-### ACP/MCP (Agent Communication Protocol / Model Context Protocol)
+**Conceito**: CrewAI é um framework para orquestrar agentes de IA autônomos que assumem papéis e trabalham juntos como uma equipe coordenada para realizar tarefas complexas através de fluxos de trabalho colaborativos.
 
-**Concept**: Standardized protocols for agent communication and context sharing, enabling seamless integration between different AI models, external services, and heterogeneous agent ecosystems.
+**Benefícios da Implementação**:
+- **Orquestração de Tarefas Complexas**: Habilitar fluxos de trabalho multi-agente sofisticados onde diferentes agentes assumem papéis especializados (especialista em diagnóstico, coordenador de agendamento, otimizador de recursos)
+- **Colaboração Baseada em Papéis**: Agentes podem ser atribuídos papéis específicos com responsabilidades definidas, melhorando a especialização de tarefas e reduzindo conflitos
+- **Processamento Sequencial e Paralelo**: Suporte para fluxos de trabalho sequenciais (onde a saída de um agente alimenta outro) e processamento paralelo para tarefas independentes
+- **Tomada de Decisão Aprimorada**: Múltiplos agentes podem colaborar em decisões complexas de manutenção, trazendo diferentes perspectivas e expertise
+- **Modelos de Fluxo de Trabalho**: Criar modelos de equipe reutilizáveis para cenários comuns de manutenção (resposta de emergência, planejamento de manutenção preventiva, gerenciamento de ciclo de vida de equipamentos)
 
-**Agent Communication Protocol (ACP) Benefits**:
-- **Standardized Messaging**: Common protocol for all agent communications, ensuring compatibility and reducing integration complexity
-- **Protocol Versioning**: Support for protocol evolution without breaking existing agent implementations
-- **Authentication & Authorization**: Secure agent-to-agent communication with proper access controls
-- **Message Routing**: Intelligent routing of messages based on agent capabilities and current load
-- **Discovery Services**: Automatic discovery and registration of new agents in the ecosystem
+**Casos de Uso**:
+- Equipes de resposta de emergência combinando agentes de detecção de anomalias, avaliação de riscos e alocação de recursos
+- Equipes de planejamento de manutenção envolvendo análise preditiva, otimização de agendamento e gerenciamento de recursos
+- Equipes de garantia de qualidade com agentes de inspeção, verificadores de conformidade e especialistas em relatórios
 
-**Model Context Protocol (MCP) Benefits**:
-- **Context Preservation**: Maintain conversation context and state across different AI models and agent interactions
-- **Model Interoperability**: Enable different AI models (GPT, Claude, local models) to work together seamlessly
-- **Context Sharing**: Agents can share rich context about ongoing maintenance scenarios
-- **External Integration**: Standardized way to integrate with external AI services and tools
-- **Context Caching**: Efficient storage and retrieval of conversation context to reduce token usage and improve response times
+### Comunicação A2A (Agente-para-Agente)
 
-**Implementation Architecture**:
-- **Protocol Adapters**: Translate between different communication protocols and standards
-- **Context Managers**: Centralized management of conversation context and state
-- **Service Registry**: Dynamic discovery and registration of available agents and their capabilities
-- **Message Brokers**: Intelligent routing and delivery of messages between agents
-- **Context Stores**: Persistent storage for long-running conversation contexts
+**Conceito**: Canais de comunicação direta e síncrona entre agentes que contornam o barramento de eventos para trocas bidirecionais em tempo real que requerem respostas imediatas.
 
-**Use Cases**:
-- Seamless handoff of maintenance cases between different specialist agents
-- Integration with external AI services for specialized analysis (e.g., image recognition for equipment inspection)
-- Consistent context sharing across different user interfaces and interaction channels
-- Multi-model ensembles where different AI models contribute to maintenance decisions
+**Benefícios da Implementação**:
+- **Coordenação em Tempo Real**: Habilitar comunicação instantânea para cenários críticos em tempo onde a latência do barramento de eventos é inaceitável
+- **Fluxos de Trabalho Síncronos**: Suporte para padrões de solicitação-resposta onde agentes precisam de feedback ou confirmação imediata
+- **Overhead Reduzido**: Comunicação direta elimina overhead de processamento do barramento de eventos para interações simples entre agentes
+- **Colaboração Aprimorada**: Agentes podem engajar em "conversas" para negociar recursos, compartilhar contexto ou coordenar ações complexas
+- **Padrões Circuit Breaker**: Implementar mecanismos de fallback quando a comunicação direta falha, revertendo para comunicação via barramento de eventos
 
-## Implementation Roadmap
+**Padrões de Implementação**:
+- **Canais gRPC**: Comunicação de alta performance e tipada entre agentes
+- **Conexões WebSocket**: Comunicação bidirecional em tempo real para streaming de dados
+- **Endpoints API REST**: Padrões simples de solicitação-resposta para serviços de agentes
+- **Filas de Mensagens**: Mensageria ponto-a-ponto direta com entrega garantida
 
-### Phase 1: Foundation Enhancement (Sprint 2)
-- Implement basic A2A communication patterns for critical agent interactions
-- Establish ACP protocol definitions and initial implementation
-- Create proof-of-concept CrewAI integration for simple multi-agent workflows
+**Casos de Uso**:
+- Agente de detecção de anomalias solicitando contexto imediato do agente de dados históricos
+- Agente de agendamento negociando disponibilidade de recursos com múltiplos agentes de gerenciamento de recursos
+- Agente de decisão solicitando entrada em tempo real de múltiplos agentes especialistas antes de tomar decisões críticas
 
-### Phase 2: Advanced Collaboration (Sprint 3)
-- Full CrewAI integration with role-based agent orchestration
-- Complete A2A communication framework with circuit breaker patterns
-- MCP implementation for context sharing across models
+### ACP/MCP (Protocolo de Comunicação de Agentes / Protocolo de Contexto de Modelo)
 
-### Phase 3: Ecosystem Integration (Sprint 4)
-- External service integration through MCP adapters
-- Advanced workflow templates using CrewAI
-- Performance optimization and scalability enhancements
+**Conceito**: Protocolos padronizados para comunicação de agentes e compartilhamento de contexto, habilitando integração perfeita entre diferentes modelos de IA, serviços externos e ecossistemas de agentes heterogêneos.
 
-### Phase 4: Enterprise Features (Sprint 5)
-- Multi-tenant agent isolation and resource management
-- Advanced security and compliance features
-- Comprehensive monitoring and observability for agent ecosystems
+**Benefícios do Protocolo de Comunicação de Agentes (ACP)**:
+- **Mensageria Padronizada**: Protocolo comum para todas as comunicações de agentes, garantindo compatibilidade e reduzindo complexidade de integração
+- **Versionamento de Protocolo**: Suporte para evolução de protocolo sem quebrar implementações de agentes existentes
+- **Autenticação e Autorização**: Comunicação agente-para-agente segura com controles de acesso adequados
+- **Roteamento de Mensagens**: Roteamento inteligente de mensagens baseado em capacidades de agentes e carga atual
+- **Serviços de Descoberta**: Descoberta automática e registro de novos agentes no ecossistema
 
-## Technical Considerations
+**Benefícios do Protocolo de Contexto de Modelo (MCP)**:
+- **Preservação de Contexto**: Manter contexto de conversa e estado através de diferentes modelos de IA e interações de agentes
+- **Interoperabilidade de Modelos**: Habilitar diferentes modelos de IA (GPT, Claude, modelos locais) a trabalhar juntos perfeitamente
+- **Compartilhamento de Contexto**: Agentes podem compartilhar contexto rico sobre cenários de manutenção em andamento
+- **Integração Externa**: Forma padronizada de integrar com serviços de IA externos e ferramentas
+- **Cache de Contexto**: Armazenamento e recuperação eficiente de contexto de conversa para reduzir uso de tokens e melhorar tempos de resposta
 
-### Scalability
-- Agent communication protocols must handle high-throughput scenarios
-- Context management systems need efficient storage and retrieval mechanisms
-- Load balancing for agent workloads and communication channels
+**Arquitetura de Implementação**:
+- **Adaptadores de Protocolo**: Traduzir entre diferentes protocolos de comunicação e padrões
+- **Gerenciadores de Contexto**: Gerenciamento centralizado de contexto de conversa e estado
+- **Registro de Serviços**: Descoberta dinâmica e registro de agentes disponíveis e suas capacidades
+- **Brokers de Mensagem**: Roteamento inteligente e entrega de mensagens entre agentes
+- **Armazenamentos de Contexto**: Armazenamento persistente para contextos de conversa de longa duração
 
-### Security
-- End-to-end encryption for sensitive agent communications
-- Role-based access control for agent interactions
-- Audit logging for all agent communications and decisions
+**Casos de Uso**:
+- Transferência perfeita de casos de manutenção entre diferentes agentes especialistas
+- Integração com serviços de IA externos para análise especializada (reconhecimento de imagem para inspeção de equipamentos)
+- Compartilhamento de contexto consistente através de diferentes interfaces de usuário e canais de interação
+- Conjuntos multi-modelo onde diferentes modelos de IA contribuem para decisões de manutenção
 
-### Reliability
-- Fault tolerance in agent communication channels
-- Graceful degradation when advanced features are unavailable
-- Comprehensive error handling and recovery mechanisms
+## Roteiro de Implementação
 
-### Monitoring
-- Real-time visibility into agent interactions and performance
-- Context flow tracking across multi-agent workflows
-- Performance metrics for communication protocols and context management
+### Fase 1: Aprimoramento da Base (Sprint 2)
+- Implementar padrões básicos de comunicação A2A para interações críticas entre agentes
+- Estabelecer definições de protocolo ACP e implementação inicial
+- Criar integração prova-de-conceito CrewAI para fluxos de trabalho multi-agente simples
 
-## Success Metrics
+### Fase 2: Colaboração Avançada (Sprint 3)
+- Integração completa CrewAI com orquestração de agentes baseada em papéis
+- Framework completo de comunicação A2A com padrões circuit breaker
+- Implementação MCP para compartilhamento de contexto entre modelos
 
-- **Agent Collaboration Efficiency**: Measure the time reduction in complex maintenance workflows
-- **Communication Reliability**: Track success rates and latency of agent communications
-- **Context Accuracy**: Measure the quality and relevance of shared context across agents
-- **System Scalability**: Performance under increasing agent loads and communication volumes
-- **Integration Success**: Ease of adding new agents and external services to the ecosystem
+### Fase 3: Integração de Ecossistema (Sprint 4)
+- Integração de serviços externos através de adaptadores MCP
+- Modelos avançados de fluxo de trabalho usando CrewAI
+- Otimização de performance e melhorias de escalabilidade
 
-This roadmap positions the Smart Maintenance SaaS system for evolution into a sophisticated, multi-agent platform capable of handling complex industrial maintenance scenarios with advanced AI collaboration patterns.
+### Fase 4: Recursos Empresariais (Sprint 5)
+- Isolamento de agentes multi-tenant e gerenciamento de recursos
+- Recursos avançados de segurança e conformidade
+- Monitoramento abrangente e observabilidade para ecossistemas de agentes
+
+## Considerações Técnicas
+
+### Escalabilidade
+- Protocolos de comunicação de agentes devem lidar com cenários de alto throughput
+- Sistemas de gerenciamento de contexto precisam de mecanismos eficientes de armazenamento e recuperação
+- Balanceamento de carga para cargas de trabalho de agentes e canais de comunicação
+
+### Segurança
+- Criptografia fim-a-fim para comunicações sensíveis de agentes
+- Controle de acesso baseado em papéis para interações de agentes
+- Log de auditoria para todas as comunicações e decisões de agentes
+
+### Confiabilidade
+- Tolerância a falhas em canais de comunicação de agentes
+- Degradação graciosa quando recursos avançados não estão disponíveis
+- Tratamento de erro abrangente e mecanismos de recuperação
+
+### Monitoramento
+- Visibilidade em tempo real sobre interações e performance de agentes
+- Rastreamento de fluxo de contexto através de fluxos de trabalho multi-agente
+- Métricas de performance para protocolos de comunicação e gerenciamento de contexto
+
+## Métricas de Sucesso
+
+- **Eficiência de Colaboração de Agentes**: Medir a redução de tempo em fluxos de trabalho complexos de manutenção
+- **Confiabilidade de Comunicação**: Rastrear taxas de sucesso e latência de comunicações de agentes
+- **Precisão de Contexto**: Medir a qualidade e relevância do contexto compartilhado entre agentes
+- **Escalabilidade do Sistema**: Performance sob cargas crescentes de agentes e volumes de comunicação
+- **Sucesso de Integração**: Facilidade de adicionar novos agentes e serviços externos ao ecossistema
+
+Este roteiro posiciona o sistema Smart Maintenance SaaS para evolução em uma plataforma multi-agente sofisticada capaz de lidar com cenários complexos de manutenção industrial com padrões avançados de colaboração de IA.
