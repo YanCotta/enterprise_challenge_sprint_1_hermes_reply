@@ -604,20 +604,22 @@ graph TD
 
 ## 4. Architectural Decisions & Future Enhancements
 
-### 4.1 Project Evolution: Plan vs. Implementation
+### 4.1. Project Evolution: Plan vs. Implementation
 
-This checklist provides a transparent breakdown of the features and technologies outlined in the initial "Hermes Backend Plan" versus what was ultimately implemented in the codebase during the 14-day sprint. The "Senior Developer Opinion" column offers a rationale for the architectural trade-offs that were made.
+This checklist provides a transparent breakdown of the features and technologies outlined in the initial "Hermes Backend Plan" versus what was ultimately implemented in the codebase during the 14-day sprint. The "My Opinion" column offers my rationale for the architectural trade-offs that I made.
 
-| Component | Planned in "Hermes Backend Plan" | Implemented in Codebase | Senior Developer Opinion |
-| :--- | :--- | :--- | :--- |
-| **API & Gateway** | FastAPI, GraphQL, WebSocket Hub. | FastAPI (REST API only). The API is functional with endpoints for ingestion, reporting, and decisions. | **Good decision.** Implementing GraphQL and WebSockets would be a significant effort. A standard REST API is more than sufficient for the core functionality and deliverables. Stick with this. |
-| **Event Streaming** | Apache Kafka, Redis Streams, Event Sourcing. | Custom In-Memory `EventBus`. Your `core/events/event_bus.py` is a custom, asynchronous pub/sub system. | **Excellent trade-off.** This is the most significant architectural deviation, and it was the right one. A full Kafka setup is complex. Your custom event bus achieves the required decoupling for the agents to function in an event-driven manner, which was the primary goal. |
-| **Agent Workflow** | Temporal.io, LangGraph, Service Mesh. | Implicit Orchestration via the `OrchestratorAgent` and direct event subscriptions between agents. | **Pragmatic choice.** Like Kafka, a full workflow engine like Temporal.io is overkill for this sprint. Your `OrchestratorAgent` serves this purpose effectively for the current scope. |
-| **ML: Prediction** | Prophet and LSTM for combined forecasting. | Prophet only. The `PredictionAgent` is fully implemented using the Prophet library. | **Sufficient and strong.** Prophet is a powerful forecasting model on its own. Adding LSTM would increase complexity for potentially marginal gains in this timeframe. What you have is robust and meets the goal of predictive insights. |
-| **ML: Anomaly Detection**| Scikit-learn (IsolationForest), Statistical Models, Autoencoder, Ensemble methods. | Scikit-learn (IsolationForest) and Statistical Models are fully implemented in the `AnomalyDetectionAgent` with an ensemble decision method. | **Fully aligned.** You've successfully implemented the core of the planned anomaly detection system. Autoencoders are complex and not necessary for a functional prototype. |
-| **ML: Learning (RAG)** | RAG with ChromaDB and MLflow for MLOps. | RAG with ChromaDB and SentenceTransformers is implemented in the `LearningAgent`. MLflow is not used. | **Great work.** Implementing the RAG portion is a major feature. MLflow is an MLOps tool for experiment tracking and is not critical for the core backend functionality. It was correct to omit it. |
-| **Scheduling** | OR-Tools for constraint optimization. | The `ortools` dependency is in `pyproject.toml`, but the `SchedulingAgent` uses a simplified "greedy" logic. The OR-Tools code is commented out. | **Partially implemented.** This is the one area where the implementation is incomplete but the foundation is laid. Given the time constraints, your greedy approach is a functional placeholder. |
-| **Databases** | TimescaleDB, Vector DB (Chroma), Redis. | TimescaleDB and ChromaDB are both used. Redis is installed but not actively used for caching or rate-limiting yet. | **Excellent.** You've implemented the two most critical and novel database technologies from the plan. Redis caching is an optimization that can be added later. |
+| Component | Planned in "Hermes Backend Plan" | Implemented in Codebase | My Opinion |
+|-----------|----------------------------------|-------------------------|-------------------------|
+| **API & Gateway** | FastAPI, GraphQL, WebSocket Hub | FastAPI (REST API only). The API is functional with endpoints for ingestion, reporting, and decisions | **Good decision.** I chose not to implement GraphQL and WebSockets as they would require significant effort. A standard REST API is more than sufficient for our core functionality and deliverables. I'm keeping it as is. |
+| **Event Streaming** | Apache Kafka, Redis Streams, Event Sourcing | Custom In-Memory `EventBus`. My `core/events/event_bus.py` is a custom, asynchronous pub/sub system | **Excellent trade-off.** This was my most significant architectural deviation, and I stand by it. A full Kafka setup would be too complex. My custom event bus achieves the required decoupling for the agents to function in an event-driven manner, which was my primary goal. |
+| **Agent Workflow** | Temporal.io, LangGraph, Service Mesh | Implicit Orchestration via the `OrchestratorAgent` and direct event subscriptions between agents | **Pragmatic choice.** Like Kafka, I decided a full workflow engine like Temporal.io was unnecessary for this sprint. My `OrchestratorAgent` serves this purpose effectively for the current scope. |
+| **ML: Prediction** | Prophet and LSTM for combined forecasting | Prophet only. The `PredictionAgent` is fully implemented using the Prophet library | **Sufficient and strong.** I chose Prophet as it's a powerful forecasting model on its own. Adding LSTM would increase complexity for potentially marginal gains in this timeframe. What I implemented is robust and meets our prediction goal. |
+| **ML: Anomaly Detection** | Scikit-learn (IsolationForest), Statistical Models, Autoencoder, Ensemble methods | Scikit-learn (IsolationForest) and Statistical Models are fully implemented in the `AnomalyDetectionAgent` with an ensemble decision method | **Fully aligned.** I successfully implemented the core of the planned anomaly detection system. I skipped autoencoders as they're complex and not necessary for a functional prototype. |
+| **ML: Learning (RAG)** | RAG with ChromaDB and MLflow for MLOps | RAG with ChromaDB and SentenceTransformers is implemented in the `LearningAgent`. MLflow is not used | **Excellent work.** I prioritized implementing the RAG portion as it's a major feature. I omitted MLflow as it's an MLOps tool for experiment tracking and not critical for our core backend functionality. |
+| **Scheduling** | OR-Tools for constraint optimization | The `ortools` dependency is in `pyproject.toml`, but the `SchedulingAgent` uses a simplified "greedy" logic. The OR-Tools code is commented out | **Partially implemented.** This is the one area where my implementation is incomplete but I've laid the foundation. Given our time constraints, I used a greedy approach as a functional placeholder. |
+| **Databases** | TimescaleDB, Vector DB (Chroma), Redis | TimescaleDB and ChromaDB are both used. Redis is installed but not actively used for caching or rate-limiting yet | **Excellent.** I've implemented the two most critical and novel database technologies from the plan. Redis caching is an optimization that I can add later. |
+
+
 
 ### 4.2. Machine Learning Implementation Deep Dive
 
@@ -641,26 +643,6 @@ Our machine learning implementation is solid and aligns well with the project's 
 - **Low Latency:** In-memory communication is faster than networked messaging solutions.
 - **Simplicity:** Less operational complexity compared to external messaging systems.
 - **Rapid Development:** Enables quick prototyping and iteration.
-
-### 4.4. Future Vision
-
-**Short-Term Enhancements (1-3 months):**
-
-1. **Complete OR-Tools Implementation:** Finish the optimization algorithm in the `SchedulingAgent` for more efficient scheduling.
-2. **Redis Caching:** Implement caching for frequent database queries.
-3. **Metrics and Monitoring:** Add detailed performance metrics and health checks.
-
-**Medium-Term Enhancements (3-6 months):**
-
-1. **Gradual Migration to Kafka:** For higher throughput and event persistence.
-2. **Robust Authentication and Authorization:** Implement RBAC (Role-Based Access Control).
-3. **GraphQL API:** For more flexible frontend queries.
-
-**Long-Term Enhancements (6+ months):**
-
-1. **Microservices:** Split agents into independently deployable services.
-2. **Workflow Engine:** Migrate to Temporal.io or similar for more sophisticated orchestration.
-3. **Advanced ML:** Add neural networks and deep learning models.
 
 ---
 
@@ -1268,20 +1250,21 @@ graph TD
 
 ### 7.1. Evolução do Projeto: Plano vs. Implementação
 
-Esta lista de verificação fornece uma análise transparente das funcionalidades e tecnologias delineadas no "Plano Backend Hermes" inicial versus o que foi efetivamente implementado no código durante o sprint de 14 dias. A coluna "Opinião do Desenvolvedor Sênior" oferece uma justificativa para as decisões arquiteturais que foram tomadas.
+Esta lista de verificação fornece uma análise transparente das funcionalidades e tecnologias delineadas no "Plano Backend Hermes" inicial versus o que foi efetivamente implementado no código durante o sprint de 14 dias. A coluna "Minha Opinião" oferece minha justificativa para as decisões arquiteturais que tomei.
 
-| Componente | Planejado no "Plano Backend Hermes" | Implementado no Código | Opinião do Desenvolvedor Sênior |
+| Componente | Planejado no "Plano Backend Hermes" | Implementado no Código | Minha Opinião |
 | :--- | :--- | :--- | :--- |
-| **API & Gateway** | FastAPI, GraphQL, Hub WebSocket. | FastAPI (apenas REST API). A API é funcional com endpoints para ingestão, relatórios e decisões. | **Boa decisão.** Implementar GraphQL e WebSockets seria um esforço significativo. Uma API REST padrão é mais que suficiente para a funcionalidade principal e entregáveis. Mantenha assim. |
-| **Event Streaming** | Apache Kafka, Redis Streams, Event Sourcing. | `EventBus` customizado em memória. Seu `core/events/event_bus.py` é um sistema pub/sub assíncrono personalizado. | **Excelente trade-off.** Este é o desvio arquitetural mais significativo, e foi a escolha certa. Uma configuração completa do Kafka é complexa. Seu event bus personalizado alcança o desacoplamento necessário para os agentes funcionarem de maneira orientada a eventos, que era o objetivo principal. |
-| **Agent Workflow** | Temporal.io, LangGraph, Service Mesh. | Orquestração implícita via `OrchestratorAgent` e assinaturas diretas de eventos entre agentes. | **Escolha pragmática.** Como o Kafka, um motor de workflow completo como Temporal.io é desnecessário para este sprint. Seu `OrchestratorAgent` serve efetivamente a este propósito para o escopo atual. |
-| **ML: Previsão** | Prophet e LSTM para previsão combinada. | Prophet apenas. O `PredictionAgent` está totalmente implementado usando a biblioteca Prophet. | **Suficiente e forte.** Prophet é um modelo de previsão poderoso por si só. Adicionar LSTM aumentaria a complexidade para ganhos potencialmente marginais neste prazo. O que você tem é robusto e atende ao objetivo de predição. |
-| **ML: Detecção de Anomalias** | Scikit-learn (IsolationForest), Modelos Estatísticos, Autoencoder, métodos Ensemble. | Scikit-learn (IsolationForest) e Modelos Estatísticos estão totalmente implementados no `AnomalyDetectionAgent` com um método de decisão ensemble. | **Totalmente alinhado.** Você implementou com sucesso o núcleo do sistema de detecção de anomalias planejado. Autoencoders são complexos e não necessários para um protótipo funcional. |
-| **ML: Aprendizado (RAG)** | RAG com ChromaDB e MLflow para MLOps. | RAG com ChromaDB e SentenceTransformers está implementado no `LearningAgent`. MLflow não é usado. | **Excelente trabalho.** Implementar a parte RAG é uma funcionalidade importante. MLflow é uma ferramenta MLOps para rastreamento de experimentos e não é crítica para a funcionalidade principal do backend. Foi correto omiti-lo. |
-| **Agendamento** | OR-Tools para otimização com restrições. | A dependência `ortools` está no `pyproject.toml`, mas o `SchedulingAgent` usa uma lógica "greedy" simplificada. O código OR-Tools está comentado. | **Parcialmente implementado.** Esta é a única área onde a implementação está incompleta, mas a base está estabelecida. Dados os constrangimentos de tempo, sua abordagem greedy é um placeholder funcional. |
-| **Bancos de Dados** | TimescaleDB, Vector DB (Chroma), Redis. | TimescaleDB e ChromaDB são ambos usados. Redis está instalado mas não usado ativamente para cache ou rate-limiting ainda. | **Excelente.** Você implementou as duas tecnologias de banco de dados mais críticas e inovadoras do plano. Cache Redis é uma otimização que pode ser adicionada depois. |
+| **API & Gateway** | FastAPI, GraphQL, Hub WebSocket. | FastAPI (apenas REST API). A API é funcional com endpoints para ingestão, relatórios e decisões. | **Boa decisão.** Optei por não implementar GraphQL e WebSockets pois seria um esforço significativo. Uma API REST padrão é mais que suficiente para nossa funcionalidade principal e entregáveis. Vou manter assim. |
+| **Event Streaming** | Apache Kafka, Redis Streams, Event Sourcing. | `EventBus` customizado em memória. Meu `core/events/event_bus.py` é um sistema pub/sub assíncrono personalizado. | **Excelente trade-off.** Este foi meu desvio arquitetural mais significativo, e tenho certeza que foi a escolha certa. Uma configuração completa do Kafka seria muito complexa. Meu event bus personalizado alcança o desacoplamento necessário para os agentes funcionarem de maneira orientada a eventos, que era meu objetivo principal. |
+| **Agent Workflow** | Temporal.io, LangGraph, Service Mesh. | Orquestração implícita via `OrchestratorAgent` e assinaturas diretas de eventos entre agentes. | **Escolha pragmática.** Como o Kafka, decidi que um motor de workflow completo como Temporal.io seria desnecessário para este sprint. Meu `OrchestratorAgent` serve efetivamente a este propósito para o escopo atual. |
+| **ML: Previsão** | Prophet e LSTM para previsão combinada. | Prophet apenas. O `PredictionAgent` está totalmente implementado usando a biblioteca Prophet. | **Suficiente e forte.** Escolhi Prophet pois é um modelo de previsão poderoso por si só. Adicionar LSTM aumentaria a complexidade para ganhos potencialmente marginais neste prazo. O que implementei é robusto e atende ao objetivo de predição. |
+| **ML: Detecção de Anomalias** | Scikit-learn (IsolationForest), Modelos Estatísticos, Autoencoder, métodos Ensemble. | Scikit-learn (IsolationForest) e Modelos Estatísticos estão totalmente implementados no `AnomalyDetectionAgent` com um método de decisão ensemble. | **Totalmente alinhado.** Implementei com sucesso o núcleo do sistema de detecção de anomalias planejado. Deixei de fora os autoencoders pois são complexos e não necessários para um protótipo funcional. |
+| **ML: Aprendizado (RAG)** | RAG com ChromaDB e MLflow para MLOps. | RAG com ChromaDB e SentenceTransformers está implementado no `LearningAgent`. MLflow não é usado. | **Excelente trabalho.** Priorizei implementar a parte RAG pois é uma funcionalidade importante. Omiti o MLflow pois é uma ferramenta MLOps para rastreamento de experimentos e não é crítica para a funcionalidade principal do backend. |
+| **Agendamento** | OR-Tools para otimização com restrições. | A dependência `ortools` está no `pyproject.toml`, mas o `SchedulingAgent` usa uma lógica "greedy" simplificada. O código OR-Tools está comentado. | **Parcialmente implementado.** Esta é a única área onde minha implementação está incompleta, mas estabeleci a base. Dados os constrangimentos de tempo, usei uma abordagem greedy como um placeholder funcional. |
+| **Bancos de Dados** | TimescaleDB, Vector DB (Chroma), Redis. | TimescaleDB e ChromaDB são ambos usados. Redis está instalado mas não usado ativamente para cache ou rate-limiting ainda. | **Excelente.** Implementei as duas tecnologias de banco de dados mais críticas e inovadoras do plano. O cache Redis é uma otimização que posso adicionar depois. |
 
 ### 7.2. Aprofundamento na Implementação de Machine Learning
+
 
 Nossa implementação de machine learning é sólida e se alinha bem com os objetivos do projeto.
 
