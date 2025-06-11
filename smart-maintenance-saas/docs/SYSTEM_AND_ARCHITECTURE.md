@@ -9,6 +9,8 @@ This document is part of the Smart Maintenance SaaS documentation suite. For com
 - **[API Documentation](./api.md)** - Complete REST API reference and usage examples  
 - **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
 - **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
+- **[System Screenshots](./SYSTEM_SCREENSHOTS.md)** - Complete system demonstration with visual documentation
+- **[Future Roadmap](./FUTURE_ROADMAP.md)** - Planned enhancements and architectural evolution
 - **[Test Documentation](../tests/README.md)** - Test organization and execution guide
 - **[Project Overview](../../README.md)** - High-level project description and objectives
 
