@@ -1,6 +1,6 @@
 # Load Testing Instructions for Smart Maintenance SaaS
 
-**🇧🇷 Para usuários brasileiros:** [**Ir para a versão em português**](#instruções-de-teste-de-carga-para-smart-maintenance-saas-português)
+**🇧🇷 Para usuários brasileiros:** [**Ir para a versão em português**](#-instruções-de-teste-de-carga-para-smart-maintenance-saas-português)
 
 ## 📚 Documentation Navigation
 
