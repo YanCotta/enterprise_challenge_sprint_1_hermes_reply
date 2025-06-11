@@ -45,10 +45,12 @@ jobs:
 
     - name: Run tests
       run: |
-        # Ensure the test script is executable
-        chmod +x ./scripts/run_tests.sh
-        # Run tests without Docker containers for CI
-        ./scripts/run_tests.sh --no-container
+        # Set environment variables for testing without containers
+        export PYTHONPATH=.
+        export ENV_FILE=.env.test
+        export PYTEST_DIRECT_DB=1
+        # Run tests using Poetry to ensure proper virtual environment
+        poetry run python -m pytest tests -v
 
     # Optional: Add steps here to build and push the Docker image to Docker Hub
     # Uncomment and configure the following steps when ready to deploy
