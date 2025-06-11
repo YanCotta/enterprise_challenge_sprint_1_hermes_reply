@@ -3,7 +3,12 @@
 ## 📚 Documentation Links
 
 - **[Backend README](../../README.md)** - Main documentation and Docker deployment
+- **[System Screenshots](../../docs/SYSTEM_SCREENSHOTS.md)** - Complete visual system walkthrough with screenshots
+- **[System Architecture](../../docs/SYSTEM_AND_ARCHITECTURE.md)** - Complete system overview
+- **[Future Roadmap](../../docs/FUTURE_ROADMAP.md)** - Strategic vision and planned enhancements
 - **[Deployment Status](../../docs/DEPLOYMENT_STATUS.md)** - Current system status
+- **[API Documentation](../../docs/api.md)** - Complete REST API reference and usage examples
+- **[Test Documentation](../../tests/README.md)** - Test organization and execution guide
 - **[Project Overview](../../../README.md)** - High-level project information
 
 ---
