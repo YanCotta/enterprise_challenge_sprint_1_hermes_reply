@@ -18,6 +18,8 @@ from datetime import datetime, timedelta, timezone
 from locust import HttpUser, task, between
 from typing import Dict, Any
 
+from core.config.settings import settings
+
 
 class WebsiteUser(HttpUser):
     """
@@ -112,7 +114,7 @@ class WebsiteUser(HttpUser):
         """Send normal sensor reading to ingestion endpoint."""
         payload = self._generate_sensor_reading()
         
-        headers = {"X-API-Key": "your_default_api_key"}
+        headers = {"X-API-Key": settings.API_KEY}
         
         with self.client.post(
             "/api/v1/data/ingest",
