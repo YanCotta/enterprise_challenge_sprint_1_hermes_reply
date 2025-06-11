@@ -170,7 +170,7 @@ Este diretório contém testes para a aplicação Smart Maintenance SaaS. A estr
 
 **Total de Testes: 411** | **✅ Aprovados: 410** | **❌ Falharam: 1**
 
-### Resumo dos Resultados dos Testes
+### Resumo dos Resultados dos Testes 
 
 - **Taxa de Sucesso**: 99,8% (410/411 testes aprovados)
 - **Problemas Conhecidos**: 1 falha de restrição de agendamento
