@@ -23,6 +23,7 @@ This document is part of the Smart Maintenance SaaS documentation suite. For com
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-Available-blue)](https://hub.docker.com/r/yancotta/smart-maintenance-saas)
 [![Tests](https://img.shields.io/badge/Tests-410%2F411%20Passing-brightgreen.svg)](#test-status)
 [![Poetry](https://img.shields.io/badge/Poetry-Dependency%20Management-blue.svg)](https://python-poetry.org/)
 
@@ -107,7 +108,7 @@ The simplest way to run the complete Smart Maintenance SaaS system:
 
     ```bash
     # Pull the latest image from Docker Hub
-    docker pull your-username/smart-maintenance-saas:latest
+    docker pull yancotta/smart-maintenance-saas:latest
     
     # Run with environment variables
     docker run -d \
@@ -116,7 +117,7 @@ The simplest way to run the complete Smart Maintenance SaaS system:
       -e DATABASE_URL=postgresql://user:pass@host:5432/db \
       -e API_KEY=your_secure_api_key_min_32_characters \
       -e SECRET_KEY=your_secure_secret_key_min_32_chars \
-      your-username/smart-maintenance-saas:latest
+      yancotta/smart-maintenance-saas:latest
     ```
 
 2. **Access the application:**
@@ -179,11 +180,13 @@ The simplest way to run the complete Smart Maintenance SaaS system:
 
 ### Docker Image Details
 
-- **Image:** `smart-maintenance-saas:latest`
-- **Size:** ~12.7GB (includes full ML/data science stack)
-- **Base:** Python 3.11 with Poetry, FastAPI, Streamlit, TimescaleDB
-- **Health Checks:** All services include comprehensive health monitoring
-- **Networking:** Container-to-container communication optimized
+- **Docker Hub:** [yancotta/smart-maintenance-saas](https://hub.docker.com/r/yancotta/smart-maintenance-saas)
+- **Image:** `yancotta/smart-maintenance-saas:latest`
+- **Size:** ~3.12 GB (optimized multi-stage build)
+- **Base:** Python 3.11 with Poetry, FastAPI, Streamlit, ML libraries
+- **Available Tags:** `latest`, `main`, `main-<commit-sha>`
+- **Health Checks:** Includes comprehensive health monitoring
+- **Architecture:** linux/amd64
 
 ### Alternative: Local Development Setup
 
@@ -549,6 +552,29 @@ Todos os endpoints são seguros e requerem um `X-API-Key` válido no cabeçalho.
 
 ### Início Rápido com Docker (Recomendado)
 
+**Opção 1: Usando Imagem do Docker Hub (Mais Rápido)**
+
+```bash
+# Baixe a imagem mais recente do Docker Hub
+docker pull yancotta/smart-maintenance-saas:latest
+
+# Execute o container
+docker run -d \
+  --name smart-maintenance-saas \
+  -p 8000:8000 \
+  -e DATABASE_URL="postgresql://user:password@host:5432/dbname" \
+  -e API_KEY="your-secure-api-key-min-32-chars" \
+  -e SECRET_KEY="your-secure-secret-key-min-32-chars" \
+  yancotta/smart-maintenance-saas:latest
+
+# Acesse em http://localhost:8000/docs
+```
+
+> 🐳 **Docker Hub**: [yancotta/smart-maintenance-saas](https://hub.docker.com/r/yancotta/smart-maintenance-saas)  
+> 📦 **Tags disponíveis**: `latest`, `main`, `main-{commit}`
+
+**Opção 2: Usando Docker Compose (Stack Completa)**
+
 A maneira mais simples de executar o sistema completo Smart Maintenance SaaS:
 
 1. **Clone o repositório:**
@@ -605,11 +631,17 @@ A maneira mais simples de executar o sistema completo Smart Maintenance SaaS:
 
 ### Detalhes da Imagem Docker
 
-- **Imagem:** `smart-maintenance-saas:latest`
-- **Tamanho:** ~12.7GB (inclui stack completo ML/data science)
-- **Base:** Python 3.11 com Poetry, FastAPI, Streamlit, TimescaleDB
-- **Verificações de Saúde:** Todos os serviços incluem monitoramento abrangente de saúde
-- **Networking:** Comunicação container-to-container otimizada
+- **Repositório Docker Hub:** [yancotta/smart-maintenance-saas](https://hub.docker.com/r/yancotta/smart-maintenance-saas)
+- **Imagem:** `yancotta/smart-maintenance-saas:latest`
+- **Tamanho:** ~3.12GB (otimizada com build multi-stage)
+- **Base:** Python 3.11 slim com Poetry, FastAPI, e dependências ML
+- **Arquitetura:** linux/amd64 
+- **Tags disponíveis:** 
+  - `latest` - versão mais recente da branch main
+  - `main` - última versão estável
+  - `main-{commit}` - builds específicos por commit
+- **Verificações de Saúde:** Monitoramento integrado de saúde do container
+- **Usuário:** Executa como usuário não-root para segurança
 
 ### Alternativa: Configuração de Desenvolvimento Local
 
