@@ -1,0 +1,66 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./smart-maintenance-saas
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.8.3 # Match the version used in the project
+
+    - name: Configure Poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v3
+      with:
+        path: ./smart-maintenance-saas/.venv
+        key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          poetry-${{ runner.os }}-
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Run tests
+      run: |
+        # Ensure the test script is executable
+        chmod +x ./scripts/run_tests.sh
+        # Run tests without Docker containers for CI
+        ./scripts/run_tests.sh --no-container
+
+    # Optional: Add steps here to build and push the Docker image to Docker Hub
+    # Uncomment and configure the following steps when ready to deploy
+    # - name: Log in to Docker Hub
+    #   uses: docker/login-action@v2
+    #   with:
+    #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+    #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+    # 
+    # - name: Build and push Docker image
+    #   uses: docker/build-push-action@v4
+    #   with:
+    #     context: ./smart-maintenance-saas
+    #     push: true
+    #     tags: ${{ secrets.DOCKERHUB_USERNAME }}/smart-maintenance-saas:latest
