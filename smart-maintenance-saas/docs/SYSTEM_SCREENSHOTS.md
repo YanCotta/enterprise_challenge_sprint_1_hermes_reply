@@ -1,6 +1,6 @@
 # Smart Maintenance SaaS - System Demonstration Screenshots
 
-**🇧🇷 Para usuários brasileiros:** [**Ir para a versão em português**](#smart-maintenance-saas---capturas-de-tela-da-demonstração-do-sistema-português)
+**🇧🇷 Para usuários brasileiros:** [**Ir para a versão em português**](#-smart-maintenance-saas---capturas-de-tela-da-demonstração-do-sistema-português)
 
 ## Overview
 This document provides a complete walkthrough of the Smart Maintenance SaaS system demonstration, with designated placeholders for screenshots taken during the live demonstration process. This serves as both documentation and validation of the system's production-ready capabilities.
