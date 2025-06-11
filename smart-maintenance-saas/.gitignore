@@ -59,9 +59,6 @@ logs/
 # Docker
 .docker/
 
-# Poetry
-poetry.lock
-
 # Redis
 dump.rdb
 
