@@ -15,11 +15,11 @@ This directory contains tests for the Smart Maintenance SaaS application. The te
 
 ## 📊 Current Test Status
 
-**Total Tests: 412** | **✅ Passed: 409** | **❌ Failed: 1** | **⚠️ Errors: 2**
+**Total Tests: 411** | **✅ Passed: 410** | **❌ Failed: 1**
 
 ### Test Results Summary
-- **Success Rate**: 99.3% (409/412 tests passing)
-- **Known Issues**: 1 scheduling constraint failure + 2 UI dependency errors
+- **Success Rate**: 99.8% (410/411 tests passing)
+- **Known Issues**: 1 scheduling constraint failure
 - **Core Functionality**: 100% operational
 
 ### Known Issues
@@ -29,12 +29,6 @@ This directory contains tests for the Smart Maintenance SaaS application. The te
 - **Issue**: No available technician slots found during business hours
 - **Impact**: Low - Core system functionality works correctly
 - **Details**: Scheduling agent correctly processes events but calendar service constraints prevent scheduling
-
-**2. UI Dependency Errors (2 tests):**
-- **Tests**: `test_maintenance_logs`, `test_sensor_data`
-- **Issue**: UI integration test dependencies
-- **Impact**: Low - UI functionality verified through other means
-- **Details**: Core UI components work as verified by `final_system_test.py`
 
 ## Test Organization
 
@@ -174,12 +168,12 @@ Este diretório contém testes para a aplicação Smart Maintenance SaaS. A estr
 
 ## 📊 Status Atual dos Testes
 
-**Total de Testes: 412** | **✅ Aprovados: 409** | **❌ Falharam: 1** | **⚠️ Erros: 2**
+**Total de Testes: 411** | **✅ Aprovados: 410** | **❌ Falharam: 1**
 
 ### Resumo dos Resultados dos Testes
 
-- **Taxa de Sucesso**: 99,3% (409/412 testes aprovados)
-- **Problemas Conhecidos**: 1 falha de restrição de agendamento + 2 erros de dependência de UI
+- **Taxa de Sucesso**: 99,8% (410/411 testes aprovados)
+- **Problemas Conhecidos**: 1 falha de restrição de agendamento
 - **Funcionalidade Principal**: 100% operacional
 
 ### Problemas Conhecidos
@@ -189,12 +183,6 @@ Este diretório contém testes para a aplicação Smart Maintenance SaaS. A estr
 - **Problema**: Nenhum slot de técnico disponível encontrado durante horário comercial
 - **Impacto**: Baixo - Funcionalidade principal do sistema funciona corretamente
 - **Detalhes**: Agente de agendamento processa eventos corretamente, mas restrições do serviço de calendário impedem agendamento
-
-**2. Erros de Dependência de UI (2 testes):**
-- **Testes**: `test_maintenance_logs`, `test_sensor_data`
-- **Problema**: Dependências de teste de integração de UI
-- **Impacto**: Baixo - Funcionalidade de UI verificada por outros meios
-- **Detalhes**: Componentes principais de UI funcionam conforme verificado por `final_system_test.py`
 
 ## Organização dos Testes
 
