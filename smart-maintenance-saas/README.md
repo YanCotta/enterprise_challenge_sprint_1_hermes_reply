@@ -101,6 +101,30 @@ All endpoints are secured and require a valid `X-API-Key` in the header.
 
 The simplest way to run the complete Smart Maintenance SaaS system:
 
+**Option 1: Using Docker Hub Image (Fastest)**
+
+1. **Pull and run the pre-built image:**
+
+    ```bash
+    # Pull the latest image from Docker Hub
+    docker pull your-username/smart-maintenance-saas:latest
+    
+    # Run with environment variables
+    docker run -d \
+      --name smart-maintenance \
+      -p 8000:8000 \
+      -e DATABASE_URL=postgresql://user:pass@host:5432/db \
+      -e API_KEY=your_secure_api_key_min_32_characters \
+      -e SECRET_KEY=your_secure_secret_key_min_32_chars \
+      your-username/smart-maintenance-saas:latest
+    ```
+
+2. **Access the application:**
+   - **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
+   - **Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
+
+**Option 2: Using Docker Compose (Full Stack)**
+
 1. **Clone the repository:**
 
     ```bash
