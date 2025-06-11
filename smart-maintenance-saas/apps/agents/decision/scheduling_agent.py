@@ -416,6 +416,21 @@ class SchedulingAgent(BaseAgent):
             )
             raise AgentProcessingError(f"Greedy scheduling failed for request {maintenance_request.id}: {str(e)}", original_exception=e) from e
 
+    # ================================================================================
+    # FUTURE ENHANCEMENT: OR-Tools Advanced Constraint Programming Scheduler
+    # ================================================================================
+    # The following OR-Tools implementation is a planned future enhancement that will
+    # provide sophisticated optimization capabilities including:
+    # - Multi-objective optimization (priority, efficiency, resource utilization)
+    # - Complex constraint handling (technician skills, availability, travel time)
+    # - Global optimization across multiple maintenance requests
+    # - Advanced scheduling scenarios (recurring maintenance, emergency priorities)
+    #
+    # Current Status: IMPLEMENTED but requires OR-Tools dependency and feature flag
+    # Default Behavior: System falls back to greedy algorithm for this deliverable
+    # Activation: Set USE_OR_TOOLS_SCHEDULER=true in settings and install OR-Tools
+    # ================================================================================
+
     async def _schedule_with_or_tools(self, maintenance_requests: List[MaintenanceRequest], correlation_id: Optional[str] = None) -> OptimizedSchedule:
         """
         Advanced constraint programming scheduler using OR-Tools.
