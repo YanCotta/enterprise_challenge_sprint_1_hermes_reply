@@ -2,7 +2,7 @@
 
 *Last Updated: June 11, 2025*
 
-**🇧🇷 Para usuários brasileiros:** [**Ir para a versão em português**](#relatório-de-baseline-de-performance-português)
+**🇧🇷 Para usuários brasileiros:** [**Ir para a versão em português**](#-relatório-de-baseline-de-performance-português)
 
 ## 📚 Documentation Navigation
 
