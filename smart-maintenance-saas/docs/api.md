@@ -1,5 +1,7 @@
 # Smart Maintenance SaaS - API Documentation
 
+🇧🇷 **[Clique aqui para ler em Português](#-smart-maintenance-saas---documentação-da-api-português)** | 🇺🇸 **English Version Below**
+
 ## 📚 Documentation Navigation
 
 This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
@@ -11,7 +13,10 @@ This document is part of the Smart Maintenance SaaS documentation suite. For com
 - **[Deployment Status](./DEPLOYMENT_STATUS.md)** - Current deployment status and container information
 - **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
 - **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
+- **[Original Architecture](./original_full_system_architecture.md)** - Complete Phase 1 documentation and initial system design
 - **[Test Documentation](../tests/README.md)** - Test organization and execution guide
+- **[Logging Configuration](../core/logging_config.md)** - Structured JSON logging setup and configuration
+- **[Configuration Management](../core/config/README.md)** - Centralized configuration system using Pydantic BaseSettings
 - **[Project Overview](../../README.md)** - High-level project description and objectives
 
 ---
@@ -54,7 +59,19 @@ See the [Backend README](../README.md#control-panel-ui-streamlit) for detailed u
 
 ## Authentication
 
-Currently, the API operates without authentication for development purposes. In production, implement proper authentication mechanisms such as JWT tokens or API keys.
+All API endpoints require authentication via API key. Include the API key in the request header:
+
+```http
+X-API-Key: your-api-key-here
+```
+
+### API Key Scopes
+
+The API uses a scope-based permission system:
+
+- `data:ingest` - Permission to ingest sensor data
+- `reports:generate` - Permission to generate reports
+- `tasks:update` - Permission to submit human decisions
 
 ## Core Endpoints
 
@@ -68,15 +85,11 @@ Ingests sensor data into the Smart Maintenance system for processing and analysi
 ```json
 {
   "sensor_id": "TEMP_001",
+  "value": 25.5,
   "sensor_type": "temperature",
-  "value": 75.2,
   "unit": "celsius",
-  "equipment_id": "PUMP_A001",
-  "location": "Plant Floor 1",
-  "metadata": {
-    "calibration_date": "2024-01-15",
-    "maintenance_window": "2024-02-01"
-  }
+  "location": "Factory Floor A",
+  "timestamp": "2025-06-11T10:30:00Z"
 }
 ```
 
@@ -84,8 +97,9 @@ Ingests sensor data into the Smart Maintenance system for processing and analysi
 ```json
 {
   "message": "Data ingested successfully",
-  "sensor_reading_id": "123e4567-e89b-12d3-a456-426614174000",
-  "timestamp": "2024-01-20T10:30:00Z"
+  "timestamp": "2025-06-11T10:30:00Z",
+  "sensor_id": "TEMP_001",
+  "correlation_id": "req_123456789"
 }
 ```
 
@@ -107,606 +121,169 @@ Generates various maintenance and system reports based on the specified report t
 ```json
 {
   "report_type": "anomaly_summary",
-  "parameters": {
-    "start_date": "2024-01-01",
-    "end_date": "2024-01-31",
-    "equipment_ids": ["PUMP_A001", "PUMP_B002"]
+  "start_date": "2025-05-11",
+  "end_date": "2025-06-11",
+  "output_format": "json",
+  "include_charts": false
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "report_id": "rpt_987654321",
+  "report_type": "anomaly_summary",
+  "generated_at": "2025-06-11T10:30:00Z",
+  "report_data": {
+    "summary": "Anomaly analysis for the past 30 days",
+    "total_anomalies": 15,
+    "critical_anomalies": 3,
+    "anomalies_by_type": {
+      "temperature": 8,
+      "vibration": 5,
+      "pressure": 2
+    }
+  },
+  "metadata": {
+    "date_range": "2025-05-11 to 2025-06-11",
+    "total_sensors": 45,
+    "data_points_analyzed": 12450
   }
 }
 ```
 
 **Report Types Available:**
 - `anomaly_summary` - Summary of detected anomalies
-- `system_health` - Overall system health report  
-- `maintenance_overview` - Maintenance activities overview
-- `prediction_accuracy` - ML prediction accuracy metrics
-- `custom` - Custom report with flexible parameters
+- `system_health` - Overall system health report
+- `maintenance_summary` - Maintenance activities summary
+- `performance_summary` - System performance metrics
 
-**Response (200 OK):**
-```json
-{
-  "report_id": "rep_123e4567-e89b-12d3-a456-426614174000",
-  "report_type": "anomaly_summary",
-  "generated_at": "2024-01-20T10:30:00Z",
-  "data": {
-    "total_anomalies": 15,
-    "high_confidence": 8,
-    "medium_confidence": 5,
-    "low_confidence": 2,
-    "equipment_breakdown": {
-      "PUMP_A001": 8,
-      "PUMP_B002": 7
-    }
-  }
-}
-```
-
-### Human Decision Interface
+### Human Decision Submission
 
 #### POST /api/v1/decisions/submit
 
-Submits human feedback or decisions on system-prompted queries, enabling human-in-the-loop workflows.
+Submits human feedback or decisions on system-prompted queries for maintenance approval/rejection.
 
 **Request Body:**
 ```json
 {
-  "decision_id": "dec_123e4567-e89b-12d3-a456-426614174000",
+  "request_id": "req_maintenance_123",
   "decision": "approve",
-  "feedback": "Anomaly confirmed - schedule maintenance immediately",
-  "metadata": {
-    "reviewer": "technician_001",
-    "review_date": "2024-01-20T10:30:00Z"
-  }
+  "justification": "Critical equipment requires immediate attention",
+  "submitted_by": "operator_001"
 }
 ```
-
-**Valid Decision Values:**
-- `approve` - Approve the system recommendation
-- `reject` - Reject the system recommendation
-- `modify` - Approve with modifications
-- `escalate` - Escalate to higher authority
 
 **Response (200 OK):**
 ```json
 {
   "message": "Decision submitted successfully",
-  "decision_id": "dec_123e4567-e89b-12d3-a456-426614174000",
-  "status": "processed",
-  "next_actions": [
-    "Maintenance task scheduled",
-    "Notification sent to technician"
-  ]
+  "request_id": "req_maintenance_123",
+  "decision": "approve",
+  "timestamp": "2025-06-11T10:30:00Z",
+  "status": "processed"
 }
 ```
 
-## Data Models
-
-### SensorReading
-
-```json
-{
-  "sensor_id": "string",
-  "sensor_type": "temperature|vibration|pressure|humidity|current|voltage",
-  "value": "number",
-  "unit": "string",
-  "equipment_id": "string",
-  "location": "string",
-  "timestamp": "datetime (ISO 8601)",
-  "metadata": "object (optional)"
-}
-```
-
-### AnomalyAlert
-
-```json
-{
-  "anomaly_id": "uuid",
-  "sensor_reading_id": "uuid", 
-  "confidence_score": "number (0.0-1.0)",
-  "anomaly_type": "statistical|isolation_forest|ensemble",
-  "detected_at": "datetime (ISO 8601)",
-  "equipment_id": "string",
-  "severity": "low|medium|high|critical",
-  "validation_status": "pending|validated|false_positive"
-}
-```
-
-### MaintenanceTask
-
-```json
-{
-  "task_id": "uuid",
-  "equipment_id": "string",
-  "task_type": "preventive|corrective|predictive",
-  "priority": "low|medium|high|urgent",
-  "scheduled_date": "datetime (ISO 8601)",
-  "estimated_duration": "number (hours)",
-  "assigned_technician": "string",
-  "status": "scheduled|in_progress|completed|cancelled"
-}
-```
-
-## Error Responses
-
-The API uses standard HTTP status codes and returns errors in a consistent format:
-
-### 400 Bad Request
-```json
-{
-  "detail": "Invalid sensor type. Must be one of: temperature, vibration, pressure, humidity, current, voltage"
-}
-```
-
-### 422 Validation Error
-```json
-{
-  "detail": [
-    {
-      "loc": ["body", "sensor_id"],
-      "msg": "field required",
-      "type": "value_error.missing"
-    }
-  ]
-}
-```
-
-### 500 Internal Server Error
-```json
-{
-  "detail": "Internal server error occurred while processing the request"
-}
-```
-
-## Rate Limiting
-
-Currently, no rate limiting is implemented. In production, consider implementing:
-- 1000 requests per hour for data ingestion endpoints
-- 100 requests per hour for report generation endpoints  
-- 50 requests per hour for decision submission endpoints
-
-## Usage Examples
-
-### Python Client Example
-
-```python
-import requests
-import json
-
-# Ingest sensor data
-sensor_data = {
-    "sensor_id": "TEMP_001",
-    "sensor_type": "temperature", 
-    "value": 85.5,
-    "unit": "celsius",
-    "equipment_id": "PUMP_A001",
-    "location": "Plant Floor 1"
-}
-
-response = requests.post(
-    "http://localhost:8000/api/v1/data/ingest",
-    json=sensor_data
-)
-
-print(f"Status: {response.status_code}")
-print(f"Response: {response.json()}")
-
-# Generate anomaly report
-report_request = {
-    "report_type": "anomaly_summary",
-    "parameters": {
-        "start_date": "2024-01-01",
-        "end_date": "2024-01-31"
-    }
-}
-
-response = requests.post(
-    "http://localhost:8000/api/v1/reports/generate",
-    json=report_request
-)
-
-print(f"Report: {response.json()}")
-```
-
-### cURL Examples
-
-```bash
-# Ingest temperature data
-curl -X POST "http://localhost:8000/api/v1/data/ingest" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sensor_id": "TEMP_001",
-    "sensor_type": "temperature",
-    "value": 75.2,
-    "unit": "celsius", 
-    "equipment_id": "PUMP_A001",
-    "location": "Plant Floor 1"
-  }'
-
-# Generate system health report
-curl -X POST "http://localhost:8000/api/v1/reports/generate" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "report_type": "system_health",
-    "parameters": {}
-  }'
-
-# Submit decision
-curl -X POST "http://localhost:8000/api/v1/decisions/submit" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "decision_id": "dec_123e4567-e89b-12d3-a456-426614174000",
-    "decision": "approve",
-    "feedback": "Anomaly confirmed"
-  }'
-```
-
-## Interactive API Documentation
-
-For hands-on exploration and testing, visit the interactive API documentation at:
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-
-These interfaces provide:
-- Real-time API testing capabilities
-- Detailed schema documentation  
-- Example requests and responses
-- Authentication testing (when implemented)
-
----
-
-*For more technical details about the system architecture and agent workflows, see the [System and Architecture Documentation](./SYSTEM_AND_ARCHITECTURE.md).*
-
-- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
-- ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
-## Authentication
-
-All API endpoints require authentication via API key. Include the API key in the request header:
-
-```http
-X-API-Key: your-api-key-here
-```
-
-### API Key Scopes
-
-The API uses a scope-based permission system:
-
-- `data:ingest` - Permission to ingest sensor data
-- `reports:generate` - Permission to generate reports
-- `tasks:update` - Permission to submit human decisions
+**Decision Options:**
+- `approve` - Approve the maintenance request
+- `reject` - Reject the maintenance request
+- `defer` - Defer the decision for later review
 
 ## Health Check Endpoints
 
 ### GET /health
 
-Basic health check for the API service.
+Basic health check endpoint to verify API availability.
 
-**Response:**
-
+**Response (200 OK):**
 ```json
 {
-  "status": "healthy"
+  "status": "healthy",
+  "timestamp": "2025-06-11T10:30:00Z",
+  "version": "v1.0.0"
 }
 ```
 
-### GET /health/db
+### GET /health/detailed
 
-Database connectivity health check.
+Detailed health check including database and service status.
 
-**Response:**
-
+**Response (200 OK):**
 ```json
 {
-  "db_status": "connected"
-}
-```
-
-**Error Response (503):**
-
-```json
-{
-  "detail": "Database connection error: <error_message>"
-}
-```
-
-## Data Ingestion Endpoints
-
-### POST /api/v1/data/ingest
-
-Ingests sensor data into the Smart Maintenance system and triggers the event-driven processing pipeline.
-
-**Required Scope:** `data:ingest`
-
-**Request Body:**
-```json
-{
-  "sensor_id": "sensor_001",
-  "value": 45.6,
-  "timestamp": "2025-06-10T10:30:00Z",
-  "sensor_type": "temperature",
-  "unit": "°C",
-  "quality": 1.0,
-  "correlation_id": "optional-uuid",
-  "metadata": {
-    "location": "Factory Floor A",
-    "equipment_id": "pump_123"
-  }
-}
-```
-
-**Request Schema (`SensorReadingCreate`):**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `sensor_id` | string | Yes | Unique sensor identifier |
-| `value` | float | Yes | The sensor reading value |
-| `timestamp` | datetime | No | UTC timestamp (defaults to current time) |
-| `sensor_type` | enum | No | Type: "temperature", "vibration", "pressure" |
-| `unit` | string | No | Unit of measurement |
-| `quality` | float | No | Data quality score (0.0-1.0, default: 1.0) |
-| `correlation_id` | UUID | No | Correlation ID for tracking (auto-generated if not provided) |
-| `metadata` | object | No | Additional metadata as key-value pairs |
-
-**Response (200):**
-```json
-{
-  "status": "event_published",
-  "event_id": "12345678-1234-5678-9abc-123456789abc",
-  "correlation_id": "87654321-4321-8765-cba9-987654321cba",
-  "sensor_id": "sensor_001"
-}
-```
-
-**Error Responses:**
-- `500` - System coordinator or event bus not available
-- `422` - Validation error in request data
-
-## Reporting Endpoints
-
-### POST /api/v1/reports/generate
-
-Generates maintenance and system health reports using the ReportingAgent with enhanced async processing.
-
-**Required Scope:** `reports:generate`
-
-**Request Body:**
-```json
-{
-  "report_type": "performance_summary",
-  "format": "text",
-  "time_range_start": "2025-06-01T00:00:00Z",
-  "time_range_end": "2025-06-10T23:59:59Z",
-  "parameters": {
-    "include_details": true,
-    "severity_threshold": "medium"
+  "status": "healthy",
+  "timestamp": "2025-06-11T10:30:00Z",
+  "services": {
+    "database": "healthy",
+    "event_bus": "healthy",
+    "ml_services": "healthy"
   },
-  "include_charts": true
+  "version": "v1.0.0"
 }
 ```
-
-**Request Schema (`ReportRequest`):**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `report_type` | string | Yes | Type of report (see available types below) |
-| `format` | string | No | Output format ("json", "text", default: "json") |
-| `time_range_start` | datetime | No | Start time for report data (UTC) |
-| `time_range_end` | datetime | No | End time for report data (UTC) |
-| `parameters` | object | No | Additional report-specific parameters |
-| `include_charts` | boolean | No | Whether to include matplotlib charts (default: true) |
-
-**Available Report Types:**
-
-- `performance_summary` - Overall system performance metrics and KPIs
-- `anomaly_summary` - Summary of detected anomalies and their status
-- `maintenance_summary` - Summary of maintenance activities and schedules  
-- `system_health` - Comprehensive system health and status report
-- `equipment_status` - Status report for specific equipment
-- `prediction_accuracy` - Machine learning model performance metrics
-
-**Enhanced Features:**
-
-- **Async Processing**: Uses ThreadPoolExecutor to prevent blocking on matplotlib and analytics operations
-- **Visual Charts**: Automatically generates base64-encoded PNG charts when `include_charts=true`
-- **Multiple Formats**: JSON for structured data, text for human-readable reports
-- **Rich Metadata**: Includes generation time, data points analyzed, and analytics summary
-
-**Response (200):**
-```json
-{
-  "report_id": "report-a1b2c3d4",
-  "report_type": "performance_summary",
-  "format": "text",
-  "content": "REPORT SUMMARY\n=============\n\nReport Type: performance_summary\nData Points: 285\nProcessing Time: 12.38 ms\n\nGenerated on: 2025-06-10 14:45:00 UTC",
-  "generated_at": "2025-06-10T14:45:00.313548+00:00",
-  "charts_encoded": {
-    "main_chart": "iVBORw0KGgoAAAANSUhEUgAAAoAAAAHgCAYAAAA..."
-  },
-  "metadata": {
-    "parameters": {
-      "include_details": true
-    },
-    "time_range_start": "2025-06-01T00:00:00+00:00",
-    "time_range_end": "2025-06-10T23:59:59+00:00",
-    "include_charts": true,
-    "analytics_summary": {
-      "data_points": 285,
-      "has_chart_data": true
-    }
-  },
-  "error_message": null
-}
-```
-
-**Technical Implementation:**
-
-- **Thread Pool Processing**: Reports are generated in a separate thread to avoid blocking the async event loop
-- **Chart Generation**: Uses matplotlib with Agg backend for server-side chart generation
-- **Error Handling**: Comprehensive error reporting with correlation IDs for debugging
-```
-
-**Error Responses:**
-- `500` - System coordinator or reporting agent not available
-- `422` - Validation error in request data
-
-## Human Decision Endpoints
-
-### POST /api/v1/decisions/submit
-
-Submits human operator decisions in response to system prompts requiring human-in-the-loop input.
-
-**Required Scope:** `tasks:update`
-
-**Request Body:**
-```json
-{
-  "request_id": "decision_req_12345",
-  "decision": "approve_maintenance",
-  "justification": "Critical temperature anomaly detected, immediate maintenance required",
-  "operator_id": "operator_jane_doe",
-  "confidence": 0.95,
-  "additional_notes": "Contacted equipment vendor for specialized parts",
-  "correlation_id": "anomaly_correlation_abc123"
-}
-```
-
-**Request Schema (`DecisionResponse`):**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `request_id` | string | Yes | ID of the original decision request |
-| `decision` | string | Yes | The chosen decision/action |
-| `justification` | string | No | Explanation for the decision |
-| `operator_id` | string | Yes | ID of the human operator making the decision |
-| `timestamp` | datetime | No | When decision was made (auto-generated) |
-| `confidence` | float | No | Confidence level (0.0-1.0, default: 1.0) |
-| `additional_notes` | string | No | Additional notes or comments |
-| `correlation_id` | string | No | Correlation ID for tracking |
-
-**Common Decision Types:**
-- `approve_maintenance` - Approve scheduled maintenance
-- `reject_maintenance` - Reject/postpone maintenance
-- `escalate_to_supervisor` - Escalate to higher authority
-- `request_additional_data` - Request more information
-- `manual_override` - Override system recommendation
-- `confirm_anomaly` - Confirm detected anomaly
-- `false_positive` - Mark as false positive
-
-**Response (201):**
-```json
-{
-  "status": "success",
-  "event_id": "87654321-4321-8765-cba9-987654321cba",
-  "request_id": "decision_req_12345"
-}
-```
-
-**Error Responses:**
-- `500` - System coordinator or event bus not available
-- `422` - Validation error in request data
-
-## Event-Driven Architecture
-
-The API endpoints trigger events in the multi-agent system:
-
-### Data Ingestion Flow
-1. `POST /api/v1/data/ingest` → `SensorDataReceivedEvent`
-2. `DataAcquisitionAgent` processes and validates data
-3. `AnomalyDetectionAgent` analyzes for anomalies
-4. `ValidationAgent` validates detected anomalies
-5. `OrchestratorAgent` coordinates next steps
-
-### Reporting Flow
-1. `POST /api/v1/reports/generate` → Direct call to `ReportingAgent`
-2. Agent queries database and generates report
-3. Optional chart generation and encoding
-4. Return structured report data
-
-### Human Decision Flow
-1. System generates `HumanDecisionRequiredEvent`
-2. UI/external system calls `POST /api/v1/decisions/submit`
-3. Creates `HumanDecisionResponseEvent`
-4. `OrchestratorAgent` processes decision and continues workflow
 
 ## Error Handling
 
-The API uses standard HTTP status codes and returns detailed error messages:
+The API uses standard HTTP status codes and returns structured error responses:
 
-### Standard Error Response Format
+### Error Response Format
+
 ```json
 {
-  "detail": "Error description here"
-}
-```
-
-### Common Status Codes
-- `200` - Success
-- `201` - Created successfully
-- `422` - Validation error (invalid request data)
-- `500` - Internal server error
-- `503` - Service unavailable (database connectivity issues)
-
-### Validation Errors (422)
-```json
-{
-  "detail": [
-    {
-      "loc": ["body", "sensor_id"],
-      "msg": "field required",
-      "type": "value_error.missing"
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "The request body is invalid",
+    "details": {
+      "field": "sensor_id",
+      "issue": "This field is required"
     }
-  ]
+  },
+  "timestamp": "2025-06-11T10:30:00Z",
+  "request_id": "req_error_123"
 }
 ```
+
+### Common Error Codes
+
+- `400 Bad Request` - Invalid request format or missing required fields
+- `401 Unauthorized` - Missing or invalid API key
+- `403 Forbidden` - Insufficient permissions for the requested operation
+- `404 Not Found` - Requested resource not found
+- `422 Unprocessable Entity` - Request validation failed
+- `500 Internal Server Error` - Unexpected server error
 
 ## Rate Limiting
 
-The API implements rate limiting to ensure system stability:
+The API implements rate limiting to ensure fair usage:
 
-- Data ingestion: 100 requests per minute per API key
-- Report generation: 10 requests per minute per API key
-- Decision submission: 50 requests per minute per API key
+- **Data Ingestion**: 100 requests per minute per API key
+- **Report Generation**: 10 requests per minute per API key
+- **Decision Submission**: 50 requests per minute per API key
 
-Rate limit headers are included in responses:
+Rate limit headers are included in all responses:
+
 ```http
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
-X-RateLimit-Reset: 1718026800
+X-RateLimit-Reset: 1623456789
 ```
 
-## Data Formats
+## Examples
 
-### DateTime Format
-All datetime fields use ISO 8601 format in UTC:
-```
-2025-06-10T14:30:00Z
-```
+### Complete Data Ingestion Workflow
 
-### UUID Format
-UUIDs follow RFC 4122 standard:
-```
-12345678-1234-5678-9abc-123456789abc
-```
-
-### Sensor Types
-Supported sensor types:
-- `temperature` - Temperature sensors (°C, °F, K)
-- `vibration` - Vibration sensors (mm/s, g, Hz)
-- `pressure` - Pressure sensors (Pa, psi, bar)
-
-## Example Workflows
-
-### Complete Sensor Data Processing
 ```bash
 # 1. Ingest sensor data
 curl -X POST "http://localhost:8000/api/v1/data/ingest" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "sensor_id": "temp_001",
+    "sensor_id": "TEMP_001",
     "value": 85.5,
     "sensor_type": "temperature",
-    "unit": "°C"
+    "unit": "celsius",
+    "location": "Factory Floor A"
   }'
 
 # 2. Generate anomaly report
@@ -715,71 +292,326 @@ curl -X POST "http://localhost:8000/api/v1/reports/generate" \
   -H "Content-Type: application/json" \
   -d '{
     "report_type": "anomaly_summary",
-    "format": "json"
+    "start_date": "2025-05-11",
+    "end_date": "2025-06-11"
   }'
 
-# 3. Submit human decision (if required)
+# 3. Submit maintenance decision
 curl -X POST "http://localhost:8000/api/v1/decisions/submit" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "request_id": "decision_12345",
-    "decision": "approve_maintenance",
-    "operator_id": "maintenance_supervisor_01"
+    "request_id": "req_maintenance_123",
+    "decision": "approve",
+    "justification": "Temperature anomaly requires immediate attention"
   }'
 ```
 
-## Security Considerations
+---
 
-- Always use HTTPS in production
-- Rotate API keys regularly
-- Implement IP whitelisting for additional security
-- Monitor API usage for anomalous patterns
-- Use scope-based permissions appropriately
+## 🇧🇷 Smart Maintenance SaaS - Documentação da API (Português)
 
-## Monitoring and Observability
+### 📚 Navegação da Documentação
 
-The API provides built-in monitoring capabilities:
+Este documento faz parte do conjunto de documentação do Smart Maintenance SaaS. Para compreensão completa do sistema, consulte também:
 
-- Health check endpoints for uptime monitoring
-- Structured logging for request/response tracking
-- Correlation IDs for distributed tracing
-- Performance metrics via built-in FastAPI instrumentation
-
-## SDK and Client Libraries
-
-For easier integration, consider using:
-
-- Python: `httpx` or `requests` libraries
-- JavaScript/Node.js: `axios` or `fetch`
-- cURL: For testing and scripting
-
-Example Python client:
-```python
-import httpx
-
-class SmartMaintenanceClient:
-    def __init__(self, base_url: str, api_key: str):
-        self.base_url = base_url
-        self.headers = {"X-API-Key": api_key}
-    
-    async def ingest_sensor_data(self, sensor_data: dict):
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base_url}/api/v1/data/ingest",
-                json=sensor_data,
-                headers=self.headers
-            )
-            return response.json()
-```
-
-## Support and Documentation
-
-- **Interactive API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Alternative Docs**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-- **System Architecture**: [SYSTEM_AND_ARCHITECTURE.md](./SYSTEM_AND_ARCHITECTURE.md)
-- **Load Testing Guide**: [LOAD_TESTING_INSTRUCTIONS.md](./LOAD_TESTING_INSTRUCTIONS.md)
+- **[README do Backend](../README.md)** - Implantação Docker e guia de primeiros passos
+- **[Capturas de Tela do Sistema](./SYSTEM_SCREENSHOTS.md)** - Demonstração visual completa do sistema com capturas de tela
+- **[Sistema e Arquitetura](./SYSTEM_AND_ARCHITECTURE.md)** - Visão geral completa da arquitetura e componentes do sistema
+- **[Roadmap Futuro](./FUTURE_ROADMAP.md)** - Visão estratégica e melhorias planejadas
+- **[Status de Implantação](./DEPLOYMENT_STATUS.md)** - Status atual de implantação e informações do container
+- **[Baseline de Performance](./PERFORMANCE_BASELINE.md)** - Resultados de testes de carga e métricas de performance
+- **[Instruções de Teste de Carga](./LOAD_TESTING_INSTRUCTIONS.md)** - Guia abrangente para execução de testes de performance
+- **[Arquitetura Original](./original_full_system_architecture.md)** - Documentação completa da Fase 1 e design inicial do sistema
+- **[Documentação de Testes](../tests/README.md)** - Organização e guia de execução de testes
+- **[Configuração de Logging](../core/logging_config.md)** - Configuração de logging JSON estruturado
+- **[Gerenciamento de Configuração](../core/config/README.md)** - Sistema centralizado de configuração usando Pydantic BaseSettings
+- **[Visão Geral do Projeto](../../README.md)** - Descrição de alto nível e objetivos do projeto
 
 ---
 
-**Note**: This API documentation reflects the current implementation of the Smart Maintenance SaaS backend. For the most up-to-date endpoint details and schemas, refer to the interactive API documentation at `/docs`.
+## Visão Geral
+
+A API Smart Maintenance SaaS fornece uma interface RESTful abrangente para operações de manutenção preditiva industrial. A API é construída com FastAPI e segue os padrões OpenAPI 3.0, oferecendo documentação e validação automáticas.
+
+**URL Base**: `http://localhost:8000` (implantação Docker)  
+**Versão da API**: v1  
+**Status de Produção**: ✅ Pronto  
+**Documentação**: 
+- Documentação Interativa da API: `http://localhost:8000/docs`
+- Documentação ReDoc: `http://localhost:8000/redoc`
+
+## Início Rápido com Docker
+
+```bash
+# Inicie o sistema completo
+docker compose up -d
+
+# Pontos de acesso
+# API: http://localhost:8000
+# UI: http://localhost:8501
+# Docs: http://localhost:8000/docs
+```
+
+## Interface do Painel de Controle
+
+Para interação fácil com a API, um painel de controle baseado em Streamlit está disponível em `http://localhost:8501`. O painel de controle fornece:
+
+- **Formulários visuais** para todos os endpoints da API
+- **Validação em tempo real** e tratamento de erros
+- **Monitoramento de saúde do sistema** e verificações de conectividade
+- **Ferramentas de teste rápido** para exploração rápida da API
+
+Ao usar Docker: A UI fica automaticamente disponível em `http://localhost:8501` quando você executa `docker compose up -d`.
+
+Consulte o [README do Backend](../README.md#control-panel-ui-streamlit) para instruções detalhadas de uso.
+
+## Autenticação
+
+Todos os endpoints da API requerem autenticação via chave API. Inclua a chave API no cabeçalho da requisição:
+
+```http
+X-API-Key: sua-chave-api-aqui
+```
+
+### Escopos da Chave API
+
+A API usa um sistema de permissões baseado em escopo:
+
+- `data:ingest` - Permissão para ingerir dados de sensores
+- `reports:generate` - Permissão para gerar relatórios
+- `tasks:update` - Permissão para submeter decisões humanas
+
+## Endpoints Principais
+
+### Ingestão de Dados
+
+#### POST /api/v1/data/ingest
+
+Ingere dados de sensores no sistema Smart Maintenance para processamento e análise.
+
+**Corpo da Requisição:**
+```json
+{
+  "sensor_id": "TEMP_001",
+  "value": 25.5,
+  "sensor_type": "temperature",
+  "unit": "celsius",
+  "location": "Piso da Fábrica A",
+  "timestamp": "2025-06-11T10:30:00Z"
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "message": "Dados ingeridos com sucesso",
+  "timestamp": "2025-06-11T10:30:00Z",
+  "sensor_id": "TEMP_001",
+  "correlation_id": "req_123456789"
+}
+```
+
+**Tipos de Sensor Suportados:**
+- `temperature` (temperatura)
+- `vibration` (vibração)
+- `pressure` (pressão)
+- `humidity` (umidade)
+- `current` (corrente)
+- `voltage` (voltagem)
+
+### Geração de Relatórios
+
+#### POST /api/v1/reports/generate
+
+Gera vários relatórios de manutenção e sistema baseados no tipo de relatório especificado.
+
+**Corpo da Requisição:**
+```json
+{
+  "report_type": "anomaly_summary",
+  "start_date": "2025-05-11",
+  "end_date": "2025-06-11",
+  "output_format": "json",
+  "include_charts": false
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "report_id": "rpt_987654321",
+  "report_type": "anomaly_summary",
+  "generated_at": "2025-06-11T10:30:00Z",
+  "report_data": {
+    "summary": "Análise de anomalias dos últimos 30 dias",
+    "total_anomalies": 15,
+    "critical_anomalies": 3,
+    "anomalies_by_type": {
+      "temperature": 8,
+      "vibration": 5,
+      "pressure": 2
+    }
+  },
+  "metadata": {
+    "date_range": "2025-05-11 to 2025-06-11",
+    "total_sensors": 45,
+    "data_points_analyzed": 12450
+  }
+}
+```
+
+**Tipos de Relatório Disponíveis:**
+- `anomaly_summary` - Resumo de anomalias detectadas
+- `system_health` - Relatório geral de saúde do sistema
+- `maintenance_summary` - Resumo de atividades de manutenção
+- `performance_summary` - Métricas de performance do sistema
+
+### Submissão de Decisão Humana
+
+#### POST /api/v1/decisions/submit
+
+Submete feedback humano ou decisões sobre consultas solicitadas pelo sistema para aprovação/rejeição de manutenção.
+
+**Corpo da Requisição:**
+```json
+{
+  "request_id": "req_maintenance_123",
+  "decision": "approve",
+  "justification": "Equipamento crítico requer atenção imediata",
+  "submitted_by": "operator_001"
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "message": "Decisão submetida com sucesso",
+  "request_id": "req_maintenance_123",
+  "decision": "approve",
+  "timestamp": "2025-06-11T10:30:00Z",
+  "status": "processed"
+}
+```
+
+**Opções de Decisão:**
+- `approve` - Aprovar a solicitação de manutenção
+- `reject` - Rejeitar a solicitação de manutenção
+- `defer` - Adiar a decisão para revisão posterior
+
+## Endpoints de Verificação de Saúde
+
+### GET /health
+
+Endpoint básico de verificação de saúde para verificar disponibilidade da API.
+
+**Resposta (200 OK):**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-06-11T10:30:00Z",
+  "version": "v1.0.0"
+}
+```
+
+### GET /health/detailed
+
+Verificação detalhada de saúde incluindo status do banco de dados e serviços.
+
+**Resposta (200 OK):**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-06-11T10:30:00Z",
+  "services": {
+    "database": "healthy",
+    "event_bus": "healthy",
+    "ml_services": "healthy"
+  },
+  "version": "v1.0.0"
+}
+```
+
+## Tratamento de Erros
+
+A API usa códigos de status HTTP padrão e retorna respostas de erro estruturadas:
+
+### Formato de Resposta de Erro
+
+```json
+{
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "O corpo da requisição é inválido",
+    "details": {
+      "field": "sensor_id",
+      "issue": "Este campo é obrigatório"
+    }
+  },
+  "timestamp": "2025-06-11T10:30:00Z",
+  "request_id": "req_error_123"
+}
+```
+
+### Códigos de Erro Comuns
+
+- `400 Bad Request` - Formato de requisição inválido ou campos obrigatórios ausentes
+- `401 Unauthorized` - Chave API ausente ou inválida
+- `403 Forbidden` - Permissões insuficientes para a operação solicitada
+- `404 Not Found` - Recurso solicitado não encontrado
+- `422 Unprocessable Entity` - Falha na validação da requisição
+- `500 Internal Server Error` - Erro inesperado do servidor
+
+## Limitação de Taxa
+
+A API implementa limitação de taxa para garantir uso justo:
+
+- **Ingestão de Dados**: 100 requisições por minuto por chave API
+- **Geração de Relatórios**: 10 requisições por minuto por chave API
+- **Submissão de Decisões**: 50 requisições por minuto por chave API
+
+Cabeçalhos de limite de taxa são incluídos em todas as respostas:
+
+```http
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1623456789
+```
+
+## Exemplos
+
+### Fluxo de Trabalho Completo de Ingestão de Dados
+
+```bash
+# 1. Ingerir dados de sensor
+curl -X POST "http://localhost:8000/api/v1/data/ingest" \
+  -H "X-API-Key: sua-chave-api" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sensor_id": "TEMP_001",
+    "value": 85.5,
+    "sensor_type": "temperature",
+    "unit": "celsius",
+    "location": "Piso da Fábrica A"
+  }'
+
+# 2. Gerar relatório de anomalias
+curl -X POST "http://localhost:8000/api/v1/data/ingest" \
+  -H "X-API-Key: sua-chave-api" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "report_type": "anomaly_summary",
+    "start_date": "2025-05-11",
+    "end_date": "2025-06-11"
+  }'
+
+# 3. Submeter decisão de manutenção
+curl -X POST "http://localhost:8000/api/v1/decisions/submit" \
+  -H "X-API-Key: sua-chave-api" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "request_id": "req_maintenance_123",
+    "decision": "approve",
+    "justification": "Anomalia de temperatura requer atenção imediata"
+  }'
+```
