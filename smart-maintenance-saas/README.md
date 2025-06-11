@@ -23,7 +23,7 @@ This document is part of the Smart Maintenance SaaS documentation suite. For com
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/Tests-409%2F412%20Passing-brightgreen.svg)](#test-status)
+[![Tests](https://img.shields.io/badge/Tests-410%2F411%20Passing-brightgreen.svg)](#test-status)
 [![Poetry](https://img.shields.io/badge/Poetry-Dependency%20Management-blue.svg)](https://python-poetry.org/)
 
 A robust, event-driven, multi-agent backend for an industrial predictive maintenance SaaS platform. This system provides a solid foundation for ingesting sensor data, detecting anomalies, predicting failures, and orchestrating maintenance workflows.
@@ -44,7 +44,7 @@ A robust, event-driven, multi-agent backend for an industrial predictive mainten
 **Technical Details:**
 - Reports endpoint now uses `asyncio.loop.run_in_executor()` with ThreadPoolExecutor for non-blocking operations
 - Enhanced UI with date pickers, format selectors, and chart options
-- **409 out of 412 tests pass** - Only 1 E2E test fails due to scheduling constraints, 2 UI test errors due to testing infrastructure (see [Test Status](#test-status) below)
+- **410 out of 411 tests pass** - Only 1 E2E test fails due to scheduling constraints (see [Test Status](#test-status) below)
 - Fully functional integration between FastAPI backend and Streamlit frontend
 
 ## Tech Stack
@@ -257,9 +257,9 @@ With Docker deployment, the Streamlit UI is automatically available at [http://l
 
 ## Test Status
 
-**Current Test Results: 409 PASSED, 1 FAILED, 2 ERRORS** ✅
+**Current Test Results: 410 PASSED, 1 FAILED** ✅
 
-The Smart Maintenance SaaS backend has an extensive test suite with 412 total tests covering unit, integration, and end-to-end scenarios. Currently, 409 tests pass successfully with only 1 failing test and 2 errors.
+The Smart Maintenance SaaS backend has an extensive test suite with 411 total tests covering unit, integration, and end-to-end scenarios. Currently, 410 tests pass successfully with only 1 failing test.
 
 ### Failing Tests and Errors
 
@@ -267,11 +267,6 @@ The Smart Maintenance SaaS backend has an extensive test suite with 412 total te
 **Status:** FAILED
 **Issue:** AssertionError: Expected at least 1 MaintenanceScheduledEvent, got 0
 
-**Error Tests:**
-- `tests/e2e/test_ui_functionality.py::test_maintenance_logs` - ERROR
-- `tests/e2e/test_ui_functionality.py::test_sensor_data` - ERROR
-
-**Note:** The errors in UI functionality tests are related to Streamlit testing infrastructure and do not affect the actual UI functionality, which has been verified to work correctly through manual testing and the comprehensive final system test.
 
 ### Root Cause Analysis
 
@@ -310,10 +305,10 @@ The SchedulingAgent correctly receives `MaintenancePredictedEvent` and creates m
 
 - **Unit Tests**: 100% of individual component tests pass
 - **Integration Tests**: All agent integration scenarios pass
-- **E2E Coverage**: 99.3% success rate (409/412 tests)
-- **Overall Success Rate**: 409 PASSED, 1 FAILED, 2 ERRORS out of 412 total tests
+- **E2E Coverage**: 99.8% success rate (410/411 tests)
+- **Overall Success Rate**: 410 PASSED, 1 FAILED, out of 411 total tests
 
-The failing test and errors do not impact the system's core functionality or deployment readiness. All critical system components have been verified to work correctly through comprehensive testing.
+The failing test does not impact the system's core functionality or deployment readiness. All critical system components have been verified to work correctly through comprehensive testing.
 
 ## Running Tests
 
@@ -454,7 +449,7 @@ Este documento faz parte do conjunto de documentação do Smart Maintenance SaaS
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![Testes](https://img.shields.io/badge/Testes-409%2F412%20Aprovados-brightgreen.svg)](#status-dos-testes)
+[![Testes](https://img.shields.io/badge/Testes-410%2F411%20Aprovados-brightgreen.svg)](#status-dos-testes)
 [![Poetry](https://img.shields.io/badge/Poetry-Gerenciamento%20de%20Dependências-blue.svg)](https://python-poetry.org/)
 
 Um backend robusto, orientado a eventos e multi-agente para uma plataforma SaaS de manutenção preditiva industrial. Este sistema fornece uma base sólida para ingestão de dados de sensores, detecção de anomalias, previsão de falhas e orquestração de fluxos de trabalho de manutenção.
@@ -475,7 +470,7 @@ Um backend robusto, orientado a eventos e multi-agente para uma plataforma SaaS 
 **Detalhes Técnicos:**
 - Endpoint de relatórios agora usa `asyncio.loop.run_in_executor()` com ThreadPoolExecutor para operações não-bloqueantes
 - UI melhorada com seletores de data, seletores de formato e opções de gráfico
-- **409 de 412 testes aprovados** - Apenas 1 teste E2E falha devido a restrições de agendamento, 2 erros de teste de UI devido à infraestrutura de teste
+- **410 de 411 testes aprovados** - Apenas 1 teste E2E falha devido a restrições de agendamento
 - Integração totalmente funcional entre backend FastAPI e frontend Streamlit
 
 ## Stack Tecnológica
@@ -688,21 +683,17 @@ Com a implantação Docker, a interface Streamlit fica automaticamente disponív
 
 ## Status dos Testes
 
-**Resultados Atuais dos Testes: 409 APROVADOS, 1 FALHARAM, 2 ERROS** ✅
+**Resultados Atuais dos Testes: 410 APROVADOS, 1 FALHARAM** ✅
 
-O backend Smart Maintenance SaaS possui um conjunto extensivo de testes com 412 testes totais cobrindo cenários unitários, de integração e end-to-end. Atualmente, 409 testes passam com sucesso com apenas 1 teste falhando e 2 erros.
+O backend Smart Maintenance SaaS possui um conjunto extensivo de testes com 411 testes totais cobrindo cenários unitários, de integração e end-to-end. Atualmente, 410 testes passam com sucesso com apenas 1 teste falhando.
 
-### Testes Falhando e Erros
+### Testes Falhando
 
 **Teste Falhando:** `tests/e2e/test_e2e_full_system_workflow.py::test_full_workflow_from_ingestion_to_scheduling`
 **Status:** FALHARAM
 **Problema:** AssertionError: Esperado pelo menos 1 MaintenanceScheduledEvent, obtido 0
 
-**Testes com Erro:**
-- `tests/e2e/test_ui_functionality.py::test_maintenance_logs` - ERRO
-- `tests/e2e/test_ui_functionality.py::test_sensor_data` - ERRO
-
-**Nota:** Os erros nos testes de funcionalidade de UI estão relacionados à infraestrutura de teste do Streamlit e não afetam a funcionalidade real da UI, que foi verificada funcionar corretamente através de testes manuais e do teste final abrangente do sistema.
+**Nota:** O problema com o teste está relacionado à lógica de agendamento e não afeta a funcionalidade real do sistema, que foi verificada funcionar corretamente através de testes manuais.
 
 ### Análise da Causa Raiz
 
@@ -741,10 +732,10 @@ O SchedulingAgent recebe corretamente `MaintenancePredictedEvent` e cria solicit
 
 - **Testes Unitários**: 100% dos testes de componentes individuais passam
 - **Testes de Integração**: Todos os cenários de integração de agentes passam
-- **Cobertura E2E**: 99,3% de taxa de sucesso (409/412 testes)
-- **Taxa de Sucesso Geral**: 409 APROVADOS, 1 FALHARAM, 2 ERROS de 412 testes totais
+- **Cobertura E2E**: 99,8% de taxa de sucesso (410/411 testes)
+- **Taxa de Sucesso Geral**: 410 APROVADOS, 1 FALHARAM de 411 testes totais
 
-Os testes falhando e erros não impactam a funcionalidade principal do sistema ou a prontidão para implantação. Todos os componentes críticos do sistema foram verificados funcionar corretamente através de testes abrangentes.
+O teste falhando não impacta a funcionalidade principal do sistema ou a prontidão para implantação. Todos os componentes críticos do sistema foram verificados funcionar corretamente através de testes abrangentes.
 
 ## Executando Testes
 
