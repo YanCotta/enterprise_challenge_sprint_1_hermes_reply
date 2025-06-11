@@ -9,6 +9,8 @@ This document is part of the Smart Maintenance SaaS documentation suite. For com
 - **[System and Architecture](./docs/SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
 - **[API Documentation](./docs/api.md)** - Complete REST API reference and usage examples  
 - **[Load Testing Instructions](./docs/LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
+- **[System Screenshots](./docs/SYSTEM_SCREENSHOTS.md)** - Complete system demonstration with visual documentation
+- **[Future Roadmap](./docs/FUTURE_ROADMAP.md)** - Planned enhancements and architectural evolution
 - **[Test Documentation](./tests/README.md)** - Test organization and execution guide
 - **[Project Overview](../README.md)** - High-level project description and objectives
 
@@ -101,18 +103,41 @@ The simplest way to run the complete Smart Maintenance SaaS system:
     cd smart-maintenance-saas
     ```
 
-2. **Start the complete system:**
+2. **Configure environment variables (Important):**
+
+    ```bash
+    # Copy the production environment template
+    cp .env.prod.example .env
+    ```
+    
+    **📝 Configure your .env file:** Open the newly created `.env` file and update the following critical settings:
+    
+    - **DATABASE_URL**: Update the database connection string with your PostgreSQL credentials
+    - **API_KEY**: Set a secure API key for authentication (minimum 32 characters)
+    - **SECRET_KEY**: Set a secure secret key for JWT signing (minimum 32 characters)
+    
+    **Example minimal configuration:**
+    ```bash
+    DATABASE_URL=postgresql://smart_user:your_secure_password@localhost:5432/smart_maintenance_db
+    API_KEY=your_secure_api_key_min_32_characters_long_example
+    SECRET_KEY=your_secure_secret_key_for_jwt_signing_min_32_chars
+    DEBUG=false
+    ```
+    
+    > 💡 **Tip**: The `.env.prod.example` file contains comprehensive documentation for all available configuration options including optional services like WhatsApp notifications, email SMTP, and Redis caching.
+
+3. **Start the complete system:**
 
     ```bash
     docker compose up -d
     ```
 
-3. **Access the applications:**
+4. **Access the applications:**
    - **Streamlit UI:** [http://localhost:8501](http://localhost:8501) - Web-based control panel
    - **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs) - Swagger UI
    - **Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
 
-4. **Verify system status:**
+5. **Verify system status:**
 
     ```bash
     docker compose ps
@@ -352,6 +377,52 @@ To run the full test suite, use the following command:
 ```bash
 poetry run pytest
 ```
+
+## Security Considerations
+
+### Current Security Implementation (v1.0)
+
+The Smart Maintenance SaaS system includes basic security measures suitable for development and initial production deployments:
+
+- **API Key Authentication**: Static API key validation for endpoint access
+- **Environment-based Configuration**: Sensitive values stored in environment variables
+- **Database Security**: PostgreSQL with user authentication and connection encryption
+- **Container Isolation**: Docker containers provide process and network isolation
+- **Input Validation**: Pydantic models ensure data integrity and prevent injection attacks
+
+### Production Security Recommendations
+
+For hardened production environments, consider implementing the following enhanced security measures:
+
+#### 🔐 **Secrets Management**
+- **Recommended**: Replace static API keys with dynamic secrets management
+- **Solutions**: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, or Google Secret Manager
+- **Benefits**: Automatic secret rotation, audit logging, and centralized access control
+
+#### 🛡️ **Authentication & Authorization**
+- **JWT Tokens**: Implement time-limited JWT tokens instead of static API keys
+- **Role-Based Access Control (RBAC)**: Different access levels for operators, maintenance teams, and administrators
+- **Multi-Factor Authentication (MFA)**: Additional security layer for administrative access
+
+#### 🔒 **Network Security**
+- **HTTPS/TLS**: Enable SSL/TLS certificates for all external communications
+- **API Gateway**: Implement rate limiting, DDoS protection, and request filtering
+- **VPC/Private Networks**: Deploy in isolated network environments
+- **Firewall Rules**: Restrict access to only necessary ports and IP ranges
+
+#### 📊 **Monitoring & Compliance**
+- **Security Audit Logging**: Comprehensive logging of all API access and administrative actions
+- **Intrusion Detection**: Monitor for suspicious patterns and unauthorized access attempts
+- **Compliance**: SOC 2, ISO 27001, or industry-specific compliance standards
+- **Vulnerability Scanning**: Regular security assessments and dependency updates
+
+#### 🏗️ **Infrastructure Security**
+- **Container Security**: Regular base image updates and vulnerability scanning
+- **Database Encryption**: Encrypt data at rest and in transit
+- **Backup Security**: Encrypted backups with secure off-site storage
+- **Disaster Recovery**: Documented procedures and tested recovery processes
+
+> **⚠️ Important**: The current implementation provides a solid foundation for security but should be enhanced with enterprise-grade solutions for production deployments handling sensitive industrial data.
 
 ## 🇧🇷 Sumário em Português
 
