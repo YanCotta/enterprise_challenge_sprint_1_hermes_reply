@@ -2,6 +2,11 @@
 # Stage 1: Builder - Install dependencies
 FROM python:3.11-slim-bullseye AS builder
 
+# Add metadata labels
+LABEL maintainer="Smart Maintenance SaaS Team"
+LABEL description="Smart Maintenance SaaS - AI-powered predictive maintenance platform"
+LABEL version="1.0"
+
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -40,6 +45,14 @@ RUN ls -la /app/.venv && echo "Virtual environment created successfully"
 
 # Stage 2: Production - Create slim final image
 FROM python:3.11-slim-bullseye AS production
+
+# Add metadata labels for production stage
+LABEL maintainer="Smart Maintenance SaaS Team"
+LABEL description="Smart Maintenance SaaS - AI-powered predictive maintenance platform"
+LABEL version="1.0"
+LABEL org.opencontainers.image.source="https://github.com/your-username/enterprise_challenge_sprint_1_hermes_reply"
+LABEL org.opencontainers.image.description="Smart Maintenance SaaS - Production ready container"
+LABEL org.opencontainers.image.licenses="MIT"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
