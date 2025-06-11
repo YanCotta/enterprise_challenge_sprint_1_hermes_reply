@@ -17,7 +17,7 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-def test_api_connection():
+def check_api_connection():
     """Test basic API connectivity"""
     print("🔧 Testing API Connection...")
     try:
@@ -33,7 +33,7 @@ def test_api_connection():
         print(f"❌ API Health Check: FAILED (Error: {e})")
         return False
 
-def test_equipment_operations():
+def check_equipment_operations():
     """Test equipment CRUD operations"""
     print("\n🏭 Testing Equipment Operations...")
     
@@ -79,7 +79,7 @@ def test_equipment_operations():
         print(f"❌ Equipment Operations: FAILED (Error: {e})")
         return None
 
-def test_maintenance_logs(equipment_id):
+def check_maintenance_logs(equipment_id):
     """Test maintenance log operations"""
     print("\n📋 Testing Maintenance Log Operations...")
     
@@ -123,7 +123,7 @@ def test_maintenance_logs(equipment_id):
         print(f"❌ Maintenance Log Operations: FAILED (Error: {e})")
         return None
 
-def test_sensor_data(equipment_id):
+def check_sensor_data(equipment_id):
     """Test sensor data operations"""
     print("\n📊 Testing Sensor Data Operations...")
     
@@ -158,7 +158,7 @@ def test_sensor_data(equipment_id):
     except Exception as e:
         print(f"❌ Sensor Data Operations: FAILED (Error: {e})")
 
-def test_api_docs():
+def check_api_docs():
     """Test API documentation endpoints"""
     print("\n📚 Testing API Documentation...")
     
@@ -185,21 +185,21 @@ def main():
     print("=" * 60)
     
     # Test API connection
-    if not test_api_connection():
+    if not check_api_connection():
         print("\n❌ API connection failed. Exiting tests.")
         return
     
     # Test equipment operations
-    equipment_id = test_equipment_operations()
+    equipment_id = check_equipment_operations()
     
     # Test maintenance logs
-    log_id = test_maintenance_logs(equipment_id)
+    log_id = check_maintenance_logs(equipment_id)
     
     # Test sensor data
-    test_sensor_data(equipment_id)
+    check_sensor_data(equipment_id)
     
     # Test API documentation
-    test_api_docs()
+    check_api_docs()
     
     print("\n" + "=" * 60)
     print("🏁 Test Suite Completed!")
