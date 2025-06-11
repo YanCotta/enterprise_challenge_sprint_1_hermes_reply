@@ -92,10 +92,22 @@ jobs:
           type=raw,value=latest,enable={{is_default_branch}}
           type=sha,prefix={{branch}}-
 
+    - name: Debug build context
+      run: |
+        echo "=== Root directory ==="
+        ls -la
+        echo "=== smart-maintenance-saas directory ==="
+        ls -la ./smart-maintenance-saas/
+        echo "=== Check for poetry files ==="
+        ls -la ./smart-maintenance-saas/poetry.*
+        echo "=== Check Dockerfile ==="
+        head -n 40 ./smart-maintenance-saas/Dockerfile
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: ./smart-maintenance-saas
+        file: ./smart-maintenance-saas/Dockerfile
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
