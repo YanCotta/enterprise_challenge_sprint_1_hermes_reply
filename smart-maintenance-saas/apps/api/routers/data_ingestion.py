@@ -1,4 +1,6 @@
 import uuid
+import time
+from typing import Dict, Tuple
 from fastapi import APIRouter, Request, HTTPException, Depends, Security
 from apps.api.dependencies import api_key_auth # Updated to use api_key_auth
 from data.schemas import SensorReadingCreate
@@ -6,6 +8,16 @@ from core.events.event_models import SensorDataReceivedEvent
 from core.events.event_bus import EventBus
 
 router = APIRouter()
+
+# Simple in-memory idempotency store: key -> (event_id, expire_ts)
+IDEMPOTENCY_TTL_SECONDS = 600  # 10 minutes
+_idempotency_store: Dict[str, Tuple[str, float]] = {}
+
+def _cleanup_idempotency_store(now: float) -> None:
+    # Lightweight periodic cleanup
+    expired = [k for k, (_, exp) in _idempotency_store.items() if exp <= now]
+    for k in expired:
+        _idempotency_store.pop(k, None)
 
 @router.post("/ingest", status_code=200, dependencies=[Security(api_key_auth, scopes=["data:ingest"])])
 async def ingest_sensor_data(
@@ -56,6 +68,23 @@ async def ingest_sensor_data(
     if reading.correlation_id is None:
         reading.correlation_id = uuid.uuid4()
 
+    # Handle Idempotency-Key to avoid duplicate events
+    idem_key = request.headers.get("Idempotency-Key")
+    now = time.time()
+    if idem_key:
+        # Cleanup occasionally
+        if len(_idempotency_store) > 1000 or int(now) % 29 == 0:
+            _cleanup_idempotency_store(now)
+        cached = _idempotency_store.get(idem_key)
+        if cached and cached[1] > now:
+            # Duplicate - return same response as before
+            return {
+                "status": "duplicate_ignored",
+                "event_id": cached[0],
+                "correlation_id": str(reading.correlation_id),
+                "sensor_id": reading.sensor_id,
+            }
+
     event = SensorDataReceivedEvent(
         raw_data=reading.dict(), # Send the whole reading as raw_data
         sensor_id=reading.sensor_id,
@@ -64,6 +93,9 @@ async def ingest_sensor_data(
 
     try:
         await event_bus.publish(event)
+        # Cache idempotency key result
+        if idem_key:
+            _idempotency_store[idem_key] = (str(event.event_id), now + IDEMPOTENCY_TTL_SECONDS)
         return {
             "status": "event_published",
             "event_id": str(event.event_id),
