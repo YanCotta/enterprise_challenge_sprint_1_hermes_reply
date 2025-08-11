@@ -2,6 +2,7 @@ import logging  # For basic logging if setup_logging is not yet fully integrated
 
 from fastapi import Depends, FastAPI, HTTPException
 from apps.api.routers import data_ingestion, reporting, human_decision
+from apps.api.middleware.request_id import RequestIDMiddleware
 from sqlalchemy import select  # Import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -68,6 +69,9 @@ app = FastAPI(
     else "/openapi.json",
     lifespan=lifespan  # Add this
 )
+
+# Middleware
+app.add_middleware(RequestIDMiddleware)
 
 
 # Health check endpoint
