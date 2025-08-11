@@ -1,0 +1,67 @@
+Project smart_maintenance_saas {
+  database_type: "PostgreSQL"
+  Note: 'High-level ERD source. Keep this in sync with alembic migrations.'
+}
+
+Table sensor_readings {
+  id int [pk]
+  timestamp timestamptz [pk]
+  sensor_id varchar(255) [not null, note: 'ID of the sensor']
+  sensor_type varchar(50) [not null]
+  value float8 [not null]
+  unit varchar(50)
+  quality float8
+  sensor_metadata jsonb
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table anomaly_alerts {
+  id uuid [pk]
+  sensor_id varchar(255) [not null]
+  anomaly_type varchar(100) [not null]
+  severity int [not null]
+  confidence float8
+  description text
+  evidence jsonb
+  recommended_actions varchar[]
+  status varchar(50) [not null, default: 'open']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table maintenance_tasks {
+  id uuid [pk]
+  equipment_id varchar(255) [not null]
+  task_type varchar(100) [not null]
+  description text
+  priority int [not null, default: 3]
+  status varchar(50) [not null, default: 'pending']
+  estimated_duration_hours float8
+  actual_duration_hours float8
+  required_skills varchar[]
+  parts_needed varchar[]
+  assigned_technician_id varchar(255)
+  scheduled_start_time timestamptz
+  scheduled_end_time timestamptz
+  actual_start_time timestamptz
+  actual_end_time timestamptz
+  notes text
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table maintenance_logs {
+  id uuid [pk]
+  task_id uuid [not null]
+  equipment_id varchar(255) [not null]
+  completion_date timestamptz [not null]
+  technician_id varchar(255) [not null]
+  notes text
+  status varchar(50) [not null]
+  actual_duration_hours float8
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: maintenance_logs.task_id > maintenance_tasks.id
