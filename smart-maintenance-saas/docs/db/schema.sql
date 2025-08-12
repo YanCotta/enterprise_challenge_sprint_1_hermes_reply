@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 15.13
--- Dumped by pg_dump version 15.13
+-- Dumped by pg_dump version 16.9 (Ubuntu 16.9-0ubuntu0.24.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -31,6 +31,32 @@ COMMENT ON EXTENSION timescaledb IS 'Enables scalable inserts and complex querie
 
 
 --
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
+
+--
+-- Name: alert_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.alert_status AS ENUM (
+    'open',
+    'acknowledged',
+    'resolved',
+    'ignored'
+);
+
+
+--
 -- Name: maintenancetaskstatus; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -44,16 +70,81 @@ CREATE TYPE public.maintenancetaskstatus AS ENUM (
 );
 
 
+--
+-- Name: sensor_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.sensor_status AS ENUM (
+    'active',
+    'inactive',
+    'maintenance',
+    'decommissioned'
+);
+
+
+--
+-- Name: task_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.task_status AS ENUM (
+    'pending',
+    'in_progress',
+    'completed',
+    'failed',
+    'cancelled'
+);
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: _compressed_hypertable_3; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+-- Name: _compressed_hypertable_2; Type: TABLE; Schema: _timescaledb_internal; Owner: -
 --
 
-CREATE TABLE _timescaledb_internal._compressed_hypertable_3 (
+CREATE TABLE _timescaledb_internal._compressed_hypertable_2 (
 );
+
+
+--
+-- Name: sensor_readings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sensor_readings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sensor_readings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sensor_readings (
+    id integer DEFAULT nextval('public.sensor_readings_id_seq'::regclass) NOT NULL,
+    sensor_id character varying(255) NOT NULL,
+    sensor_type character varying(50) NOT NULL,
+    value double precision NOT NULL,
+    unit character varying(50),
+    "timestamp" timestamp with time zone NOT NULL,
+    quality double precision,
+    sensor_metadata jsonb,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
+-- Name: _hyper_1_2_chunk; Type: TABLE; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE TABLE _timescaledb_internal._hyper_1_2_chunk (
+    CONSTRAINT constraint_2 CHECK ((("timestamp" >= '2025-08-07 00:00:00+00'::timestamp with time zone) AND ("timestamp" < '2025-08-14 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (public.sensor_readings);
 
 
 --
@@ -78,7 +169,7 @@ CREATE TABLE public.anomaly_alerts (
     description text,
     evidence jsonb,
     recommended_actions character varying[],
-    status character varying(50) NOT NULL,
+    status public.alert_status NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
@@ -112,7 +203,7 @@ CREATE TABLE public.maintenance_tasks (
     task_type character varying(100) NOT NULL,
     description text,
     priority integer NOT NULL,
-    status character varying(50) NOT NULL,
+    status public.task_status NOT NULL,
     estimated_duration_hours double precision,
     actual_duration_hours double precision,
     required_skills character varying[],
@@ -124,53 +215,53 @@ CREATE TABLE public.maintenance_tasks (
     actual_end_time timestamp with time zone,
     notes text,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    sensor_id character varying(255)
 );
 
 
 --
--- Name: sensor_readings; Type: TABLE; Schema: public; Owner: -
+-- Name: sensors; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.sensor_readings (
-    id integer NOT NULL,
+CREATE TABLE public.sensors (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     sensor_id character varying(255) NOT NULL,
-    sensor_type character varying(50) NOT NULL,
-    value double precision NOT NULL,
-    unit character varying(50),
-    "timestamp" timestamp with time zone NOT NULL,
-    quality double precision,
-    sensor_metadata jsonb,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+    type character varying(50) NOT NULL,
+    location character varying(255),
+    status public.sensor_status DEFAULT 'active'::public.sensor_status NOT NULL,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
 );
 
 
 --
--- Name: sensor_readings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: _hyper_1_2_chunk id; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
 --
 
-CREATE SEQUENCE public.sensor_readings_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
+ALTER TABLE ONLY _timescaledb_internal._hyper_1_2_chunk ALTER COLUMN id SET DEFAULT nextval('public.sensor_readings_id_seq'::regclass);
 
 
 --
--- Name: sensor_readings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: _hyper_1_2_chunk created_at; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
 --
 
-ALTER SEQUENCE public.sensor_readings_id_seq OWNED BY public.sensor_readings.id;
+ALTER TABLE ONLY _timescaledb_internal._hyper_1_2_chunk ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP;
 
 
 --
--- Name: sensor_readings id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: _hyper_1_2_chunk updated_at; Type: DEFAULT; Schema: _timescaledb_internal; Owner: -
 --
 
-ALTER TABLE ONLY public.sensor_readings ALTER COLUMN id SET DEFAULT nextval('public.sensor_readings_id_seq'::regclass);
+ALTER TABLE ONLY _timescaledb_internal._hyper_1_2_chunk ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;
+
+
+--
+-- Name: _hyper_1_2_chunk 2_4_sensor_readings_pkey; Type: CONSTRAINT; Schema: _timescaledb_internal; Owner: -
+--
+
+ALTER TABLE ONLY _timescaledb_internal._hyper_1_2_chunk
+    ADD CONSTRAINT "2_4_sensor_readings_pkey" PRIMARY KEY ("timestamp", sensor_id);
 
 
 --
@@ -210,7 +301,44 @@ ALTER TABLE ONLY public.maintenance_tasks
 --
 
 ALTER TABLE ONLY public.sensor_readings
-    ADD CONSTRAINT sensor_readings_pkey PRIMARY KEY (id, "timestamp");
+    ADD CONSTRAINT sensor_readings_pkey PRIMARY KEY ("timestamp", sensor_id);
+
+
+--
+-- Name: sensors sensors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sensors
+    ADD CONSTRAINT sensors_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sensors uq_sensors_sensor_id; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sensors
+    ADD CONSTRAINT uq_sensors_sensor_id UNIQUE (sensor_id);
+
+
+--
+-- Name: _hyper_1_2_chunk_ix_sensor_readings_id; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_1_2_chunk_ix_sensor_readings_id ON _timescaledb_internal._hyper_1_2_chunk USING btree (id);
+
+
+--
+-- Name: _hyper_1_2_chunk_ix_sensor_readings_sensor_id; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_1_2_chunk_ix_sensor_readings_sensor_id ON _timescaledb_internal._hyper_1_2_chunk USING btree (sensor_id);
+
+
+--
+-- Name: _hyper_1_2_chunk_ix_sensor_readings_timestamp; Type: INDEX; Schema: _timescaledb_internal; Owner: -
+--
+
+CREATE INDEX _hyper_1_2_chunk_ix_sensor_readings_timestamp ON _timescaledb_internal._hyper_1_2_chunk USING btree ("timestamp");
 
 
 --
@@ -263,6 +391,13 @@ CREATE INDEX ix_maintenance_tasks_id ON public.maintenance_tasks USING btree (id
 
 
 --
+-- Name: ix_maintenance_tasks_sensor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_maintenance_tasks_sensor_id ON public.maintenance_tasks USING btree (sensor_id);
+
+
+--
 -- Name: ix_sensor_readings_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -284,10 +419,10 @@ CREATE INDEX ix_sensor_readings_timestamp ON public.sensor_readings USING btree 
 
 
 --
--- Name: _compressed_hypertable_3 ts_insert_blocker; Type: TRIGGER; Schema: _timescaledb_internal; Owner: -
+-- Name: _compressed_hypertable_2 ts_insert_blocker; Type: TRIGGER; Schema: _timescaledb_internal; Owner: -
 --
 
-CREATE TRIGGER ts_insert_blocker BEFORE INSERT ON _timescaledb_internal._compressed_hypertable_3 FOR EACH ROW EXECUTE FUNCTION _timescaledb_functions.insert_blocker();
+CREATE TRIGGER ts_insert_blocker BEFORE INSERT ON _timescaledb_internal._compressed_hypertable_2 FOR EACH ROW EXECUTE FUNCTION _timescaledb_functions.insert_blocker();
 
 
 --
@@ -295,6 +430,38 @@ CREATE TRIGGER ts_insert_blocker BEFORE INSERT ON _timescaledb_internal._compres
 --
 
 CREATE TRIGGER ts_insert_blocker BEFORE INSERT ON public.sensor_readings FOR EACH ROW EXECUTE FUNCTION _timescaledb_functions.insert_blocker();
+
+
+--
+-- Name: _hyper_1_2_chunk 2_3_fk_sensor_readings_sensor; Type: FK CONSTRAINT; Schema: _timescaledb_internal; Owner: -
+--
+
+ALTER TABLE ONLY _timescaledb_internal._hyper_1_2_chunk
+    ADD CONSTRAINT "2_3_fk_sensor_readings_sensor" FOREIGN KEY (sensor_id) REFERENCES public.sensors(sensor_id) ON DELETE RESTRICT;
+
+
+--
+-- Name: anomaly_alerts fk_anomaly_alerts_sensor; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.anomaly_alerts
+    ADD CONSTRAINT fk_anomaly_alerts_sensor FOREIGN KEY (sensor_id) REFERENCES public.sensors(sensor_id) ON DELETE RESTRICT;
+
+
+--
+-- Name: maintenance_tasks fk_maintenance_tasks_sensor; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.maintenance_tasks
+    ADD CONSTRAINT fk_maintenance_tasks_sensor FOREIGN KEY (sensor_id) REFERENCES public.sensors(sensor_id) ON DELETE RESTRICT;
+
+
+--
+-- Name: sensor_readings fk_sensor_readings_sensor; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sensor_readings
+    ADD CONSTRAINT fk_sensor_readings_sensor FOREIGN KEY (sensor_id) REFERENCES public.sensors(sensor_id) ON DELETE RESTRICT;
 
 
 --
