@@ -67,48 +67,43 @@ This document records all changes made during the final 30-day sprint toward del
 
 ## 2025-08-12 (Day 5) – Database Schema & TimescaleDB Migration Resolution
 
-### Critical Issue Resolution ✅
-**RESOLVED: TimescaleDB Migration Error Blocking Development**
+### Complete Troubleshooting Journey ✅
 
-#### Problem Analysis
-- Initial migration attempted to DROP id column from compressed TimescaleDB hypertable
-- TimescaleDB compression prevents ALTER COLUMN operations on hypertables
-- Composite primary key implementation needed for time-series partitioning
-- ORM model mismatch with database schema causing type conflicts
+#### Initial Fix
+The TimescaleDB error was resolved by modifying the migration `20250812_090000_finalize_data_model.py` to no longer DROP the `id` column from `sensor_readings`. The original error occurred because:
+- TimescaleDB compression was enabled on the `sensor_readings` hypertable
+- Compressed hypertables prevent DDL operations like `DROP COLUMN`
+- The migration attempted to remove the `id` column to implement a composite primary key
 
-#### Technical Solution Implemented
-1. **Migration Fix**: Removed DROP COLUMN operation from finalize_data_model migration
-2. **Composite Primary Key**: Successfully implemented `(timestamp, sensor_id)` PK
-3. **TimescaleDB Compatibility**: Created sequence-based id default instead of UUID conversion
-4. **ORM Alignment**: Updated SensorReadingORM to use Integer with sequence instead of UUID
-5. **Schema Validation**: Verified all migrations apply successfully with compression enabled
+**Solution**: Removed the `DROP COLUMN id` operation while preserving the composite primary key creation `(timestamp, sensor_id)`.
 
-#### Migration Chain Results
-```
-✅ d4a01b4dd5a1 - create_initial_tables
-✅ 2a6b3cf9a7fc - add_maintenance_logs_table  
-✅ 20250811_120000 - add_timescale_policies
-✅ 20250812_090000 - finalize_data_model (FIXED)
-✅ 20250812_150000 - add_default_uuid_to_sensor_readings_id (REPLACED with sequence)
-```
+#### New Discovery
+This initial fix created a new problem where the `id` column became `NOT NULL` without a `DEFAULT` value, which would break our data seeder and any INSERT operations that didn't explicitly provide an `id` value.
 
-#### Final Schema Status
-- **sensor_readings table**: Composite PK (timestamp, sensor_id), integer id with auto-sequence
-- **TimescaleDB hypertable**: Properly configured with compression policies
-- **Foreign key constraints**: Active and validated
-- **Data insertion**: Working correctly with auto-generated ids (tested)
+**Problem**: The `id` column was defined as `NOT NULL` but lacked a server-side default, causing:
+- INSERT failures when no `id` value was provided
+- Incompatibility with ORM models expecting auto-generated values
+- Data seeding scripts unable to function properly
 
-#### Stack Health Status
-- **Database**: ✅ Healthy (PostgreSQL + TimescaleDB)
-- **API**: ✅ Healthy (FastAPI with SQLAlchemy ORM)  
-- **UI**: ✅ Healthy (Streamlit interface)
-- **Container Dependencies**: ✅ All health checks passing
+#### Final Resolution
+A new migration was created (`20250812_150000_add_default_uuid_to_sensor_readings_id.py`) to add an auto-incrementing integer sequence to the `id` column, ensuring its value is always generated automatically. The ORM was updated to match.
 
-#### Lessons Learned
-- TimescaleDB compressed hypertables have stricter DDL limitations than standard PostgreSQL
-- Type conversions require careful coordination between ORM and migration files
-- Composite primary keys work well with TimescaleDB time-series partitioning
-- Sequence-based auto-increment is more compatible than UUIDs for compressed tables
+**Technical Implementation**:
+1. **Migration**: Created sequence `sensor_readings_id_seq` with `ALTER COLUMN id SET DEFAULT nextval('sensor_readings_id_seq')`
+2. **ORM Update**: Modified `SensorReadingORM.id` from `UUID` type to `Integer` with sequence reference
+3. **TimescaleDB Compatibility**: Used sequence-based approach instead of UUID conversion to avoid compression conflicts
+
+#### Validation
+The fix was validated with a successful two-part INSERT statement:
+1. **Sensor Creation**: `INSERT INTO sensors (sensor_id, type, location, status) VALUES ('test-sensor-001', 'temperature', 'Zone A', 'active')`
+2. **Reading Insertion**: `INSERT INTO sensor_readings (...) VALUES (...) RETURNING id, sensor_id, timestamp`
+3. **Result**: Auto-generated `id=3`, confirming sequence functionality
+
+#### Final System State
+- **Migration Chain**: All 5 migrations applied successfully
+- **Schema Export**: `./scripts/export_schema.sh` completed with no git diff differences
+- **Health Checks**: All containers (api, db, ui) reporting healthy status
+- **Data Operations**: Verified INSERT with auto-generated primary keys working correctly
 
 **Result**: Development unblocked, Day 5 objectives can proceed with stable database foundation.
 
