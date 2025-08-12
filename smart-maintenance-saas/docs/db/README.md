@@ -1,73 +1,82 @@
 # Database Model Documentation
 
-This document describes the relational model used by Smart Maintenance SaaS. It complements the ER diagram and the initial SQL schema.
+This document describes the finalized relational model for Smart Maintenance SaaS. It complements the ER diagram and the SQL schema.
+
+Key updates as of 2025-08-12:
+
+- Introduced a central `sensors` table as the source of truth for assets.
+- Standardized foreign keys using `sensor_id` across dependent tables.
+- Adopted database ENUMs for status fields to enforce integrity.
+- Corrected the time-series primary key to `(timestamp, sensor_id)` for TimescaleDB alignment.
 
 ## Entities
 
-### sensor_readings
+### sensors (new)
 
-- id (int, PK, auto-increment)
-- timestamp (timestamptz, PK)
-- sensor_id (varchar(255), indexed, not null)
-- sensor_type (varchar(50), not null)
+- id (uuid, PK, default gen_random_uuid())
+- sensor_id (varchar(255), unique, not null) — business identifier
+- type (varchar(50), not null)
+- location (varchar(255))
+- status (enum sensor_status, default 'active')
+- created_at, updated_at (timestamptz, defaults)
+- Rationale: single source of truth for sensor metadata and lifecycle status.
+
+### sensor_readings (Timescale hypertable)
+
+- timestamp (timestamptz, PK part)
+- sensor_id (varchar(255), PK part, not null) — FK to sensors.sensor_id
 - value (float8, not null)
 - unit (varchar(50))
-- quality (float8, default 1.0)
-- sensor_metadata (jsonb)
-- created_at, updated_at (timestamptz, defaults)
-- Rationale: time-series hypertable for raw sensor readings. PK includes time for TimescaleDB.
+- Rationale: raw time-series readings. Composite PK aligns with Timescale chunking and avoids surrogate id contention.
 
 ### anomaly_alerts
 
 - id (uuid, PK)
-- sensor_id (varchar(255), indexed, not null)
+- sensor_id (varchar(255), not null) — FK to sensors.sensor_id
 - anomaly_type (varchar(100), not null)
 - severity (int, 1..5)
-- confidence (float8, 0..1)
 - description (text)
 - evidence (jsonb)
-- recommended_actions (varchar[])
-- status (varchar(50), default 'open')
+- status (enum alert_status, default 'open')
 - created_at, updated_at
-- Rationale: captures anomaly detection events and human/auto triage.
+- Rationale: captures anomaly detection events and triage status.
 
 ### maintenance_tasks
 
 - id (uuid, PK)
-- equipment_id (varchar(255), indexed)
+- sensor_id (varchar(255), not null) — FK to sensors.sensor_id
 - task_type (varchar(100), not null)
 - description (text)
 - priority (int, default 3)
-- status (varchar(50), default 'pending')
-- estimated_duration_hours (float8)
-- actual_duration_hours (float8)
-- required_skills (varchar[])
-- parts_needed (varchar[])
-- assigned_technician_id (varchar(255))
-- scheduled_start_time, scheduled_end_time, actual_start_time, actual_end_time
-- notes (text)
+- status (enum task_status, default 'pending')
+- scheduled_start_time (timestamptz)
 - created_at, updated_at
-- Rationale: workflow entity for maintenance operations.
+- Rationale: streamlined tasks tied to specific sensors.
 
 ### maintenance_logs
 
 - id (uuid, PK)
-- task_id (uuid, indexed)
-- equipment_id (varchar(255), indexed)
-- completion_date (timestamptz)
-- technician_id (varchar(255))
+- task_id (uuid, not null) — FK to maintenance_tasks.id
+- technician_id (varchar(255), not null)
 - notes (text)
-- status (enum MaintenanceTaskStatus)
 - actual_duration_hours (float8)
+- completion_date (timestamptz, default now())
 - created_at, updated_at
-- Rationale: immutable log of executed tasks for audit and analytics.
+- Rationale: immutable log of executed maintenance activities.
+
+## Enums
+
+- task_status: pending | in_progress | completed | failed | cancelled
+- alert_status: open | acknowledged | resolved | ignored
+- sensor_status: active | inactive | maintenance | decommissioned
 
 ## Constraints and Indexes
 
-- sensor_readings: composite PK (id, timestamp); indexes on (sensor_id), (timestamp), and composite (sensor_id, timestamp desc).
-- anomaly_alerts: indexes on (id), (sensor_id).
-- maintenance_tasks: indexes on (id), (equipment_id).
-- maintenance_logs: indexes on (id), (task_id), (equipment_id).
+- sensor_readings: PK (timestamp, sensor_id); indexes on (sensor_id), (timestamp) as needed per queries.
+- anomaly_alerts: index (sensor_id).
+- maintenance_tasks: index (sensor_id).
+- maintenance_logs: index (task_id).
+- sensors: unique (sensor_id).
 
 ## TimescaleDB Policies
 
@@ -78,8 +87,8 @@ This document describes the relational model used by Smart Maintenance SaaS. It 
 ## ERD and Schema
 
 - ERD source: `docs/db/erd.dbml`
-- ERD image: `docs/db/erd.png` (generate via script or modeling tool)
-- Initial SQL: `docs/db/schema.sql` (exported from live DB)
+- ERD image: `docs/db/erd.png` (exported from DBML tool)
+- SQL schema: `docs/db/schema.sql` (aligned to ERD; migrations may evolve iteratively)
 
 ## Future Visualization
 
