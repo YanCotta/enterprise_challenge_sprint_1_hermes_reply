@@ -65,3 +65,50 @@ This document records all changes made during the final 30-day sprint toward del
 - Idempotency backend (Redis): Deferred. Current in-memory TTL cache is sufficient for single-replica scope. Re-evaluate post load testing if horizontal scaling is required.
 - Full metrics stack (Prometheus/Grafana): Deferred until Week 3. We will prioritize only if load testing reveals performance/observability needs beyond basic health/logs.
 
+## 2025-08-12 (Day 5) – Database Schema & TimescaleDB Migration Resolution
+
+### Critical Issue Resolution ✅
+**RESOLVED: TimescaleDB Migration Error Blocking Development**
+
+#### Problem Analysis
+- Initial migration attempted to DROP id column from compressed TimescaleDB hypertable
+- TimescaleDB compression prevents ALTER COLUMN operations on hypertables
+- Composite primary key implementation needed for time-series partitioning
+- ORM model mismatch with database schema causing type conflicts
+
+#### Technical Solution Implemented
+1. **Migration Fix**: Removed DROP COLUMN operation from finalize_data_model migration
+2. **Composite Primary Key**: Successfully implemented `(timestamp, sensor_id)` PK
+3. **TimescaleDB Compatibility**: Created sequence-based id default instead of UUID conversion
+4. **ORM Alignment**: Updated SensorReadingORM to use Integer with sequence instead of UUID
+5. **Schema Validation**: Verified all migrations apply successfully with compression enabled
+
+#### Migration Chain Results
+```
+✅ d4a01b4dd5a1 - create_initial_tables
+✅ 2a6b3cf9a7fc - add_maintenance_logs_table  
+✅ 20250811_120000 - add_timescale_policies
+✅ 20250812_090000 - finalize_data_model (FIXED)
+✅ 20250812_150000 - add_default_uuid_to_sensor_readings_id (REPLACED with sequence)
+```
+
+#### Final Schema Status
+- **sensor_readings table**: Composite PK (timestamp, sensor_id), integer id with auto-sequence
+- **TimescaleDB hypertable**: Properly configured with compression policies
+- **Foreign key constraints**: Active and validated
+- **Data insertion**: Working correctly with auto-generated ids (tested)
+
+#### Stack Health Status
+- **Database**: ✅ Healthy (PostgreSQL + TimescaleDB)
+- **API**: ✅ Healthy (FastAPI with SQLAlchemy ORM)  
+- **UI**: ✅ Healthy (Streamlit interface)
+- **Container Dependencies**: ✅ All health checks passing
+
+#### Lessons Learned
+- TimescaleDB compressed hypertables have stricter DDL limitations than standard PostgreSQL
+- Type conversions require careful coordination between ORM and migration files
+- Composite primary keys work well with TimescaleDB time-series partitioning
+- Sequence-based auto-increment is more compatible than UUIDs for compressed tables
+
+**Result**: Development unblocked, Day 5 objectives can proceed with stable database foundation.
+
