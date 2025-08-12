@@ -23,11 +23,8 @@ from core.database.base import Base
 class SensorReadingORM(Base):
     __tablename__ = "sensor_readings"
 
-    # For TimescaleDB hypertables, include the partitioning column (timestamp) in the primary key
-    id = Column(Integer, autoincrement=True, primary_key=True, nullable=False, index=True)
-    # Alternatively, for UUID PK:
-    # id = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False, index=True)
-
+    # Use integer id column with sequence for TimescaleDB compatibility
+    id = Column(Integer, nullable=False, index=True)
     sensor_id = Column(String(255), index=True, nullable=False)
     sensor_type = Column(
         String(50), nullable=False
@@ -35,7 +32,7 @@ class SensorReadingORM(Base):
     value = Column(Float, nullable=False)
     unit = Column(String(50))
     timestamp = Column(
-        DateTime(timezone=True), primary_key=True, nullable=False, index=True
+        DateTime(timezone=True), nullable=False, index=True
     )
     quality = Column(Float, default=1.0)
     sensor_metadata = Column(
@@ -45,6 +42,11 @@ class SensorReadingORM(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Define composite primary key matching the DB migration
+    __table_args__ = (
+        PrimaryKeyConstraint('timestamp', 'sensor_id', name='sensor_readings_pkey'),
     )
 
     # We'll handle creating the hypertable in Alembic migrations instead of using SQLAlchemy
