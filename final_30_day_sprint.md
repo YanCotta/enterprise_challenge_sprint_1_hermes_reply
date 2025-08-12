@@ -368,3 +368,8 @@ Optional stretch (only if time remains)
 - Add Grafana + Prometheus in compose (nice demo, optional)
 - Drift monitoring hooks and alerts
 - Canary model activation via models/active.json and % routing (within API)
+
+## Deferments (for delivery focus)
+
+- Idempotency backend (Redis): Deferred. The in-memory TTL cache is sufficient for the current single-replica scope. We will re-evaluate after load testing if horizontal scaling is planned.
+- Full metrics stack (Prometheus/Grafana): Deferred until Week 3 load testing. We’ll prioritize only if performance bottlenecks or observability gaps are detected beyond health checks and logs.
