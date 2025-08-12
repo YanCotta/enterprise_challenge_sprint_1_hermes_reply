@@ -60,3 +60,8 @@ This document records all changes made during the final 30-day sprint toward del
 - Idempotency cache: In-memory per replica. For multi-replica/higher durability, swap to Redis with TTL. TTL and periodic cleanup cap memory growth.
 - Request IDs: Propagate for client traceability now. For full structured logs with correlation IDs, wire `logging` extras or adopt a request-context logger in a later observability task.
 
+## 2025-08-12 (Pre-Day 5) – Deferments for delivery focus
+
+- Idempotency backend (Redis): Deferred. Current in-memory TTL cache is sufficient for single-replica scope. Re-evaluate post load testing if horizontal scaling is required.
+- Full metrics stack (Prometheus/Grafana): Deferred until Week 3. We will prioritize only if load testing reveals performance/observability needs beyond basic health/logs.
+
