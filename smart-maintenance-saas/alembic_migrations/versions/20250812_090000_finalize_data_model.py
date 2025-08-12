@@ -83,7 +83,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_maintenance_tasks_sensor_id', 'maintenance_tasks', ['sensor_id'], unique=False)
 
-    # sensor_readings: FK to sensors, change PK to (timestamp, sensor_id) and drop id
+    # sensor_readings: FK to sensors, change PK to (timestamp, sensor_id)
     op.create_foreign_key(
         'fk_sensor_readings_sensor', 'sensor_readings', 'sensors', ['sensor_id'], ['sensor_id'], ondelete='RESTRICT'
     )
@@ -95,11 +95,6 @@ def upgrade() -> None:
         op.drop_constraint('sensor_readings_pkey', 'sensor_readings', type_='primary')
     except Exception:
         pass
-    with op.batch_alter_table('sensor_readings') as batch_op:
-        try:
-            batch_op.drop_column('id')
-        except Exception:
-            pass
     op.create_primary_key('sensor_readings_pkey', 'sensor_readings', ['timestamp', 'sensor_id'])
     op.execute("DROP SEQUENCE IF EXISTS public.sensor_readings_id_seq CASCADE;")
 
