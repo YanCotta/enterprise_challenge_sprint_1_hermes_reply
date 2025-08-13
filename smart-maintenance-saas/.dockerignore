@@ -41,7 +41,6 @@ docs/
 .devcontainer/
 .github/
 examples/
-scripts/
 tests/
 locustfile.py
 
