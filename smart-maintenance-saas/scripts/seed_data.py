@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Seed sensors and time-series readings into TimescaleDB.
 
-Aligns with finalized ERD: sensors table and sensor_readings with PK (timestamp, sensor_id).
+This script generates sensor data for testing and ML training.
+Finalized ERD: sensors table and sensor_readings with PK (timestamp, sensor_id).
 """
 
 import argparse
+import json
 import os
 import random
 from datetime import datetime, timedelta, timezone
@@ -88,7 +90,7 @@ def seed_readings(
 					unit,
 					ts,
 					float(f"{quality:.3f}"),
-					meta,
+					json.dumps(meta),  # Convert dict to JSON string
 				)
 			)
 
