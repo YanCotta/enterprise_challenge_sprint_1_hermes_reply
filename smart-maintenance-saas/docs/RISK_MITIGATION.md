@@ -1,0 +1,8 @@
+# Project Risk Mitigation
+
+| Risk                      | Description                                                                    | Mitigation Plan                                                                                                    | Status      |
+| ------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ----------- |
+| **Model Drift** | ML model performance degrades over time as real-world data distributions change. | Implement automated drift detection (Day 13) and a scheduled retraining loop (Day 23) using Evidently AI.            | Planned     |
+| **Docker Resource Overload**| Running all services (DB, API, UI, MLflow, Monitoring) on a local dev machine may be resource-intensive. | Add environment flags (`ENABLE_MLFLOW`, etc.) to `docker-compose.yml` to run a lighter stack for development (Day 9). | Planned     |
+| **Scalability Bottleneck** | The in-memory idempotency cache will fail if the API is scaled horizontally.   | Migrate idempotency logic to a distributed Redis cache to support multiple API replicas (Day 15).                    | Planned     |
+| **Dependency Conflicts** | Incompatible library versions can break the build process.                     | Maintain a strict `poetry.lock` file. Perform all dependency management via `poetry` commands, not manual edits. | Implemented |
