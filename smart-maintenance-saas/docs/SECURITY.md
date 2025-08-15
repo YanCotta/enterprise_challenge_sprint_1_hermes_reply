@@ -1,0 +1,42 @@
+# Security Threat Model
+
+This document outlines the proactive threat model for the Smart Maintenance SaaS, based on the STRIDE framework.
+
+## System Components
+
+1. **API Gateway (FastAPI)**
+2. **Database (PostgreSQL/TimescaleDB)**
+3. **Event Bus (In-memory)**
+4. **ML Models**
+
+## STRIDE Analysis
+
+### 1. Spoofing (Pretending to be someone/something you're not)
+
+- **Threat:** An unauthorized actor sends data to the `/ingest` endpoint, corrupting the dataset.
+- **Mitigation:** The API enforces `X-API-Key` authentication on sensitive endpoints. Scopes are used to ensure keys have the correct permissions.
+
+### 2. Tampering (Modifying data)
+
+- **Threat:** An attacker injects malicious or malformed data into an ML model payload to cause a crash or incorrect prediction.
+- **Mitigation:** All incoming data is validated using Pydantic models, which cast types and reject malformed payloads. Input validation will be added for ML features.
+
+### 3. Repudiation (Claiming you didn't do something)
+
+- **Threat:** An operation is performed, but there is no sufficient log to prove who initiated it.
+- **Mitigation:** All API requests are logged with a unique `correlation_id`. The API key used for a request can be logged to trace actions back to a specific client.
+
+### 4. Information Disclosure (Exposing information to unauthorized users)
+
+- **Threat:** Error messages leak internal system details (e.g., stack traces, database schema).
+- **Mitigation:** FastAPI is configured to not send detailed exception information in production. The database is isolated on a private Docker network and is not exposed to the public internet.
+
+### 5. Denial of Service (DoS)
+
+- **Threat:** An attacker spams the compute-intensive `/predict` endpoint, overloading the server.
+- **Mitigation:** Rate limiting will be implemented (Day 16) to throttle requests on a per-key and global basis.
+
+### 6. Elevation of Privilege
+
+- **Threat:** A user with a read-only API key finds a way to perform a write operation.
+- **Mitigation:** FastAPI dependencies enforce API key scopes on a per-endpoint basis, ensuring a key for `reports:generate` cannot be used for `data:ingest`.
