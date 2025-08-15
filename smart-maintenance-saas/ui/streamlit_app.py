@@ -9,6 +9,7 @@ import json
 import base64
 import os
 import uuid
+import pandas as pd
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
 
@@ -258,6 +259,30 @@ def main():
                     st.error(result["error"])
     
     # === ADDITIONAL SECTIONS ===
+    st.markdown("---")
+    
+    # Master Dataset Preview Section
+    st.header("Master Dataset Preview")
+    
+    if st.button("Load and Preview Sensor Data"):
+        data_path = 'data/sensor_data.csv'
+        if os.path.exists(data_path):
+            try:
+                df = pd.read_csv(data_path, parse_dates=['timestamp'])
+                st.success(f"Successfully loaded {len(df)} readings from {data_path}")
+                
+                st.subheader("Raw Data Sample")
+                st.dataframe(df.head())
+
+                st.subheader("Time-Series Preview (first 1000 readings)")
+                preview_df = df.head(1000).set_index('timestamp')
+                st.line_chart(preview_df[['value']])
+                
+            except Exception as e:
+                st.error(f"Failed to load or parse the dataset: {e}")
+        else:
+            st.warning(f"Dataset not found at {data_path}. Please ensure Day 5 tasks (seeding/export) were completed.")
+
     st.markdown("---")
     
     # Recent Activity Section
