@@ -93,283 +93,410 @@ Day 5: Data generation/export for ML
 - Acceptance:
   - data/sensor_data.csv exists; has adequate rows per sensor.
 
-Day 6: Observability (metrics/logs)
-- Objective: Baseline metrics and structured logs.
-- Actions:
-  - Add prometheus-fastapi-instrumentator; expose /metrics.
-  - Ensure JSON logs with correlation_id; log DB query timings at info in debug mode.
-- Files:
-  - main.py (instrumentator init)
-  - core/logging_config.py (JSON formatter update, if needed)
-- Acceptance:
-  - /metrics accessible; logs include request_id and basic timings.
 
-Day 7: Documentation and housekeeping
-- Objective: Clear docs and repo hygiene.
-- Actions:
-  - Update main README: Compose run, health endpoints, links to ERD/schema.
-  - Ensure no secrets in repo; .env.example updated.
-- Acceptance:
-  - README shows one-command run; DB artifacts linked; environment instructions clear.
+UPDATED AND REFINED PLAN FROM NOW ON (STOPPED TO REVIEW THE PLAN ON THE END OF DAY 5 AND ELEVATED IT):
 
-Week 2: ML notebooks, models, and endpoints (Days 8–14)
+# Refined 30-Day Sprint Plan (Starting from Day 6)
 
-Day 8: Notebook 01 – EDA
-- Objective: Explore dataset; prepare features.
-- Actions:
-  - Create notebooks/01_data_exploration.ipynb: load CSV, .info(), .describe(), missing data; plots (temp/humidity/time series); stationarity notes if forecasting.
-- Files:
-  - notebooks/01_data_exploration.ipynb
-  - docs/ml/eda_preview.png (optional)
-- Acceptance:
-  - Notebook committed; at least three meaningful plots saved.
 
-Day 9: Notebook 02 – Isolation Forest (anomaly)
-- Objective: Train anomaly detector; save model and chart.
-- Actions:
-  - Train sklearn IsolationForest on features (e.g., value or [temp, humidity]); choose features from EDA.
-  - Save model to models/anomaly_detector_v1.joblib.
-  - Export scatter with anomalies highlighted to docs/ml/anomaly_scatter.png.
-- Files:
-  - notebooks/02_anomaly_isolation_forest.ipynb
-  - models/anomaly_detector_v1.joblib
-  - docs/ml/anomaly_scatter.png
-- Acceptance:
-  - Model loads; visual shows anomalies; notebook explains choice.
+Key enhancements integrated:
+- **Scalability:** Early introduction of Redis for distributed idempotency (replacing in-memory cache), event bus retries for reliability, and optional microservice stubs for ML to enable horizontal scaling.
+- **ML Robustness:** Use MLflow for a centralized model registry (replacing simple JSON files), Dockerized reproducible workflows with Makefiles, drift detection using Evidently AI, shared feature engineering, and telemetry for KPIs.
+- **Database Optimizations:** Advanced indexing for forecasting queries and enabling continuous aggregates to reduce load on ML endpoints.
+- **Security:** Early threat modeling using STRIDE, refined rate limiting tied to scopes, and JWT considerations for future auth.
+- **Observability:** Expand to full Prometheus/Grafana stack post-load testing, with event lineage logging.
+- **Testing:** Expanded e2e tests including drift scenarios, property-based tests for data generators.
+- **Deployment/UI:** Kubernetes manifests as roadmap, Trivy scans in CI, enhanced Streamlit with previews.
+- **General:** Iterative mini load tests, checksum validations, no deferments for critical items like Redis/drift (prioritized for production-readiness).
 
-Day 10: Notebook 03 – Forecast (ARIMA or Prophet)
-- Objective: Train forecaster; save model and chart.
-- Actions:
-  - Train ARIMA (start with order (5,1,0)) or switch to Prophet if seasonality; document reasoning.
-  - Save models/ts_predictor_v1.joblib.
-  - Export forecast chart to docs/ml/forecast_plot.png.
-- Files:
-  - notebooks/03_forecast_arima.ipynb
-  - models/ts_predictor_v1.joblib
-  - docs/ml/forecast_plot.png
-- Acceptance:
-  - Forecast chart looks reasonable; notebook explains method/assumptions.
+## Checklist (Requirements to Cover)
 
-Day 11: Model registry and loader
-- Objective: Robust model lifecycle.
-- Actions:
-  - Add models/active.json pointing to active versions.
-  - Add per-model meta JSON (trained_at, data_window, metrics, checksum).
-  - App startup loads models with integrity check; fallback to 503 if missing.
-- Files:
-  - models/active.json
-  - models/anomaly_detector_v1.meta.json
-  - models/ts_predictor_v1.meta.json
-  - apps/api/routers/ml.py (or similar loader integration)
-- Acceptance:
-  - API logs show model versions loaded; failure path returns 503 with clear detail.
+- **Database:** ERD source + exported image; initial SQL (CREATE TABLE); entity/field descriptions; constraints; indexing for ML queries; continuous aggregates; future BI integration note (e.g., Grafana dashboards).
+- **ML:** Notebooks (.ipynb) with reproducible Dockerized runs via Makefiles; dataset CSV (build on existing ~9,000 readings); trained models (.joblib via MLflow); charts (.png); problem justification, results, drift detection (Evidently AI); shared feature engineering; telemetry KPIs.
+- **SaaS:** One-command Docker Compose (enhanced with Redis/Grafana); health endpoints; ingestion (with Redis idempotency); reporting; /predict and /detect_anomaly endpoints; model loading lifecycle (MLflow); observability (full stack); event bus retries; optional microservice split.
+- **Docs:** README sections for DB modeling (including indexes), ML implementation/results (with drift notes), run instructions (including Dockerized ML); security threat model; video link (unlisted); architecture diagram updates.
+- **Quality:** Tests (unit/integration/e2e with drift/property-based); CI (with Trivy scans); security (API key scopes, rate limiting, threat model); no secrets; performance baseline (P95 < 200ms); acceptance criteria met; reproducibility guide.
 
-Day 12: ML API endpoints
-- Objective: Public endpoints for prediction and anomaly detection.
-- Actions:
-  - Add POST /api/v1/predict (reads recent N points from Timescale, produces forecast).
-  - Add POST /api/v1/detect_anomaly (classify a new reading).
-  - Secure with API key scopes; add Pydantic schemas; update /docs.
-- Files:
-  - apps/api/routers/ml.py
-  - main.py (include router)
-- Acceptance:
-  - curl requests return valid JSON; OpenAPI shows new endpoints.
+## Key Architecture Decisions (Consistent with Repo, Enhanced)
 
-Day 13: Tests for ML endpoints
-- Objective: Quality and contracts.
-- Actions:
-  - Add unit tests for loader and basic inference shapes.
-  - Integration tests calling /predict and /detect_anomaly with seeded data and mocked models where needed.
-- Files:
-  - tests/api/test_ml_endpoints.py
-  - tests/unit/test_model_loader.py
-- Acceptance:
-  - Tests pass locally and in CI.
+- Retain PostgreSQL + TimescaleDB (already modeled/migrated/tests/docs). Add advanced indexes and continuous aggregates for efficient forecasting windows. No switch to InfluxDB.
+- Retain FastAPI as API Gateway. Add ML endpoints there first; introduce microservice stubs for prediction/anomaly services (optional activation via env flag) after load testing justifies.
+- Use Alembic migrations; async SQLAlchemy; enhance event bus with retries and optional persistence (Redis queues if needed).
+- Implement lightweight MLflow model registry for versioning, metadata, and reproducibility (over simple JSON); include drift monitoring hooks.
+- Add Redis for distributed idempotency and potential event queuing to support horizontal scaling.
+- Observability: Start with logging/metrics; expand to Prometheus/Grafana for dashboards (e.g., anomaly KPIs, query latencies).
+- Security: API keys with scopes; rate limiting; STRIDE threat model documented.
+- Lean persistence: TimescaleDB for time-series; no polyglot DBs yet.
+- Controlled complexity: Monolith-first with stubs for microservices; event-driven agents for extensibility (e.g., anomaly escalation).
 
-Day 14: README ML section and artifacts
-- Objective: Document ML approach and results.
-- Actions:
-  - Add README sections:
-    - Problem statements, dataset, model choices, charts, results, and limitations.
-  - Link to notebooks, models, and charts.
-- Acceptance:
-  - Clear ML documentation in README; artifacts linked.
+## 30-Day Action Plan (Detailed, Step-by-Step)
 
-Week 3: Scale, resilience, performance, and (optional) microservices (Days 15–21)
+### Week 1: Observability, Documentation, and Early Security (Days 6–7; Focus on Baseline Enhancements Post-Day 5)
 
-Day 15: Resilience – timeouts, retries, and error handling
-- Objective: Harden calls and DB access.
-- Actions:
-  - For any HTTP client (if used internally later): configure connect/read timeouts, limited retries with backoff.
-  - Wrap DB queries with clear exception mapping; return 503/504 where appropriate.
-- Files:
-  - apps/api/dependencies/http_client.py (if needed later)
-  - apps/api/routers/ml.py (timeouts on DB reads if using async with timeout)
-- Acceptance:
-  - Under induced slowness, endpoints degrade gracefully.
+Day 6: Observability (Metrics/Logs) + Event Bus Retries
+- **Objective:** Establish baseline metrics, structured logs with correlation, and improve event bus reliability for agent orchestration. This builds on existing JSON logging in `core/logging_config.py` and prepares for ML integration.
+- **Rationale/Context:** Correlation IDs (from Day 4 middleware) need full integration into logs/metrics for traceability across requests/events. Event bus (in `core/event_bus/`) currently lacks retries, risking lost events in high-load scenarios; add at-least-once semantics using a simple retry decorator (e.g., 3 attempts with exponential backoff).
+- **Actions:**
+  - Install `prometheus-fastapi-instrumentator` via Poetry (add to `pyproject.toml`).
+  - Instrument FastAPI in `main.py`: Expose `/metrics` endpoint; add custom metrics for ingestion counts and DB query timings (use `sqlalchemy` event listeners in `core/database/`).
+  - Update `core/logging_config.py`: Ensure JSON logs include `correlation_id` and add event lineage (e.g., `event_id` for bus events like `DataProcessedEvent`).
+  - In `core/event_bus/`, add a retry decorator to publish/subscribe methods (use `tenacity` library; add to dependencies).
+  - Test with `manual_test_anomaly_agent.py`: Simulate failures and verify retries.
+- **Files:**
+  - `main.py` (instrumentator init and include in app).
+  - `core/logging_config.py` (enrich with lineage).
+  - `core/event_bus/event_bus.py` (retry logic).
+  - `pyproject.toml` / `poetry.lock` (add `prometheus-fastapi-instrumentator` and `tenacity`).
+- **Commands (zsh):**
+  - `poetry add prometheus-fastapi-instrumentator tenacity`
+  - `docker compose up -d --build`
+  - `curl "http://localhost:8000/metrics"` (verify output).
+  - `poetry run python scripts/manual_test_anomaly_agent.py` (check logs for retries).
+- **Acceptance:**
+  - `/metrics` returns Prometheus data with custom counters (e.g., `ingestion_success_total`); logs show `correlation_id` and `event_id`; retries handle simulated bus failures (e.g., temp disconnect); CI tests pass.
 
-Day 16: Security – rate limiting and scopes
-- Objective: Protect endpoints.
-- Actions:
-  - Add slowapi for rate limiting (per API key).
-  - Confirm scopes: data:ingest, reports:generate already used; add ml:predict for ML endpoints if desired.
-- Files:
-  - apps/api/dependencies.py (scopes)
-  - main.py (slowapi middleware/config)
-- Acceptance:
-  - Rate limit enforced; unauthorized/scopeless requests denied.
+Day 7: Documentation, Housekeeping, and Threat Model
+- **Objective:** Update docs for clarity, ensure repo hygiene, and conduct a STRIDE threat model to prioritize security.
+- **Rationale/Context:** With infra stable, document for evaluators/boss (e.g., link ERD/schema from Days 2-3). Threat model identifies risks like spoofing (fake API keys) or DoS (unlimited ML queries), informing later rate limiting. Use STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege) on components (API, DB, ML, event bus).
+- **Actions:**
+  - Update main `README.md`: Add sections for one-command run (`docker compose up`), health endpoints, links to ERD (`docs/db/erd.png`), schema (`docs/db/schema.sql`), and dataset usage. Include quickstart for ingestion with curl examples.
+  - Audit repo: Ensure no secrets in `.env` (use `.env.example`); add gitignore for temp files.
+  - Create `docs/SECURITY.md`: Document STRIDE analysis (e.g., mitigate tampering with input validation in ML payloads; DoS via rate limiting).
+  - Enhance Streamlit (`streamlit_app.py`): Add a simple timeseries preview button loading from `data/sensor_data.csv` (use `st.line_chart` with Pandas).
+- **Files:**
+  - `README.md` (updated sections).
+  - `docs/SECURITY.md` (threat model).
+  - `streamlit_app.py` (preview feature).
+  - `.env.example` (scrubbed if needed).
+- **Commands:**
+  - `docker compose up -d`
+  - Access Streamlit at `http://localhost:8501` and test preview.
+- **Acceptance:**
+  - README allows fresh clone/run in <5 mins; threat model covers all components with 2-3 mitigations each; Streamlit shows CSV preview; no secrets found (use `git grep` for check).
 
-Day 17: Load testing (Locust) and tuning
-- Objective: Meet performance SLOs.
-- Actions:
-  - Update locustfile.py to hit /api/v1/data/ingest, /predict, /detect_anomaly.
-  - Tune uvicorn workers, DB pool sizes, and indices as needed.
-- Files:
-  - locustfile.py (updated tasks)
-- Commands:
-  - locust -f locustfile.py
-- Acceptance:
-  - Targets (example): P95 < 200ms for /predict and /detect; minimal errors at target RPS.
+### Week 2: ML Notebooks, Models, Registry, and Endpoints (Days 8–14; Focus on Reproducible, Drift-Aware ML)
 
-Day 18: Timescale tuning and indices
-- Objective: Ensure query efficiency.
-- Actions:
-  - Validate existing indices (sensor_id, timestamp, composite index). Add missing ones if queries support them.
-  - Consider continuous aggregates used by forecasting windows to reduce DB load.
-- Files:
-  - New Alembic migration if additional indexes needed.
-- Acceptance:
-  - Query plans efficient; measurable perf gain if bottlenecked.
+Day 8: Notebook 01 – EDA + Reproducible Workflow Setup
+- **Objective:** Explore dataset; prepare features with shared engineering; set up Dockerized reproducible ML runs.
+- **Rationale/Context:** Build on `data/sensor_data.csv` (~9,000 rows, 15 sensors). EDA identifies distributions/stationarity for time-series. Make workflows reproducible: Docker for env consistency (e.g., fixed library versions), Makefile for automation. Share features (e.g., scaling, lags) in `ml/features.py` for reuse in training/inference.
+- **Actions:**
+  - Create `Dockerfile.ml`: Base on Python 3.12-slim, install Poetry deps + ML libs (scikit-learn, prophet, evidently).
+  - Add `Makefile`: Targets like `make eda` to run notebook in Docker.
+  - Notebook: Load CSV, compute .info()/.describe(), handle missingness, plot time-series/distributions/stationarity (ADF test via statsmodels); save plots.
+  - Implement `ml/features.py`: Shared transformers (e.g., MinMaxScaler for values, lag features for forecasting).
+- **Files:**
+  - `notebooks/01_data_exploration.ipynb`
+  - `docs/ml/eda_preview.png` (exported plots).
+  - `Dockerfile.ml`, `Makefile` (in root).
+  - `ml/features.py` (new module under `core/ml/` or `apps/ml/`).
+  - `pyproject.toml` (add `scikit-learn`, `prophet`, `evidently`, `statsmodels`).
+- **Commands:**
+  - `poetry add scikit-learn prophet evidently statsmodels`
+  - `make eda` (runs notebook in Docker, saves outputs).
+- **Acceptance:**
+  - Notebook runs top-to-bottom in Docker; at least 3 plots (e.g., value distributions, autocorrelation); features module testable (e.g., unit test scaler).
 
-Day 19–20: Optional microservice split (only if needed)
-- Objective: Split ML services if required by scaling.
-- Actions:
-  - Create services/prediction_service and services/anomaly_service (FastAPI), load models at startup, expose healthz/readyz.
-  - Gateway forwards requests internally via Docker network; per-service API keys.
-  - Update docker-compose.yml; add health checks.
-- Acceptance:
-  - Gateway-to-service chain works; latency/error rate within budget.
-- Note: Skip if the gateway-alone meets SLOs (preferred for simplicity).
+Day 9: Notebook 02 – Isolation Forest (Anomaly) + Feature Reuse
+- **Objective:** Train anomaly detector; save model via MLflow; generate charts.
+- **Rationale/Context:** Use Isolation Forest for unsupervised anomalies on features like value/sensor_type. Reuse `ml/features.py` for consistency. Track with MLflow for metadata/metrics.
+- **Actions:**
+  - Install MLflow via Poetry; start server in compose (add service).
+  - Train in notebook: Fit on transformed data (from features.py); compute precision/recall if labels simulated; log to MLflow.
+  - Save model as `anomaly_detector_v1` in MLflow registry; export anomaly scatter plot.
+- **Files:**
+  - `notebooks/02_anomaly_isolation_forest.ipynb`
+  - `docs/ml/anomaly_scatter.png`
+  - `docker-compose.yml` (add MLflow service: `mlflow` with SQLite backend).
+- **Commands:**
+  - `poetry add mlflow`
+  - `docker compose up -d mlflow`
+  - Run notebook: Log experiment to `http://localhost:5000`.
+- **Acceptance:**
+  - Model registered in MLflow with metrics (e.g., contamination rate); plot highlights anomalies; notebook explains choices (e.g., why Isolation Forest for time-series).
 
-Day 21: CI/CD and security scans
-- Objective: Production-ready pipeline.
-- Actions:
-  - Ensure GitHub Actions runs: lint (ruff), tests (pytest), build Docker, optional trivy scan.
-  - Publish Docker image on main merges (optional).
-- Files:
-  - ci.yml (update)
-- Acceptance:
-  - CI green; artifacts built; minimal warnings.
+Day 10: Notebook 03 – Forecast (ARIMA or Prophet) + Telemetry Setup
+- **Objective:** Train forecaster; save via MLflow; add KPI telemetry.
+- **Rationale/Context:** Choose Prophet for seasonality (document vs. ARIMA). Reuse features.py for lags. Add Prometheus counters for forecast RMSE/MAPE in `/metrics`.
+- **Actions:**
+  - Train in notebook: Fit on per-sensor series; forecast horizon (e.g., next 10 points); log metrics to MLflow.
+  - Instrument ML endpoints (stub if needed) with telemetry (e.g., `forecast_error_gauge`).
+  - Save as `ts_predictor_v1` in MLflow; export plot.
+- **Files:**
+  - `notebooks/03_forecast_prophet.ipynb` (or ARIMA).
+  - `docs/ml/forecast_plot.png`
+  - `main.py` (add ML telemetry hooks).
+- **Commands:**
+  - Run notebook in Docker via Makefile.
+- **Acceptance:**
+  - Model in MLflow with RMSE < threshold (e.g., 5% MAPE); plot shows reasonable forecasts; metrics exposed.
 
-Week 4: Docs, video, polish, and final delivery (Days 22–30)
+Day 11: MLflow Registry Integration and Loader
+- **Objective:** Robust lifecycle with versioning, checksums, rollback.
+- **Rationale/Context:** MLflow replaces `active.json`; supports hashing (SHA256) for integrity, versioning (stages: Staging/Production).
+- **Actions:**
+  - Configure loader in `apps/ml/model_loader.py`: Fetch from MLflow at startup, validate checksums, fallback to 503.
+  - Add metadata logging in notebooks (e.g., trained_at, metrics).
+  - Support hot-swap via env var pointing to model URI.
+- **Files:**
+  - `apps/ml/model_loader.py`
+  - Update notebooks to log metadata.
+- **Commands:**
+  - Test loader: `poetry run python -m apps.ml.model_loader` (mock load).
+- **Acceptance:**
+  - API logs model versions; invalid checksum raises error; rollback tested manually.
 
-Day 22: DB documentation finish
-- Objective: Competition-ready DB package.
-- Actions:
-  - Finalize README.md with entity/field rationales and constraints.
-  - Ensure ERD PNG and schema.sql reflect current schema.
-- Acceptance:
-  - DB section self-contained; meets rubric.
+Day 12: ML API Endpoints + Database Indexing for Queries
+- **Objective:** Add endpoints; optimize DB for windowed fetches.
+- **Rationale/Context:** `/predict` fetches recent N readings (use continuous aggregates for speed); `/detect_anomaly` classifies batches. Add indexes for efficiency.
+- **Actions:**
+  - New router: POST `/api/v1/predict` (query DB window, apply features.py, infer via loaded model; return predictions + confidence/model_version).
+  - POST `/api/v1/detect_anomaly` (similar, return flag/score).
+  - Alembic migration: Add BRIN on `timestamp`, B-tree on `(sensor_id, timestamp DESC)`; enable CAGG for 1-hour rollups on `sensor_readings`.
+  - Secure with API key scopes (e.g., `ml:predict`).
+- **Files:**
+  - `apps/api/routers/ml.py`
+  - `alembic_migrations/versions/<timestamp>_add_ml_indexes_and_cagg.py`
+  - `main.py` (include router).
+- **Commands:**
+  - `poetry run alembic revision -m "add ml indexes and cagg"`
+  - `poetry run alembic upgrade head`
+  - `curl -H "X-API-Key: yourkey" -d '{"sensor_id": "sensor-001", "window": 10}' http://localhost:8000/api/v1/predict`
+- **Acceptance:**
+  - Endpoints return JSON (e.g., {"predictions": [...], "version": "v1"}); EXPLAIN shows index usage; scopes enforce access.
 
-Day 23: ML documentation finish
-- Objective: Competition-ready ML package.
-- Actions:
-  - Ensure notebooks run top-to-bottom; outputs saved; charts present in docs/ml/.
-  - Summarize results and limitations in README.
-- Acceptance:
-  - ML section meets rubric with clear justifications and visuals.
+Day 13: Tests for ML Endpoints + Drift Detection Hooks
+- **Objective:** Quality contracts; add drift monitoring.
+- **Rationale/Context:** Use Evidently for PSI/KS stats on inputs vs. training baseline. Hook into anomaly agent for alerts.
+- **Actions:**
+  - Tests: Unit for loader/inference; integration for endpoints with seeded data; e2e with drift scenarios (simulate shifted data).
+  - Add `/api/v1/check_drift`: Compare recent data vs. baseline (store baseline in MLflow).
+  - Property-based tests for generators (`tests/unit/test_sensor_data_generator.py` using Hypothesis).
+- **Files:**
+  - `tests/api/test_ml_endpoints.py`
+  - `tests/unit/test_model_loader.py`
+  - `apps/api/routers/ml.py` (drift endpoint).
+  - `pyproject.toml` (add `hypothesis` for property tests).
+- **Commands:**
+  - `poetry add hypothesis`
+  - `poetry run pytest tests/`
+- **Acceptance:**
+  - 100% coverage for ML paths; drift endpoint flags shifts (e.g., PSI > 0.1 triggers log); property tests validate generator ranges.
 
-Day 24: Polished README and run instructions
-- Objective: Single source of truth for evaluators.
-- Actions:
-  - Add architecture diagram (Gateway + TimescaleDB + Streamlit; optional ML services).
-  - “How to run” with docker compose up -d.
-  - API quickstart with curl examples for ingest, predict, detect, reports.
-  - Add video link placeholder.
-- Acceptance:
-  - README crisp and complete; a judge can run the system in <5 minutes.
+Day 14: README ML Section, Artifacts, and Mini Load Test
+- **Objective:** Document ML; baseline perf.
+- **Rationale/Context:** Include drift notes, reproducibility guide (Makefile/Docker). Run early Locust on stubs.
+- **Actions:**
+  - Update README: Problem statements, dataset, models, charts, results, limitations, drift handling, run guide.
+  - Update `locustfile.py`: Add ML endpoint tasks.
+- **Files:**
+  - `README.md` (ML section).
+  - `locustfile.py`
+- **Commands:**
+  - `locust -f locustfile.py --users 10 --spawn-rate 1`
+- **Acceptance:**
+  - Docs link all artifacts; load test shows <200ms P95 for stubs.
 
-Day 25: Small runbooks and future BI integration note
-- Objective: Professional touch.
-- Actions:
-  - Add a short “Troubleshooting & Runbooks” section (DB slow, model load fails).
-  - “Future Visualization” note: Timescale continuous aggregates + Grafana; mention Streamlit in repo.
-- Acceptance:
-  - Adds credibility; aligns with brief’s “future visualization” requirement.
+### Week 3: Scale, Resilience, Performance, and Microservices (Days 15–21)
 
-Day 26: Record 5‑minute video
-- Objective: Compelling demo.
-- Actions:
-  - Show compose ps; health endpoints; Streamlit; ingestion; ML endpoints; Timescale data; charts; high-level architecture justification.
-  - Upload unlisted to YouTube; add link to README.
-- Acceptance:
-  - Video within 5 minutes; link added.
+Day 15: Resilience – Timeouts, Retries, Error Handling + Redis Idempotency
+- **Objective:** Harden system; migrate idempotency to Redis.
+- **Rationale/Context:** Replace in-memory cache with Redis for scaling. Add timeouts/retries to DB/HTTP calls.
+- **Actions:**
+  - Add Redis service to compose; use `redis-py` for TTL cache (e.g., 10min expiry, key: hash(payload)).
+  - Update ingestion (`apps/api/routers/data.py` or similar): Check/set in Redis.
+  - Wrap async SQLAlchemy with timeouts (use `asyncio.timeout`); retries via tenacity.
+- **Files:**
+  - `docker-compose.yml` (add `redis` service).
+  - `data/ingestion.py` (Redis logic).
+  - `core/database/session.py` (timeouts).
+  - `pyproject.toml` (add `redis`).
+- **Commands:**
+  - `poetry add redis`
+  - `docker compose up -d`
+  - Test idempotency with duplicate curls.
+- **Acceptance:**
+  - Duplicates rejected across restarts; timeouts return 504; Redis handles horizontal sim (manual multi-container test).
 
-Day 27: End-to-end test run + freeze prep
-- Objective: Validate everything.
-- Actions:
-  - Fresh clone; run compose; execute a scripted sequence (ingest -> predict/detect -> report).
-  - Verify artifacts (ERD PNG, schema.sql, notebooks, charts, CSV) present and accurate.
-  - Tag a pre-release.
-- Acceptance:
-  - Smooth from scratch; no hidden deps; green tests.
+Day 16: Security – Rate Limiting, Scopes + Threat Model Refinements
+- **Objective:** Protect endpoints; refine based on Day 7 model.
+- **Rationale/Context:** Tie limiting to scopes (e.g., 100/min for `ml:predict`); consider JWT for rotation.
+- **Actions:**
+  - Add `slowapi`: Global/per-key limits in `main.py`.
+  - Update dependencies.py: Enforce scopes (e.g., deny without `ml:predict`).
+  - Refine `docs/SECURITY.md`: Add mitigations like watermarking ML outputs.
+- **Files:**
+  - `main.py` (slowapi init).
+  - `apps/api/dependencies.py` (scopes).
+  - `pyproject.toml` (add `slowapi`).
+- **Commands:**
+  - `poetry add slowapi`
+  - Test: Spam requests to hit limits.
+- **Acceptance:**
+  - 429 on excess; scopes block unauthorized; docs updated.
 
-Day 28: Final QA and accessibility pass
-- Objective: Reduce friction for judges.
-- Actions:
-  - Check OpenAPI docs; add brief descriptions to new endpoints.
-  - Confirm all links work in README.
-  - Ensure no secrets; .env.example adequate.
-- Acceptance:
-  - Repository tidy; docs clean.
+Day 17: Load Testing (Locust) and Tuning + Event Bus Evaluation
+- **Objective:** Meet SLOs; assess bus for persistence.
+- **Rationale/Context:** Test full chain; if >100 events/sec, add Redis queues to bus.
+- **Actions:**
+  - Run Locust on ingest/predict/detect; tune workers/pools.
+  - If needed, enhance bus with Redis (publish to queue).
+- **Files:**
+  - `locustfile.py` (full scenarios).
+- **Commands:**
+  - `locust -f locustfile.py --users 50`
+- **Acceptance:**
+  - P95 <200ms; no errors at target RPS; bus handles load (add queues if fails).
 
-Day 29: Final release (freeze)
-- Objective: Lock deliverable.
-- Actions:
-  - Create final release tag; mark that no changes will occur after submission deadline (per rules).
-  - Optionally generate a GitHub release with a short changelog.
-- Acceptance:
-  - Repo frozen; aligns with rules.
+Day 18: Timescale Tuning, Indices + Continuous Aggregates
+- **Objective:** Optimize for ML queries.
+- **Rationale/Context:** Already planned; ensure CAGG reduces load (precompute windows).
+- **Actions:**
+  - Validate/add indexes via migration; enable CAGG if not (from Day 12).
+  - Test query plans for forecasting windows.
+- **Files:**
+  - Alembic migration if needed.
+- **Commands:**
+  - `poetry run alembic upgrade head`
+  - `psql $DATABASE_URL -c "EXPLAIN SELECT * FROM sensor_readings WHERE sensor_id = 'sensor-001' ORDER BY timestamp DESC LIMIT 100"`
+- **Acceptance:**
+  - Plans use indexes/CAGG; perf gain >20% on windows.
 
-Day 30: Buffer and celebration
-- Objective: Catch last issues if any.
-- Actions:
-  - Respond to any feedback; minor non-code doc tweaks if allowed before hard deadline.
-  - Backup video and artifacts.
+Day 19–20: Microservice Split (Activate if Needed) + K8s Roadmap
+- **Objective:** Isolate ML if load justifies; add deployment scaffolds.
+- **Rationale/Context:** Stubs from Day 12; create services with own FastAPI, model load.
+- **Actions:**
+  - If activated (env flag): Add `services/prediction_service/` and `services/anomaly_service/` (Dockerfiles, compose entries).
+  - Gateway forwards internally.
+  - Add `infrastructure/k8s/deployment.yaml` placeholders (e.g., API deployment).
+- **Files:**
+  - `services/prediction_service/app.py` etc.
+  - `docker-compose.yml` (new services).
+  - K8s files.
+- **Acceptance:**
+  - Chain works; latency within budget; K8s manifests valid (kubectl apply --dry-run).
 
-Concrete file additions you’ll implement
-- docker-compose.yml (stack)
-- Alembic migration: Timescale retention/compression (+ optional CAGGs)
-- docs/db/erd.dbml (or SQL Developer model), docs/db/erd.png
-- docs/db/schema.sql (via scripts/export_schema.sh)
-- README.md (entity/field constraints and rationale)
-- notebooks/01_data_exploration.ipynb
-- notebooks/02_anomaly_isolation_forest.ipynb
-- notebooks/03_forecast_arima.ipynb
-- data/sensor_data.csv
-- models/anomaly_detector_v1.joblib (+ .meta.json)
-- models/ts_predictor_v1.joblib (+ .meta.json)
-- models/active.json
-- apps/api/routers/ml.py; include in main.py
-- scripts/export_schema.sh, scripts/generate_erd.sh, scripts/export_training_data.py (optional)
-- Observability integration in main.py (metrics) and core/logging_config.py (JSON + correlation IDs)
-- tests/api/test_ml_endpoints.py; tests/unit/test_model_loader.py
-- README updates (DB/ML sections, run instructions, video link)
+Day 21: CI/CD, Security Scans + Grafana Integration
+- **Objective:** Production pipeline; full observability.
+- **Rationale/Context:** Add Trivy for image scans; Grafana for dashboards (anomaly KPIs, drifts).
+- **Actions:**
+  - Update `ci.yml`: Add Trivy step.
+  - Add Grafana/Prometheus to compose; configure dashboards.
+- **Files:**
+  - `ci.yml`
+  - `docker-compose.yml` (add grafana, prometheus).
+- **Commands:**
+  - `docker compose up -d`
+  - Access Grafana at `http://localhost:3000`; import dashboard JSON.
+- **Acceptance:**
+  - CI scans images (no critical vulns); dashboards show metrics (e.g., drift scores).
 
-SLOs and acceptance thresholds (suggested)
-- Functional: curl /health returns 200; /api/v1/data/ingest validates idempotency; /predict and /detect_anomaly return 200 with valid JSON.
-- Performance: P95 latency < 200ms for /predict and /detect at moderate RPS (as per Locust test).
-- Artifacts: ERD source+PNG, schema.sql, CSV, notebooks, models, charts all present and referenced in README.
-- CI: Tests green; lint passes; Docker build succeeds.
+### Week 4: Docs, Video, Polish, and Final Delivery (Days 22–30)
 
-Optional stretch (only if time remains)
-- Split ML into microservices (prediction_service, anomaly_service)
-- Add Grafana + Prometheus in compose (nice demo, optional)
-- Drift monitoring hooks and alerts
-- Canary model activation via models/active.json and % routing (within API)
+Day 22: DB Documentation Finish + Indexing Rationale
+- **Objective:** Complete DB package.
+- **Actions:**
+  - Finalize `docs/db/README.md`: Add index/CAGG rationales, constraints.
+  - Refresh ERD/schema if changed.
+- **Acceptance:**
+  - Self-contained; meets rubric.
 
-## Deferments (for delivery focus)
+Day 23: ML Documentation Finish + Drift Monitoring Loop
+- **Objective:** Complete ML package; add retraining hooks.
+- **Actions:**
+  - Ensure notebooks reproducible; summarize in README with drift notes.
+  - Add agent hook: On high drift, trigger retrain (scripted).
+- **Files:**
+  - `README.md`
+  - `scripts/retrain_models.py` (uses Makefile).
+- **Acceptance:**
+  - Docs clear; hook logs alerts.
 
-- Idempotency backend (Redis): Deferred. The in-memory TTL cache is sufficient for the current single-replica scope. We will re-evaluate after load testing if horizontal scaling is planned.
-- Full metrics stack (Prometheus/Grafana): Deferred until Week 3 load testing. We’ll prioritize only if performance bottlenecks or observability gaps are detected beyond health checks and logs.
+Day 24: Polished README, Run Instructions + Architecture Diagram
+- **Objective:** Evaluator-friendly.
+- **Actions:**
+  - Add diagram (e.g., Draw.io: Gateway + DB + Redis + MLflow + Agents).
+  - How-to: Compose, curl examples, ML runs.
+  - Troubleshooting: e.g., model load fails → check MLflow.
+- **Files:**
+  - `docs/architecture.png`
+  - `README.md`
+- **Acceptance:**
+  - Run in <5 mins; diagram covers enhancements.
+
+Day 25: Small Runbooks, Future BI Note + UI Polish
+- **Objective:** Professional extras.
+- **Actions:**
+  - Runbooks in README: DB slow → check indexes; drift high → retrain.
+  - BI note: CAGG + Grafana for viz; enhance Streamlit with anomaly summaries.
+- **Acceptance:**
+  - Adds value; aligns with requirements.
+
+Day 26: Record 5-Minute Video
+- **Objective:** Demo everything.
+- **Actions:**
+  - Show compose, health, ingestion, ML endpoints, drift check, Grafana, threat model justification.
+  - Upload unlisted YouTube; link in README.
+- **Acceptance:**
+  - <5 mins; comprehensive.
+
+Day 27: End-to-End Test Run + Freeze Prep
+- **Objective:** Validate.
+- **Actions:**
+  - Fresh clone; run sequence: ingest → predict → detect → drift.
+  - Tag pre-release.
+- **Acceptance:**
+  - Smooth; green tests.
+
+Day 28: Final QA, Accessibility Pass + Reproducibility Guide
+- **Objective:** Tidy up.
+- **Actions:**
+  - Check OpenAPI; fix links.
+  - Add README section: "Reproducing ML" (Docker/Makefile steps).
+- **Acceptance:**
+  - Repo clean.
+
+Day 29: Final Release (Freeze)
+- **Objective:** Lock.
+- **Actions:**
+  - Tag release; changelog.
+- **Acceptance:**
+  - Frozen.
+
+Day 30: Buffer and Celebration
+- **Objective:** Final tweaks.
+- **Actions:**
+  - Non-code docs if needed.
+
+## Concrete File Additions You'll Implement
+
+- `Dockerfile.ml`, `Makefile` (reproducible ML).
+- `notebooks/01_data_exploration.ipynb`, `02_anomaly_isolation_forest.ipynb`, `03_forecast_prophet.ipynb`.
+- `ml/features.py` (shared engineering).
+- `apps/ml/model_loader.py`, `apps/api/routers/ml.py`.
+- `docs/ml/*.png`, `docs/SECURITY.md`, `docs/architecture.png`.
+- Alembic migrations for indexes/CAGG.
+- `docker-compose.yml` updates (Redis, MLflow, Grafana, Prometheus, microservices).
+- `tests/*` expansions.
+- `locustfile.py` updates.
+- `scripts/retrain_models.py`.
+- `infrastructure/k8s/*` (roadmap).
+- `ci.yml` (Trivy).
+- Dependencies: `prometheus-fastapi-instrumentator`, `tenacity`, `mlflow`, `evidently`, `hypothesis`, `redis`, `slowapi`, etc.
+
+## SLOs and Acceptance Thresholds (Suggested)
+
+- **Functional:** `/health` 200; idempotency with Redis; ML endpoints return valid JSON with version; drift flags shifts.
+- **Performance:** P95 <200ms for /predict/detect at 50 RPS (Locust); query plans efficient.
+- **Artifacts:** ERD PNG, schema.sql, CSV, notebooks, models (in MLflow), charts, threat model all present/linked.
+- **CI:** Tests/lint/build/scan green.
+- **Reproducibility:** `make train-anomaly` runs in Docker, produces same model hash.
+
+## Optional Stretch (Only if Time Remains)
+
+- Advanced drift: Statistical tests in agent for auto-retrain.
+- Canary routing: % traffic to new model versions via loader.
+- Full NATS/Kafka for event bus if Redis queues insufficient.
+
+## Deferments (Minimal, for Focus)
+
+- None for core enhancements (e.g., Redis, drift integrated early). Full feature store deferred post-sprint.
