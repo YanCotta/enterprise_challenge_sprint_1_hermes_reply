@@ -7,6 +7,8 @@ import time # Added for retry delay, though asyncio.sleep is used
 import json # Added for DLQ serialization
 import os # Added for DLQ log directory
 
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 from core.config.settings import settings
 # from data.exceptions import EventHandlerError, SmartMaintenanceBaseException # Not strictly needed if not raising new exceptions yet
 
@@ -118,6 +120,10 @@ class EventBus:
                 f"No subscribers for event type name '{event_type_name}' during unsubscribe attempt."
             )
 
+    @retry(
+        wait=wait_exponential(multiplier=1, min=2, max=6),
+        stop=stop_after_attempt(3)
+    )
     async def publish(self, event_type_or_object: Any, data_payload_arg: Any = None):
         """
         Publishes an event to all subscribed asynchronous handlers.
