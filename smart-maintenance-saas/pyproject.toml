@@ -37,6 +37,8 @@ chromadb = "^0.4.22" # Vector database for RAG capabilities
 sentence-transformers = "^2.2.2" # For text embeddings in RAG
 locust = "^2.37.10"
 streamlit = "^1.45.1"
+prometheus-fastapi-instrumentator = ">=6.0.0,<7.0.0"
+tenacity = "^9.1.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
