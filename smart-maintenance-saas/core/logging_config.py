@@ -12,12 +12,25 @@ import logging.config
 import os
 import sys
 import uuid
+import contextvars
 from datetime import datetime
 from typing import Any, Dict, Optional
 
 from pythonjsonlogger import jsonlogger
+from starlette.requests import Request
 
 from core.config import settings
+
+# Context variable to hold correlation ID
+correlation_id_var = contextvars.ContextVar('correlation_id', default=None)
+
+
+class CorrelationIdFilter(logging.Filter):
+    """Filter that injects correlation ID from context variable into log records."""
+    
+    def filter(self, record):
+        record.correlation_id = correlation_id_var.get()
+        return True
 
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
@@ -89,11 +102,12 @@ def setup_logging(log_level: Optional[str] = None) -> None:
     level = log_level or settings.log_level
 
     # Create formatter
-    formatter = CustomJsonFormatter("%(timestamp)s %(level)s %(name)s %(message)s")
+    formatter = CustomJsonFormatter("%(timestamp)s %(level)s %(name)s %(message)s %(correlation_id)s")
 
     # Configure console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
+    console_handler.addFilter(CorrelationIdFilter())
 
     # Configure root logger
     root_logger = logging.getLogger()
