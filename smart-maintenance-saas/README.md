@@ -31,6 +31,28 @@ A robust, event-driven, multi-agent backend for an industrial predictive mainten
 
 **Current Status:** The system is fully functional, with a complete end-to-end workflow from data ingestion to maintenance scheduling and logging. All core agents are implemented and integrated through an event-driven architecture.
 
+## 🚀 Quick Start (One-Command Run)
+
+This project is fully containerized with Docker. To get the entire system (API, Database, UI) running, follow these steps:
+
+1.  **Prerequisite:** Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+2.  **Clone the repository.**
+3.  **Run the system:** Navigate to the `smart-maintenance-saas` directory in your terminal and run the single command:
+    ```bash
+    docker compose up -d --build
+    ```
+4.  **Access the services:**
+    * **User Interface:** [http://localhost:8501](http://localhost:8501)
+    * **API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+    * **Health Check:** `curl http://localhost:8000/health`
+    * **Metrics:** `curl http://localhost:8000/metrics`
+
+## 🏛️ Key Project Artifacts
+
+* **Database Schema:** [View the Entity-Relationship Diagram](./docs/db/erd.png) and the raw [SQL Schema](./docs/db/schema.sql).
+* **Master Dataset:** The training data is available at `data/sensor_data.csv`.
+* **Security Analysis:** Our proactive threat model can be found in [SECURITY.md](./docs/SECURITY.md).
+
 ## 🚀 Recent Updates
 
 ### Enhanced Streamlit UI & Async Fix (June 2025)
