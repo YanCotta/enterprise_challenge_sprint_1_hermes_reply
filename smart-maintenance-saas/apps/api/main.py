@@ -1,6 +1,7 @@
 import logging  # For basic logging if setup_logging is not yet fully integrated
 
 from fastapi import Depends, FastAPI, HTTPException
+from prometheus_fastapi_instrumentator import Instrumentator
 from apps.api.routers import data_ingestion, reporting, human_decision
 from apps.api.middleware.request_id import RequestIDMiddleware
 from sqlalchemy import select  # Import select
@@ -43,6 +44,10 @@ async def lifespan(app: FastAPI):
         logging.error(f"Error during SystemCoordinator startup: {e}", exc_info=True)
         # Optionally, re-raise or handle to prevent app startup if critical
 
+    # Expose the /metrics endpoint
+    instrumentator.expose(app, include_in_schema=False)
+    logging.info("Prometheus metrics endpoint exposed at /metrics")
+
     yield
 
     # Shutdown
@@ -69,6 +74,9 @@ app = FastAPI(
     else "/openapi.json",
     lifespan=lifespan  # Add this
 )
+
+# Instrument the app with default metrics (latency, requests, etc.)
+instrumentator = Instrumentator().instrument(app)
 
 # Middleware
 app.add_middleware(RequestIDMiddleware)
