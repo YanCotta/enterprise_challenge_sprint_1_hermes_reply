@@ -179,168 +179,205 @@ Day 7: Documentation, Housekeeping, and Threat Model
 
 ### Week 2: ML Notebooks, Models, Registry, and Endpoints (Days 8–14; Focus on Reproducible, Drift-Aware ML)
 
-Day 8: Notebook 01 – EDA + Reproducible Workflow Setup
-- **Objective:** Explore dataset; prepare features with shared engineering; set up Dockerized reproducible ML runs.
-- **Rationale/Context:** Build on `data/sensor_data.csv` (~9,000 rows, 15 sensors). EDA identifies distributions/stationarity for time-series. Make workflows reproducible: Docker for env consistency (e.g., fixed library versions), Makefile for automation. Share features (e.g., scaling, lags) in `ml/features.py` for reuse in training/inference. Also To ensure our ML experiments are perfectly reproducible, we need to version our dataset just like we version our code.
-- **Actions:**
-  - We will initialize DVC to track data/sensor_data.csv and integrate it into our Makefile.
-  - Create `Dockerfile.ml`: Base on Python 3.12-slim, install Poetry deps + ML libs (scikit-learn, prophet, evidently).
-  - Add `Makefile`: Targets like `make eda` to run notebook in Docker.
-  - Notebook: Load CSV, compute .info()/.describe(), handle missingness, plot time-series/distributions/stationarity (ADF test via statsmodels); save plots.
-  - Implement `ml/features.py`: Shared transformers (e.g., MinMaxScaler for values, lag features for forecasting).
-- **Files:**
-  - `notebooks/01_data_exploration.ipynb`
-  - `docs/ml/eda_preview.png` (exported plots).
-  - `Dockerfile.ml`, `Makefile` (in root).
-  - `ml/features.py` (new module under `core/ml/` or `apps/ml/`).
-  - `pyproject.toml` (add `scikit-learn`, `prophet`, `evidently`, `statsmodels`).
-- **Commands:**
-  - `poetry add scikit-learn prophet evidently statsmodels`
-  - `make eda` (runs notebook in Docker, saves outputs).
-- **Acceptance:**
-  - Notebook runs top-to-bottom in Docker; at least 3 plots (e.g., value distributions, autocorrelation); features module testable (e.g., unit test scaler).
+**Day 8: Notebook 01 – EDA + Reproducible Workflow Setup**  
 
-Day 9: Notebook 02 – Isolation Forest (Anomaly) + Feature Reuse
-- **Objective:** Train anomaly detector; save model via MLflow; generate charts.
-- **Rationale/Context:** Use Isolation Forest for unsupervised anomalies on features like value/sensor_type. Reuse `ml/features.py` for consistency. Track with MLflow for metadata/metrics. Also, To prevent resource strain on local machines, we'll make heavy services like MLflow and the monitoring stack optional during development.
-- **Actions:**
-  - Install MLflow via Poetry; start server in compose (add service).
-    - We will update docker-compose.yml to read environment variables like ENABLE_MLFLOW=true. Services will be configured to only start if their corresponding flag is set to true. We will update .env.example to include these new flags.
-  - Train in notebook: Fit on transformed data (from features.py); compute precision/recall if labels simulated; log to MLflow.
-  - Save model as `anomaly_detector_v1` in MLflow registry; export anomaly scatter plot.
-- **Files:**
-  - `notebooks/02_anomaly_isolation_forest.ipynb`
-  - `docs/ml/anomaly_scatter.png`
-  - `docker-compose.yml` (add MLflow service: `mlflow` with SQLite backend).
-- **Commands:**
-  - `poetry add mlflow`
-  - `docker compose up -d mlflow`
-  - Run notebook: Log experiment to `http://localhost:5000`.
-- **Acceptance:**
-  - Model registered in MLflow with metrics (e.g., contamination rate); plot highlights anomalies; notebook explains choices (e.g., why Isolation Forest for time-series).
+- **Objective**: Explore dataset; prepare features; set up reproducible ML runs.  
 
-Day 10: Notebook 03 – Forecast (ARIMA or Prophet) + Telemetry Setup
-- **Objective:** Train forecaster; save via MLflow; add KPI telemetry.
-- **Rationale/Context:** Choose Prophet for seasonality (document vs. ARIMA). Reuse features.py for lags. Add Prometheus counters for forecast RMSE/MAPE in `/metrics`.
-- **Actions:**
-  - Train in notebook: Fit on per-sensor series; forecast horizon (e.g., next 10 points); log metrics to MLflow.
-  - Instrument ML endpoints (stub if needed) with telemetry (e.g., `forecast_error_gauge`).
-  - Save as `ts_predictor_v1` in MLflow; export plot.
-- **Files:**
-  - `notebooks/03_forecast_prophet.ipynb` (or ARIMA).
-  - `docs/ml/forecast_plot.png`
-  - `main.py` (add ML telemetry hooks).
-- **Commands:**
-  - Run notebook in Docker via Makefile.
-- **Acceptance:**
-  - Model in MLflow with RMSE < threshold (e.g., 5% MAPE); plot shows reasonable forecasts; metrics exposed.
+- **Rationale/Context**: Build on `data/sensor_data.csv`. EDA for time-series patterns. Docker for reproducibility, DVC for versioning data/plots. Stub `ml/features.py` to reduce Day 8 load.  
 
-Day 11: MLflow Registry Integration and Loader
-- **Objective:** Robust lifecycle with versioning, checksums, rollback.
-- **Rationale/Context:** MLflow replaces `active.json`; supports hashing (SHA256) for integrity, versioning (stages: Staging/Production).
-- **Actions:**
-  - Configure loader in `apps/ml/model_loader.py`: Fetch from MLflow at startup, validate checksums, fallback to 503.
-  - Add metadata logging in notebooks (e.g., trained_at, metrics).
-  - Support hot-swap via env var pointing to model URI.
-- **Files:**
-  - `apps/ml/model_loader.py`
-  - Update notebooks to log metadata.
-- **Commands:**
-  - Test loader: `poetry run python -m apps.ml.model_loader` (mock load).
-- **Acceptance:**
-  - API logs model versions; invalid checksum raises error; rollback tested manually.
+- **Actions**:  
 
-Day 12: ML API Endpoints + Database Indexing for Queries
-- **Objective:** Add endpoints; optimize DB for windowed fetches.
-- **Rationale/Context:** `/predict` fetches recent N readings (use continuous aggregates for speed); `/detect_anomaly` classifies batches. Add indexes for efficiency.
-- **Actions:**
-  - New router: POST `/api/v1/predict` (query DB window, apply features.py, infer via loaded model; return predictions + confidence/model_version).
-  - POST `/api/v1/detect_anomaly` (similar, return flag/score).
-  - Alembic migration: Add BRIN on `timestamp`, B-tree on `(sensor_id, timestamp DESC)`; enable CAGG for 1-hour rollups on `sensor_readings`.
-  - Secure with API key scopes (e.g., `ml:predict`).
-  - We will add a "Mini-Load Test" checkpoint at the end of the day. Using Locust, we will run a simple 5-minute test against any newly created endpoints to get an early performance baseline.
-- **Files:**
-  - `apps/api/routers/ml.py`
-  - `alembic_migrations/versions/<timestamp>_add_ml_indexes_and_cagg.py`
-  - `main.py` (include router).
-- **Commands:**
-  - `poetry run alembic revision -m "add ml indexes and cagg"`
-  - `poetry run alembic upgrade head`
-  - `curl -H "X-API-Key: yourkey" -d '{"sensor_id": "sensor-001", "window": 10}' http://localhost:8000/api/v1/predict`
-- **Acceptance:**
-  - Endpoints return JSON (e.g., {"predictions": [...], "version": "v1"}); EXPLAIN shows index usage; scopes enforce access.
+  - Create stub `ml/features.py` (basic MinMaxScaler function) as prep.  
 
-Day 13: Tests for ML Endpoints + Drift Detection Hooks
-- **Objective:** Quality contracts; add drift monitoring.
-- **Rationale/Context:** Use Evidently for PSI/KS stats on inputs vs. training baseline. Hook into anomaly agent for alerts.
-- **Actions:**
-  - Tests: Unit for loader/inference; integration for endpoints with seeded data; e2e with drift scenarios (simulate shifted data).
-  - Add `/api/v1/check_drift`: Compare recent data vs. baseline (store baseline in MLflow).
-  - Property-based tests for generators (`tests/unit/test_sensor_data_generator.py` using Hypothesis).
-- **Files:**
-  - `tests/api/test_ml_endpoints.py`
-  - `tests/unit/test_model_loader.py`
-  - `apps/api/routers/ml.py` (drift endpoint).
-  - `pyproject.toml` (add `hypothesis` for property tests).
-- **Commands:**
-  - `poetry add hypothesis`
-  - `poetry run pytest tests/`
-- **Acceptance:**
-  - 100% coverage for ML paths; drift endpoint flags shifts (e.g., PSI > 0.1 triggers log); property tests validate generator ranges.
+  - Initialize DVC: `dvc init`, `dvc add data/sensor_data.csv`, add `dvc-push`/`dvc-pull` to `Makefile`.  
 
-Day 14: README ML Section, Artifacts, and Mini Load Test
-- **Objective:** Document ML; baseline perf.
-- **Rationale/Context:** Include drift notes, reproducibility guide (Makefile/Docker). Run early Locust on stubs.
-- **Actions:**
-  - Update README: Problem statements, dataset, models, charts, results, limitations, drift handling, run guide.
-  - Update `locustfile.py`: Add ML endpoint tasks.
-  - At the end of each week, we will add a "Weekly Progress Summary" task. This involves preparing a 1-paragraph summary and a brief screen recording of the key achievements to share.
-- **Files:**
-  - `README.md` (ML section).
-  - `locustfile.py`
-- **Commands:**
-  - `locust -f locustfile.py --users 10 --spawn-rate 1`
-- **Acceptance:**
-  - Docs link all artifacts; load test shows <200ms P95 for stubs.
+  - Create `Dockerfile.ml`: Python 3.12-slim, Poetry + ML libs (scikit-learn, prophet, evidently, statsmodels).  
 
-### Week 3: Scale, Resilience, Performance, and Microservices (Days 15–21)
+  - Add `Makefile`: Targets `make eda`, `make check-eda` (runs notebook with sample data).  
 
-Day 15: Resilience – Timeouts, Retries, Error Handling + Redis Idempotency
-- **Objective:** Harden system; migrate idempotency to Redis.
-- **Rationale/Context:** Replace in-memory cache with Redis for scaling. Add timeouts/retries to DB/HTTP calls. To prove our system's resilience, we need to test how it behaves when dependencies fail.
-- **Actions:**
-  - Add Redis service to compose; use `redis-py` for TTL cache (e.g., 10min expiry, key: hash(payload)).
-  - Update ingestion (`apps/api/routers/data.py` or similar): Check/set in Redis.
-  - Wrap async SQLAlchemy with timeouts (use `asyncio.timeout`); retries via tenacity.
-  - We will add a new integration test that simulates a database connection failure (e.g., by using a mock or temporarily stopping the db container) and asserts that the API's retry logic handles it gracefully by returning a proper 503 Service Unavailable error instead of crashing.
-- **Files:**
-  - `docker-compose.yml` (add `redis` service).
-  - `data/ingestion.py` (Redis logic).
-  - `core/database/session.py` (timeouts).
-  - `pyproject.toml` (add `redis`).
-- **Commands:**
-  - `poetry add redis`
-  - `docker compose up -d`
-  - Test idempotency with duplicate curls.
-- **Acceptance:**
-  - Duplicates rejected across restarts; timeouts return 504; Redis handles horizontal sim (manual multi-container test).
+  - Notebook: Load CSV, compute .info()/.describe(), handle missingness, plot time-series/distributions/stationarity (ADF test); save plots to `docs/ml/`, track with DVC.  
 
-Day 16: Security – Rate Limiting, Scopes + Threat Model Refinements
-- **Objective:** Protect endpoints; refine based on Day 7 model.
-- **Rationale/Context:** Tie limiting to scopes (e.g., 100/min for `ml:predict`); consider JWT for rotation.
-- **Actions:**
-  - Add `slowapi`: Global/per-key limits in `main.py`.
-  - Update dependencies.py: Enforce scopes (e.g., deny without `ml:predict`).
-  - Refine `docs/SECURITY.md`: Add mitigations like watermarking ML outputs.
-- **Files:**
-  - `main.py` (slowapi init).
-  - `apps/api/dependencies.py` (scopes).
-  - `pyproject.toml` (add `slowapi`).
-- **Commands:**
-  - `poetry add slowapi`
-  - Test: Spam requests to hit limits.
-- **Acceptance:**
-  - 429 on excess; scopes block unauthorized; docs updated.
+  - Implement `ml/features.py`: Add lag features for forecasting.  
+
+  - **New**: Run AI code review: Validate `ml/features.py` (flake8) and `make check-eda`.  
+
+- **Files**: `ml/features.py`, `Dockerfile.ml`, `Makefile`, `notebooks/01_data_exploration.ipynb`, `docs/ml/eda_preview.png`, `.dvc/config`.  
+
+- **Commands**:  
+
+  - `poetry add scikit-learn prophet evidently statsmodels dvc`  
+
+  - `dvc init && dvc add data/sensor_data.csv`  
+
+  - `make eda`, `make check-eda`, `make dvc-push`, `poetry run flake8 ml/features.py`  
+
+- **Acceptance**: Notebook runs in Docker; 3+ plots tracked in DVC; features testable; review catches syntax/dependency issues.  
+
+
+**Day 9: Notebook 02 – Isolation Forest (Anomaly) + Feature Reuse**  
+
+- **Objective**: Train anomaly detector; save via MLflow; generate charts.  
+
+- **Rationale/Context**: Use Isolation Forest with `ml/features.py`. MLflow for metadata. Optional MLflow service to reduce resource strain.  
+
+- **Actions**:  
+
+  - Install MLflow; add to `docker-compose.yml` with `ENABLE_MLFLOW=true` flag.  
+
+  - Train in notebook: Fit on transformed data; log precision/recall to MLflow; save as `anomaly_detector_v1`.  
+
+  - Export anomaly scatter plot; track with DVC.  
+
+  - **New**: Create `scripts/monitor_resources.sh` to log `docker stats`; add hardware reqs to `README.md` (e.g., 8GB RAM).  
+
+  - **New**: Mini-load test: Add Locust task for MLflow API (`http://localhost:5000`) in `locustfile.py`.  
+
+- **Files**: `notebooks/02_anomaly_isolation_forest.ipynb`, `docs/ml/anomaly_scatter.png`, `docker-compose.yml`, `scripts/monitor_resources.sh`, `README.md`, `locustfile.py`.  
+
+- **Commands**:  
+
+  - `poetry add mlflow`  
+
+  - `docker compose up -d mlflow`  
+
+  - `locust -f locustfile.py --users 5 --run-time 2m`  
+
+  - `./scripts/monitor_resources.sh`  
+
+- **Acceptance**: Model in MLflow with metrics; plot tracked; resource script logs usage; load test P95 < 200ms.  
+
+
+
+**Day 10: Notebook 03 – Forecast (ARIMA or Prophet) + Telemetry Setup**  
+
+- **Actions**:  
+
+  - Add mini-load test for MLflow model fetch.  
+
+- **Files**: `locustfile.py`.  
+
+- **Commands**: `locust -f locustfile.py --users 5 --run-time 2m`.  
+
+- **Acceptance**: Load test passes; metrics include forecast errors.  
+
+
+
+**Day 11: MLflow Registry Integration and Loader**  
+
+- **Actions**:  
+
+  - Add mini-load test for model loader (mock inference).  
+
+  - Run AI code review for `apps/ml/model_loader.py`.  
+
+- **Files**: `locustfile.py`, `apps/ml/model_loader.py`.  
+
+- **Commands**: `locust -f locustfile.py --users 5`, `poetry run flake8 apps/ml/model_loader.py`.  
+
+- **Acceptance**: Loader passes load test; review clean.  
+
+
+
+**Day 12: ML API Endpoints + Database Indexing for Queries**  
+
+- **Actions**:  
+
+  - Mini-load test for `/predict` and `/detect_anomaly` with mock data.  
+
+  - Add SLOs to `docs/PERFORMANCE_BASELINE.md` (e.g., P95 < 200ms, error rate < 0.1%).  
+
+- **Files**: `locustfile.py`, `docs/PERFORMANCE_BASELINE.md`.  
+
+- **Commands**: `locust -f locustfile.py --users 5`.  
+
+- **Acceptance**: Endpoints meet SLOs in mini-test.  
+
+
+
+**Day 13: Tests for ML Endpoints + Drift Detection Hooks**  
+
+- **Actions**:  
+
+  - Add e2e test for drift workflow (`tests/e2e/test_drift_workflow.py`).  
+
+  - Mini-load test for `/check_drift`.  
+
+- **Files**: `tests/e2e/test_drift_workflow.py`, `locustfile.py`.  
+
+- **Commands**: `poetry run pytest tests/e2e/test_drift_workflow.py`, `locust -f locustfile.py --users 5`.  
+
+- **Acceptance**: Drift test passes; load test stable.  
+
+
+
+**Day 14: README ML Section, Artifacts, and Mini Load Test**  
+
+- **Objective**: Document ML; baseline perf; add incremental data export.  
+
+- **Actions**:  
+
+  - Enhance `scripts/export_sensor_data_csv.py` with `--incremental` flag (append since `MAX(timestamp)`).  
+
+  - Add test in `tests/integration/test_data_export.py` for incremental export.  
+
+  - Update README with incremental export guide.  
+
+  - Run mini-load test (all endpoints).  
+
+  - Create Week 2 Loom video for ML endpoints.  
+
+  - Log feedback in `docs/FEEDBACK_LOG.md`.  
+
+- **Files**: `scripts/export_sensor_data_csv.py`, `tests/integration/test_data_export.py`, `README.md`, `locustfile.py`, `docs/FEEDBACK_LOG.md`.  
+
+- **Commands**: `poetry run python scripts/export_sensor_data_csv.py --incremental`, `poetry run pytest tests/integration/test_data_export.py`, `loom record`.  
+
+- **Acceptance**: Incremental export appends correctly; tests pass; video < 3 mins; feedback logged.  
+
+
+
+#### Week 3: Scale, Resilience, Performance, and Microservices (Days 15–21)
+
+
+
+**Day 15: Resilience – Timeouts, Retries, Error Handling + Redis Idempotency**  
+
+- **Objective**: Harden system; migrate idempotency to Redis; test chaos scenarios.  
+
+- **Actions**:  
+
+  - Add `toxiproxy` to `docker-compose.yml` for chaos testing (Redis/DB latency/outages).  
+
+  - Add chaos tests in `tests/integration/test_resilience.py` (e.g., Redis down, DB slow).  
+
+  - Enable `pytest-cov` in `ci.yml` for 80/15/5 test pyramid ratio.  
+
+  - Add `mem_limit`/`cpus` to `docker-compose.yml` (e.g., Redis: 256MB).  
+
+- **Files**: `docker-compose.yml`, `tests/integration/test_resilience.py`, `ci.yml`.  
+
+- **Commands**: `docker compose up -d toxiproxy`, `poetry run pytest tests/integration/test_resilience.py --cov`, `./scripts/monitor_resources.sh`.  
+
+- **Acceptance**: Chaos tests pass; coverage > 80%; resources within limits.  
+
+
+
+**Day 16: Security – Rate Limiting, Scopes + Threat Model Refinements**  
+
+- **Actions**:  
+
+  - Create `docs/SECURITY_AUDIT_CHECKLIST.md` (checklist for endpoints, scopes).  
+
+  - Add Snyk scans to `ci.yml`.  
+
+  - Rate limit `/check_drift` (10/min per key).  
+
+- **Files**: `docs/SECURITY_AUDIT_CHECKLIST.md`, `ci.yml`, `main.py`.  
+
+- **Commands**: `snyk test`, `poetry run pytest tests/api/test_rate_limits.py`.  
+
+- **Acceptance**: Checklist complete; Snyk clean; rate limits enforced.  
+
 
 Day 17: Load Testing (Locust) and Tuning + Event Bus Evaluation
 - **Objective:** Meet SLOs; assess bus for persistence.
@@ -383,23 +420,25 @@ Day 19–20: Microservice Split (Activate if Needed) + K8s Roadmap
 - **Acceptance:**
   - Chain works; latency within budget; K8s manifests valid (kubectl apply --dry-run).
 
-Day 21: CI/CD, Security Scans + Grafana Integration
-- **Objective:** Production pipeline; full observability.
-- **Rationale/Context:** Add Trivy for image scans; Grafana for dashboards (anomaly KPIs, drifts). Also, To guarantee that our model training pipeline never breaks, we must automate it.
-- **Actions:**
-  - We will add a new ml-train job to our .github/workflows/ci.yml. This job will use our Dockerfile.ml and Makefile to run the training process as part of our continuous integration checks.
-  - Update `ci.yml`: Add Trivy step.
-  - Add Grafana/Prometheus to compose; configure dashboards.
-  - At the end of each week, we will add a "Weekly Progress Summary" task. This involves preparing a 1-paragraph summary and a brief screen recording of the key achievements to share.
-  - We will add two "Security Re-Audit" checkpoints. These will be quick reviews of docs/SECURITY.md against any new services or endpoints.
-- **Files:**
-  - `ci.yml`
-  - `docker-compose.yml` (add grafana, prometheus).
-- **Commands:**
-  - `docker compose up -d`
-  - Access Grafana at `http://localhost:3000`; import dashboard JSON.
-- **Acceptance:**
-  - CI scans images (no critical vulns); dashboards show metrics (e.g., drift scores).
+**Day 21: CI/CD, Security Scans + Grafana Integration**  
+
+- **Actions**:  
+
+  - Add `ml-train` job in `ci.yml` with model hash validation (`docs/ml/baseline_hashes.json`).  
+
+  - Create Week 3 Loom video for Grafana dashboards.  
+
+  - Update `docs/FEEDBACK_LOG.md`.  
+
+  - Re-audit `docs/SECURITY.md` using checklist.  
+
+- **Files**: `ci.yml`, `docs/ml/baseline_hashes.json`, `docs/FEEDBACK_LOG.md`, `docs/SECURITY.md`.  
+
+- **Commands**: `poetry run python scripts/validate_model_hashes.py`, `loom record`.  
+
+- **Acceptance**: CI validates hashes; video < 3 mins; audit complete.  
+
+
 
 ### Week 4: Docs, Video, Polish, and Final Delivery (Days 22–30)
 
@@ -411,18 +450,22 @@ Day 22: DB Documentation Finish + Indexing Rationale
 - **Acceptance:**
   - Self-contained; meets rubric.
 
-Day 23: ML Documentation Finish + Drift Monitoring Loop
-  -**Rationale:** A static drift check is good, but a production system needs an automated loop.
-- **Objective:** Complete ML package; add retraining hooks.
-- **Actions:**
-  - We will use the APScheduler library within a core agent or a new script to create a scheduled job that calls the /api/v1/check_drift endpoint periodically and publishes a DriftDetectedEvent to the event bus if a threshold is breached.
-  - Ensure notebooks reproducible; summarize in README with drift notes.
-  - Add agent hook: On high drift, trigger retrain (scripted).
-- **Files:**
-  - `README.md`
-  - `scripts/retrain_models.py` (uses Makefile).
-- **Acceptance:**
-  - Docs clear; hook logs alerts.
+**Day 23: ML Documentation Finish + Drift Monitoring Loop**  
+
+- **Objective**: Complete ML package; add automated drift loop.  
+
+- **Actions**:  
+
+  - Enhance `scripts/retrain_models.py`: Add APScheduler job (daily at 2 AM) calling `/check_drift`, logging PSI/KS to Prometheus, publishing `DriftDetectedEvent` if PSI > 0.1, and notifying via log/Slack webhook.  
+
+  - Update `README.md` with drift monitoring guide.  
+
+- **Files**: `scripts/retrain_models.py`, `README.md`.  
+
+- **Commands**: `poetry run python scripts/retrain_models.py --check-drift`.  
+
+- **Acceptance**: Job runs; alerts triggered; docs clear.  
+
 
 Day 24: Polished README, Run Instructions + Architecture Diagram
 - **Objective:** Evaluator-friendly.
@@ -436,15 +479,26 @@ Day 24: Polished README, Run Instructions + Architecture Diagram
 - **Acceptance:**
   - Run in <5 mins; diagram covers enhancements.
 
-Day 25: Small Runbooks, Future BI Note + UI Polish
-- **Objective:** Professional extras. To make the final demo more compelling for non-technical evaluators, we'll allow them to interact with the models directly.
-- **Actions:**
-  - We will enhance streamlit_app.py with input forms and buttons to call the /predict and /detect_anomaly API endpoints and display the results.
-  - Runbooks in README: DB slow → check indexes; drift high → retrain.
-  - BI note: CAGG + Grafana for viz; enhance Streamlit with anomaly summaries.
-  - We will add a "Maintenance & Operations Runbook" section to the main README.md, covering topics like database backups and the recommended model retraining schedule.
-- **Acceptance:**
-  - Adds value; aligns with requirements.
+**Day 25: Small Runbooks, Future BI Note + UI Polish**  
+
+- **Objective**: Professional extras; enhance UI.  
+
+- **Actions**:  
+
+  - Add dashboard tab in `streamlit_app.py`: Show `/metrics` anomaly counts, `/check_drift` status.  
+
+  - Expand runbook in `README.md`: Add monitoring alerts, scaling tips, `pg_dump` cron.  
+
+  - Create `scripts/backup_db.sh` for DB backups.  
+
+  - Update `docs/RISK_MITIGATION.md` with all risks and statuses.  
+
+- **Files**: `streamlit_app.py`, `README.md`, `scripts/backup_db.sh`, `docs/RISK_MITIGATION.md`.  
+
+- **Commands**: `./scripts/backup_db.sh`, `docker compose up -d` (test UI).  
+
+- **Acceptance**: Dashboard shows metrics; runbook comprehensive; risks updated.  
+
 
 Day 26: Record 5-Minute Video
 - **Objective:** Demo everything.
@@ -462,14 +516,21 @@ Day 27: End-to-End Test Run + Freeze Prep
 - **Acceptance:**
   - Smooth; green tests.
 
-Day 28: Final QA, Accessibility Pass + Reproducibility Guide
-- **Objective:** Tidy up.
-- **Actions:**
-  - Check OpenAPI; fix links.
-  - Add README section: "Reproducing ML" (Docker/Makefile steps).
-  - We will add two "Security Re-Audit" checkpoints. These will be quick reviews of docs/SECURITY.md against any new services or endpoints.
-- **Acceptance:**
-  - Repo clean.
+**Day 28: Final QA, Accessibility Pass + Reproducibility Guide**  
+
+- **Actions**:  
+
+  - Re-audit `docs/SECURITY.md` with checklist.  
+
+  - Add “Reproducing ML” section in `README.md` with DVC/Docker steps.  
+
+- **Files**: `docs/SECURITY.md`, `README.md`.  
+
+- **Commands**: `dvc pull`, `make eda`.  
+
+- **Acceptance**: Audit clean; reproducibility guide works.  
+
+
 
 Day 29: Final Release (Freeze)
 - **Objective:** Lock.
