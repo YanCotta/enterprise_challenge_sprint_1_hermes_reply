@@ -13,12 +13,15 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies required for building
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies with added resilience (retries & no recommends)
+RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /etc/apt/apt.conf.d/80-retries
 
 # Install Poetry
 RUN pip install poetry==1.8.3
