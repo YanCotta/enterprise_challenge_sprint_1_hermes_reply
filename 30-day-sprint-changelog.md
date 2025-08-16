@@ -356,3 +356,120 @@ Enhanced project documentation, implemented security threat model, and improved 
 
 **Week 2 Readiness**: System prepared for ML notebook development and model training with robust data foundation and monitoring infrastructure.
 
+## 2025-08-16 (Day 8) – Exploratory Data Analysis & Feature Engineering ✅ COMPLETE
+
+### Objectives Completed
+
+Established ML pipeline foundation with corrected EDA notebook and professional feature engineering implementation.
+
+#### EDA Notebook Diagnosis & Correction (`notebooks/01_data_exploration.ipynb`)
+
+- **Issue Identified**: Original plotting logic had flawed sampling and display bugs producing questionable visualizations
+- **Root Cause**: Plotting code created incorrect 3-panel layout with faulty sampling that obscured actual data patterns
+- **Professional Fix**: Implemented proper 6-panel grid visualization:
+  - **Panels 1-5**: Individual time-series plots for each sensor type (temperature, vibration, pressure, humidity, voltage)
+  - **Panel 6**: Comprehensive value distribution histogram with sensor type stratification using seaborn
+  - **Technical Approach**: Removed problematic sampling, used proper pandas indexing, added KDE overlays
+- **Data Quality Confirmation**: ADF stationarity tests confirmed non-stationary behavior across all sensor types as expected for industrial sensor data
+
+#### Docker Environment Professional Resolution
+
+- **Challenge**: Poetry virtual environment conflicts causing import failures for pandas/pytest
+- **Root Cause Analysis**:
+  - Inconsistent Poetry configuration between `POETRY_VENV_IN_PROJECT=1` and `virtualenvs.create false`
+  - Volume mounting overwrote container virtual environment causing missing dependencies
+  - Mixed package management (Poetry + direct pip installs) created conflicts
+- **Senior-Level Solution**: Complete Docker architecture redesign:
+
+  ```dockerfile
+  # Professional approach: Global installation for container environment
+  ENV POETRY_NO_INTERACTION=1 \
+      POETRY_VENV_IN_PROJECT=0 \
+      POETRY_CACHE_DIR=/tmp/poetry_cache
+  
+  RUN poetry config virtualenvs.create false && \
+      poetry install --with dev && \
+      rm -rf $POETRY_CACHE_DIR
+  ```
+
+- **Makefile Enhancement**: Added dedicated `test-features` target for proper CI/CD testing workflows
+
+#### Feature Engineering Implementation (`apps/ml/features.py`)
+
+- **Architecture**: Professional sklearn-compatible transformer following industry best practices
+- **SensorFeatureTransformer Class**:
+  - **MinMaxScaler Integration**: Normalizes sensor values to [0,1] range for ML algorithm stability
+  - **Lag Feature Generation**: Creates 1-5 lag features per sensor for time series modeling
+  - **Sensor Grouping**: Proper handling of multiple sensors with grouped operations
+  - **Production Patterns**: Implements BaseEstimator and TransformerMixin for sklearn pipeline compatibility
+- **Error Handling**: Robust validation with descriptive error messages for missing columns
+- **Logging Integration**: Structured logging with feature count and transformation details
+
+#### Unit Testing Excellence (`tests/unit/test_features.py`)
+
+- **Test Coverage**: Comprehensive test suite covering all transformer functionality:
+  - **test_sensor_feature_transformer**: Basic functionality, column creation, data preservation
+  - **test_sensor_feature_transformer_fit_transform**: End-to-end validation with expected scaling results
+  - **test_sensor_feature_transformer_invalid_input**: Error handling with pytest exception validation
+- **Data Validation**: Confirms MinMaxScaler produces expected [0,1] range output
+- **Professional Standards**: Follows pytest conventions with clear assertions and descriptive test names
+
+#### Reproducible ML Workflow (`Makefile` targets)
+
+- **`make eda`**: Executes corrected notebook via papermill in containerized environment
+- **`make test-features`**: Runs feature engineering tests with proper pytest integration
+- **`make build-ml`**: Rebuilds ML Docker image with all dependencies and proper package configuration
+- **Container Consistency**: All ML operations use identical Docker environment ensuring reproducibility
+
+#### Key Findings from Corrected EDA
+
+- **Non-Stationarity Confirmed**: ADF tests show p-values >0.05 for all sensor types, validating need for differencing in time series models
+- **Sensor Type Patterns**: Each sensor type exhibits distinct value ranges and temporal patterns suitable for multi-modal learning
+- **Data Quality Validation**: 9,000 readings with >95% quality scores confirm dataset readiness for training
+- **Temporal Coverage**: ~50 hours of 5-minute interval data provides sufficient historical context for lag feature effectiveness
+
+#### Validation Results
+
+```bash
+# Docker build successful
+✅ Docker image built: smart-maintenance-ml
+✅ EDA notebook executed: notebooks/01_data_exploration_output.ipynb
+✅ Plots generated: docs/ml/eda_preview.png (proper 6-panel visualization)
+✅ Unit tests passed: 3/3 tests successful
+✅ Feature transformer validated: MinMaxScaler + lag features working correctly
+```
+
+#### Technical Architecture Enhancements
+
+- **Long-term Maintainability**: Professional Docker configuration eliminates dependency conflicts
+- **CI/CD Ready**: Makefile targets support automated testing and notebook execution
+- **ML Pipeline Foundation**: Feature transformer ready for integration with sklearn pipelines
+- **Reproducible Science**: Containerized environment ensures consistent results across deployments
+
+#### Files Created/Modified
+
+- `notebooks/01_data_exploration.ipynb`: Corrected plotting logic with professional visualization
+- `Dockerfile.ml`: Complete rewrite for production-grade Poetry/Python environment
+- `Makefile`: Added `test-features` target and improved workflow commands
+- `apps/ml/__init__.py`: Fixed import statements to match actual feature implementations
+- `pyproject.toml`: Streamlined package configuration for reliable builds
+
+#### Quality Assurance Validation
+
+- **EDA Output**: Generated `eda_preview.png` shows clear, informative 6-panel visualization grid
+- **Feature Engineering**: All 3 unit tests pass demonstrating robust transformer functionality
+- **Docker Environment**: Consistent build/test/execute workflow without environment conflicts
+- **Data Pipeline**: 9,000 sensor readings successfully processed through feature transformer
+
+#### Week 2 ML Foundation Established
+
+- **Data Understanding**: Comprehensive EDA revealing sensor patterns and stationarity characteristics
+- **Feature Engineering**: Production-ready transformer for time series feature creation
+- **Testing Framework**: Unit tests ensuring feature reliability across development lifecycle
+- **Containerized ML**: Docker environment supporting notebook execution and model development
+- **Reproducible Workflow**: Makefile targets enabling consistent ML pipeline execution
+
+**Diagnosis & Resolution**: Successfully identified and professionally corrected initial EDA plotting bugs, established robust Docker/Poetry environment, and implemented enterprise-grade feature engineering pipeline.
+
+**Status**: Day 8 COMPLETE ✅ - ML foundation established with corrected EDA, professional feature engineering, and production-ready testing framework
+
