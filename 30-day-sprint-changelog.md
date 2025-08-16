@@ -473,3 +473,40 @@ Established ML pipeline foundation with corrected EDA notebook and professional 
 
 **Status**: Day 8 COMPLETE ✅ - ML foundation established with corrected EDA, professional feature engineering, and production-ready testing framework
 
+
+## 2025-08-16 (Day 9) – Anomaly Detection Model, MLflow Integration & Pipeline Hardening ✅ COMPLETE
+
+### Objectives Completed
+Successfully trained and registered a refined `IsolationForest` anomaly detection model. The initial session involved significant architectural improvements to harden the ML training workflow, resolving critical networking issues and elevating the pipeline's quality and reliability.
+
+---
+
+### Part 1: Initial Implementation & Troubleshooting
+
+* **Initial Goal**: Train an anomaly detection model and log it to a new MLflow service.
+* **Problem Encountered**: The initial approach of running the training notebook via a `docker run` command in the `Makefile` led to persistent `ConnectionRefusedError`. The ephemeral training container could not reliably connect to the `mlflow` service running within the Docker Compose network.
+* **Root Cause Analysis**: The `docker run` command created a container that was external to the main application stack's managed network, leading to DNS resolution failures for the `mlflow` service name.
+* **Solution**: The ML training workflow was re-architected. A dedicated, one-off service named `notebook_runner` was added to `docker-compose.yml`. The `Makefile` was updated to use `docker compose run --rm notebook_runner`, ensuring the training container always runs on the correct network with guaranteed access to other services like MLflow.
+
+---
+
+### Part 2: Pipeline Refinement & Final Run
+
+* **Action**: Based on a detailed analysis of the first model run, the feature engineering pipeline and MLflow logging were significantly enhanced to meet professional standards.
+* **`SensorFeatureTransformer` Enhancements**:
+    * Replaced naive `fillna(0)` for lag features with an intelligent forward-fill/back-fill strategy to prevent artificial data patterns.
+    * Eliminated feature redundancy by scaling specified columns (`value`, `quality`) and then dropping the original raw columns.
+* **Notebook & MLflow Logging Improvements**:
+    * The notebook was updated to log richer metadata for better reproducibility, including the final list of feature names, a summary of feature statistics, and the calculated `anomaly_rate` metric.
+* **MLflow Service Hardening**: The MLflow service was made more robust by creating a dedicated `Dockerfile.mlflow` to pre-install all dependencies, preventing installation failures during container startup.
+
+---
+
+### Final Validation & Outcome
+
+* **Training Execution**: The `make train-anomaly` command successfully executed the refined notebook (`IsolationForest_v2_refined`) without errors.
+* **MLflow UI**: All experiments, parameters, metrics, and artifacts were verified as correctly logged and reachable at `http://localhost:5000`.
+* **Model Registry**: A new, refined model was successfully registered as `anomaly_detector_refined_v2`.
+* **Artifacts**: All specified artifacts, including `docs/ml/anomaly_scatter_v2.png` and `feature_names.txt`, were generated and logged.
+
+**Status**: Day 9 is now COMPLETE. We have a stable, reproducible, and high-quality ML training workflow with a registered anomaly detection model, ready for the next set of tasks.
