@@ -7,11 +7,7 @@ readme = "README.md"
 packages = [
     {include = "apps"},
     {include = "core"},
-    {include = "data"},
-    {include = "examples"},
-    {include = "infrastructure"},
-    {include = "scripts"},
-    {include = "tests"}
+    {include = "data"}
 ]
 
 [tool.poetry.dependencies]
@@ -39,6 +35,10 @@ locust = "^2.37.10"
 streamlit = "^1.45.1"
 prometheus-fastapi-instrumentator = ">=6.0.0,<7.0.0"
 tenacity = "^9.1.2"
+evidently = "^0.7.12"
+statsmodels = "^0.14.5"
+dvc = "^3.62.0"
+papermill = "^2.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
