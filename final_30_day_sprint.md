@@ -179,73 +179,50 @@ Day 7: Documentation, Housekeeping, and Threat Model
 
 ### Week 2: ML Notebooks, Models, Registry, and Endpoints (Days 8–14; Focus on Reproducible, Drift-Aware ML)
 
-**Day 8: Notebook 01 – EDA + Reproducible Workflow Setup**  
+**Day 8: Notebook 01 – EDA + Reproducible Workflow Setup**
 
-- **Objective**: Explore dataset; prepare features; set up reproducible ML runs.  
-
-- **Rationale/Context**: Build on `data/sensor_data.csv`. EDA for time-series patterns. Docker for reproducibility, DVC for versioning data/plots. Stub `ml/features.py` to reduce Day 8 load.  
-
-- **Actions**:  
-
-  - Create stub `ml/features.py` (basic MinMaxScaler function) as prep.  
-
-  - Initialize DVC: `dvc init`, `dvc add data/sensor_data.csv`, add `dvc-push`/`dvc-pull` to `Makefile`.  
-
-  - Create `Dockerfile.ml`: Python 3.12-slim, Poetry + ML libs (scikit-learn, prophet, evidently, statsmodels).  
-
-  - Add `Makefile`: Targets `make eda`, `make check-eda` (runs notebook with sample data).  
-
-  - Notebook: Load CSV, compute .info()/.describe(), handle missingness, plot time-series/distributions/stationarity (ADF test); save plots to `docs/ml/`, track with DVC.  
-
-  - Implement `ml/features.py`: Add lag features for forecasting.  
-
-  - **New**: Run AI code review: Validate `ml/features.py` (flake8) and `make check-eda`.  
-
-- **Files**: `ml/features.py`, `Dockerfile.ml`, `Makefile`, `notebooks/01_data_exploration.ipynb`, `docs/ml/eda_preview.png`, `.dvc/config`.  
-
-- **Commands**:  
-
-  - `poetry add scikit-learn prophet evidently statsmodels dvc`  
-
-  - `dvc init && dvc add data/sensor_data.csv`  
-
-  - `make eda`, `make check-eda`, `make dvc-push`, `poetry run flake8 ml/features.py`  
-
-- **Acceptance**: Notebook runs in Docker; 3+ plots tracked in DVC; features testable; review catches syntax/dependency issues.  
+- **Objective:** Explore dataset; prepare features with shared engineering; set up Dockerized reproducible ML runs.
+- **Rationale/Context:** Build on `data/sensor_data.csv` (~9,000 rows, 15 sensors). EDA identifies distributions/stationarity for time-series. Make workflows reproducible: Docker for env consistency (e.g., fixed library versions), Makefile for automation. Share features (e.g., scaling, lags) in `ml/features.py` for reuse in training/inference. Add DVC for dataset versioning to track changes and ensure reproducibility.
+- **Actions:**
+  - Install DVC via Poetry; initialize in repo root and track `data/sensor_data.csv`.
+  - Create `Dockerfile.ml`: Base on Python 3.12-slim, install Poetry deps + ML libs (scikit-learn, prophet, evidently).
+  - Add `Makefile`: Targets like `make eda` to run notebook in Docker.
+  - Notebook: Load CSV, compute `.info()`/`.describe()`, handle missingness, plot time-series/distributions/stationarity (ADF test via statsmodels); save plots.
+  - Implement `ml/features.py`: Shared transformers (e.g., MinMaxScaler for values, lag features for forecasting).
+- **Files:**
+  - `notebooks/01_data_exploration.ipynb`
+  - `docs/ml/eda_preview.png` (exported plots).
+  - `Dockerfile.ml`, `Makefile` (in root).
+  - `ml/features.py` (new module under `core/ml/` or `apps/ml/`).
+  - `pyproject.toml` (add scikit-learn, prophet, evidently, statsmodels, dvc).
+- **Commands:**
+  - `poetry add scikit-learn prophet evidently statsmodels dvc`
+  - `dvc init; dvc add data/sensor_data.csv; git add data/sensor_data.csv.dvc .dvc/config; git commit -m "Add DVC tracking for dataset"`
+  - `make eda` (runs notebook in Docker, saves outputs).
+- **Acceptance:**
+  - Notebook runs top-to-bottom in Docker; at least 3 plots (e.g., value distributions, autocorrelation); features module testable (e.g., unit test scaler); DVC tracks dataset (verify with `dvc status` clean).
 
 
-**Day 9: Notebook 02 – Isolation Forest (Anomaly) + Feature Reuse**  
+**Day 9: Notebook 02 – Isolation Forest (Anomaly) + Feature Reuse**
 
-- **Objective**: Train anomaly detector; save via MLflow; generate charts.  
-
-- **Rationale/Context**: Use Isolation Forest with `ml/features.py`. MLflow for metadata. Optional MLflow service to reduce resource strain.  
-
-- **Actions**:  
-
-  - Install MLflow; add to `docker-compose.yml` with `ENABLE_MLFLOW=true` flag.  
-
-  - Train in notebook: Fit on transformed data; log precision/recall to MLflow; save as `anomaly_detector_v1`.  
-
-  - Export anomaly scatter plot; track with DVC.  
-
-  - **New**: Create `scripts/monitor_resources.sh` to log `docker stats`; add hardware reqs to `README.md` (e.g., 8GB RAM).  
-
-  - **New**: Mini-load test: Add Locust task for MLflow API (`http://localhost:5000`) in `locustfile.py`.  
-
-- **Files**: `notebooks/02_anomaly_isolation_forest.ipynb`, `docs/ml/anomaly_scatter.png`, `docker-compose.yml`, `scripts/monitor_resources.sh`, `README.md`, `locustfile.py`.  
-
-- **Commands**:  
-
-  - `poetry add mlflow`  
-
-  - `docker compose up -d mlflow`  
-
-  - `locust -f locustfile.py --users 5 --run-time 2m`  
-
-  - `./scripts/monitor_resources.sh`  
-
-- **Acceptance**: Model in MLflow with metrics; plot tracked; resource script logs usage; load test P95 < 200ms.  
-
+- **Objective:** Train anomaly detector; save model via MLflow; generate charts.
+- **Rationale/Context:** Use Isolation Forest for unsupervised anomalies on features like value/sensor_type. Reuse `ml/features.py` for consistency. Track with MLflow for metadata/metrics.
+- **Actions:**
+  - Install MLflow via Poetry; start server in compose (add service).
+  - Pull latest dataset version with DVC before training.
+  - Train in notebook: Fit on transformed data (from `features.py`); compute precision/recall if labels simulated; log to MLflow.
+  - Save model as `anomaly_detector_v1` in MLflow registry; export anomaly scatter plot.
+- **Files:**
+  - `notebooks/02_anomaly_isolation_forest.ipynb`
+  - `docs/ml/anomaly_scatter.png`
+  - `docker-compose.yml` (add MLflow service: mlflow with SQLite backend).
+- **Commands:**
+  - `poetry add mlflow`
+  - `dvc pull data/sensor_data.csv`
+  - `docker compose up -d mlflow`
+  - Run notebook: Log experiment to `http://localhost:5000`.
+- **Acceptance:**
+  - Model registered in MLflow with metrics (e.g., contamination rate); plot shows anomalies; notebook explains choice.
 
 
 **Day 10: Notebook 03 – Forecast (ARIMA or Prophet) + Telemetry Setup**  
@@ -450,24 +427,22 @@ Day 22: DB Documentation Finish + Indexing Rationale
 - **Acceptance:**
   - Self-contained; meets rubric.
 
-**Day 23: ML Documentation Finish + Drift Monitoring Loop**  
+**Day 23: ML Documentation Finish + Drift Monitoring Loop**
 
-- **Objective**: Complete ML package; add automated drift loop.  
+- **Objective:** Complete ML package; add retraining hooks.
+- **Rationale/Context:** A static drift check is good, but a production system needs an automated loop.
+- **Actions:**
+  - Ensure notebooks reproducible; summarize in README with drift notes.
+  - Add agent hook: On high drift, trigger retrain (scripted).
+  - Use APScheduler in a core agent or new script for scheduled job (e.g., daily): Call `/api/v1/check_drift`, publish `DriftDetectedEvent` if PSI/KS > 0.1, notify via log and optional Slack webhook (via env var `SLACK_WEBHOOK_URL`).
+- **Files:**
+  - `README.md`
+  - `scripts/retrain_models.py` (uses Makefile).
+- **Acceptance:**
+  - Docs clear; hook logs alerts.
 
-- **Actions**:  
+**Day 24: Polished README, Run Instructions + Architecture Diagram**
 
-  - Enhance `scripts/retrain_models.py`: Add APScheduler job (daily at 2 AM) calling `/check_drift`, logging PSI/KS to Prometheus, publishing `DriftDetectedEvent` if PSI > 0.1, and notifying via log/Slack webhook.  
-
-  - Update `README.md` with drift monitoring guide.  
-
-- **Files**: `scripts/retrain_models.py`, `README.md`.  
-
-- **Commands**: `poetry run python scripts/retrain_models.py --check-drift`.  
-
-- **Acceptance**: Job runs; alerts triggered; docs clear.  
-
-
-Day 24: Polished README, Run Instructions + Architecture Diagram
 - **Objective:** Evaluator-friendly.
 - **Actions:**
   - Add diagram (e.g., Draw.io: Gateway + DB + Redis + MLflow + Agents).
