@@ -25,9 +25,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - smart-maintenance-network
 
   # Streamlit UI Service
   ui:
+    build: .
     image: smart-maintenance-saas:latest
     container_name: smart_maintenance_ui
     ports:
@@ -53,6 +56,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    networks:
+      - smart-maintenance-network
 
   # Database Service
   db:
@@ -73,7 +78,48 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - smart-maintenance-network
+
+  # MLflow Service (hardened)
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: smart_maintenance_mlflow
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow_data:/mlruns
+      - ./mlflow_db:/mlflow_db
+    networks:
+      - smart-maintenance-network
+
+  # One-off notebook runner service for ML training / experimentation
+  notebook_runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: smart_maintenance_notebook_runner
+    command: >
+      sh -c "papermill notebooks/02_anomaly_isolation_forest.ipynb notebooks/02_anomaly_isolation_forest_output.ipynb"
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+      - ./apps:/app/apps
+      - ./docs:/app/docs
+    environment:
+      - DOCKER_ENV=true  # Ensure notebook selects in-cluster MLflow URI
+    depends_on:
+      - mlflow
+    networks:
+      - smart-maintenance-network
 
 volumes:
   pg_data:
     name: smart_maintenance_pg_data
+
+networks:
+  smart-maintenance-network:
+    driver: bridge
