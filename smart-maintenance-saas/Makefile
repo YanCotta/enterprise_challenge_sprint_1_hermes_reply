@@ -1,12 +1,13 @@
 # Makefile for Smart Maintenance SaaS ML workflows
 
-.PHONY: help build-ml eda test-features clean
+.PHONY: help build-ml eda train-anomaly test-features clean
 
 # Default target
 help:
 	@echo "Available targets:"
 	@echo "  build-ml       Build the ML Docker image"
 	@echo "  eda            Run the EDA notebook in Docker"
+	@echo "  train-anomaly  Run the anomaly detection training notebook"
 	@echo "  test-features  Run feature engineering tests"
 	@echo "  clean          Clean up Docker images and containers"
 
@@ -20,6 +21,13 @@ eda: build-ml
 	@mkdir -p docs/ml
 	docker run --rm -v $(PWD):/app smart-maintenance-ml \
 		papermill notebooks/01_data_exploration.ipynb notebooks/01_data_exploration_output.ipynb
+
+# Run anomaly detection training notebook in Docker
+.PHONY: train-anomaly
+train-anomaly: build-ml
+	@echo "--- Running Anomaly Detection Training Notebook via Docker Compose ---"
+	@mkdir -p docs/ml
+	docker compose run --rm --service-ports notebook_runner
 
 # Run feature engineering tests
 test-features: build-ml
