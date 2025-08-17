@@ -26,6 +26,7 @@ asyncpg = "^0.30.0"
 aiosqlite = "^0.21.0"
 numpy = "<2.0.0"
 scikit-learn = "^1.4.0" # Using a recent version, compatible with numpy 2.x
+lightgbm = "^4.0.0" # Gradient boosting framework for challenger models
 prophet = "^1.1.5" # For time series forecasting and maintenance predictions
 ortools = "^9.12.4544"
 matplotlib = "^3.10.3"
