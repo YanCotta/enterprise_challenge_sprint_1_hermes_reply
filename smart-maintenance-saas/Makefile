@@ -8,6 +8,7 @@ help:
 	@echo "  build-ml       Build the ML Docker image"
 	@echo "  eda            Run the EDA notebook in Docker"
 	@echo "  train-anomaly  Run the anomaly detection training notebook"
+	@echo "  train-forecast Run the forecasting training notebook (Prophet)"
 	@echo "  test-features  Run feature engineering tests"
 	@echo "  clean          Clean up Docker images and containers"
 
@@ -28,6 +29,13 @@ train-anomaly: build-ml
 	@echo "--- Running Anomaly Detection Training Notebook via Docker Compose ---"
 	@mkdir -p docs/ml
 	docker compose run --rm --service-ports notebook_runner
+
+# Run forecasting training notebook (Prophet) via docker compose
+.PHONY: train-forecast
+train-forecast: build-ml
+	@echo "--- Running Forecast Training Notebook via Docker Compose ---"
+	@mkdir -p docs/ml
+	docker compose run --rm -e NOTEBOOK_FILE=03_forecast_prophet --service-ports notebook_runner
 
 # Run feature engineering tests
 test-features: build-ml
