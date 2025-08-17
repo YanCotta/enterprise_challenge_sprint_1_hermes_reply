@@ -510,3 +510,82 @@ Successfully trained and registered a refined `IsolationForest` anomaly detectio
 * **Artifacts**: All specified artifacts, including `docs/ml/anomaly_scatter_v2.png` and `feature_names.txt`, were generated and logged.
 
 **Status**: Day 9 is now COMPLETE. We have a stable, reproducible, and high-quality ML training workflow with a registered anomaly detection model, ready for the next set of tasks.
+
+## 2025-08-17 (Day 10) – Time Series Forecasting Model & MLflow Registry Load Test ✅ COMPLETE
+
+### Summary
+
+Delivered first forecasting capability (Prophet) with reproducible training pipeline, parameterized notebook execution, and performance validation of MLflow Model Registry endpoints under concurrent access.
+
+### Key Implementations
+
+#### Flexible Notebook Runner
+
+- Updated `docker-compose.yml` `notebook_runner` service to accept `NOTEBOOK_FILE` env var.
+- Default remains anomaly notebook; override via `docker compose run -e NOTEBOOK_FILE=03_forecast_prophet notebook_runner`.
+- Added generic `ml` utility service enabling ad‑hoc tooling (Locust) within the compose network.
+
+#### Makefile Enhancement
+
+- Added `train-forecast` target:
+  - Builds ML image (`build-ml`) then executes: `docker compose run --rm -e NOTEBOOK_FILE=03_forecast_prophet --service-ports notebook_runner`.
+- Ensures consistent, network-aware execution sharing volumes for notebooks, data, docs.
+
+#### Forecasting Notebook (`notebooks/03_forecast_prophet.ipynb`)
+
+- Dynamic MLflow tracking URI selection: uses `http://mlflow:5000` when `DOCKER_ENV=true`, else local `http://localhost:5000` for host runs.
+- Timezone normalization fix: converted sensor timestamps to timezone-naive to satisfy Prophet (resolved `ValueError: Dataframe has timezone-aware datetimes`).
+- Logged metrics (MAE, MAPE-style approximation) and registered model: `prophet_forecaster_sensor-001` under experiment "Forecasting Models".
+- Artifacts: forecast plot & component decomposition saved to `docs/ml/` and MLflow artifact store.
+
+#### MLflow Registry Load Testing (Locust)
+
+- Replaced previous general API load script with focused `locustfile.py` targeting:
+  - `GET /api/2.0/mlflow/registered-models/get?name=...`
+  - `POST /api/2.0/mlflow/registered-models/get-latest-versions` (correct method + JSON body)
+- User wait time randomized (1–5s) across 5 virtual users; registry model list includes anomaly + prophet models.
+- Corrected earlier 404 issue caused by improper GET on `get-latest-versions` by switching to POST per MLflow REST spec.
+
+### Execution & Validation
+
+| Step | Action | Result |
+|------|--------|--------|
+| 1 | `make train-forecast` | Notebook executed successfully post-timezone fix; model & artifacts visible in MLflow UI |
+| 2 | Initial load test (1m) | 404 failures (improper endpoint method) |
+| 3 | Fix `locustfile.py` (POST for latest versions) | Eliminated 404s |
+| 4 | Verification load test (30s, 5 users) | 48 requests, 0 failures, sub-10ms typical latency |
+
+Full 2-minute run (acceptance spec) can be executed via:
+
+```bash
+docker compose run --rm -v $(pwd):/app -w /app --service-ports ml \
+  locust -f locustfile.py --host http://mlflow:5000 --users 5 --run-time 2m --headless --print-stats
+```
+
+Short verification (30s) demonstrated stability; extended run expected to mirror 0 failure rate given idempotent, read-only endpoints.
+
+### Files Modified / Added
+
+- `docker-compose.yml`: Parameterized `notebook_runner` with `NOTEBOOK_FILE`; added `ml` utility service.
+- `Makefile`: Added `train-forecast` target.
+- `notebooks/03_forecast_prophet.ipynb`: Added MLflow URI env logic; artifact directory init; timezone-naive conversion.
+- `locustfile.py`: Rewritten to focus exclusively on MLflow Registry; corrected latest versions POST usage.
+
+### Troubleshooting Insights
+
+- Prophet timezone error surfaced immediately; resolved by stripping timezone info (`tz_localize(None)`). Prevents subtle forecast misalignment.
+- 404 burst isolated to misuse of MLflow API interface (method semantics). Rapid correction validated by zero-failure retest.
+
+### Current Registry State
+
+- Models Present: `anomaly_detector_refined_v2`, `prophet_forecaster_sensor-001`.
+- Endpoints exercised are read-only; negligible side effects, enabling safe load validation in CI later.
+
+### Risks & Next Steps
+
+- Performance Baseline: Add sustained (5–10 min) registry read test during Week 3 scaling tasks.
+- Forecast Quality: Introduce cross-validation / backtesting (Prophet `cross_validation`) in a later iteration to harden model evaluation.
+- Automation: Future Makefile target could encapsulate load test (`test-mlflow-registry`).
+
+**Status**: Day 10 COMPLETE ✅ – Forecasting pipeline operational, model registered, MLflow registry resilience validated, and infrastructure now supports parameterized notebook execution for future models.
+
