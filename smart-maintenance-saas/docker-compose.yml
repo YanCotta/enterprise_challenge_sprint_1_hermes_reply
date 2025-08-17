@@ -90,9 +90,10 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
+    # Ensure backend store (SQLite) and artifact root map to host for persistence
     volumes:
-      - ./mlflow_data:/mlruns
-      - ./mlflow_db:/mlflow_db
+      - ./mlflow_data:/mlruns        # Artifact store
+      - ./mlflow_db:/mlflow_db       # SQLite backend store (mlflow.db lives here)
     networks:
       - smart-maintenance-network
 
@@ -103,18 +104,39 @@ services:
       dockerfile: Dockerfile.ml
     container_name: smart_maintenance_notebook_runner
     command: >
-      sh -c "papermill notebooks/02_anomaly_isolation_forest.ipynb notebooks/02_anomaly_isolation_forest_output.ipynb"
+      sh -c "papermill notebooks/$${NOTEBOOK_FILE}.ipynb notebooks/$${NOTEBOOK_FILE}_output.ipynb"
+    environment:
+      - DOCKER_ENV=true
+      - NOTEBOOK_FILE=02_anomaly_isolation_forest
     volumes:
       - ./notebooks:/app/notebooks
       - ./data:/app/data
       - ./apps:/app/apps
       - ./docs:/app/docs
-    environment:
-      - DOCKER_ENV=true  # Ensure notebook selects in-cluster MLflow URI
-    depends_on:
-      - mlflow
     networks:
       - smart-maintenance-network
+    depends_on:
+      - mlflow
+
+  # Generic ML utility container (used for ad-hoc commands like Locust load testing)
+  ml:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: smart_maintenance_ml
+    command: bash
+    environment:
+      - DOCKER_ENV=true
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+      - ./apps:/app/apps
+      - ./docs:/app/docs
+      - ./mlflow_data:/app/mlflow_data
+    networks:
+      - smart-maintenance-network
+    depends_on:
+      - mlflow
 
 volumes:
   pg_data:
