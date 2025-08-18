@@ -1,0 +1,14 @@
+{
+  "experiment_name": "Vibration Gauntlet (NASA)",
+  "dataset": "NASA IMS Bearing Dataset - 1st Test",
+  "files_processed": 20,
+  "total_windows": 2880,
+  "window_size": 2048,
+  "sampling_frequency": 20000,
+  "features_extracted": 10,
+  "models_trained": [
+    "IsolationForest",
+    "OneClassSVM"
+  ],
+  "mlflow_uri": "http://mlflow:5000"
+}
