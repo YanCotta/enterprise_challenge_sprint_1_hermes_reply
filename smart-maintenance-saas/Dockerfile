@@ -35,11 +35,12 @@ ENV POETRY_NO_INTERACTION=1 \
 WORKDIR /app
 
 # Copy dependency files
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml ./
 
 # Create virtual environment and install dependencies
 RUN poetry config virtualenvs.create true && \
     poetry config virtualenvs.in-project true && \
+    poetry lock && \
     poetry install --only=main --no-root && \
     rm -rf $POETRY_CACHE_DIR && \
     # Clean up unnecessary files to save space
