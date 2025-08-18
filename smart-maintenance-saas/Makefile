@@ -10,6 +10,7 @@ help:
 	@echo "  train-anomaly  Run the anomaly detection training notebook"
 	@echo "  train-forecast Run the forecasting training notebook (Prophet)"
 	@echo "  tune-forecast  Run the forecasting tuning & challenger notebook"
+	@echo "  classification-gauntlet  Run the Classification Gauntlet notebook (AI4I)"
 	@echo "  test-features  Run feature engineering tests"
 	@echo "  clean          Clean up Docker images and containers"
 
@@ -43,6 +44,15 @@ train-forecast: build-ml
 tune-forecast: build-ml
 	@echo "--- Running Forecast Tuning & Challenger Notebook ---"
 	docker compose run --rm -e NOTEBOOK_FILE=04_forecasting_tuning_and_challenger_models --service-ports notebook_runner
+
+# Run Classification Gauntlet notebook (AI4I Dataset)
+.PHONY: classification-gauntlet
+classification-gauntlet: build-ml
+	@echo "--- Running Classification Gauntlet (AI4I Dataset) ---"
+	@mkdir -p docs/ml
+	docker compose run --rm -e NOTEBOOK_FILE=05_classification_benchmark --service-ports notebook_runner
+	@echo "--- Fixing file ownership ---"
+	sudo chown -R $(USER):$(USER) notebooks/*_output.ipynb 2>/dev/null || true
 
 # Run feature engineering tests
 test-features: build-ml
