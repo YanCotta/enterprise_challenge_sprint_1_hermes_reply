@@ -935,5 +935,21 @@ step_size = window_size // 2  # 50% overlap
 **Status**: Phase 2 COMPLETE ✅ – Vibration Gauntlet successfully executed with sophisticated signal processing, 2 production-ready anomaly detection models, and comprehensive industrial validation using NASA bearing dataset.
 
 
-````
+## 2025-08-18 (Day 11) – Project Gauntlet: Phase 3 (The Audio Gauntlet) ✅ COMPLETE
+
+### Infrastructure Overhaul & Build Optimization
+- **Problem Diagnosed**: Identified a critical flaw where Docker build contexts were exceeding 23GB due to large datasets not being excluded, causing slow builds and consuming over 300GB of disk space.
+- **Solution Implemented**:
+  - **`.dockerignore` Enhancement**: Updated the `.dockerignore` file to explicitly exclude all large dataset directories, reducing the build context size by over 99.9% (from 23GB to ~5MB).
+  - **Multi-Stage Dockerfile**: Refactored `Dockerfile.ml` to use a multi-stage build, separating the build environment from the final runtime environment. This significantly reduced the final image size and improved security.
+  - **Troubleshooting**: Systematically resolved complex `poetry.lock` and Docker cache issues by forcing clean rebuilds and using containerized dependency management, resulting in a stable and efficient build process.
+- **Outcome**: Reclaimed over 200GB of disk space and established a professional, optimized, and fast CI/CD-ready build pipeline.
+
+### The Audio Gauntlet
+- **Objective**: Proved the platform's versatility by processing and modeling raw audio data from the **MIMII Sound Dataset**.
+- **Dependencies**: Successfully added the `librosa` library for audio processing and its system-level dependency `libsndfile1` to the ML Docker environment.
+- **Feature Engineering**: Implemented a robust pipeline to process over 8,300 `.wav` files. **Mel-Frequency Cepstral Coefficients (MFCCs)** were extracted from each audio clip to create a feature set representing the unique "fingerprint" of each sound.
+- **Model Training**: A `RandomForestClassifier` was trained on the MFCC features to distinguish between "normal" and "abnormal" machine sounds.
+- **Performance**: The model achieved a strong baseline performance with **93.3% overall accuracy** and a promising **F1-Score of 0.62 for detecting abnormal sounds**.
+- **MLflow Integration**: The trained classifier and the corresponding `StandardScaler` were both successfully versioned and registered in the MLflow Model Registry, ensuring a fully reproducible prediction pipeline.
 
