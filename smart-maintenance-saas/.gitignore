@@ -64,3 +64,10 @@ dump.rdb
 
 # Kafka
 kafka-logs/
+
+# Project Gauntlet - Real-World Datasets
+data/AI4I_2020_uci_dataset/
+data/kaggle_pump_sensor_data/
+data/MIMII_sound_dataset/
+data/nasa_bearing_dataset/
+data/XJTU_SY_bearing_datasets/
