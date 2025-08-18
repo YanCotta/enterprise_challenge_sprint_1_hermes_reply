@@ -44,6 +44,21 @@ examples/
 tests/
 locustfile.py
 
+# MLflow artifacts (these will be mounted as volumes)
+mlflow_data/
+mlflow_db/
+
+# DVC cache and artifacts
+.dvc/cache/
+.dvc/tmp/
+
+# Jupyter notebooks (we'll copy only what we need)
+notebooks/
+!notebooks/*.ipynb
+
+# Reports and outputs
+reports/
+
 # Logs
 logs/
 *.log
@@ -57,6 +72,21 @@ build/
 *.db
 *.sqlite
 *.sqlite3
+
+# Large datasets - DO NOT COPY TO DOCKER CONTEXT
+data/MIMII_sound_dataset/
+data/XJTU_SY_bearing_datasets/
+data/nasa_bearing_dataset/
+# Keep only smaller datasets and scripts
+!data/__init__.py
+!data/schemas.py
+!data/exceptions.py
+!data/generators/
+!data/processors/
+!data/validators/
+!data/models/
+!data/sensor_data.csv
+!data/*.dvc
 
 # Temporary files
 tmp/
