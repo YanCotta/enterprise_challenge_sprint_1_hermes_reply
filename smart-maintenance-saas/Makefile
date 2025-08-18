@@ -12,6 +12,7 @@ help:
 	@echo "  tune-forecast  Run the forecasting tuning & challenger notebook"
 	@echo "  classification-gauntlet  Run the Classification Gauntlet notebook (AI4I)"
 	@echo "  vibration-gauntlet       Run the Vibration Gauntlet notebook (NASA)"
+	@echo "  audio-gauntlet          Run the Audio Gauntlet notebook (MIMII)"
 	@echo "  test-features  Run feature engineering tests"
 	@echo "  clean          Clean up Docker images and containers"
 
@@ -61,6 +62,15 @@ vibration-gauntlet: build-ml
 	@echo "--- Running Vibration Gauntlet (NASA Bearing Dataset) ---"
 	@mkdir -p docs/ml
 	docker compose run --rm -e NOTEBOOK_FILE=06_vibration_benchmark --service-ports notebook_runner
+	@echo "--- Fixing file ownership ---"
+	sudo chown -R $(USER):$(USER) notebooks/*_output.ipynb 2>/dev/null || true
+
+# Run Audio Gauntlet notebook (MIMII Sound Dataset)
+.PHONY: audio-gauntlet
+audio-gauntlet: build-ml
+	@echo "--- Running Audio Gauntlet (MIMII Sound Dataset) ---"
+	@mkdir -p docs/ml
+	docker compose run --rm -e NOTEBOOK_FILE=07_audio_benchmark --service-ports notebook_runner
 	@echo "--- Fixing file ownership ---"
 	sudo chown -R $(USER):$(USER) notebooks/*_output.ipynb 2>/dev/null || true
 
