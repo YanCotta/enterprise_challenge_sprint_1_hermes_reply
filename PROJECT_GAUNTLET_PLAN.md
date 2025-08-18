@@ -307,78 +307,231 @@ Ready to begin the Audio Gauntlet?
 
 -----
 
-### **Phase 4: Final Analysis & Documentation**
+### **Phase 4: The Second Classification Gauntlet (Kaggle Pump Data)**
 
-**Goal:** Consolidate all our findings from the gauntlets into a final report and produce the project's key documentation.
+**Goal:** Apply our classification pipeline to a new, real-world tabular dataset to test the generalizability of our methods.
 
 #### **▶️ Prompt for Copilot: Phase 4**
 
------
+*(Add the "Master Guardrail Snippet v2.0" here)*
 
-**Objective:** Conclude "Project Gauntlet". We will programmatically analyze all the experiments we've logged to MLflow, declare our champion models, and generate the final documentation that showcases our comprehensive work.
-
------
+**Objective:** Begin the "Second Classification Gauntlet". We will use the **Kaggle Pump Sensor Data** to benchmark our classification models (RandomForest, LightGBM) and feature engineering techniques on a new problem.
 
 **Step 4.1: Setup (User Task)**
 
-  * **To Me, the User:** I need you to create our final analysis notebook.
-    1.  **Create the Notebook File:** Create a new, empty file at `smart-maintenance-saas/notebooks/08_final_analysis.ipynb`.
-    2.  **Paste Initial Content:** Open it in a text editor and paste this initial JSON content.
-        ```json
-        {
-         "cells": [
-          {
-           "cell_type": "code",
-           "execution_count": null,
-           "metadata": {},
-           "outputs": [],
-           "source": [
-            "import mlflow\n",
-            "import pandas as pd\n",
-            "import plotly.express as px\n",
-            "\n",
-            "pd.set_option('display.max_rows', 100)\n",
-            "\n",
-            "tracking_uri = \"http://mlflow:5000\" if os.getenv(\"DOCKER_ENV\") == \"true\" else \"http://localhost:5000\"\n",
-            "mlflow.set_tracking_uri(tracking_uri)\n",
-            "\n",
-            "print(f\"Connected to MLflow at: {mlflow.get_tracking_uri()}\")"
-           ]
-          }
-         ],
-         "metadata": {},\n",
-         "nbformat": 4,\n",
-         "nbformat_minor": 2\n",
-        }
-        ```
-    3.  **Confirm:** Let me know when you are done.
+  * **To Me, the User:** I need you to create the new notebook for this phase.
+    1.  **Create the Notebook File:** Create `smart-maintenance-saas/notebooks/08_pump_classification.ipynb`.
+    2.  **Paste Initial Content:** *(The initial JSON content is provided below)*.
+    3.  **Confirm:** Let me know when you're done.
+
+\<details\>
+\<summary\>\<strong\>Click to expand JSON for 08\_pump\_classification.ipynb\</strong\>\</summary\>
+
+```json
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import mlflow\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.preprocessing import StandardScaler\n",
+    "from sklearn.ensemble import RandomForestClassifier\n",
+    "import lightgbm as lgb\n",
+    "from sklearn.metrics import classification_report\n",
+    "import os\n",
+    "\n",
+    "tracking_uri = \"http://mlflow:5000\" if os.getenv(\"DOCKER_ENV\") == \"true\" else \"http://localhost:5000\"\n",
+    "mlflow.set_tracking_uri(tracking_uri)\n",
+    "mlflow.set_experiment(\"Classification Gauntlet (Kaggle Pump)\")\n",
+    "\n",
+    "print(f\"MLflow tracking URI set to: {mlflow.get_tracking_uri()}\")"
+   ]
+  }
+ ],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
+```
+
+\</details\>
 
 -----
 
-**Step 4.2: Comprehensive Analysis Script (Copilot Task)**
+**Step 4.2: Data Loading & Preprocessing (Copilot Task)**
 
-  * Once I give you the green light, your task is to write the Python code for a new cell that performs our final analysis. This code must:
-    1.  Use `mlflow.search_runs()` to fetch all runs from our three gauntlet experiments: "Classification Gauntlet (AI4I)", "Vibration Gauntlet (NASA)", and "Audio Gauntlet (MIMII)".
+  * Once I give the green light, your task is to write the Python code for a new cell that loads and preprocesses the `sensor_maintenance_data.csv` file. This will involve handling missing values and preparing the data for modeling. The target variable is `machine_status`.
+  * **Present this code to me for review** and wait for my approval.
+
+-----
+
+**Step 4.3: Baseline & Feature-Engineered Model Training (Copilot Task)**
+
+  * After I approve the preprocessing, your next task is to write the code to replicate our process from Phase 1:
+    1.  Train baseline models (`RandomForestClassifier`, `LGBMClassifier`) on the cleaned data.
+    2.  Apply advanced feature engineering (rolling statistics on sensor readings).
+    3.  Train the models again on the feature-engineered data.
+    4.  Log all runs, metrics, and models to the new "Classification Gauntlet (Kaggle Pump)" experiment in MLflow, using clear tags to distinguish between baseline and engineered runs.
+  * **Present the full code for this experimental pipeline to me for review.**
+
+-----
+
+**Step 4.4: Execution (User Task)**
+
+  * After all code is approved, you will guide me on updating the `Makefile` with a `run-pump-benchmark` target and then running the notebook. We will verify the results in the MLflow UI.
+
+Ready to begin the second Classification Gauntlet?
+
+-----
+
+### **Phase 5: The Advanced Vibration Gauntlet (XJTU Dataset)**
+
+**Goal:** Test our signal processing pipeline on a new, more complex run-to-failure bearing dataset.
+
+#### **▶️ Prompt for Copilot: Phase 5**
+
+*(Add the "Master Guardrail Snippet v2.0" here)*
+
+**Objective:** Begin the "Advanced Vibration Gauntlet" using the **XJTU-SY Bearing Datasets**. This will test the robustness of the feature extraction techniques we developed in Phase 2.
+
+**Step 5.1: Setup (User Task)**
+
+  * **To Me, the User:** Please create the notebook `smart-maintenance-saas/notebooks/09_xjtu_vibration.ipynb` and paste the initial JSON content provided below. Let me know when you are done.
+
+\<details\>
+\<summary\>\<strong\>Click to expand JSON for 09\_xjtu\_vibration.ipynb\</strong\>\</summary\>
+
+```json
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import mlflow\n",
+    "from scipy.stats import kurtosis, skew\n",
+    "from sklearn.ensemble import IsolationForest\n",
+    "from sklearn.preprocessing import StandardScaler\n",
+    "import os\n",
+    "\n",
+    "tracking_uri = \"http://mlflow:5000\" if os.getenv(\"DOCKER_ENV\") == \"true\" else \"http://localhost:5000\"\n",
+    "mlflow.set_tracking_uri(tracking_uri)\n",
+    "mlflow.set_experiment(\"Vibration Gauntlet (XJTU)\")\n",
+    "\n",
+    "print(f\"MLflow tracking URI set to: {mlflow.get_tracking_uri()}\")"
+   ]
+  }
+ ],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
+```
+
+\</details\>
+
+-----
+
+**Step 5.2: Data Loading & Signal Processing (Copilot Task)**
+
+  * Once I give the green light, your task is to write the Python code to load the XJTU-SY data files. This dataset structure is complex, so you will need to parse the different operating conditions (e.g., `37.5Hz11kN`).
+  * You will then adapt and apply the same signal processing and feature extraction functions we created in Phase 2 to this new dataset.
+  * **Present this complex data loading and feature extraction code to me for review.** Wait for my approval.
+
+-----
+
+**Step 5.3: Model Training (Copilot Task)**
+
+  * After I approve the feature extraction, write the code to train our anomaly detection models (e.g., `IsolationForest`) on the new feature set and log the results to the "Vibration Gauntlet (XJTU)" experiment.
+  * **Present the model training code to me for review.**
+
+-----
+
+**Step 5.4: Execution (User Task)**
+
+  * Guide me on updating the `Makefile` with a `run-xjtu-benchmark` target and running the notebook. We will verify the results in the MLflow UI.
+
+Ready to begin the Advanced Vibration Gauntlet?
+
+-----
+
+### **Phase 6: Final Analysis, Documentation & Tagging**
+
+**Goal:** Consolidate all findings, declare champion models for each task, and create the final project documentation.
+
+#### **▶️ Prompt for Copilot: Phase 6**
+
+*(Add the "Master Guardrail Snippet v2.0" here)*
+
+**Objective:** Conclude "Project Gauntlet". We will programmatically analyze all experiments, declare our champion models, and generate the final documentation that showcases our comprehensive work.
+
+**Step 6.1: Setup (User Task)**
+
+  * **To Me, the User:** Please create the final analysis notebook `smart-maintenance-saas/notebooks/10_final_analysis.ipynb` using the JSON provided below. Let me know when you are done.
+
+\<details\>
+\<summary\>\<strong\>Click to expand JSON for 10\_final\_analysis.ipynb\</strong\>\</summary\>
+
+```json
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import mlflow\n",
+    "import pandas as pd\n",
+    "import plotly.express as px\n",
+    "\n",
+    "pd.set_option('display.max_rows', 100)\n",
+    "\n",
+    "tracking_uri = \"http://mlflow:5000\" if os.getenv(\"DOCKER_ENV\") == \"true\" else \"http://localhost:5000\"\n",
+    "mlflow.set_tracking_uri(tracking_uri)\n",
+    "\n",
+    "print(f\"Connected to MLflow at: {mlflow.get_tracking_uri()}\")"
+   ]
+  }
+ ],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
+```
+
+\</details\>
+
+-----
+
+**Step 6.2: Comprehensive Analysis Script (Copilot Task)**
+
+  * Once I give the green light, your task is to write the Python code for a new cell that performs our final analysis. This code must:
+    1.  Use `mlflow.search_runs()` to fetch runs from **all five** gauntlet experiments: Classification (AI4I), Vibration (NASA), Audio (MIMII), Classification (Pump), and Vibration (XJTU).
     2.  Combine the results into clean pandas DataFrames.
-    3.  Generate summary tables and plots (using `plotly.express`) that clearly show:
-          * The performance comparison of baseline vs. feature-engineered models in the classification task.
-          * The results of the different anomaly detection models for the vibration and audio tasks.
-    4.  Programmatically identify and print the "Champion Model" for each gauntlet based on the best performance metrics.
+    3.  Generate summary tables and plots that clearly identify the champion model for each distinct task.
   * **Present this analysis code to me for review.**
 
 -----
 
-**Step 4.3: Final Documentation Generation (Copilot Task)**
+**Step 6.3: Final Documentation Generation (Copilot Task)**
 
-  * After we run the analysis and agree on the champions, your final coding task is to generate the complete markdown content for our `docs/REAL_WORLD_DATASETS.md` file.
-  * This document should summarize everything we've done in Project Gauntlet, including the datasets used, the feature engineering techniques applied, the models benchmarked, our champion model findings, and the final "Bring Your Own Data" disclaimer.
+  * After we run the analysis and agree on the champions, generate the complete markdown content for our `docs/REAL_WORLD_DATASETS.md` file. This document should summarize everything we've done in Project Gauntlet.
   * **Present the full markdown text to me.**
 
 -----
 
-**Step 4.4: Finalization (User Task)**
+**Step 6.4: Finalization (User & Copilot Task)**
 
-  * Once I approve the markdown, I will manually create the `docs/REAL_WORLD_DATASETS.md` file and paste the content.
-  * You will then provide me with the final, massive changelog entry that summarizes the entirety of "Project Gauntlet."
-  * With that, this epic sprint will be complete, and we will be ready to proceed to the original Day 11.
-
+  * **To Me, the User:** Once I approve the markdown, I will manually create the file. I will also go through the MLflow UI and add detailed descriptions and tags to all the champion models from each gauntlet.
+  * **To You, Copilot:** Your final task is to provide the massive changelog entry that summarizes the entirety of "Project Gauntlet."
+  * After this, the project will be ready to resume the original 30-day sprint at Day 11.
