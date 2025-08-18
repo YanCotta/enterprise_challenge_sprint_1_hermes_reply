@@ -650,3 +650,15 @@ Short verification (30s) demonstrated stability; extended run expected to mirror
 
 **Status**: Day 10.5 COMPLETE ✅ – Prophet model optimized to 20.86% improvement, LightGBM challenger evaluated, MLflow tracking enhanced, and comprehensive system analysis report delivered.
 
+## 2025-08-18 (Day 11 Kick-off) – Project Gauntlet: Data Acquisition
+
+### New Real-World Datasets Acquired
+
+- **Objective**: Pivoted from synthetic data to a suite of real-world datasets to rigorously benchmark the platform's capabilities.
+- **Datasets Downloaded**:
+  - **AI4I 2020 UCI Dataset**: `data/AI4I_2020_uci_dataset/ai4i2020.csv`
+  - **Kaggle Pump Sensor Data**: `data/kaggle_pump_sensor_data/sensor_maintenance_data.csv`
+  - **NASA Bearing Dataset**: `data/nasa_bearing_dataset/4. Bearings/IMS.7z`
+  - **XJTU-SY Bearing Datasets**: `data/XJTU_SY_bearing_datasets/`
+  - **MIMII Sound Dataset**: `data/MIMII_sound_dataset/`
+
