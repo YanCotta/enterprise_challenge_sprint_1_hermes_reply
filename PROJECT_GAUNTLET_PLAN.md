@@ -71,6 +71,25 @@ This multi-day sprint will replace our synthetic data with a suite of real-world
 
 **Goal:** Find the best classification algorithm for predicting machine failure from structured, tabular sensor data.
 
+### **Master Guardrail Snippet for Copilot Prompts**
+
+**CRITICAL WORKFLOW REMINDERS (Read First):**
+
+- **Clean Environment Start:** The user has cleaned their Docker environment. Your first instruction in this new phase must be to guide the user to bring the full Docker stack up with a fresh build.
+
+-   **Important notes and guardrails for all phases below:**
+
+- **Robust Dependency Management:** If a new dependency is needed (like librosa), the process is:
+    1. I will instruct the user to run `poetry add <package>`.
+    2. You will then verify that `pyproject.toml` and `poetry.lock` have been updated.
+    3. The subsequent `docker compose up -d --build` command will then correctly use the updated lock file to build the image, ensuring consistency.
+
+- **Validate Before Running:** If we edit any YAML (`docker-compose.yml`) or script (`Makefile`), you must first instruct the user to run a validation command (e.g., `docker compose config`) to catch syntax errors before we attempt a full build or execution.
+
+- **Path Awareness:** Remember, the project is located in the `smart-maintenance-saas` subdirectory. All commands you provide must reflect this (e.g., `cd smart-maintenance-saas && ...` or assume the user is already in that directory).
+
+- **Interactive Collaboration:** This is a partnership. At every step where you propose new code, a new command, or a new file, you must wait for my explicit "green light" before proceeding to the next step. I will run all terminal commands.
+
 #### **▶️ Prompt for Copilot: Phase 1**
 
 -----
@@ -86,61 +105,7 @@ This multi-day sprint will replace our synthetic data with a suite of real-world
     2.  **Paste Initial Content:** Open it in a text editor and paste the JSON content I've provided below.
     3.  **Confirm:** Let me know when you're done.
 
-<!-- end list -->
-
-```json
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "import pandas as pd\n",
-    "import mlflow\n",
-    "from sklearn.model_selection import train_test_split\n",
-    "from sklearn.preprocessing import StandardScaler\n",
-    "from sklearn.ensemble import RandomForestClassifier\n",
-    "from sklearn.svm import SVC\n",
-    "import lightgbm as lgb\n",
-    "from sklearn.metrics import accuracy_score, classification_report\n",
-    "import os\n",
-    "\n",
-    "tracking_uri = \"http://mlflow:5000\" if os.getenv(\"DOCKER_ENV\") == \"true\" else \"http://localhost:5000\"\n",
-    "mlflow.set_tracking_uri(tracking_uri)\n",
-    "mlflow.set_experiment(\"Classification Gauntlet (AI4I)\")\n",
-    "\n",
-    "print(f\"MLflow tracking URI set to: {mlflow.get_tracking_uri()}\")"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# --- 1. Data Loading and Preprocessing ---\n",
-    "df = pd.read_csv('data/AI4I_2020_uci_dataset/ai4i2020.csv')\n",
-    "df = df.drop(['UDI', 'Product ID'], axis=1)\n",
-    "df = pd.get_dummies(df, columns=['Type'], drop_first=True)\n",
-    "X = df.drop('Machine failure', axis=1)\n",
-    "y = df['Machine failure']\n",
-    "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)\n",
-    "\n",
-    "scaler = StandardScaler()\n",
-    "X_train_scaled = scaler.fit_transform(X_train)\n",
-    "X_test_scaled = scaler.transform(X_test)\n",
-    "\n",
-    "print(\"Data loaded and preprocessed.\")"
-   ]
-  }
- ],
- "metadata": {},
- "nbformat": 4,
- "nbformat_minor": 2
-}
-```
+NOTEBOOK CODE
 
 -----
 
