@@ -11,7 +11,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 fastapi = "^0.104.0"
 uvicorn = "^0.24.0"
 sqlalchemy = "^2.0.23"
