@@ -71,3 +71,7 @@ data/kaggle_pump_sensor_data/
 data/MIMII_sound_dataset/
 data/nasa_bearing_dataset/
 data/XJTU_SY_bearing_datasets/
+
+#MLFlow
+mlflow_data/
+mlflow_db/
