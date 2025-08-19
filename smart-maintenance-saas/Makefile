@@ -14,6 +14,7 @@ help:
 	@echo "  vibration-gauntlet       Run the Vibration Gauntlet notebook (NASA)"
 	@echo "  audio-gauntlet          Run the Audio Gauntlet notebook (MIMII)"
 	@echo "  pump-gauntlet           Run the Second Classification Gauntlet notebook (Kaggle Pump)"
+	@echo "  xjtu-gauntlet           Run the Advanced Vibration Gauntlet notebook (XJTU)"
 	@echo "  test-features  Run feature engineering tests"
 	@echo "  clean          Clean up Docker images and containers"
 
@@ -83,6 +84,17 @@ pump-gauntlet: build-ml
 	docker compose run --rm -e NOTEBOOK_FILE=08_pump_classification --service-ports notebook_runner
 	@echo "--- Fixing file ownership ---"
 	sudo chown -R $(USER):$(USER) notebooks/*_output.ipynb 2>/dev/null || true
+
+# Run Advanced Vibration Gauntlet notebook (XJTU-SY Bearing Dataset)
+.PHONY: xjtu-gauntlet
+xjtu-gauntlet: build-ml
+	@echo "--- Running Advanced Vibration Gauntlet (XJTU-SY Bearing Dataset) ---"
+	@mkdir -p docs/ml
+	docker compose run --rm -e NOTEBOOK_FILE=09_xjtu_vibration --service-ports notebook_runner
+	@echo "--- Fixing file ownership ---"
+	sudo chown -R $(USER):$(USER) notebooks/*_output.ipynb 2>/dev/null || true
+	@echo "--- Fixing artifact ownership ---"
+	sudo chown -R $(USER):$(USER) docs/ml/*xjtu* 2>/dev/null || true
 
 # Run feature engineering tests
 test-features: build-ml
