@@ -92,7 +92,7 @@ packages = [
     "tests"
 ]
 
-python_version = "3.11"
+python_version = "3.12"
 ignore_missing_imports = true
 disallow_untyped_defs = true
 check_untyped_defs = true
