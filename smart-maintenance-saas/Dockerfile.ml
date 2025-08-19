@@ -23,6 +23,8 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_VENV_IN_PROJECT=0 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
+# Generate poetry.lock and install dependencies
+# Use poetry lock to regenerate lock file from pyproject.toml
 RUN poetry config virtualenvs.create false && \
     poetry lock && \
     poetry install --with dev --no-root && \
