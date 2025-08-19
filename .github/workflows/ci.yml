@@ -26,17 +26,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python 3.12
+    - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
+        python-version: '3.11'
 
     - name: Verify Python version
       run: |
         python --version
-        python3.12 --version
+        python3.11 --version
         which python
-        which python3.12
+        which python3.11
 
     - name: Install Poetry
       uses: snok/install-poetry@v1
@@ -49,7 +49,11 @@ jobs:
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-        poetry env use python3.12
+        poetry env use python3.11
+
+    - name: Clear Poetry cache (if needed)
+      run: |
+        poetry cache clear --all pypi || true
 
     - name: Verify Poetry Python version
       run: |
