@@ -13,6 +13,7 @@ help:
 	@echo "  classification-gauntlet  Run the Classification Gauntlet notebook (AI4I)"
 	@echo "  vibration-gauntlet       Run the Vibration Gauntlet notebook (NASA)"
 	@echo "  audio-gauntlet          Run the Audio Gauntlet notebook (MIMII)"
+	@echo "  pump-gauntlet           Run the Second Classification Gauntlet notebook (Kaggle Pump)"
 	@echo "  test-features  Run feature engineering tests"
 	@echo "  clean          Clean up Docker images and containers"
 
@@ -71,6 +72,15 @@ audio-gauntlet: build-ml
 	@echo "--- Running Audio Gauntlet (MIMII Sound Dataset) ---"
 	@mkdir -p docs/ml
 	docker compose run --rm -e NOTEBOOK_FILE=07_audio_benchmark --service-ports notebook_runner
+	@echo "--- Fixing file ownership ---"
+	sudo chown -R $(USER):$(USER) notebooks/*_output.ipynb 2>/dev/null || true
+
+# Run Second Classification Gauntlet notebook (Kaggle Pump Dataset)
+.PHONY: pump-gauntlet
+pump-gauntlet: build-ml
+	@echo "--- Running Second Classification Gauntlet (Kaggle Pump Dataset) ---"
+	@mkdir -p docs/ml
+	docker compose run --rm -e NOTEBOOK_FILE=08_pump_classification --service-ports notebook_runner
 	@echo "--- Fixing file ownership ---"
 	sudo chown -R $(USER):$(USER) notebooks/*_output.ipynb 2>/dev/null || true
 
