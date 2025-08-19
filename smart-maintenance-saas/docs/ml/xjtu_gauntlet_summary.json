@@ -1,0 +1,22 @@
+{
+  "experiment": "Vibration Gauntlet (XJTU)",
+  "dataset": "XJTU-SY Bearing Dataset",
+  "algorithm": "IsolationForest",
+  "samples_processed": 180,
+  "features_extracted": 22,
+  "anomaly_rate": "10.0%",
+  "operating_conditions": [
+    "35Hz12kN",
+    "37.5Hz11kN",
+    "40Hz10kN"
+  ],
+  "top_discriminative_features": [
+    "v_kurtosis",
+    "h_skewness",
+    "v_skewness",
+    "v_high_freq_energy",
+    "h_kurtosis"
+  ],
+  "model_registered": "xjtu_anomaly_isolation_forest",
+  "scaler_registered": "xjtu_feature_scaler"
+}
