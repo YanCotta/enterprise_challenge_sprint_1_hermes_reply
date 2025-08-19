@@ -1,0 +1,5 @@
+Model,Feature_Type,Accuracy,ROC_AUC,Features_Count
+RandomForest,Baseline,1.0,1.0,20
+RandomForest,Engineered,1.0,1.0,31
+LightGBM,Baseline,1.0,0.9999999999999999,20
+LightGBM,Engineered,1.0,1.0,31
