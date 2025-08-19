@@ -5,6 +5,8 @@ FROM python:3.12-slim AS builder
 RUN apt-get update && apt-get install -y \
     build-essential \
     libsndfile1 \
+    libgomp1 \
+    libomp-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry
@@ -34,6 +36,8 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     libsndfile1 \
+    libgomp1 \
+    libomp-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python packages from builder
