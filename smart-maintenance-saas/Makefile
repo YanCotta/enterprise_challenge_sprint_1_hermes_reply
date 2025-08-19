@@ -1,11 +1,12 @@
 # Makefile for Smart Maintenance SaaS ML workflows
 
-.PHONY: help build-ml eda train-anomaly test-features clean
+.PHONY: help build-ml rebuild-ml eda train-anomaly test-features clean
 
 # Default target
 help:
 	@echo "Available targets:"
 	@echo "  build-ml       Build the ML Docker image"
+	@echo "  rebuild-ml     Rebuild the ML Docker image without cache"
 	@echo "  eda            Run the EDA notebook in Docker"
 	@echo "  train-anomaly  Run the anomaly detection training notebook"
 	@echo "  train-forecast Run the forecasting training notebook (Prophet)"
@@ -15,12 +16,17 @@ help:
 	@echo "  audio-gauntlet          Run the Audio Gauntlet notebook (MIMII)"
 	@echo "  pump-gauntlet           Run the Second Classification Gauntlet notebook (Kaggle Pump)"
 	@echo "  xjtu-gauntlet           Run the Advanced Vibration Gauntlet notebook (XJTU)"
+	@echo "  run-final-analysis      Run the Project Gauntlet Final Analysis notebook"
 	@echo "  test-features  Run feature engineering tests"
 	@echo "  clean          Clean up Docker images and containers"
 
 # Build ML Docker image
 build-ml:
 	docker build -f Dockerfile.ml -t smart-maintenance-ml .
+
+# Rebuild ML Docker image without cache (for dependency updates)
+rebuild-ml:
+	docker build --no-cache -f Dockerfile.ml -t smart-maintenance-ml .
 
 # Run EDA notebook in Docker using papermill
 eda: build-ml
@@ -95,6 +101,17 @@ xjtu-gauntlet: build-ml
 	sudo chown -R $(USER):$(USER) notebooks/*_output.ipynb 2>/dev/null || true
 	@echo "--- Fixing artifact ownership ---"
 	sudo chown -R $(USER):$(USER) docs/ml/*xjtu* 2>/dev/null || true
+
+# Run Project Gauntlet Final Analysis notebook
+.PHONY: run-final-analysis
+run-final-analysis: build-ml
+	@echo "--- Running Project Gauntlet Final Analysis ---"
+	@mkdir -p docs/ml
+	docker compose run --rm -e NOTEBOOK_FILE=10_final_analysis --service-ports notebook_runner
+	@echo "--- Fixing file ownership ---"
+	sudo chown -R $(USER):$(USER) notebooks/*_output.ipynb 2>/dev/null || true
+	@echo "--- Fixing artifact ownership ---"
+	sudo chown -R $(USER):$(USER) docs/ml/project_gauntlet_* 2>/dev/null || true
 
 # Run feature engineering tests
 test-features: build-ml
