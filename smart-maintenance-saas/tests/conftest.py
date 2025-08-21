@@ -24,10 +24,31 @@ from core.database.base import Base
 
 @pytest.fixture(scope="session")
 def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+    """Create an instance of the default event loop for the entire test session."""
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
+    
+    # Set the loop as the current loop for this thread
+    asyncio.set_event_loop(loop)
+    
+    try:
+        yield loop
+    finally:
+        # Clean up properly
+        if not loop.is_closed():
+            # Cancel any remaining tasks
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+            
+            # Wait for cancellation to complete
+            if pending:
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            
+            loop.close()
+        
+        # Reset the event loop policy
+        asyncio.set_event_loop(None)
 
 
 @pytest.fixture(scope="session")
@@ -46,7 +67,7 @@ def postgres_container():
 
     postgres = PostgresContainer(
         "timescale/timescaledb:latest-pg15",
-        user=settings.db_user,
+        username=settings.db_user,
         password=settings.db_password,
         dbname=settings.db_name,
     )
