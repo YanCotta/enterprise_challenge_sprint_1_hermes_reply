@@ -7,7 +7,7 @@ using our validated MLflow Model Registry integration from Day 11.
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -19,6 +19,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from apps.ml.model_loader import load_model
 from core.database.session import get_async_db
 from data.schemas import AnomalyAlert, AnomalyType, SensorReading
+from scipy.stats import ks_2samp
+
+from core.database.crud.crud_sensor_reading import crud_sensor_reading
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +107,49 @@ class AnomalyDetectionResponse(BaseModel):
     analysis_timestamp: datetime = Field(default_factory=datetime.utcnow, description="Analysis timestamp")
     request_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique request ID")
     
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class DriftCheckRequest(BaseModel):
+    """Request schema for /check_drift endpoint.
+
+    Compares recent window of sensor readings vs a preceding baseline window
+    using a two-sample Kolmogorov–Smirnov test over the numeric `value` field.
+    """
+
+    sensor_id: str = Field(..., description="Sensor identifier to evaluate")
+    window_minutes: int = Field(60, gt=0, le=24*60, description="Size (minutes) of the recent window")
+    p_value_threshold: float = Field(0.05, gt=0, lt=1, description="P-value threshold below which drift is flagged")
+    min_samples: int = Field(30, gt=5, le=10000, description="Minimum samples required in each window to run test")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "sensor_id": "sensor_001",
+                "window_minutes": 60,
+                "p_value_threshold": 0.05,
+                "min_samples": 30,
+            }
+        }
+
+
+class DriftCheckResponse(BaseModel):
+    """Response schema for /check_drift endpoint."""
+
+    sensor_id: str
+    recent_count: int
+    baseline_count: int
+    window_minutes: int
+    ks_statistic: Optional[float]
+    p_value: Optional[float]
+    p_value_threshold: float
+    drift_detected: bool
+    insufficient_data: bool = False
+    request_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    evaluated_at: datetime = Field(default_factory=datetime.utcnow)
+    notes: Optional[str] = None
+
     class Config:
         json_encoders = {datetime: lambda dt: dt.isoformat()}
 
@@ -358,6 +404,91 @@ async def detect_anomaly(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Anomaly detection failed: {str(e)}"
+        )
+
+
+@router.post("/check_drift", response_model=DriftCheckResponse, tags=["ML Drift"])
+async def check_drift(
+    request: DriftCheckRequest,
+    db: AsyncSession = Depends(get_async_db)
+) -> DriftCheckResponse:
+    """Check for statistical drift in a sensor's readings.
+
+    Implementation notes:
+    - Recent window: now - window_minutes .. now
+    - Baseline window: (recent_start - window_minutes) .. recent_start
+    - Uses KS test (two-sided) on the numeric `value` distribution.
+    - Flags drift when p-value < threshold.
+    - Returns insufficient_data=True if either window lacks min_samples.
+    - Optimized by leveraging composite index (sensor_id, timestamp DESC) via time bounded queries.
+    """
+    now = datetime.utcnow()
+    recent_start = now - timedelta(minutes=request.window_minutes)
+    baseline_start = recent_start - timedelta(minutes=request.window_minutes)
+    baseline_end = recent_start
+
+    try:
+        # Fetch baseline readings
+        baseline_readings = await crud_sensor_reading.get_sensor_readings_by_sensor_id(
+            db,
+            sensor_id=request.sensor_id,
+            start_time=baseline_start,
+            end_time=baseline_end,
+            limit=request.min_samples * 5,  # heuristic buffer
+        )
+        # Fetch recent readings
+        recent_readings = await crud_sensor_reading.get_sensor_readings_by_sensor_id(
+            db,
+            sensor_id=request.sensor_id,
+            start_time=recent_start,
+            end_time=now,
+            limit=request.min_samples * 5,
+        )
+
+        baseline_values = [r.value for r in baseline_readings]
+        recent_values = [r.value for r in recent_readings]
+
+        insufficient = False
+        ks_statistic = None
+        p_value = None
+        drift_detected = False
+        notes = None
+
+        if len(baseline_values) < request.min_samples or len(recent_values) < request.min_samples:
+            insufficient = True
+            notes = (
+                f"Insufficient samples: baseline={len(baseline_values)}, recent={len(recent_values)}, "
+                f"required={request.min_samples}"
+            )
+        else:
+            try:
+                ks_res = ks_2samp(baseline_values, recent_values, alternative="two-sided", mode="auto")
+                ks_statistic = float(ks_res.statistic)
+                p_value = float(ks_res.pvalue)
+                drift_detected = p_value < request.p_value_threshold
+            except Exception as stats_err:
+                logger.error(f"Drift stats computation failed: {stats_err}")
+                notes = f"Stats computation error: {stats_err}"
+
+        return DriftCheckResponse(
+            sensor_id=request.sensor_id,
+            recent_count=len(recent_values),
+            baseline_count=len(baseline_values),
+            window_minutes=request.window_minutes,
+            ks_statistic=ks_statistic,
+            p_value=p_value,
+            p_value_threshold=request.p_value_threshold,
+            drift_detected=drift_detected,
+            insufficient_data=insufficient,
+            notes=notes,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Drift check failed for sensor {request.sensor_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Drift check failed: {str(e)}"
         )
 
 
