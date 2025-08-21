@@ -1,4 +1,4 @@
-from locust import task, between, User
+from locust import task, between, User, HttpUser
 from apps.ml.model_loader import load_model
 
 # List of some of our champion models to test loading.
@@ -48,3 +48,21 @@ class ModelLoaderUser(User):
                     request.failure(f"Model '{model_to_load}' v{version_to_load} failed to load (returned None).")
             except Exception as e:
                 request.failure(str(e))
+
+
+class DriftCheckUser(HttpUser):
+    """Locust user that exercises the /check_drift endpoint under light load."""
+
+    wait_time = between(1, 2)
+
+    @task
+    def check_drift(self):
+        payload = {
+            "sensor_id": "drift_sensor_load_test",
+            "window_minutes": 30,
+            "p_value_threshold": 0.05,
+            "min_samples": 10,
+        }
+        with self.client.post("/api/v1/ml/check_drift", json=payload, name="check_drift") as resp:
+            if resp.status_code != 200:
+                resp.failure(f"Unexpected status {resp.status_code}: {resp.text}")
