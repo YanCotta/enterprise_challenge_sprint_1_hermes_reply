@@ -135,6 +135,14 @@ app.include_router(
     tags=["Human Decisions"]
 )
 
+# Include ML endpoints router for Day 12
+from apps.api.routers import ml_endpoints
+app.include_router(
+    ml_endpoints.router,
+    prefix="/api/v1/ml",
+    tags=["Machine Learning"]
+)
+
 # Root endpoint (optional)
 @app.get("/", tags=["Root"])
 async def read_root():
