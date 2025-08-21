@@ -25,6 +25,7 @@ python-json-logger = "^2.0.7"
 asyncpg = "^0.30.0"
 aiosqlite = "^0.21.0"
 numpy = "<2.0.0"
+pandas = "^2.0.0"  # For data manipulation and ML feature preparation
 scipy = "^1.11.0"  # For signal processing (FFT, statistical functions)
 scikit-learn = "^1.4.0" # Using a recent version, compatible with numpy 2.x
 lightgbm = "^4.0.0" # Gradient boosting framework for challenger models
