@@ -41,8 +41,9 @@ docs/
 .devcontainer/
 .github/
 examples/
-tests/
-locustfile.py
+# Keep tests/ and locustfile.py for Day 13 testing
+# tests/
+# locustfile.py
 
 # MLflow artifacts (these will be mounted as volumes)
 mlflow_data/
