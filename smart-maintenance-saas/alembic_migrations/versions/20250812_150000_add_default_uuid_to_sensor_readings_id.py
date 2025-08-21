@@ -7,8 +7,16 @@ Create Date: 2025-08-12 15:00:00.000000
 """
 from typing import Sequence, Union
 
-from alembic import op
-import sqlalchemy as sa
+# NO-OP MIGRATION
+# This migration was originally intended to alter / add defaults for sensor_readings.id.
+# Current live schema diverged (composite PK on (timestamp, sensor_id)) making the
+# original operations unsafe and causing failed transactions on startup.
+# Per recovery plan (Day 12 stabilization) this file has been neutralized to
+# preserve migration chain continuity without performing schema changes.
+# Future adjustments should create a fresh migration rather than reactivating this one.
+
+from alembic import op  # noqa: F401 (kept for consistency/reference)
+import sqlalchemy as sa  # noqa: F401
 
 
 # revision identifiers, used by Alembic.
@@ -18,45 +26,11 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-def upgrade() -> None:
-    """Add server-side UUID default to sensor_readings.id column"""
-    
-    # Enable uuid-ossp extension for uuid generation
-    op.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
-    
-    # For TimescaleDB hypertables with compression, we cannot ALTER COLUMN TYPE
-    # Instead, we'll just add a default value to the existing integer column
-    # This maintains compatibility while allowing new inserts to work
-    op.execute(
-        """
-        DO $$
-        BEGIN
-            -- Check if the column exists and needs a default
-            IF EXISTS (
-                SELECT 1 FROM information_schema.columns
-                WHERE table_schema = 'public'
-                  AND table_name = 'sensor_readings'
-                  AND column_name = 'id'
-                  AND column_default IS NULL
-            ) THEN
-                -- For integer id column, we'll use a sequence-based approach
-                -- that's compatible with compressed hypertables
-                EXECUTE 'CREATE SEQUENCE IF NOT EXISTS sensor_readings_id_seq';
-                EXECUTE 'ALTER TABLE sensor_readings ALTER COLUMN id SET DEFAULT nextval(''sensor_readings_id_seq'')';
-                -- Set the sequence to start from a high value to avoid conflicts
-                EXECUTE 'SELECT setval(''sensor_readings_id_seq'', COALESCE((SELECT MAX(id) FROM sensor_readings), 0) + 1)';
-            END IF;
-        END$$;
-        """
-    )
-
-    # Recreate index on id if it's missing (safe-guard)
-    try:
-        op.create_index(op.f('ix_sensor_readings_id'), 'sensor_readings', ['id'], unique=False)
-    except Exception:
-        pass
+def upgrade() -> None:  # pragma: no cover
+    """NO-OP: intentionally left blank (see header comment)."""
+    pass
 
 
-def downgrade() -> None:
-    # Remove server-side default; leave column type as-is (uuid)
-    op.alter_column('sensor_readings', 'id', server_default=None)
+def downgrade() -> None:  # pragma: no cover
+    """NO-OP reverse of a no-op migration."""
+    pass
