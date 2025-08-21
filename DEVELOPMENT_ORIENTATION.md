@@ -84,6 +84,43 @@ FROM python:3.12-slim AS production
 # Copy application code last
 ```
 
+### 6. Testing Environment Setup Issues
+**Issue**: Tests fail because pytest and other dev dependencies are missing from production containers.
+
+**Root Cause**: Production Dockerfile uses `poetry install --only=main` which excludes dev dependencies including pytest, and poetry itself is not copied to the final image.
+
+**Solutions**:
+1. **Quick Fix for Running Containers**: Install pytest directly in running container:
+   ```bash
+   docker compose exec api pip install pytest pytest-asyncio
+   ```
+
+2. **Proper Fix for Development**: Modify Dockerfile to include dev dependencies for development builds:
+   ```dockerfile
+   # In builder stage, install dev dependencies for development
+   RUN poetry install --with dev --no-root  # Instead of --only=main
+   ```
+
+3. **Alternative**: Create separate dev Dockerfile or use docker-compose override for development.
+
+**Prevention Strategy**:
+- Always verify test dependencies are available before running tests
+- Consider separate production and development Docker configurations
+- Document which dependencies are needed for testing vs production
+- Use `docker compose exec api pip list` to verify available packages
+
+**Verification Commands**:
+```bash
+# Check if pytest is available
+docker compose exec api python -c "import pytest; print('pytest available')"
+
+# List all installed packages
+docker compose exec api pip list | grep pytest
+
+# Quick install for testing (temporary)
+docker compose exec api pip install pytest pytest-asyncio
+```
+
 ## Quick Reference Commands
 
 ### Docker Management
@@ -128,9 +165,3 @@ docker run --rm smart-maintenance-ml python -c "import librosa, resampy; print('
 - **Mount, Don't Copy**: Always use volume mounts for large datasets
 - **Exclude from Builds**: Keep datasets out of Docker build context
 - **Version Control**: Use DVC for dataset versioning (already configured)
-
-## Phase 4+ Preparation
-- All audio processing infrastructure is ready
-- ML experiment tracking established with MLflow
-- Database schema prepared for production deployment
-- Container optimization complete for memory efficiency
