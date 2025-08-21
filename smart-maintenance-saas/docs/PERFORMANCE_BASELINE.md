@@ -26,12 +26,44 @@ This document captures the baseline performance metrics for the Smart Maintenanc
 
 **Current Status**: The system shows excellent performance for data ingestion endpoints. Report generation endpoints are temporarily disabled in load testing due to datetime parsing issues that are being resolved.
 
+## Service Level Objectives (SLOs) – (Added Aug 20, 2025)
+
+Defined initial SLOs to guide Week 3+ optimization. These are forward‑looking where current metrics are not yet collected (noted as “to instrument”). Baseline ingestion performance demonstrates ample headroom.
+
+| Category | SLO | Measurement Window | Current Status | Notes / Next Action |
+|----------|-----|--------------------|----------------|---------------------|
+| Core API Latency | P95 < 200ms for `/api/v1/ml/predict` | Rolling 1h | Pending (endpoint newly stabilized) | Add prometheus histogram + route label |
+| Ingestion Latency | P95 < 50ms `/api/v1/data/ingest` | Rolling 1h | Met (20ms) | Continue monitoring |
+| Error Rate | < 0.1% (5xx + application errors) | Rolling 1h | Met (0%) | Need error counter separation by class |
+| Availability (Overall) | ≥ 99.5% | 30‑day | Early (dev) | Formalize synthetic probe |
+| Availability (Ingestion) | ≥ 99.9% | 30‑day | Early | Same probe; stretch target |
+| Model Load Cold Start | P99 < 3s (first load) | Per deployment | Unmeasured | Add timer around model_loader.load_model |
+| Model Load Warm | P99 < 1s (cache hit) | Per deployment | Qualitatively met | Expose cache metrics |
+| Drift Check Endpoint (planned) | P95 < 5s | Rolling 1h | Not implemented | Will measure after /check_drift Day 13 |
+| Event Bus Publish Success | > 99% success (pre‑DLQ) | Rolling 24h | Partially measured (logs) | Add success/fail counters |
+| DLQ Rate | < 0.5% of events | Rolling 24h | Not aggregated | Emit DLQ counter metric |
+| DB Read (Latest Sensor Window) | P95 < 50ms query time | Rolling 1h | Unmeasured | Enable pg_stat_statements sampling |
+| Index Health | 0 missing “expected” indexes | Continuous | Met (composite index added) | Add checklist in migration pipeline |
+
+SLO Implementation Roadmap:
+
+1. Instrumentation: Add Prometheus summary/histogram for `/api/v1/ml/predict` and model load durations.
+2. Error Budget Tracking: Introduce counters `app_request_errors_total` (labeled by route & type) to compute rolling error rate.
+3. Synthetic Probes: Lightweight external script or GitHub Action hitting core endpoints on schedule (records success/latency to time‑series backend later).
+4. Event Metrics: Emit counters for event bus publish attempts, successes, failures, DLQ placements.
+5. Drift Endpoint: After implementation, wrap heavy computations with timer and cache results if >1s typical.
+6. Database Observability: Enable `pg_stat_statements`, export Top N slow queries, validate index usage on sensor_readings via EXPLAIN in CI for critical queries.
+
+Initial Error Budget (example for `/predict`): If SLO allows 0.1% errors, in 1,000 requests/hour budget = 1 failure. Alarm thresholds: 50% budget burn in 15 min or 100% in 60 min.
+
+These SLOs will be revisited after first full measurement cycle post Day 15 load & drift testing.
+
 ## Test Configuration
 
 - **Test Duration**: 5 minutes
 - **Concurrent Users**: 50
 - **Spawn Rate**: 5 users/second
-- **Target Host**: http://localhost:8000
+- **Target Host**: <http://localhost:8000>
 - **Test Tool**: Locust 2.31.8+
 - **Active Endpoints**: `/api/v1/data/ingest`, `/health`
 - **Disabled Endpoints**: `/api/v1/reports/generate` (temporarily disabled in load tests)
