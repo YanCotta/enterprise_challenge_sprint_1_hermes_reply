@@ -7,10 +7,11 @@ help:
 	@echo "Available targets:"
 	@echo "  build-ml       Build the ML Docker image"
 	@echo "  rebuild-ml     Rebuild the ML Docker image without cache"
-	@echo "  eda            Run the EDA notebook in Docker"
-	@echo "  train-anomaly  Run the anomaly detection training notebook"
-	@echo "  train-forecast Run the forecasting training notebook (Prophet)"
-	@echo "  tune-forecast  Run the forecasting tuning & challenger notebook"
+	@echo "  synthetic-validation    Run the synthetic data validation notebook"
+	@echo "  synthetic-eda          Run the synthetic data EDA notebook"
+	@echo "  synthetic-anomaly      Run the synthetic anomaly detection training notebook"
+	@echo "  synthetic-forecast     Run the synthetic forecasting training notebook (Prophet)"
+	@echo "  synthetic-tune-forecast Run the synthetic forecasting tuning & challenger notebook"
 	@echo "  classification-gauntlet  Run the Classification Gauntlet notebook (AI4I)"
 	@echo "  vibration-gauntlet       Run the Vibration Gauntlet notebook (NASA)"
 	@echo "  audio-gauntlet          Run the Audio Gauntlet notebook (MIMII)"
@@ -28,12 +29,46 @@ build-ml:
 rebuild-ml:
 	docker build --no-cache -f Dockerfile.ml -t smart-maintenance-ml .
 
+# Run synthetic data validation notebook
+.PHONY: synthetic-validation
+synthetic-validation: build-ml
+	@echo "--- Running Synthetic Data Validation Notebook ---"
+	docker compose run --rm -e NOTEBOOK_FILE=00_synthetic_data_validation --service-ports notebook_runner
+
+# Run synthetic data EDA notebook in Docker using papermill
+.PHONY: synthetic-eda
+synthetic-eda: build-ml
+	@echo "Running Synthetic Data EDA notebook in Docker..."
+	@mkdir -p docs/ml
+	docker run --rm -v $(PWD):/app smart-maintenance-ml \
+		papermill notebooks/01_synthetic_data_exploration.ipynb notebooks/01_synthetic_data_exploration_output.ipynb
+
+# Run synthetic anomaly detection training notebook in Docker
+.PHONY: synthetic-anomaly
+synthetic-anomaly: build-ml
+	@echo "--- Running Synthetic Anomaly Detection Training Notebook ---"
+	@mkdir -p docs/ml
+	docker compose run --rm -e NOTEBOOK_FILE=02_synthetic_anomaly_isolation_forest --service-ports notebook_runner
+
+# Run synthetic forecasting training notebook (Prophet) via docker compose
+.PHONY: synthetic-forecast
+synthetic-forecast: build-ml
+	@echo "--- Running Synthetic Forecast Training Notebook ---"
+	@mkdir -p docs/ml
+	docker compose run --rm -e NOTEBOOK_FILE=03_synthetic_forecast_prophet --service-ports notebook_runner
+
+# Run synthetic forecast tuning and challenger models notebook
+.PHONY: synthetic-tune-forecast
+synthetic-tune-forecast: build-ml
+	@echo "--- Running Synthetic Forecast Tuning & Challenger Notebook ---"
+	docker compose run --rm -e NOTEBOOK_FILE=04_synthetic_forecasting_tuning_and_challenger_models --service-ports notebook_runner
+
 # Run EDA notebook in Docker using papermill
 eda: build-ml
 	@echo "Running EDA notebook in Docker..."
 	@mkdir -p docs/ml
 	docker run --rm -v $(PWD):/app smart-maintenance-ml \
-		papermill notebooks/01_data_exploration.ipynb notebooks/01_data_exploration_output.ipynb
+		papermill notebooks/01_synthetic_data_exploration.ipynb notebooks/01_synthetic_data_exploration_output.ipynb
 
 # Run anomaly detection training notebook in Docker
 .PHONY: train-anomaly
@@ -47,13 +82,13 @@ train-anomaly: build-ml
 train-forecast: build-ml
 	@echo "--- Running Forecast Training Notebook via Docker Compose ---"
 	@mkdir -p docs/ml
-	docker compose run --rm -e NOTEBOOK_FILE=03_forecast_prophet --service-ports notebook_runner
+	docker compose run --rm -e NOTEBOOK_FILE=03_synthetic_forecast_prophet --service-ports notebook_runner
 
 # Run forecast tuning and challenger models notebook
 .PHONY: tune-forecast
 tune-forecast: build-ml
 	@echo "--- Running Forecast Tuning & Challenger Notebook ---"
-	docker compose run --rm -e NOTEBOOK_FILE=04_forecasting_tuning_and_challenger_models --service-ports notebook_runner
+	docker compose run --rm -e NOTEBOOK_FILE=04_synthetic_forecasting_tuning_and_challenger_models --service-ports notebook_runner
 
 # Run Classification Gauntlet notebook (AI4I Dataset)
 .PHONY: classification-gauntlet
