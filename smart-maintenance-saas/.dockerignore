@@ -53,9 +53,9 @@ mlflow_db/
 .dvc/cache/
 .dvc/tmp/
 
-# Jupyter notebooks (we'll copy only what we need)
-notebooks/
-!notebooks/*.ipynb
+# Jupyter notebooks (temporarily included for training)
+# notebooks/
+# !notebooks/*.ipynb
 
 # Reports and outputs
 reports/
@@ -74,7 +74,7 @@ build/
 *.sqlite
 *.sqlite3
 
-# Large datasets - DO NOT COPY TO DOCKER CONTEXT
+# Large datasets - EXCLUDED FROM DOCKER BUILD CONTEXT
 data/MIMII_sound_dataset/
 data/XJTU_SY_bearing_datasets/
 data/nasa_bearing_dataset/
