@@ -303,14 +303,34 @@ async def predict(
     logger.info(f"Prediction request for model: {request.model_name} v{request.model_version}")
     
     try:
-        # Load model from MLflow Registry using our validated model_loader
-        model = load_model(request.model_name, request.model_version)
-        
+        # Load model + feature schema (tuple) from MLflow Registry
+        model, feature_names = load_model(request.model_name, request.model_version)
+
         if model is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Model '{request.model_name}' version '{request.model_version}' not found in MLflow Registry"
             )
+
+        # Feature schema validation (Day 13.5 hardening)
+        if feature_names is not None:
+            provided = set(request.features.keys())
+            expected = set(feature_names)
+            if provided != expected:
+                missing = sorted(list(expected - provided))
+                extra = sorted(list(provided - expected))
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "error": "Feature mismatch",
+                        "model_name": request.model_name,
+                        "model_version": request.model_version,
+                        "missing_features": missing,
+                        "unexpected_features": extra,
+                        "expected_order": feature_names,
+                        "provided": list(request.features.keys())
+                    }
+                )
         
         # Prepare features for prediction
         feature_array = prepare_features_for_prediction(request.features, request.model_name)
@@ -366,8 +386,8 @@ async def detect_anomaly(
     
     try:
         # Load anomaly detection model from MLflow Registry
-        model = load_model(request.model_name, request.model_version)
-        
+        model, _ = load_model(request.model_name, request.model_version)
+
         if model is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -506,8 +526,8 @@ async def ml_health_check():
     try:
         # Test MLflow connectivity by attempting to load a model that actually exists
         # Using direct run ID since registry may have stale references
-        test_model = load_model("anomaly_detector_refined_v2", "15")  # This version exists
-        
+        test_model, _ = load_model("anomaly_detector_refined_v2", "15")  # This version exists
+
         if test_model is not None:
             return {
                 "status": "healthy",
