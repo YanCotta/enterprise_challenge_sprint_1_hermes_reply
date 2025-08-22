@@ -1,6 +1,6 @@
 # Makefile for Smart Maintenance SaaS ML workflows
 
-.PHONY: help build-ml rebuild-ml eda train-anomaly test-features clean
+.PHONY: help build-ml rebuild-ml eda train-anomaly test-features clean logs-api logs-mlflow logs-db
 
 # Default target
 help:
@@ -123,3 +123,15 @@ test-features: build-ml
 clean:
 	docker image prune -f
 	docker container prune -f
+
+# Follow API container logs
+logs-api:
+	docker compose logs -f api
+
+# Follow MLflow server logs (if service named mlflow in compose)
+logs-mlflow:
+	docker compose logs -f mlflow || echo "mlflow service not defined in compose"
+
+# Follow DB logs
+logs-db:
+	docker compose logs -f db || echo "db service not defined in compose"
