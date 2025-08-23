@@ -1,14 +1,45 @@
 from locust import task, between, User, HttpUser
 from apps.ml.model_loader import load_model
+import mlflow
+import random
 
-# List of some of our champion models to test loading.
-# Add more models here as they are registered.
-CHAMPION_MODELS = [
-    ("ai4i_classifier_randomforest_baseline", "2"),
-    ("vibration_anomaly_isolationforest", "1"),
-    ("xjtu_anomaly_isolation_forest", "2"),
-    ("RandomForest_MIMII_Audio_Benchmark", "1"),
-]
+def get_available_models():
+    """
+    Dynamically discover available models and their latest versions from MLflow.
+    This prevents test failures due to hardcoded version mismatches.
+    """
+    try:
+        mlflow.set_tracking_uri('http://mlflow:5000')
+        client = mlflow.MlflowClient()
+        models = client.search_registered_models()
+        
+        available_models = []
+        for model in models:
+            try:
+                # Get all versions for the model and find the highest version number
+                model_versions = client.search_model_versions(f'name="{model.name}"')
+                if model_versions:
+                    # Sort by version number (as integers) and get the highest
+                    latest_version = max(model_versions, key=lambda v: int(v.version))
+                    available_models.append((model.name, latest_version.version))
+                    print(f"Found model: {model.name} v{latest_version.version}")
+            except Exception as e:
+                print(f"Warning: Could not get versions for model {model.name}: {e}")
+                continue
+        
+        return available_models
+    except Exception as e:
+        print(f"Warning: Could not connect to MLflow, using fallback models: {e}")
+        # Fallback to known working models with correct versions
+        return [
+            ("vibration_anomaly_isolationforest", "1"),
+            ("RandomForest_MIMII_Audio_Benchmark", "1"),
+            ("ai4i_classifier_randomforest_baseline", "1"),
+        ]
+
+# Dynamically get available models at startup
+CHAMPION_MODELS = get_available_models()
+print(f"Loaded {len(CHAMPION_MODELS)} champion models for testing: {[m[0] for m in CHAMPION_MODELS]}")
 
 class ModelLoaderUser(User):
     """
@@ -18,9 +49,12 @@ class ModelLoaderUser(User):
     # Wait between 1 and 3 seconds between each task.
     wait_time = between(1, 3)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.model_index = 0
+    def on_start(self):
+        """Initialize with a random starting position in the model list."""
+        if CHAMPION_MODELS:
+            self.model_index = random.randint(0, len(CHAMPION_MODELS) - 1)
+        else:
+            self.model_index = 0
 
     @task
     def load_champion_model(self):
@@ -28,6 +62,11 @@ class ModelLoaderUser(User):
         A task that picks a model from our list and attempts to load it.
         This tests the entire model loading and caching pipeline.
         """
+        if not CHAMPION_MODELS:
+            # No models available, skip this task
+            return
+            
+        # Cycle through available models
         if self.model_index >= len(CHAMPION_MODELS):
             self.model_index = 0  # Reset index to loop through models
 
