@@ -1,5 +1,5 @@
 # Dockerfile.ml - Optimized ML-focused Docker image for Smart Maintenance SaaS
-FROM python:3.12-slim AS builder
+FROM python:3.11-slim AS builder
 
 # Install only system dependencies needed for building
 RUN apt-get update && apt-get install -y \
@@ -31,7 +31,7 @@ RUN poetry config virtualenvs.create false && \
     rm -rf $POETRY_CACHE_DIR
 
 # === Final stage ===
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 # Install runtime system dependencies
 RUN apt-get update && apt-get install -y \
@@ -43,7 +43,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python packages from builder
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Set working directory
