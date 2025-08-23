@@ -304,6 +304,55 @@ With Docker deployment, the Streamlit UI is automatically available at [http://l
 - **Real Chart Support**: Proper base64 image decoding and display for matplotlib-generated charts
 - **Improved Error Handling**: Comprehensive error messages and graceful degradation
 
+## Data Export
+
+The Smart Maintenance SaaS system provides robust data export capabilities for extracting sensor readings data for analysis, backup, or integration with external systems. The export functionality supports both full and incremental export modes for optimal efficiency.
+
+### Full Export
+
+Performs a complete export of all sensor readings in the database to a CSV file. This mode is ideal for initial data extraction or when you need a complete dataset.
+
+**Command:**
+```bash
+# Export all sensor data to the default location (data/sensor_data.csv)
+python scripts/export_sensor_data_csv.py
+
+# Export to a custom location
+python scripts/export_sensor_data_csv.py --output /path/to/custom/export.csv
+```
+
+**Features:**
+- Exports all historical sensor readings
+- Creates a new CSV file with headers
+- Includes all columns: sensor_id, sensor_type, value, unit, timestamp, quality
+- Data is sorted by sensor_id and timestamp for consistent ordering
+
+### Incremental Export
+
+Performs an efficient incremental export that only exports new sensor readings added since the last export. This mode is perfect for scheduled exports and maintaining up-to-date datasets without re-exporting existing data.
+
+**Command:**
+```bash
+# Incremental export to default location
+python scripts/export_sensor_data_csv.py --incremental
+
+# Incremental export to custom location
+python scripts/export_sensor_data_csv.py --incremental --output /path/to/export.csv
+```
+
+**Features:**
+- Automatically detects the most recent timestamp from existing CSV file
+- Appends only new data since the last export
+- Fallback to full export if no existing file is found
+- Preserves data integrity and prevents duplicate records
+- No redundant headers when appending data
+
+**Use Cases:**
+- Scheduled daily/hourly data exports
+- Continuous data pipeline feeds
+- Incremental backup strategies
+- Real-time analytics data preparation
+
 ## Test Status
 
 **Current Test Results: 410 PASSED, 1 FAILED** ✅
