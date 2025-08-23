@@ -132,6 +132,7 @@ services:
     command: bash
     environment:
       - DOCKER_ENV=true
+    user: "1000:1000"  # Match host user for consistent file ownership
     volumes:
       - .:/app  # Mount entire project directory
       - ./notebooks:/app/notebooks
