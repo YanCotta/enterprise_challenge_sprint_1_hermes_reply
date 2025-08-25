@@ -7,7 +7,8 @@ services:
     ports:
       - "8000:8000"  # FastAPI backend
     environment:
-      - DATABASE_URL=postgresql://smart_user:strong_password@db:5432/smart_maintenance_db
+      - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
+      - REDIS_URL=redis://toxiproxy:6380/0
       - PYTHONPATH=/app
       - DISABLE_CHROMADB=true  # Disable ChromaDB for now due to SQLite version
       - MLFLOW_S3_ENDPOINT_URL=http://mlflow:5000  # Force MLflow client to proxy artifact access via HTTP
@@ -16,6 +17,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      toxiproxy:
+        condition: service_started
     restart: unless-stopped
     user: "1000:1000"  # Match host user for consistent file ownership across containers
     volumes:
@@ -64,23 +69,58 @@ services:
 
   # Database Service
   db:
-    image: timescale/timescaledb:latest-pg15
+    image: timescale/timescaledb:latest-pg14
     container_name: smart_maintenance_db
     environment:
+      POSTGRES_DB: smart_maintenance_db
       POSTGRES_USER: smart_user
       POSTGRES_PASSWORD: strong_password
-      POSTGRES_DB: smart_maintenance_db
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Use different port to avoid conflicts
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./infrastructure/docker/init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - smart-maintenance-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U smart_user -d smart_maintenance_db"]
-      interval: 10s
-      timeout: 5s
+      interval: 30s
+      timeout: 10s
       retries: 5
     restart: unless-stopped
+
+  # Redis Service for distributed caching and idempotency
+  redis:
+    image: redis:7.2-alpine
+    container_name: smart_maintenance_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    networks:
+      - smart-maintenance-network
+
+  # Toxiproxy for chaos engineering and network failure simulation
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.5.0
+    container_name: smart_maintenance_toxiproxy
+    restart: unless-stopped
+    ports:
+      - "8474:8474"  # Toxiproxy API
+      - "5434:5434"  # Proxied PostgreSQL port (changed to avoid conflict)
+      - "6380:6380"  # Proxied Redis port
     networks:
       - smart-maintenance-network
 
@@ -93,6 +133,7 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
+    user: "1000:1000"  # Match host user for consistent file ownership with API container
     # Ensure backend store (SQLite) and artifact root map to host for persistence
     volumes:
       - ./mlflow_data:/mlruns        # Artifact store
@@ -148,6 +189,8 @@ services:
 volumes:
   pg_data:
     name: smart_maintenance_pg_data
+  redis_data:
+    name: smart_maintenance_redis_data
 
 networks:
   smart-maintenance-network:
