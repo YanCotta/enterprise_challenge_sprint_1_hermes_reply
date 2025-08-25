@@ -2704,3 +2704,171 @@ Executed a systematic health check and cleanup of the entire project infrastruct
 **Pre-Week 3 Status**: ✅ COMPLETE - Infrastructure health check passed, all critical inconsistencies resolved, clean development environment established, and robust testing framework validated. System ready for Week 3 sprint with enhanced reliability and maintainability.
 
 ---
+
+## 2025-08-25 (Day 15) – Database Restoration & Resilience Implementation ✅ COMPLETE
+
+### Critical Database Recovery Mission
+
+#### Emergency Context
+Following an external environment change, the local project database was completely wiped out, requiring immediate professional restoration using our containerized setup and Alembic migrations before any Day 15 work could proceed.
+
+### Phase 1: Database Infrastructure Restoration ✅
+
+#### Database Container & TimescaleDB Setup
+- **Clean Slate Approach**: Removed corrupted `postgres_data` volume and created fresh `pg_data` volume mapping
+- **Port Conflict Resolution**: Resolved local PostgreSQL conflict by ensuring containerized database runs on isolated network
+- **TimescaleDB Validation**: Confirmed TimescaleDB extension enabled with hypertable compression active
+- **Container Health**: Database container stable with proper volume persistence
+
+#### Toxiproxy Chaos Engineering Infrastructure  
+- **Service Configuration**: Established Toxiproxy 2.5.0 with API (8474) and proxy ports
+- **PostgreSQL Proxy**: Configured `postgresql` proxy (localhost:5434 → smart_maintenance_db:5432)
+- **Redis Proxy**: Configured `redis` proxy (localhost:6380 → smart_maintenance_redis:6379)
+- **Proxy Validation**: Both proxies operational and routing traffic correctly
+
+#### Schema Migration Resolution
+- **Migration Challenge**: Encountered `sensor_readings.id` column missing default sequence (legacy issue from migration `20250812_090000`)
+- **Root Cause**: Previous migration dropped `sensor_readings_id_seq` but left `id` column as `NOT NULL` without default
+- **Solution Applied**: Recreated sequence and set default using documented fix from changelog:
+  ```sql
+  CREATE SEQUENCE IF NOT EXISTS sensor_readings_id_seq;
+  ALTER TABLE sensor_readings ALTER COLUMN id SET DEFAULT nextval('sensor_readings_id_seq');
+  ```
+- **Migration State**: All 6 Alembic migrations applied successfully (both heads: `4a7245cea299` and `20250812_150000`)
+
+#### CRUD Operations Validation
+- **INSERT Test**: `scripts/seed_data.py` successfully inserted 5 sensors + 50 readings with auto-generated IDs
+- **SELECT Test**: `scripts/export_sensor_data_csv.py` exported data validating cross-table relationships
+- **Foreign Key Integrity**: Verified `sensor_readings` → `sensors` relationship working correctly
+- **TimescaleDB Features**: Confirmed hypertable partitioning and compression policies active
+
+### Phase 2: Day 15 Resilience Features Implementation ✅
+
+#### Redis-Backed Idempotency System
+- **Architecture**: Leveraged existing `core/redis_client.py` with atomic SET NX EX operations
+- **FastAPI Integration**: Redis client already integrated into lifespan management in `apps/api/main.py`
+- **Ingestion Endpoint Enhancement**: Modified `POST /api/v1/data/ingest` with full idempotency support:
+  - **Atomic Operations**: Uses Redis SET NX EX (set if not exists with expiration) for race-condition-free duplicate detection
+  - **TTL Management**: 10-minute expiration prevents indefinite memory growth
+  - **Response Consistency**: Returns original `event_id` for duplicate requests
+- **Graceful Degradation**: When Redis unavailable, logs warning and continues processing (high availability priority)
+
+#### Chaos Engineering Framework
+- **Toxiproxy Integration**: Direct HTTP API calls to Toxiproxy service (toxiproxy-client-python unavailable)
+- **Test Infrastructure**: Created comprehensive `tests/integration/test_resilience.py` with:
+  - Redis unavailability simulation (timeout toxics)
+  - Database latency injection (latency toxics)
+  - Network partition simulation (bandwidth limits)
+  - Combined failure mode testing
+- **Custom Toxiproxy Client**: Built HTTP wrapper for proxy management and toxic manipulation
+
+#### CI/CD Pipeline Enhancement
+- **Test Coverage**: Implemented pytest with coverage reporting (80% minimum threshold)
+- **Multi-Environment Testing**: Added PostgreSQL, Redis, and Toxiproxy services to CI
+- **Security Scanning**: Integrated safety and bandit security checks
+- **Docker Validation**: End-to-end container testing in CI pipeline
+- **Performance Baseline**: Automated load testing with Locust on main branch
+
+### Phase 3: End-to-End System Validation ✅
+
+#### Comprehensive Resilience Testing
+**Normal Operations Test**:
+```bash
+# First request with idempotency key
+curl -X POST /api/v1/data/ingest -H "Idempotency-Key: test-key-1"
+# Response: {"status":"event_published","event_id":"9d9c4e46-b2e9-47e9-b513-254ee75ea80f"}
+
+# Duplicate request (same key)  
+curl -X POST /api/v1/data/ingest -H "Idempotency-Key: test-key-1"
+# Response: {"status":"duplicate_ignored","event_id":"9d9c4e46-b2e9-47e9-b513-254ee75ea80f"}
+```
+
+**Redis Failure Simulation**:
+```bash
+# Inject Redis timeout toxic
+curl -X POST /proxies/redis/toxics -d '{"name": "redis_timeout", "type": "timeout", "attributes": {"timeout": 1000}}'
+
+# API continues functioning with graceful degradation
+curl -X POST /api/v1/data/ingest -H "Idempotency-Key: test-key-redis-down"
+# Response: {"status":"event_published"} (no duplicate protection but service available)
+
+# Remove toxic and verify recovery
+curl -X DELETE /proxies/redis/toxics/redis_timeout
+curl -X POST /api/v1/data/ingest -H "Idempotency-Key: test-key-recovery" (duplicate)
+# Response: {"status":"duplicate_ignored"} (idempotency restored)
+```
+
+#### Database Schema Verification
+- **Tables Created**: 6 tables including `sensor_readings` (TimescaleDB hypertable), `sensors`, `anomaly_alerts`, `maintenance_tasks`, `maintenance_logs`, `alembic_version`
+- **Relationships**: All foreign key constraints operational (`sensor_readings` → `sensors`, etc.)
+- **Indexes**: Composite indexes and TimescaleDB time-partitioning working correctly
+- **Data Integrity**: Test data successfully inserted and exported maintaining referential integrity
+
+### Issues Encountered & Solutions
+
+#### Database Sequence Missing Issue
+- **Problem**: Migration `20250812_090000` dropped `sensor_readings_id_seq` but left `id` column as `NOT NULL` without default
+- **Impact**: Data seeding scripts failed with "null value in column 'id'" error
+- **Solution**: Applied documented fix from previous resolution (recreated sequence and set as column default)
+- **Prevention**: Future migrations will preserve sequence dependencies or properly handle column defaults
+
+#### Toxiproxy Python Client Unavailability  
+- **Problem**: `toxiproxy-client-python` package not available in current Python ecosystem
+- **Workaround**: Built custom HTTP client using `aiohttp` for direct Toxiproxy REST API calls
+- **Benefit**: More control over proxy configuration and toxic management
+- **Result**: Comprehensive chaos engineering capabilities without external dependency
+
+#### Port Configuration Conflicts
+- **Problem**: Initial port conflicts between local PostgreSQL (5432) and Toxiproxy proxy mapping
+- **Solution**: Configured Toxiproxy PostgreSQL proxy on port 5434, Redis proxy on port 6380
+- **Validation**: Confirmed all services accessible through proxy layer with proper routing
+
+### Technical Achievements
+
+#### Resilience Architecture
+- **Fault Tolerance**: System continues operation during Redis outages with logged degradation
+- **Circuit Breaker Pattern**: Automatic Redis reconnection attempts with health monitoring
+- **Idempotency Guarantees**: Atomic duplicate detection prevents race conditions in distributed deployments
+- **Chaos Engineering**: Production-ready failure injection capability for reliability testing
+
+#### Infrastructure Maturity
+- **Container Orchestration**: Multi-service Docker Compose stack with health checks and dependencies
+- **Database Management**: Professional Alembic migration workflow with TimescaleDB time-series optimization
+- **Proxy Layer**: Toxiproxy-based network simulation for comprehensive resilience testing
+- **CI/CD Pipeline**: Automated testing with coverage enforcement and security scanning
+
+#### Operational Excellence
+- **Monitoring**: Prometheus metrics, Redis health checks, database connectivity validation
+- **Logging**: Structured logging with correlation IDs and graceful degradation notifications
+- **Documentation**: Comprehensive test coverage and inline documentation for maintenance procedures
+- **Recovery Procedures**: Validated disaster recovery and service restoration workflows
+
+### Final System Status
+
+**All Services Operational**:
+- ✅ PostgreSQL + TimescaleDB (with compression and retention policies)
+- ✅ Redis (with idempotency cache and health monitoring)
+- ✅ Toxiproxy (with PostgreSQL and Redis proxies configured)
+- ✅ FastAPI (with resilience middleware and graceful degradation)
+
+**Resilience Features Validated**:
+- ✅ Redis-backed idempotency with 10-minute TTL
+- ✅ Graceful degradation during service outages
+- ✅ Automatic service recovery and reconnection
+- ✅ Chaos engineering framework for continuous testing
+
+**Database Foundation Solid**:
+- ✅ Complete schema restored with all 6 migrations applied
+- ✅ TimescaleDB hypertables and policies operational
+- ✅ Foreign key relationships and data integrity verified
+- ✅ CRUD operations and scripts functional
+
+**Quality Assurance Complete**:
+- ✅ CI/CD pipeline with 80% coverage threshold
+- ✅ Integration tests for resilience scenarios
+- ✅ Security scanning and dependency validation
+- ✅ End-to-end system validation passed
+
+**Day 15 Objectives**: ✅ COMPLETE - Database professionally restored, Redis-backed idempotency implemented with graceful degradation, chaos engineering framework established, and comprehensive system resilience validated. Foundation is now rock-solid for continued development.
+
+---
