@@ -525,8 +525,8 @@ async def ml_health_check():
     """
     try:
         # Test MLflow connectivity by attempting to load a model that actually exists
-        # Using direct run ID since registry may have stale references
-        test_model, _ = load_model("anomaly_detector_refined_v2", "15")  # This version exists
+        # Using version "4" (latest actual version) instead of "latest" string
+        test_model, _ = load_model("anomaly_detector_refined_v2", "4")  # Use actual version number
 
         if test_model is not None:
             return {
