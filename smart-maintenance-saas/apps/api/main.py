@@ -26,6 +26,7 @@ from core.database.session import (
     engine as async_engine,  # Import engine if needed for lifespan
 )
 from core.database.session import get_async_db
+from core.redis_client import init_redis_client, close_redis_client
 
 # Optional: Import routers if you have them (e.g., for Task 7)
 # from .routers import sensor_readings_router
@@ -44,6 +45,16 @@ async def lifespan(app: FastAPI):
         logging.error(f"Error during SystemCoordinator startup: {e}", exc_info=True)
         # Optionally, re-raise or handle to prevent app startup if critical
 
+    # Initialize Redis client
+    logging.info("Initializing Redis client...")
+    try:
+        redis_client = await init_redis_client()
+        app.state.redis_client = redis_client
+        logging.info("Redis client initialized successfully.")
+    except Exception as e:
+        logging.error(f"Error during Redis client initialization: {e}", exc_info=True)
+        # Continue without Redis - graceful degradation
+
     # Expose the /metrics endpoint
     instrumentator.expose(app, include_in_schema=False)
     logging.info("Prometheus metrics endpoint exposed at /metrics")
@@ -51,6 +62,13 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    logging.info("Application shutdown: Shutting down Redis client...")
+    try:
+        await close_redis_client()
+        logging.info("Redis client shutdown successfully.")
+    except Exception as e:
+        logging.error(f"Error during Redis client shutdown: {e}", exc_info=True)
+
     logging.info("Application shutdown: Shutting down SystemCoordinator...")
     if hasattr(app.state, 'coordinator') and app.state.coordinator:
         try:
@@ -106,6 +124,29 @@ async def health_check_db(db: AsyncSession = Depends(get_async_db)):
         logging.error(f"Database health check failed: {e}")
         raise HTTPException(
             status_code=503, detail=f"Database connection error: {str(e)}"
+        )
+
+
+# Redis health check endpoint
+@app.get("/health/redis", tags=["Health"])
+async def health_check_redis():
+    """Check Redis connectivity and basic stats."""
+    try:
+        from core.redis_client import get_redis_client
+        redis_client = await get_redis_client()
+        health_info = await redis_client.health_check()
+        
+        if health_info["status"] in ["healthy"]:
+            return health_info
+        else:
+            raise HTTPException(
+                status_code=503, 
+                detail=f"Redis health check failed: {health_info}"
+            )
+    except Exception as e:
+        logging.error(f"Redis health check failed: {e}")
+        raise HTTPException(
+            status_code=503, detail=f"Redis connection error: {str(e)}"
         )
 
 
