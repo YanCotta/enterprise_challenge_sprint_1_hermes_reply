@@ -1,7 +1,10 @@
 import logging  # For basic logging if setup_logging is not yet fully integrated
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from prometheus_fastapi_instrumentator import Instrumentator
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from apps.api.routers import data_ingestion, reporting, human_decision
 from apps.api.middleware.request_id import RequestIDMiddleware
 from sqlalchemy import select  # Import select
@@ -27,6 +30,17 @@ from core.database.session import (
 )
 from core.database.session import get_async_db
 from core.redis_client import init_redis_client, close_redis_client
+
+# Rate limiting configuration
+def get_api_key_identifier(request: Request):
+    """Get rate limiting identifier from X-API-Key header, fallback to IP address."""
+    api_key = request.headers.get("X-API-Key")
+    if api_key:
+        return f"api_key:{api_key}"
+    return get_remote_address(request)
+
+# Initialize rate limiter with in-memory store and API key identification
+limiter = Limiter(key_func=get_api_key_identifier)
 
 # Optional: Import routers if you have them (e.g., for Task 7)
 # from .routers import sensor_readings_router
@@ -92,6 +106,10 @@ app = FastAPI(
     else "/openapi.json",
     lifespan=lifespan  # Add this
 )
+
+# Set up rate limiting state and error handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Instrument the app with default metrics (latency, requests, etc.)
 instrumentator = Instrumentator().instrument(app)

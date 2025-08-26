@@ -128,8 +128,124 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: false
 
-  build-and-push:
+  security:
+    runs-on: ubuntu-latest
     needs: test
+    
+    defaults:
+      run:
+        working-directory: ./smart-maintenance-saas
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3 || \
+        pip install poetry==1.8.3 || \
+        pip install poetry
+        poetry --version
+
+    - name: Configure Poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+        poetry env use python3.11
+
+    - name: Install dependencies for security scanning
+      run: |
+        poetry install --no-interaction --no-ansi
+
+    - name: Install Snyk CLI
+      run: |
+        # Install Snyk CLI
+        npm install -g snyk
+
+    - name: Authenticate with Snyk
+      run: |
+        # Authenticate with Snyk using token from secrets
+        snyk auth ${{ secrets.SNYK_TOKEN }}
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+    - name: Run Snyk dependency vulnerability scan
+      run: |
+        echo "Running Snyk dependency vulnerability scan..."
+        # Test for known vulnerabilities in dependencies
+        # Only fail on high/critical vulnerabilities
+        snyk test --severity-threshold=high --file=pyproject.toml || {
+          echo "High or critical severity vulnerabilities found in dependencies!"
+          echo "Please review the vulnerabilities above and update dependencies as needed."
+          exit 1
+        }
+      continue-on-error: false
+
+    - name: Run Snyk code quality scan
+      run: |
+        echo "Running Snyk code analysis..."
+        # Run static analysis on application code
+        # Only fail on high/critical issues
+        snyk code test --severity-threshold=high . || {
+          echo "High or critical severity code issues found!"
+          echo "Please review the code analysis results above."
+          exit 1
+        }
+      continue-on-error: false
+
+    - name: Generate Snyk dependency report
+      run: |
+        echo "Generating Snyk dependency report..."
+        # Generate a detailed report of all dependencies and vulnerabilities
+        snyk test --json --file=pyproject.toml > snyk-dependencies-report.json || true
+        
+        # Generate human-readable report
+        snyk test --file=pyproject.toml > snyk-dependencies-report.txt || true
+        
+        echo "Dependency scan complete. Reports generated:"
+        ls -la snyk-*-report.*
+      continue-on-error: true
+
+    - name: Generate Snyk code analysis report
+      run: |
+        echo "Generating Snyk code analysis report..."
+        # Generate detailed code analysis report
+        snyk code test --json . > snyk-code-report.json || true
+        snyk code test . > snyk-code-report.txt || true
+        
+        echo "Code analysis complete. Reports generated:"
+        ls -la snyk-*-report.*
+      continue-on-error: true
+
+    - name: Upload Snyk reports as artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: snyk-security-reports
+        path: |
+          ./smart-maintenance-saas/snyk-*-report.*
+        retention-days: 30
+
+    - name: Security scan summary
+      run: |
+        echo "=== Security Scan Summary ==="
+        echo "✅ Dependency vulnerability scan completed"
+        echo "✅ Static code analysis completed"
+        echo "📊 Security reports uploaded as artifacts"
+        echo ""
+        echo "Note: This job fails only on HIGH or CRITICAL severity issues."
+        echo "Medium and low severity issues are reported but don't fail the build."
+        echo ""
+        echo "To view detailed reports:"
+        echo "1. Check the 'snyk-security-reports' artifact in this workflow run"
+        echo "2. Or run 'snyk test' and 'snyk code test' locally"
+
+  build-and-push:
+    needs: [test, security]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     

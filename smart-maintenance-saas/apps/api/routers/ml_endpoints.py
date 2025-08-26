@@ -12,8 +12,10 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.ml.model_loader import load_model
@@ -26,6 +28,17 @@ from core.database.crud.crud_sensor_reading import crud_sensor_reading
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Rate limiting configuration
+def get_api_key_identifier(request: Request):
+    """Get rate limiting identifier from X-API-Key header, fallback to IP address."""
+    api_key = request.headers.get("X-API-Key")
+    if api_key:
+        return f"api_key:{api_key}"
+    return get_remote_address(request)
+
+# Initialize rate limiter for ML endpoints
+limiter = Limiter(key_func=get_api_key_identifier)
 
 # ==============================================================================
 # REQUEST/RESPONSE SCHEMAS
@@ -428,8 +441,10 @@ async def detect_anomaly(
 
 
 @router.post("/check_drift", response_model=DriftCheckResponse, tags=["ML Drift"])
+@limiter.limit("10/minute")
 async def check_drift(
-    request: DriftCheckRequest,
+    request: Request,
+    drift_request: DriftCheckRequest,
     db: AsyncSession = Depends(get_async_db)
 ) -> DriftCheckResponse:
     """Check for statistical drift in a sensor's readings.
@@ -443,26 +458,26 @@ async def check_drift(
     - Optimized by leveraging composite index (sensor_id, timestamp DESC) via time bounded queries.
     """
     now = datetime.utcnow()
-    recent_start = now - timedelta(minutes=request.window_minutes)
-    baseline_start = recent_start - timedelta(minutes=request.window_minutes)
+    recent_start = now - timedelta(minutes=drift_request.window_minutes)
+    baseline_start = recent_start - timedelta(minutes=drift_request.window_minutes)
     baseline_end = recent_start
 
     try:
         # Fetch baseline readings
         baseline_readings = await crud_sensor_reading.get_sensor_readings_by_sensor_id(
             db,
-            sensor_id=request.sensor_id,
+            sensor_id=drift_request.sensor_id,
             start_time=baseline_start,
             end_time=baseline_end,
-            limit=request.min_samples * 5,  # heuristic buffer
+            limit=drift_request.min_samples * 5,  # heuristic buffer
         )
         # Fetch recent readings
         recent_readings = await crud_sensor_reading.get_sensor_readings_by_sensor_id(
             db,
-            sensor_id=request.sensor_id,
+            sensor_id=drift_request.sensor_id,
             start_time=recent_start,
             end_time=now,
-            limit=request.min_samples * 5,
+            limit=drift_request.min_samples * 5,
         )
 
         baseline_values = [r.value for r in baseline_readings]
@@ -474,30 +489,30 @@ async def check_drift(
         drift_detected = False
         notes = None
 
-        if len(baseline_values) < request.min_samples or len(recent_values) < request.min_samples:
+        if len(baseline_values) < drift_request.min_samples or len(recent_values) < drift_request.min_samples:
             insufficient = True
             notes = (
                 f"Insufficient samples: baseline={len(baseline_values)}, recent={len(recent_values)}, "
-                f"required={request.min_samples}"
+                f"required={drift_request.min_samples}"
             )
         else:
             try:
                 ks_res = ks_2samp(baseline_values, recent_values, alternative="two-sided", mode="auto")
                 ks_statistic = float(ks_res.statistic)
                 p_value = float(ks_res.pvalue)
-                drift_detected = p_value < request.p_value_threshold
+                drift_detected = p_value < drift_request.p_value_threshold
             except Exception as stats_err:
                 logger.error(f"Drift stats computation failed: {stats_err}")
                 notes = f"Stats computation error: {stats_err}"
 
         return DriftCheckResponse(
-            sensor_id=request.sensor_id,
+            sensor_id=drift_request.sensor_id,
             recent_count=len(recent_values),
             baseline_count=len(baseline_values),
-            window_minutes=request.window_minutes,
+            window_minutes=drift_request.window_minutes,
             ks_statistic=ks_statistic,
             p_value=p_value,
-            p_value_threshold=request.p_value_threshold,
+            p_value_threshold=drift_request.p_value_threshold,
             drift_detected=drift_detected,
             insufficient_data=insufficient,
             notes=notes,
@@ -505,7 +520,7 @@ async def check_drift(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Drift check failed for sensor {request.sensor_id}: {e}", exc_info=True)
+        logger.error(f"Drift check failed for sensor {drift_request.sensor_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Drift check failed: {str(e)}"
