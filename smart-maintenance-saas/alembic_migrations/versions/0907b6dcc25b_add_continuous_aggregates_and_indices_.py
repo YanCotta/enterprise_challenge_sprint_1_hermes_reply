@@ -33,48 +33,31 @@ def upgrade() -> None:
         ON sensor_readings (timestamp DESC)
     """)
     
-    # Create Continuous Aggregate for hourly summaries
-    # Note: TimescaleDB continuous aggregates must be created outside transactions
-    connection = op.get_bind()
-    connection.execute(sa.text("COMMIT"))  # End current transaction
-    
-    connection.execute(sa.text("""
-        CREATE MATERIALIZED VIEW sensor_readings_summary_hourly
-        WITH (timescaledb.continuous) AS
-        SELECT
-            sensor_id,
-            time_bucket('1 hour', timestamp) as bucket,
-            AVG(value) as avg_value,
-            MAX(value) as max_value,
-            MIN(value) as min_value,
-            COUNT(*) as num_readings
-        FROM
-            sensor_readings
-        GROUP BY
-            sensor_id, bucket
-    """))
-    
-    # Add refresh policy for the CAGG (refresh every 30 minutes)
-    connection.execute(sa.text("""
-        SELECT add_continuous_aggregate_policy('sensor_readings_summary_hourly',
-            start_offset => INTERVAL '3 hours',
-            end_offset => INTERVAL '1 hour',
-            schedule_interval => INTERVAL '30 minutes')
-    """))
+    # Note: TimescaleDB continuous aggregates cannot be created within Alembic transactions
+    # They must be created manually via direct psql commands as documented in:
+    # - DAY_18_PERFORMANCE_RESULTS.md
+    # - 30-day-sprint-changelog.md (Day 18 section)
+    # 
+    # Manual commands used for production deployment:
+    # 1. CREATE MATERIALIZED VIEW sensor_readings_summary_hourly...
+    # 2. SELECT add_continuous_aggregate_policy(...)
+    #
+    # This limitation is due to TimescaleDB requiring continuous aggregates
+    # to be created outside of transaction blocks, while Alembic wraps
+    # all DDL operations in transactions.
 
 
 def downgrade() -> None:
-    # Remove the continuous aggregate refresh policy
-    op.execute("""
-        SELECT remove_continuous_aggregate_policy('sensor_readings_summary_hourly')
-    """)
+    # Note: TimescaleDB continuous aggregate and refresh policy removal
+    # cannot be performed within Alembic transactions.
+    # 
+    # For manual downgrade, use these commands via psql:
+    # 1. SELECT remove_continuous_aggregate_policy('sensor_readings_summary_hourly');
+    # 2. DROP MATERIALIZED VIEW IF EXISTS sensor_readings_summary_hourly CASCADE;
+    #
+    # Only the indexes can be safely removed via Alembic:
     
-    # Drop the continuous aggregate view
-    op.execute("""
-        DROP MATERIALIZED VIEW IF EXISTS sensor_readings_summary_hourly
-    """)
-    
-    # Drop the indexes
+    # Drop the indexes (safe within transactions)
     op.execute("""
         DROP INDEX IF EXISTS idx_sensor_readings_timestamp
     """)
