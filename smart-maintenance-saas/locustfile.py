@@ -102,6 +102,8 @@ class DriftCheckUser(HttpUser):
             "p_value_threshold": 0.05,
             "min_samples": 10,
         }
-        with self.client.post("/api/v1/ml/check_drift", json=payload, name="check_drift") as resp:
+        with self.client.post("/api/v1/ml/check_drift", json=payload, name="check_drift", catch_response=True) as resp:
             if resp.status_code != 200:
                 resp.failure(f"Unexpected status {resp.status_code}: {resp.text}")
+            else:
+                resp.success()
