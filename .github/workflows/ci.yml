@@ -52,25 +52,18 @@ jobs:
         curl -I --connect-timeout 30 https://install.python-poetry.org/ || echo "Poetry installer connectivity issues detected"
         ping -c 3 8.8.8.8 || echo "DNS/network issues detected"
 
-    - name: Install Poetry with retry logic
-      run: |
-        # Set longer timeout for network operations
-        export PIP_TIMEOUT=300
-        export POETRY_INSTALLER_TIMEOUT=300
-        # Try official installer first
-        curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3 || \
-        # Fallback to pip installation if installer fails
-        pip install poetry==1.8.3 || \
-        # Final fallback to latest pip version
-        pip install poetry
-        # Verify installation
-        poetry --version
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.8.3
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        virtualenvs-path: .venv
 
-    - name: Configure Poetry
+    - name: Verify Poetry installation (test job)
       run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-        poetry env use python3.11
+        poetry --version
+        poetry env info
 
     - name: Clear Poetry cache (if needed)
       run: |
@@ -145,17 +138,17 @@ jobs:
         python-version: '3.11'
 
     - name: Install Poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3 || \
-        pip install poetry==1.8.3 || \
-        pip install poetry
-        poetry --version
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.8.3
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        virtualenvs-path: .venv
 
-    - name: Configure Poetry
+    - name: Verify Poetry installation (security job)
       run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-        poetry env use python3.11
+        poetry --version
+        poetry env info
 
     - name: Install dependencies for security scanning
       run: |
