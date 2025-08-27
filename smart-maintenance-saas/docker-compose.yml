@@ -186,6 +186,71 @@ services:
     depends_on:
       - mlflow
 
+  # --- Future Microservices: Uncomment when MICROSERVICE_MIGRATION_STRATEGY triggers are met ---
+  # 
+  # # Prediction Service - Handles ML model predictions and inference
+  # prediction_service:
+  #   build:
+  #     context: services/prediction_service
+  #     dockerfile: Dockerfile
+  #   container_name: smart_maintenance_prediction_service
+  #   ports:
+  #     - "8001:8001"  # Prediction service API
+  #   environment:
+  #     - MLFLOW_TRACKING_URI=http://mlflow:5000
+  #     - DATABASE_URL=postgresql://smart_user:strong_password@db:5432/smart_maintenance_db
+  #   env_file:
+  #     - .env
+  #   user: "1000:1000"
+  #   volumes:
+  #     - ./mlflow_data:/mlruns  # MLflow artifact store access
+  #     - ./logs:/app/logs      # Shared logging directory
+  #   networks:
+  #     - smart-maintenance-network
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     mlflow:
+  #       condition: service_started
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+  #
+  # # Anomaly Service - Handles drift detection and anomaly monitoring
+  # anomaly_service:
+  #   build:
+  #     context: services/anomaly_service
+  #     dockerfile: Dockerfile
+  #   container_name: smart_maintenance_anomaly_service
+  #   ports:
+  #     - "8002:8002"  # Anomaly service API
+  #   environment:
+  #     - DATABASE_URL=postgresql://smart_user:strong_password@db:5432/smart_maintenance_db
+  #     - REDIS_URL=redis://redis:6379/0
+  #   env_file:
+  #     - .env
+  #   user: "1000:1000"
+  #   volumes:
+  #     - ./logs:/app/logs      # Shared logging directory
+  #   networks:
+  #     - smart-maintenance-network
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+
 volumes:
   pg_data:
     name: smart_maintenance_pg_data
