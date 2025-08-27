@@ -1,34 +1,111 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: smart-maintenance-backend-service
-  namespace: default
-  labels:
-    app: smart-maintenance-backend
-spec:
-  type: ClusterIP
-  ports:
-  - port: 8000
-    targetPort: 8000
-    protocol: TCP
-    name: http
-  selector:
-    app: smart-maintenance-backend
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: smart-maintenance-backend-nodeport
+  name: api-service
   namespace: default
   labels:
-    app: smart-maintenance-backend
+    app: smart-maintenance-api
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
-  - port: 8000
-    targetPort: 8000
-    nodePort: 30800
-    protocol: TCP
-    name: http
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+      name: http
   selector:
-    app: smart-maintenance-backend
+    app: smart-maintenance-api
+
+---
+# Future Microservice Services - Uncomment when migration triggers are met
+
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: prediction-service
+#   namespace: default
+#   labels:
+#     app: prediction-service
+# spec:
+#   type: ClusterIP
+#   ports:
+#     - port: 8001
+#       targetPort: 8001
+#       protocol: TCP
+#       name: http
+#   selector:
+#     app: prediction-service
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: anomaly-service
+#   namespace: default
+#   labels:
+#     app: anomaly-service
+# spec:
+#   type: ClusterIP
+#   ports:
+#     - port: 8002
+#       targetPort: 8002
+#       protocol: TCP
+#       name: http
+#   selector:
+#     app: anomaly-service
+
+---
+# Internal Services for Database and Supporting Infrastructure
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: default
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  selector:
+    app: postgres
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: default
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: 6379
+      protocol: TCP
+      name: redis
+  selector:
+    app: redis
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-service
+  namespace: default
+  labels:
+    app: mlflow
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: 5000
+      protocol: TCP
+      name: mlflow
+  selector:
+    app: mlflow
