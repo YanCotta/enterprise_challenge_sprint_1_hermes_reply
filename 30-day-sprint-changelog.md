@@ -3773,6 +3773,29 @@ curl "http://localhost:8000/api/v1/sensors/sensor-001/readings?limit=5"
 3. Configure service mesh communication and load balancing
 4. Migrate specific endpoints from monolithic API to dedicated services
 
+### CI/CD Pipeline Robustness Enhancement ✅
+
+**✅ Poetry Installation Reliability Fix**:
+- **Issue**: GitHub Actions experiencing timeout errors with `snok/install-poetry@v1` marketplace action
+- **Root Cause**: Network connectivity issues to Poetry installer service (`install.python-poetry.org`)
+- **Solution**: Replaced marketplace action with pip-based Poetry installation for better reliability
+- **Implementation**: 
+  - `python -m pip install poetry==1.8.3` with 5-minute timeout handling
+  - Retry logic with fallback installation attempt
+  - Consistent configuration: `virtualenvs.create=true`, `virtualenvs.in-project=true`
+
+**✅ Dependency Installation Robustness**:
+- **Enhanced Security Job**: Added timeout handling and retry logic for `poetry install`
+- **Consistent Approach**: Both test and security jobs now use robust dependency installation
+- **Timeout Handling**: 10-minute timeout with 3 retry attempts and exponential backoff
+- **Network Resilience**: Handles PyPI connectivity issues gracefully
+
+**✅ CI/CD Reliability Metrics**:
+- **Installation Method**: Pip-based (eliminates external service dependency)
+- **Timeout Protection**: 300s for Poetry installation, 600s for dependency installation
+- **Retry Logic**: 3 attempts with progressive delays (10s, 30s intervals)
+- **Error Handling**: Graceful failure with clear error messages and debugging context
+
 **Scaffolding Status**: Days 19-20 Microservice Architecture Scaffolding COMPLETE ✅ – Strategic foundation established, 
 production-grade service templates created, infrastructure prepared for metric-driven activation when performance triggers are met.
 
