@@ -13,9 +13,22 @@ import pandas as pd
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
 
+# Import our new model utility functions
+try:
+    from apps.ml.model_utils import (
+        get_models_by_sensor_type,
+        get_model_recommendations,
+        suggest_sensor_types,
+        get_all_registered_models
+    )
+    MLFLOW_AVAILABLE = True
+except ImportError:
+    MLFLOW_AVAILABLE = False
+    st.warning("⚠️ MLflow model utilities not available. Model selection features will be limited.")
+
 # Configuration
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
-API_KEY = "your_default_api_key"
+API_KEY = os.getenv("API_KEY", "dev_api_key_123")
 HEADERS = {
     "X-API-Key": API_KEY,
     "Content-Type": "application/json"
@@ -41,7 +54,7 @@ def make_api_request(method: str, endpoint: str, data: Dict[Any, Any] = None) ->
         else:
             raise ValueError(f"Unsupported method: {method}")
         
-        if response.status_code == 200:
+        if response.status_code in [200, 201]:
             return {"success": True, "data": response.json()}
         else:
             return {
@@ -259,6 +272,199 @@ def main():
                     st.error(result["error"])
     
     # === ADDITIONAL SECTIONS ===
+    st.markdown("---")
+    
+    # === INTELLIGENT MODEL SELECTION SECTION ===
+    st.header("🤖 Intelligent Model Selection")
+    
+    if MLFLOW_AVAILABLE:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("📊 Model Recommendations")
+            
+            # Sensor type selection with fallback
+            try:
+                sensor_types = suggest_sensor_types()
+            except Exception as e:
+                st.warning(f"⚠️ Could not fetch sensor types from MLflow: {str(e)}")
+                sensor_types = ['bearing', 'manufacturing', 'audio', 'forecasting', 'general', 'temperature', 'pressure', 'vibration', 'pump']
+            
+            selected_sensor_type = st.selectbox(
+                "Select Sensor Type",
+                sensor_types,
+                help="Choose the type of sensor data you want to analyze"
+            )
+            
+            # Get recommended models
+            if st.button("🔍 Get Model Recommendations", key="get_recommendations"):
+                with st.spinner("Fetching model recommendations..."):
+                    try:
+                        recommendations = get_model_recommendations(selected_sensor_type)
+                        
+                        if recommendations:
+                            st.success(f"✅ Found {len(recommendations)} recommended models for {selected_sensor_type} sensors:")
+                            
+                            # Display recommendations in a nice format
+                            for i, model_name in enumerate(recommendations, 1):
+                                st.write(f"{i}. **{model_name}**")
+                            
+                            # Store recommendations in session state for use in prediction
+                            st.session_state['recommended_models'] = recommendations
+                            st.session_state['selected_sensor_type'] = selected_sensor_type
+                            
+                        else:
+                            st.warning(f"No specific models found for {selected_sensor_type} sensors.")
+                            st.info("💡 **Tip**: Models have been tagged with sensor types. Available types: bearing, manufacturing, audio, forecasting, general")
+                    
+                    except Exception as e:
+                        st.error(f"❌ Failed to get model recommendations: {str(e)}")
+                        # Provide fallback recommendations
+                        fallback_models = {
+                            'bearing': ['vibration_anomaly_isolationforest', 'xjtu_anomaly_isolation_forest'],
+                            'manufacturing': ['ai4i_classifier_randomforest_baseline', 'ai4i_classifier_lightgbm_baseline'],
+                            'audio': ['RandomForest_MIMII_Audio_Benchmark', 'MIMII_Audio_Scaler'],
+                            'forecasting': ['prophet_forecaster_enhanced_sensor-001', 'lightgbm_forecaster_challenger'],
+                            'general': ['anomaly_detector_refined_v2', 'synthetic_validation_isolation_forest'],
+                            'temperature': ['anomaly_detector_refined_v2', 'synthetic_validation_isolation_forest'],
+                            'pressure': ['anomaly_detector_refined_v2', 'synthetic_validation_isolation_forest'],
+                            'vibration': ['vibration_anomaly_isolationforest', 'xjtu_anomaly_isolation_forest'],
+                            'pump': ['anomaly_detector_refined_v2', 'synthetic_validation_isolation_forest']
+                        }
+                        
+                        if selected_sensor_type in fallback_models:
+                            st.info(f"🔄 Using fallback recommendations for {selected_sensor_type}:")
+                            for i, model_name in enumerate(fallback_models[selected_sensor_type], 1):
+                                st.write(f"{i}. **{model_name}**")
+                            st.session_state['recommended_models'] = fallback_models[selected_sensor_type]
+                            st.session_state['selected_sensor_type'] = selected_sensor_type
+            
+            # Manual model selection option
+            st.markdown("---")
+            allow_manual = st.checkbox("🔧 Allow Manual Model Selection", help="Show all available models for manual selection")
+            
+            if allow_manual:
+                try:
+                    all_models = get_all_registered_models()
+                    if all_models:
+                        model_names = [model['name'] for model in all_models]
+                        selected_manual_model = st.selectbox(
+                            "Manual Model Selection",
+                            model_names,
+                            help="Choose any available model manually"
+                        )
+                        
+                        if st.button("📋 Get Model Details", key="get_model_details"):
+                            model_details = next((model for model in all_models if model['name'] == selected_manual_model), None)
+                            if model_details:
+                                st.json(model_details)
+                            else:
+                                st.error("Model details not found")
+                    else:
+                        st.warning("No registered models found in MLflow.")
+                except Exception as e:
+                    st.error(f"Failed to load model list: {str(e)}")
+                    # Fallback manual model list
+                    st.info("🔄 Using fallback model list:")
+                    fallback_models = [
+                        'vibration_anomaly_isolationforest',
+                        'ai4i_classifier_randomforest_baseline', 
+                        'RandomForest_MIMII_Audio_Benchmark',
+                        'xjtu_anomaly_isolation_forest',
+                        'anomaly_detector_refined_v2'
+                    ]
+                    selected_manual_model = st.selectbox(
+                        "Fallback Model Selection",
+                        fallback_models,
+                        help="Choose from known models"
+                    )
+        
+        with col2:
+            st.subheader("🎯 Model Prediction Interface")
+            
+            # Model selection for prediction
+            prediction_model = None
+            
+            # Use recommended models if available
+            if 'recommended_models' in st.session_state and st.session_state['recommended_models']:
+                st.write("**Recommended Models:**")
+                prediction_model = st.selectbox(
+                    "Select Recommended Model",
+                    st.session_state['recommended_models'],
+                    help="Choose from models recommended for your sensor type",
+                    key="recommended_model_select"
+                )
+            else:
+                # Fallback to manual selection
+                st.write("**Available Models:**")
+                fallback_models = [
+                    'vibration_anomaly_isolationforest',
+                    'ai4i_classifier_randomforest_baseline', 
+                    'RandomForest_MIMII_Audio_Benchmark',
+                    'xjtu_anomaly_isolation_forest',
+                    'anomaly_detector_refined_v2'
+                ]
+                prediction_model = st.selectbox(
+                    "Select Any Available Model",
+                    fallback_models,
+                    help="Choose from available models",
+                    key="fallback_model_select"
+                )
+            
+            # Prediction interface
+            if prediction_model:
+                st.write(f"**Selected Model:** {prediction_model}")
+                
+                with st.form("prediction_form"):
+                    st.write("**Input Sensor Data for Prediction:**")
+                    
+                    pred_sensor_id = st.text_input("Sensor ID", value="PRED_SENSOR_001")
+                    pred_value = st.number_input("Sensor Value", value=42.5)
+                    pred_timestamp = st.text_input(
+                        "Timestamp (ISO format)", 
+                        value=datetime.now(timezone.utc).isoformat()
+                    )
+                    
+                    submit_prediction = st.form_submit_button("🔮 Get Prediction")
+                    
+                    if submit_prediction:
+                        # Prepare prediction payload
+                        prediction_payload = {
+                            "model_name": prediction_model,
+                            "sensor_data": {
+                                "sensor_id": pred_sensor_id,
+                                "value": pred_value,
+                                "timestamp": pred_timestamp,
+                                "sensor_type": st.session_state.get('selected_sensor_type', 'unknown')
+                            }
+                        }
+                        
+                        # Make prediction API call (placeholder for now)
+                        st.success(f"🚀 Prediction request prepared for model: {prediction_model}")
+                        with st.expander("📋 View Prediction Payload"):
+                            st.json(prediction_payload)
+                        
+                        st.info("ℹ️ **Note**: This demonstrates the payload that would be sent to a prediction endpoint. The actual prediction API is not yet implemented.")
+    
+    else:
+        st.warning("🔧 MLflow integration not available. Model selection features are limited.")
+        st.info("📝 **Available features**: You can still use the basic data ingestion, report generation, and decision submission functionality above.")
+        
+        # Show fallback model information
+        st.subheader("📊 Available Model Types")
+        model_info = {
+            "Bearing Analysis": ["vibration_anomaly_isolationforest", "xjtu_anomaly_isolation_forest"],
+            "Manufacturing Equipment": ["ai4i_classifier_randomforest_baseline", "ai4i_classifier_lightgbm_baseline"],
+            "Audio Analysis": ["RandomForest_MIMII_Audio_Benchmark"],
+            "Forecasting": ["prophet_forecaster_enhanced_sensor-001", "lightgbm_forecaster_challenger"],
+            "General Purpose": ["anomaly_detector_refined_v2", "synthetic_validation_isolation_forest"]
+        }
+        
+        for category, models in model_info.items():
+            with st.expander(f"🔧 {category}"):
+                for model in models:
+                    st.write(f"• **{model}**")
+    
     st.markdown("---")
     
     # Master Dataset Preview Section
