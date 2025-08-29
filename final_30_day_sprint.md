@@ -482,6 +482,7 @@ Day 26: Record 5-Minute Video
   - Upload unlisted YouTube; link in README.
 - **Acceptance:**
   - <5 mins; comprehensive.
+  - Deploy to huggingface spaces!!!!!!! Easy access for evaluators.
 
 Day 27: End-to-End Test Run + Freeze Prep
 - **Objective:** Validate.
