@@ -359,15 +359,34 @@ jobs:
           fi
         done
     
+    - name: Create environment file for CI
+      run: |
+        # Create .env file for CI environment from template
+        cp .env.example .env
+        # Update database URL for CI environment
+        sed -i 's/db:5432/localhost:5432/g' .env
+        # Set CI-specific values
+        echo "MLFLOW_TRACKING_URI=http://localhost:5000" >> .env
+        echo "DOCKER_ENV=false" >> .env
+        echo "CI=true" >> .env
+    
     - name: Start required services
       run: |
         # Start only essential services for CI (avoid resource conflicts)
+        # Override environment variables for CI
+        export POSTGRES_DB=smart_maintenance_db
+        export POSTGRES_USER=smart_user
+        export POSTGRES_PASSWORD=strong_password
         docker compose up -d db mlflow
         # Wait for services to be ready
         echo "Waiting for services to start..."
         sleep 30
         # Check service health
         docker compose ps
+
+    - name: Validate CI environment
+      run: |
+        python scripts/validate_ci_environment.py
     
     - name: Wait for MLflow to be ready
       run: |
