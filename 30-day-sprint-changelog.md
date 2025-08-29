@@ -3809,4 +3809,54 @@ production-grade service templates created, infrastructure prepared for metric-d
   - **Documentation**: Updated the `FEEDBACK_LOG.md` to conclude Week 3.
 - **Strategic Benefit**: This work hardens our MLOps lifecycle by creating a critical automated check that guarantees model stability and reproducibility, a core requirement for a production-grade ML system.
 
+#### **Database Recovery Crisis & Resolution**
+
+**Crisis Encountered**: During comprehensive system audit initiation, discovered database was in clean state requiring migration application. Initial attempt to add automatic migrations to entrypoint.sh would have reintroduced the **Day 12 restart storm problem**.
+
+**Root Cause Analysis**:
+
+- **Historical Context**: Day 12 changelog documented that automatic `alembic upgrade head &&` was **deliberately removed** from docker-compose.yml to prevent container restart storms during migration failures
+- **Migration Connection Issue**: Migrations were failing because they attempted to connect through toxiproxy (`toxiproxy:5434`) instead of direct database connection (`db:5432`)
+- **Key Learning**: Automatic migrations in container startup are anti-pattern for production systems
+
+**Professional Recovery Process Applied** (Following Day 15 Documentation):
+
+1. **Infrastructure as Code Recovery**:
+
+   ```bash
+   # Manual migration execution with direct database connection (bypassing toxiproxy)
+   docker compose exec -e DATABASE_URL="postgresql://smart_user:strong_password@db:5432/smart_maintenance_db" api alembic upgrade heads
+   ```
+
+2. **Migration Conflict Resolution**:
+   - **Problem**: Multiple head revisions (`0907b6dcc25b` and `4a7245cea299`) from parallel development
+   - **Solution**: Applied both heads using `alembic upgrade heads` command
+   - **Result**: All migrations applied successfully in correct dependency order
+
+3. **Historical Bug Fix Application**:
+
+   ```sql
+   -- Applied documented Day 15 fix for sensor_readings.id auto-increment sequence
+   CREATE SEQUENCE IF NOT EXISTS sensor_readings_id_seq;
+   ALTER TABLE sensor_readings ALTER COLUMN id SET DEFAULT nextval('sensor_readings_id_seq');
+   ```
+
+4. **System Validation**:
+   - **TimescaleDB Hypertable**: ✅ Verified `sensor_readings` properly configured with compression
+   - **Performance Index**: ✅ Confirmed `idx_sensor_readings_sensor_timestamp` composite index in place
+   - **Auto-increment Test**: ✅ INSERT operations generating sequential IDs correctly
+   - **API Health**: ✅ FastAPI service responding healthy
+   - **Database Integrity**: ✅ All foreign key constraints and table relationships functional
+
+**Key Technical Insights**:
+
+- **Migration Isolation**: Migrations must use direct database connections, not proxy connections
+- **Docker Compose Strategy**: Keep automatic migrations disabled to prevent restart storms
+- **Recovery Methodology**: Infrastructure as Code approach enables complete database reconstruction from version-controlled migrations
+- **Historical Context**: Always reference changelog for previous solutions to similar problems
+
+**Files Modified**: None (recovery process used existing infrastructure correctly)
+
+**Production Readiness**: Database fully restored with all optimizations, ready for continued system audit
+
 ---
