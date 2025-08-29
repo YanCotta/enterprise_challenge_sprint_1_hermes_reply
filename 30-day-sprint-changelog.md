@@ -3800,3 +3800,13 @@ curl "http://localhost:8000/api/v1/sensors/sensor-001/readings?limit=5"
 production-grade service templates created, infrastructure prepared for metric-driven activation when performance triggers are met.
 
 ---
+### **Day 21: CI/CD Hardening for ML & Security Audit**
+- **Objective Achieved**: Enhanced the CI/CD pipeline with an automated ML model training and validation job to ensure reproducibility and prevent model drift at the source. Completed a full security re-audit.
+- **Key Deliverables**:
+  - **CI/CD `ml-train-validation` Job**: Added a new matrix-based job to `ci.yml` that automatically runs model validation for both `anomaly` and `forecast` models on every push.
+  - **Model Hash Validation**: Created `scripts/validate_model_hashes.py` and a `docs/ml/baseline_hashes.json` file. The new CI job now calculates the hash of existing trained models and verifies them against the baseline, failing the build if they do not match.
+  - **Security Re-Audit**: Performed a comprehensive review of the project against the `SECURITY_AUDIT_CHECKLIST.md` and updated the `SECURITY.md` file to reflect the successful verification of all security controls.
+  - **Documentation**: Updated the `FEEDBACK_LOG.md` to conclude Week 3.
+- **Strategic Benefit**: This work hardens our MLOps lifecycle by creating a critical automated check that guarantees model stability and reproducibility, a core requirement for a production-grade ML system.
+
+---
