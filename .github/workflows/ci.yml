@@ -361,14 +361,38 @@ jobs:
     
     - name: Create environment file for CI
       run: |
-        # Create .env file for CI environment from template
-        cp .env.example .env
+        # Debug: Show current directory and available files
+        echo "Current directory: $(pwd)"
+        echo "Available files:"
+        ls -la
+        
+        # Create .env file for CI environment from template in the correct directory
+        if [ -f .env.example ]; then
+          echo "Using .env.example as template"
+          cp .env.example .env
+        elif [ -f .env.test ]; then
+          echo "Using .env.test as template"
+          cp .env.test .env
+        else
+          echo "No environment template found, creating basic .env"
+          cat > .env << 'EOF'
+        DATABASE_URL=postgresql://smart_user:strong_password@localhost:5432/smart_maintenance_db
+        REDIS_URL=redis://localhost:6379
+        MLFLOW_TRACKING_URI=http://localhost:5000
+        DOCKER_ENV=false
+        CI=true
+        EOF
+        fi
+        
         # Update database URL for CI environment
         sed -i 's/db:5432/localhost:5432/g' .env
         # Set CI-specific values
         echo "MLFLOW_TRACKING_URI=http://localhost:5000" >> .env
         echo "DOCKER_ENV=false" >> .env
         echo "CI=true" >> .env
+        
+        echo "Final .env file contents:"
+        cat .env
     
     - name: Start required services
       run: |
