@@ -299,8 +299,79 @@ jobs:
           echo "   3. Re-run this workflow"
         fi
 
-  build-and-push:
+  ml-train-validation:
+    runs-on: ubuntu-latest
     needs: [test, security]
+    strategy:
+      matrix:
+        model: [anomaly, forecast]
+    
+    defaults:
+      run:
+        working-directory: ./smart-maintenance-saas
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: '1.8.3'
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v3
+      with:
+        path: ./smart-maintenance-saas/.venv
+        key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          poetry-${{ runner.os }}-
+
+    - name: Install project dependencies
+      run: |
+        poetry install --no-interaction --no-ansi
+
+    - name: Start required services
+      run: |
+        # Start only the necessary services for ML validation
+        docker compose up -d db mlflow
+        # Wait for services to be ready
+        echo "Waiting for services to start..."
+        sleep 30
+        # Check service health
+        docker compose ps
+
+    - name: Wait for MLflow to be ready
+      run: |
+        echo "Waiting for MLflow service to be ready..."
+        for i in {1..30}; do
+          if curl -f http://localhost:5000/health >/dev/null 2>&1; then
+            echo "MLflow is ready!"
+            break
+          fi
+          echo "Attempt $i/30: MLflow not ready yet, waiting..."
+          sleep 10
+        done
+
+    - name: Run ML model validation
+      run: |
+        echo "Validating ${{ matrix.model }} model reproducibility..."
+        poetry run python scripts/validate_model_hashes.py ${{ matrix.model }}
+
+    - name: Cleanup services
+      if: always()
+      run: |
+        docker compose down || true
+
+  build-and-push:
+    needs: [test, security, ml-train-validation]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     
