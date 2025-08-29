@@ -34,6 +34,7 @@ htmlcov/
 
 # Documentation
 docs/
+!docs/ml/baseline_hashes.json
 *.md
 !README.md
 
