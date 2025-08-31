@@ -454,9 +454,9 @@ Day 22: DB Documentation Finish + Indexing Rationale
 - **Acceptance:**
   - Run in <5 mins; diagram covers enhancements.
 
-**Day 25: Small Runbooks, Future BI Note + UI Polish**  
+**Day 25: Small Runbooks, Future BI Note + UI Polish + doc overview**  
 
-- **Objective**: Professional extras; enhance UI.  
+- **Objective**: Professional extras; enhance UI; user read all documentation files and do one final check and refinement
 
 - **Actions**:  
 
