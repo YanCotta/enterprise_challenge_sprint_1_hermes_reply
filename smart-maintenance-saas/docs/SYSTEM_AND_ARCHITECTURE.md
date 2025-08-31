@@ -184,16 +184,15 @@ sequenceDiagram
     AUTH->>+EB: Authenticated Event
     EB->>+DA: DataIngestionEvent
     DA->>TS: Store Sensor Data
-    DA->>EB: DataProcessedEvent
+    DA->>-EB: DataProcessedEvent
     EB->>+AD: Process with IsolationForest
     AD->>ML: Load Model from Registry
     ML->>AD: Model Artifacts
     AD->>REDIS: Cache Results
-    AD->>EB: AnomalyDetectedEvent
+    AD->>-EB: AnomalyDetectedEvent
     EB->>TS: Store Analysis Results
-    EB->>API: Response with Correlation ID
-    API->>-AUTH: JSON Response
-    AUTH->>-API: Rate Limited Response
+    EB->>-API: Response with Correlation ID
+    AUTH->>-API: JSON Response
 ```
 
 ### 2.3. MLflow Model Management Pipeline
