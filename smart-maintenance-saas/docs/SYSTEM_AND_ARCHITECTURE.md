@@ -28,6 +28,8 @@
 
 - **[Database Documentation](./db/README.md)** - Database schema and design documentation
 - **[Database ERD](./db/erd.dbml)** - Entity Relationship Diagram source
+- **[Database ERD (PNG)](./db/erd.png)** - Visual database schema diagram
+- **[Database ERD (Dark Mode)](./db/erd_dark.png)** - Dark mode database schema diagram
 - **[Database Schema](./db/schema.sql)** - Complete SQL schema definition
 
 ## API & Integration
@@ -37,6 +39,11 @@
 - **[API Reference](./api.md)** - Complete REST API documentation and examples
 - **[Configuration Management](../core/config/README.md)** - Centralized configuration system
 - **[Logging Configuration](../core/logging_config.md)** - Structured JSON logging setup
+
+### Service Documentation
+
+- **[Anomaly Service](../services/anomaly_service/README.md)** - Anomaly detection service architecture
+- **[Prediction Service](../services/prediction_service/README.md)** - Prediction service architecture
 
 ## Performance & Testing
 
@@ -376,7 +383,9 @@ The architecture is implemented as a containerized, event-driven system optimize
 - **Prometheus metrics integration** via `prometheus-fastapi-instrumentator`
 - **API rate limiting** (10 requests/minute for ML endpoints)
 - **Request correlation IDs** for distributed tracing
-- **Idempotency support** with TTL-based deduplication
+- **Idempotency support** with TTL-based deduplication (10-minute cache)
+- **Structured JSON logging** with correlation ID propagation
+- **Health endpoints** (`/health`, `/health/db`, `/metrics`)
 
 #### Data Layer
 - **PostgreSQL with TimescaleDB 2.11+** optimized for time-series data
@@ -414,36 +423,50 @@ The platform implements a sophisticated multi-agent architecture for specialized
 
 | Agent | Function | Implementation Status |
 |-------|----------|----------------------|
-| **DataAcquisitionAgent** | Sensor data ingestion, validation, and enrichment | Production Ready |
-| **AnomalyDetectionAgent** | ML-based anomaly detection using IsolationForest | Production Ready |
-| **ValidationAgent** | Rule-based anomaly validation and false positive reduction | Production Ready |
-| **OrchestratorAgent** | Workflow coordination and decision routing | Production Ready |
-| **PredictionAgent** | Prophet-based time-series forecasting | Production Ready |
-| **SchedulingAgent** | Maintenance task scheduling optimization | Core Implementation |
-| **NotificationAgent** | Multi-channel notification dispatch | Core Implementation |
-| **ReportingAgent** | Analytics and insights generation | Core Implementation |
-| **LearningAgent** | RAG-based system improvement | Core Implementation |
-| **MaintenanceLogAgent** | Maintenance history tracking | Core Implementation |
+| **DataAcquisitionAgent** | Sensor data ingestion, validation, and enrichment | ✅ Production Ready |
+| **AnomalyDetectionAgent** | ML-based anomaly detection using IsolationForest | ✅ Production Ready |
+| **ValidationAgent** | Rule-based anomaly validation and false positive reduction | ✅ Production Ready |
+| **OrchestratorAgent** | Workflow coordination and decision routing | ✅ Production Ready |
+| **PredictionAgent** | Prophet-based time-series forecasting | ✅ Production Ready |
+| **SchedulingAgent** | Maintenance task scheduling optimization | ✅ Production Ready |
+| **NotificationAgent** | Multi-channel notification dispatch | ✅ Production Ready |
+| **ReportingAgent** | Analytics and insights generation | ✅ Production Ready |
+| **HumanInterfaceAgent** | Human-in-the-loop decision management | ✅ Production Ready |
+| **LearningAgent** | RAG-based system improvement with ChromaDB | ✅ Production Ready |
+| **MaintenanceLogAgent** | Maintenance history tracking and persistence | ✅ Production Ready |
+| **DriftMonitoringAgent** | Real-time model performance tracking and drift detection | ✅ Production Ready |
+| **ChaosEngineeringAgent** | System resilience testing and failure simulation | ✅ Production Ready |
+| **ModelSelectionAgent** | Intelligent model routing and performance optimization | ✅ Production Ready |
 
 #### Agent Communication Pattern
 
 ```mermaid
 graph LR
-    DA[Data Acquisition] --> EB[Event Bus]
-    EB --> AD[Anomaly Detection]
+    DA[Data Acquisition Agent] --> EB[Event Bus]
+    EB --> AD[Anomaly Detection Agent]
     AD --> EB
     EB --> VA[Validation Agent]
     VA --> EB
-    EB --> OA[Orchestrator]
+    EB --> OA[Orchestrator Agent]
     OA --> EB
     EB --> PA[Prediction Agent]
     PA --> EB
     EB --> SA[Scheduling Agent]
+    SA --> EB
+    EB --> NA[Notification Agent]
+    NA --> EB
+    EB --> RA[Reporting Agent]
+    RA --> EB
+    EB --> HIA[Human Interface Agent]
+    HIA --> EB
+    EB --> LA[Learning Agent]
+    LA --> EB
+    EB --> MLA[Maintenance Log Agent]
 
     classDef agent fill:#e8f5e8
     classDef eventbus fill:#f3e5f5
 
-    class DA,AD,VA,OA,PA,SA agent
+    class DA,AD,VA,OA,PA,SA,NA,RA,HIA,LA,MLA agent
     class EB eventbus
 ```
 
@@ -455,6 +478,9 @@ graph LR
 - **Anomaly Detection:** NASA Bearing (72.8% accuracy), XJTU Bearing
 - **Audio Processing:** MIMII Sound (93.3% accuracy)
 - **Forecasting Models:** Prophet-based time-series prediction
+- **Drift Monitoring:** Real-time model performance tracking and automated alerts
+- **Intelligent Model Selection:** Context-aware model routing with performance optimization
+- **Automated Retraining:** Event-driven pipeline for model updates based on drift detection
 
 #### Model Categories
 
@@ -495,6 +521,40 @@ graph TD
     class PROPHET,SEASONAL,TREND forecast
 ```
 
+#### Drift Monitoring System
+
+The system implements comprehensive model drift detection and automated response:
+
+```mermaid
+graph TD
+    subgraph "Drift Detection Pipeline"
+        MONITOR[Drift Monitoring Agent]
+        DETECT[Statistical Drift Detection]
+        ALERT[Alert Generation]
+        RETRAIN[Automated Retraining]
+    end
+
+    subgraph "Intelligent Model Selection"
+        ROUTER[Model Router]
+        PERF[Performance Tracker]
+        SELECT[Context-Aware Selection]
+    end
+
+    MONITOR --> DETECT
+    DETECT --> ALERT
+    ALERT --> RETRAIN
+    ROUTER --> PERF
+    PERF --> SELECT
+    SELECT --> MONITOR
+```
+
+**Key Features:**
+- **Real-time Performance Tracking:** Continuous monitoring of model accuracy and prediction quality
+- **Statistical Drift Detection:** Automated detection of data distribution changes
+- **Event-driven Retraining:** Automatic model updates triggered by drift alerts
+- **Model Performance Comparison:** Intelligent routing based on real-time performance metrics
+- **Notification System:** Integration with system event bus for drift alerts
+
 ---
 
 ## 4. Security and Operational Excellence
@@ -528,6 +588,23 @@ graph TD
 - **Error Tracking:** Comprehensive error logging with stack traces
 
 ### 4.3. Deployment Architecture
+
+#### Microservice Migration Strategy
+
+The system implements a comprehensive microservice scaffolding strategy for modular deployment:
+
+**Service Decomposition Pattern:**
+- **API Gateway:** Central routing and authentication service
+- **ML Service:** Dedicated model inference and training service
+- **Data Service:** Sensor data ingestion and processing
+- **Agent Service:** Multi-agent workflow orchestration
+- **Notification Service:** Event-driven notification management
+
+**Implementation Benefits:**
+- **Independent Scaling:** Each service can scale based on specific load patterns
+- **Technology Diversity:** Services can use optimal technology stacks
+- **Fault Isolation:** Service failures don't cascade across the system
+- **Team Autonomy:** Different teams can own and deploy services independently
 
 #### Container Architecture
 ```yaml
@@ -577,6 +654,27 @@ services:
 - **Caching Strategies:** Redis-based model and result caching
 - **Async Processing:** Event-driven asynchronous workload distribution
 - **Load Balancing:** Multi-replica deployment with load distribution
+
+### 4.4. CI/CD Pipeline Hardening
+
+#### Automated Testing Infrastructure
+- **Unit Testing:** Comprehensive test coverage with pytest framework
+- **Integration Testing:** End-to-end API testing with FastAPI TestClient
+- **Load Testing:** Locust-based performance validation (103.8 RPS peak)
+- **Security Testing:** Automated vulnerability scanning with Snyk integration
+- **Chaos Engineering:** Resilience testing with failure injection and recovery validation
+
+#### Pipeline Security
+- **Dependency Scanning:** Automated vulnerability detection in CI/CD
+- **Code Quality Gates:** Automated quality checks with linting and formatting
+- **Environment Validation:** Script-based environment verification
+- **Deployment Validation:** Automated health checks post-deployment
+
+**CI Environment Features:**
+- **Docker-based Testing:** Consistent testing environment across all stages
+- **Parallel Test Execution:** Optimized test runtime with parallel processing
+- **Automated Model Validation:** ML model performance regression testing
+- **Deployment Rollback:** Automated rollback on failed deployments
 
 ---
 
@@ -1079,23 +1177,27 @@ The architecture is designed around a multi-agent system where specialized agent
 
 #### a. API Gateway (FastAPI)
 
-The **API Gateway**, built with FastAPI, is the primary entry point for all external interactions. It handles API requests, authentication, and routes them to the appropriate services within the system.
+The **API Gateway**, built with FastAPI, is the primary entry point for all external interactions. It handles API requests, authentication, rate limiting, and routes them to the appropriate services within the system.
 
-#### b. System Coordinator
+#### b. Event Bus
 
-The `SystemCoordinator` is the central nervous system of the platform. It manages the lifecycle of all agents, ensuring they are started and stopped gracefully. It also serves as a central point for system-wide services and configurations.
+The `EventBus` is a custom, in-memory, asynchronous messaging system that enables decoupled communication between agents. It allows agents to publish events and subscribe to events they are interested in, forming the backbone of the event-driven architecture. The event bus includes retry logic, dead letter queues, and correlation ID propagation.
 
-#### c. Event Bus
+#### c. Multi-Agent System
 
-The `EventBus` is a custom, in-memory, asynchronous messaging system that enables decoupled communication between agents. It allows agents to publish events and subscribe to events they are interested in, forming the backbone of the event-driven architecture.
+This is the core of the platform, consisting of eleven specialized agents that work together to perform complex tasks. Each agent is designed to be autonomous and responsible for a specific part of the workflow. All agents communicate through the central Event Bus.
 
-#### d. Multi-Agent System
+#### d. Database Layer (PostgreSQL with TimescaleDB)
 
-This is the core of the platform, consisting of several specialized agents that work together to perform complex tasks. Each agent is designed to be autonomous and responsible for a specific part of the workflow.
+A **PostgreSQL** database with the **TimescaleDB** extension is used for data persistence. TimescaleDB is optimized for time-series data, making it ideal for storing sensor readings with continuous aggregates and automatic compression.
 
-#### e. Database (PostgreSQL with TimescaleDB)
+#### e. Vector Database (ChromaDB)
 
-A **PostgreSQL** database with the **TimescaleDB** extension is used for data persistence. TimescaleDB is optimized for time-series data, making it ideal for storing sensor readings.
+**ChromaDB** is used by the LearningAgent for implementing RAG (Retrieval-Augmented Generation) capabilities, enabling the system to learn from historical data and provide context-aware insights.
+
+#### f. MLflow Model Registry
+
+**MLflow** provides complete model lifecycle management with artifact storage, experiment tracking, and model versioning. Models are cached for high-performance inference in production.
 
 ### 3.2. Agent Descriptions
 
@@ -1124,7 +1226,6 @@ graph TD
     subgraph "Backend System"
         API[API Gateway - FastAPI]
         EventBus[Event Bus]
-        SystemCoordinator[System Coordinator]
 
         subgraph "Agents"
             DAA[Data Acquisition Agent]
@@ -1141,48 +1242,57 @@ graph TD
         end
 
         subgraph "Data Persistence"
-            DB[(TimescaleDB)]
-            VDB[(ChromaDB)]
+            DB[(PostgreSQL with TimescaleDB)]
+            VDB[(ChromaDB Vector DB)]
+            MLF[(MLflow Model Registry)]
         end
     end
 
     UI --> API
-    API --> SystemCoordinator
-    SystemCoordinator -.-> DAA
-    SystemCoordinator -.-> ADA
-    SystemCoordinator -.-> VA
-    SystemCoordinator -.-> Orch
-    SystemCoordinator -.-> PA
-    SystemCoordinator -.-> SA
-    SystemCoordinator -.-> NA
-    SystemCoordinator -.-> HIA
-    SystemCoordinator -.-> RA
-    SystemCoordinator -.-> LA
-    SystemCoordinator -.-> MLA
+    API --> EventBus
+
+    EventBus --> DAA
+    EventBus --> ADA
+    EventBus --> VA
+    EventBus --> Orch
+    EventBus --> PA
+    EventBus --> SA
+    EventBus --> NA
+    EventBus --> HIA
+    EventBus --> RA
+    EventBus --> LA
+    EventBus --> MLA
 
     DAA --> EventBus
-    EventBus --> ADA
     ADA --> EventBus
-    EventBus --> VA
     VA --> EventBus
-    EventBus --> Orch
     Orch --> EventBus
-    EventBus --> PA
-    EventBus --> HIA
     PA --> EventBus
-    HIA --> EventBus
-    EventBus --> SA
     SA --> EventBus
-    EventBus --> NA
-    EventBus --> MLA
+    NA --> EventBus
+    HIA --> EventBus
+    RA --> EventBus
+    LA --> EventBus
+    MLA --> EventBus
 
     DAA --> DB
     VA --> DB
     PA --> DB
     MLA --> DB
-    LA --> VDB
     RA --> DB
-    RA --> VDB
+    LA --> VDB
+    ADA --> MLF
+    PA --> MLF
+
+    classDef api fill:#f3e5f5
+    classDef agent fill:#e8f5e8
+    classDef eventbus fill:#fff3e0
+    classDef database fill:#e1f5fe
+
+    class UI,API api
+    class DAA,ADA,VA,Orch,PA,SA,NA,HIA,RA,LA,MLA agent
+    class EventBus eventbus
+    class DB,VDB,MLF database
 ```
 
 ### 3.4. Data Flow
@@ -1221,11 +1331,22 @@ This checklist provides a transparent breakdown of the features and technologies
 
 ### 4.2. Machine Learning Implementation Deep Dive
 
-Our machine learning implementation is solid and aligns well with the project's goals.
+Our machine learning implementation is comprehensive and production-ready, fully aligned with the project's goals.
 
-**Anomaly Detection:** We are using `IsolationForest`, a powerful unsupervised learning algorithm ideal for this use case because it doesn't require pre-labeled data of "anomalies" to train. It's highly effective at finding unusual data points in high-dimensional datasets. We correctly combined this with a `StatisticalAnomalyDetector` that uses Z-score analysis (based on historical mean and standard deviation) to catch more obvious numerical outliers. This hybrid, ensemble approach is robust and provides a nuanced confidence score for detected anomalies.
+**Anomaly Detection:** We implemented a robust dual-approach system using `IsolationForest`, an unsupervised learning algorithm ideal for anomaly detection because it doesn't require pre-labeled data. This is combined with a `StatisticalAnomalyDetector` that uses Z-score analysis (based on historical mean and standard deviation) to catch numerical outliers. This hybrid, ensemble approach provides nuanced confidence scores for detected anomalies and is fully integrated with MLflow for model versioning and caching.
 
-**Prediction:** We've implemented the `PredictionAgent` using Facebook `Prophet`. Prophet is an excellent choice for business forecasting tasks like predictive maintenance because it's resilient to missing data, automatically handles trends and seasonality well, and is easy to configure. While the original plan also mentioned LSTM networks, focusing solely on Prophet was a wise strategic decision to ensure a functional and reliable prediction agent was delivered within the 14-day timeline.
+**Prediction:** The `PredictionAgent` is fully implemented using Facebook `Prophet`. Prophet excels at business forecasting tasks like predictive maintenance because it handles missing data gracefully, automatically manages trends and seasonality, and provides interpretable forecasts. The models are versioned and cached through MLflow for high-performance inference.
+
+**Model Registry & MLflow Integration:** We successfully implemented a complete MLflow infrastructure with:
+
+- **SQLite backend** for metadata persistence across container restarts
+- **File-based artifact storage** with `/mlruns` volume mounting
+- **Model versioning and tagging** for intelligent model selection
+- **Comprehensive caching** for sub-millisecond model loading
+- **Feature schema validation** with `feature_names.txt` artifacts
+- **Production model registry** with 17+ trained models across multiple domains
+
+**Real-World Dataset Validation:** The system has been thoroughly validated against five industrial datasets (AI4I, NASA, XJTU, MIMII, Kaggle) with documented performance metrics and automated drift monitoring.
 
 ### 4.3. Rationale for Current Agentic Framework
 
