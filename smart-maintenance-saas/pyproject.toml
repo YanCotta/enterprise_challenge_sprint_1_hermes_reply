@@ -48,6 +48,8 @@ librosa = "^0.10.1"  # For audio processing and MFCC feature extraction
 resampy = "^0.4.3"  # Audio resampling dependency for librosa
 tqdm = "^4.66.0"  # For progress bars in data processing
 slowapi = "^0.1.9"  # Rate limiting for API endpoints
+apscheduler = "^3.10.4"  # Job scheduling for automated drift monitoring
+aiohttp = "^3.8.0"  # HTTP client for API calls in drift agent
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
