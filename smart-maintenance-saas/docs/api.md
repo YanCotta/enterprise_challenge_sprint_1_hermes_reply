@@ -1,29 +1,81 @@
 # Smart Maintenance SaaS - API Documentation
 
-🇧🇷 **[Clique aqui para ler em Português](#-smart-maintenance-saas---documentação-da-api-português)** | 🇺🇸 **English Version Below**
+# Smart Maintenance SaaS - Complete Documentation Index
 
-## 📚 Documentation Navigation
+## Core Documentation
 
-This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
+### Getting Started
 
+- **[Main README](../../README.md)** - Project overview, quick start, and repository structure
 - **[Backend README](../README.md)** - Docker deployment and getting started guide
-- **[System Screenshots](./SYSTEM_SCREENSHOTS.md)** - Complete visual system walkthrough with screenshots
-- **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
-- **[Future Roadmap](./FUTURE_ROADMAP.md)** - Strategic vision and planned enhancements
-- **[Deployment Status](./DEPLOYMENT_STATUS.md)** - Current deployment status and container information
-- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
-- **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
-- **[Original Architecture](./original_full_system_architecture.md)** - Complete Phase 1 documentation and initial system design
+- **[Development Orientation](../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
+
+### Project History & Changelog
+
+- **[30-Day Sprint Changelog](../../30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](../../final_30_day_sprint.md)** - Executive summary of sprint achievements
+
+## System Architecture & Design
+
+### Architecture Documentation
+
+- **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
+- **[System Screenshots](./SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
+- **[Comprehensive System Analysis](./COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
+- **[Microservice Migration Strategy](./MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
+
+### Database Design
+
+- **[Database Documentation](./db/README.md)** - Database schema and design documentation
+- **[Database ERD](./db/erd.dbml)** - Entity Relationship Diagram source
+- **[Database Schema](./db/schema.sql)** - Complete SQL schema definition
+
+## API & Integration
+
+### API Documentation
+
+- **[API Reference](./api.md)** - Complete REST API documentation and examples
+- **[Configuration Management](../core/config/README.md)** - Centralized configuration system
+- **[Logging Configuration](../core/logging_config.md)** - Structured JSON logging setup
+
+## Performance & Testing
+
+### Performance Documentation
+
+- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
+- **[Day 17 Load Test Report](./DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
+- **[Day 18 Performance Results](./DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
+- **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
+
+### Testing Documentation
+
 - **[Test Documentation](../tests/README.md)** - Test organization and execution guide
-- **[Logging Configuration](../core/logging_config.md)** - Structured JSON logging setup and configuration
-- **[Configuration Management](../core/config/README.md)** - Centralized configuration system using Pydantic BaseSettings
-- **[Project Overview](../../README.md)** - High-level project description and objectives
+- **[Coverage Improvement Plan](./COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
+
+## Machine Learning & Data Science
+
+### ML Documentation
+
+- **[ML Documentation](./ml/README.md)** - Machine learning models and pipelines
+- **[Models Summary](./MODELS_SUMMARY.md)** - Overview of all 17+ production models
+- **[Project Gauntlet Plan](./PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
+
+## Security & Operations
+
+### Security Documentation
+
+- **[Security Documentation](./SECURITY.md)** - Security architecture and implementation
+- **[Security Audit Checklist](./SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
+
+---
+
+*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
 
 ---
 
 ## Overview
 
-The Smart Maintenance SaaS API provides a comprehensive RESTful interface for industrial predictive maintenance operations. The API is built with FastAPI and follows OpenAPI 3.0 standards, offering automatic documentation and validation.
+The Smart Maintenance SaaS API provides a comprehensive RESTful interface for industrial predictive maintenance operations. The API is built with FastAPI and follows OpenAPI 3.0 standards, offering automatic documentation, validation, and enterprise-grade observability.
 
 **Base URL**: `http://localhost:8000` (Docker deployment)  
 **API Version**: v1  
@@ -31,6 +83,7 @@ The Smart Maintenance SaaS API provides a comprehensive RESTful interface for in
 **Documentation**: 
 - Interactive API Docs: `http://localhost:8000/docs`
 - ReDoc Documentation: `http://localhost:8000/redoc`
+- Prometheus Metrics: `http://localhost:8000/metrics`
 
 ## Quick Start with Docker
 
@@ -41,7 +94,9 @@ docker compose up -d
 # Access points
 # API: http://localhost:8000
 # UI: http://localhost:8501
+# MLflow: http://localhost:5000
 # Docs: http://localhost:8000/docs
+# Metrics: http://localhost:8000/metrics
 ```
 
 ## Control Panel UI
@@ -52,10 +107,44 @@ For easy interaction with the API, a Streamlit-based control panel is available 
 - **Real-time validation** and error handling  
 - **System health monitoring** and connectivity checks
 - **Quick testing tools** for rapid API exploration
+- **Dataset preview** with 9,000+ sensor readings visualization
 
 When using Docker: The UI is automatically available at `http://localhost:8501` when you run `docker compose up -d`.
 
 See the [Backend README](../README.md#control-panel-ui-streamlit) for detailed usage instructions.
+
+## Enterprise Features
+
+### Observability & Monitoring
+
+The API includes production-grade observability features implemented during the development sprint:
+
+#### Prometheus Metrics (`/metrics`)
+- **Endpoint**: `GET /metrics`
+- **Format**: Standard Prometheus exposition format
+- **Metrics Available**:
+  - Python GC metrics (objects collected, collections count)
+  - Process-level metrics (CPU, memory, threads)
+  - HTTP request metrics (latency, status codes, request count)
+  - FastAPI-specific application metrics
+
+#### Correlation IDs & Request Tracing
+- **Automatic Request ID Generation**: UUIDv4 generated for each request
+- **Custom Request ID Support**: Include `X-Request-ID` header to use custom correlation ID
+- **Response Headers**: All responses include `X-Request-ID` for end-to-end tracing
+- **Structured Logging**: JSON-formatted logs with correlation ID propagation
+
+#### Event Bus Reliability
+- **Retry Logic**: Exponential backoff with 3 attempts (2s, 4s, 6s delays)
+- **Dead Letter Queue**: Failed events automatically sent to DLQ after retries
+- **Circuit Breaker Pattern**: Graceful degradation for downstream service failures
+
+### Security Features
+
+- **API Key Authentication**: Scope-based permission system
+- **Input Validation**: Pydantic-based request validation
+- **STRIDE Threat Model**: Comprehensive security analysis in `docs/SECURITY.md`
+- **Rate Limiting**: Per-endpoint limits to prevent abuse
 
 ## Authentication
 
@@ -70,8 +159,18 @@ X-API-Key: your-api-key-here
 The API uses a scope-based permission system:
 
 - `data:ingest` - Permission to ingest sensor data
-- `reports:generate` - Permission to generate reports
+- `reports:generate` - Permission to generate reports  
 - `tasks:update` - Permission to submit human decisions
+
+### Request Headers
+
+#### Required Headers
+- `X-API-Key`: Your API authentication key
+- `Content-Type`: `application/json` (for POST requests)
+
+#### Optional Headers
+- `X-Request-ID`: Custom correlation ID for request tracing (auto-generated if not provided)
+- `Idempotency-Key`: Prevents duplicate processing for data ingestion (10-minute TTL)
 
 ## Core Endpoints
 
@@ -79,7 +178,15 @@ The API uses a scope-based permission system:
 
 #### POST /api/v1/data/ingest
 
-Ingests sensor data into the Smart Maintenance system for processing and analysis.
+Ingests sensor data into the Smart Maintenance system for processing and analysis. Enhanced with idempotency support to prevent duplicate event processing.
+
+**Headers:**
+```http
+X-API-Key: your-api-key-here
+X-Request-ID: optional-correlation-id
+Idempotency-Key: optional-unique-key-for-deduplication
+Content-Type: application/json
+```
 
 **Request Body:**
 ```json
@@ -99,17 +206,37 @@ Ingests sensor data into the Smart Maintenance system for processing and analysi
   "message": "Data ingested successfully",
   "timestamp": "2025-06-11T10:30:00Z",
   "sensor_id": "TEMP_001",
-  "correlation_id": "req_123456789"
+  "correlation_id": "req_123456789",
+  "event_id": "evt_987654321"
+}
+```
+
+**Response (200 OK - Duplicate):**
+```json
+{
+  "message": "Data ingested successfully",
+  "timestamp": "2025-06-11T10:30:00Z", 
+  "sensor_id": "TEMP_001",
+  "correlation_id": "req_123456789",
+  "event_id": "evt_987654321",
+  "status": "duplicate_ignored"
 }
 ```
 
 **Sensor Types Supported:**
+
 - `temperature`
-- `vibration` 
+- `vibration`
 - `pressure`
 - `humidity`
 - `current`
 - `voltage`
+
+**Idempotency Behavior:**
+- Include `Idempotency-Key` header to prevent duplicate processing
+- Duplicate requests with same key return original `event_id`
+- 10-minute TTL cache prevents memory growth
+- Designed for single-replica deployment (in-memory cache)
 
 ### Reports Generation
 
@@ -223,6 +350,82 @@ Detailed health check including database and service status.
 }
 ```
 
+### GET /metrics
+
+Prometheus metrics endpoint for monitoring and observability.
+
+**Response (200 OK):**
+```
+# HELP python_gc_objects_collected_total Objects collected during gc
+# TYPE python_gc_objects_collected_total counter
+python_gc_objects_collected_total{generation="0"} 5852.0
+python_gc_objects_collected_total{generation="1"} 3109.0
+python_gc_objects_collected_total{generation="2"} 2357.0
+
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="GET",handler="/health"} 42.0
+
+# HELP http_request_duration_seconds HTTP request duration
+# TYPE http_request_duration_seconds histogram
+...
+```
+
+**Metrics Categories:**
+- **Python Runtime**: GC metrics, memory usage, process information
+- **HTTP Traffic**: Request counts, response times, status codes
+- **FastAPI Specific**: Route-level performance metrics
+- **Application**: Custom business metrics
+
+## ML Services Integration
+
+The API integrates with MLflow for model management and provides endpoints for accessing trained models:
+
+### MLflow Integration
+- **MLflow UI**: Available at `http://localhost:5000`
+- **Model Registry**: Stores anomaly detection and forecasting models
+- **Experiment Tracking**: Complete training run history and metrics
+- **Artifact Storage**: Model files, plots, and feature metadata
+
+### Available Models
+
+Based on the latest comprehensive model analysis and Sprint 10.5 improvements:
+
+- **Anomaly Detection**: IsolationForest-based anomaly detector (`anomaly_detector_refined_v2`)
+  - **Performance**: Production-ready with validated anomaly detection capabilities
+  - **Features**: 12 lag features with MinMaxScaler normalization
+  - **Status**: Registered and ready for deployment
+
+- **Time Series Forecasting**: Prophet Tuned model (`prophet_forecaster_sensor-001`)
+  - **Performance**: 20.86% improvement over naive baseline (MAE: 2.8258)
+  - **Optimization**: Hyperparameter tuned (changepoint_prior_scale: 0.1, seasonality_prior_scale: 5.0)
+  - **Features**: Built-in trend, seasonality, and changepoint detection
+  - **Status**: Best performing model, recommended for production deployment
+
+- **Challenger Models**: LightGBM evaluation completed
+  - **Performance**: 3.0994 MAE (9.68% worse than Prophet Tuned)
+  - **Features**: 12 lag features with scaling
+  - **Status**: Evaluated but Prophet remains superior for time series forecasting
+
+- **Feature Engineering Pipeline**: 
+  - **SensorFeatureTransformer**: Professional sklearn-compatible transformer
+  - **Lag Features**: Intelligent forward-fill/back-fill strategy (1-5 lag features)
+  - **Scaling**: MinMaxScaler normalization to [0,1] range
+  - **Quality**: Robust validation and error handling
+
+### Model Access
+Models are accessed through the MLflow API and can be queried programmatically:
+
+```bash
+# Get registered models
+curl http://localhost:5000/api/2.0/mlflow/registered-models/list
+
+# Get latest model version
+curl -X POST http://localhost:5000/api/2.0/mlflow/registered-models/get-latest-versions \
+  -H "Content-Type: application/json" \
+  -d '{"name": "anomaly_detector_refined_v2"}'
+```
+
 ## Error Handling
 
 The API uses standard HTTP status codes and returns structured error responses:
@@ -267,16 +470,19 @@ Rate limit headers are included in all responses:
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1623456789
+X-Request-ID: correlation-id-for-tracing
 ```
 
 ## Examples
 
-### Complete Data Ingestion Workflow
+### Complete Data Ingestion Workflow with Enhanced Features
 
 ```bash
-# 1. Ingest sensor data
+# 1. Ingest sensor data with idempotency and correlation ID
 curl -X POST "http://localhost:8000/api/v1/data/ingest" \
   -H "X-API-Key: your-api-key" \
+  -H "X-Request-ID: custom-correlation-123" \
+  -H "Idempotency-Key: unique-operation-456" \
   -H "Content-Type: application/json" \
   -d '{
     "sensor_id": "TEMP_001",
@@ -289,6 +495,7 @@ curl -X POST "http://localhost:8000/api/v1/data/ingest" \
 # 2. Generate anomaly report
 curl -X POST "http://localhost:8000/api/v1/reports/generate" \
   -H "X-API-Key: your-api-key" \
+  -H "X-Request-ID: report-correlation-789" \
   -H "Content-Type: application/json" \
   -d '{
     "report_type": "anomaly_summary",
@@ -299,319 +506,91 @@ curl -X POST "http://localhost:8000/api/v1/reports/generate" \
 # 3. Submit maintenance decision
 curl -X POST "http://localhost:8000/api/v1/decisions/submit" \
   -H "X-API-Key: your-api-key" \
+  -H "X-Request-ID: decision-correlation-101" \
   -H "Content-Type: application/json" \
   -d '{
     "request_id": "req_maintenance_123",
     "decision": "approve",
     "justification": "Temperature anomaly requires immediate attention"
   }'
+
+# 4. Check system health and metrics
+curl -H "X-API-Key: your-api-key" "http://localhost:8000/health/detailed"
+curl "http://localhost:8000/metrics"
+
+# 5. Access MLflow models
+curl "http://localhost:5000/api/2.0/mlflow/registered-models/list"
 ```
 
----
-
-## 🇧🇷 Smart Maintenance SaaS - Documentação da API (Português)
-
-### 📚 Navegação da Documentação
-
-Este documento faz parte do conjunto de documentação do Smart Maintenance SaaS. Para compreensão completa do sistema, consulte também:
-
-- **[README do Backend](../README.md)** - Implantação Docker e guia de primeiros passos
-- **[Capturas de Tela do Sistema](./SYSTEM_SCREENSHOTS.md)** - Demonstração visual completa do sistema com capturas de tela
-- **[Sistema e Arquitetura](./SYSTEM_AND_ARCHITECTURE.md)** - Visão geral completa da arquitetura e componentes do sistema
-- **[Roadmap Futuro](./FUTURE_ROADMAP.md)** - Visão estratégica e melhorias planejadas
-- **[Status de Implantação](./DEPLOYMENT_STATUS.md)** - Status atual de implantação e informações do container
-- **[Baseline de Performance](./PERFORMANCE_BASELINE.md)** - Resultados de testes de carga e métricas de performance
-- **[Instruções de Teste de Carga](./LOAD_TESTING_INSTRUCTIONS.md)** - Guia abrangente para execução de testes de performance
-- **[Arquitetura Original](./original_full_system_architecture.md)** - Documentação completa da Fase 1 e design inicial do sistema
-- **[Documentação de Testes](../tests/README.md)** - Organização e guia de execução de testes
-- **[Configuração de Logging](../core/logging_config.md)** - Configuração de logging JSON estruturado
-- **[Gerenciamento de Configuração](../core/config/README.md)** - Sistema centralizado de configuração usando Pydantic BaseSettings
-- **[Visão Geral do Projeto](../../README.md)** - Descrição de alto nível e objetivos do projeto
-
----
-
-## Visão Geral
-
-A API Smart Maintenance SaaS fornece uma interface RESTful abrangente para operações de manutenção preditiva industrial. A API é construída com FastAPI e segue os padrões OpenAPI 3.0, oferecendo documentação e validação automáticas.
-
-**URL Base**: `http://localhost:8000` (implantação Docker)  
-**Versão da API**: v1  
-**Status de Produção**: ✅ Pronto  
-**Documentação**: 
-- Documentação Interativa da API: `http://localhost:8000/docs`
-- Documentação ReDoc: `http://localhost:8000/redoc`
-
-## Início Rápido com Docker
+### Monitoring and Observability
 
 ```bash
-# Inicie o sistema completo
-docker compose up -d
+# Check Prometheus metrics
+curl "http://localhost:8000/metrics" | grep -E "(http_requests|python_gc)"
 
-# Pontos de acesso
-# API: http://localhost:8000
-# UI: http://localhost:8501
-# Docs: http://localhost:8000/docs
+# Verify correlation ID propagation
+curl -H "X-Request-ID: test-trace-123" "http://localhost:8000/health" -v
+
+# Monitor TimescaleDB sensor data
+# Connect to database and query recent readings
+# See Database documentation for connection details
 ```
 
-## Interface do Painel de Controle
-
-Para interação fácil com a API, um painel de controle baseado em Streamlit está disponível em `http://localhost:8501`. O painel de controle fornece:
-
-- **Formulários visuais** para todos os endpoints da API
-- **Validação em tempo real** e tratamento de erros
-- **Monitoramento de saúde do sistema** e verificações de conectividade
-- **Ferramentas de teste rápido** para exploração rápida da API
-
-Ao usar Docker: A UI fica automaticamente disponível em `http://localhost:8501` quando você executa `docker compose up -d`.
-
-Consulte o [README do Backend](../README.md#control-panel-ui-streamlit) para instruções detalhadas de uso.
-
-## Autenticação
-
-Todos os endpoints da API requerem autenticação via chave API. Inclua a chave API no cabeçalho da requisição:
-
-```http
-X-API-Key: sua-chave-api-aqui
-```
-
-### Escopos da Chave API
-
-A API usa um sistema de permissões baseado em escopo:
-
-- `data:ingest` - Permissão para ingerir dados de sensores
-- `reports:generate` - Permissão para gerar relatórios
-- `tasks:update` - Permissão para submeter decisões humanas
-
-## Endpoints Principais
-
-### Ingestão de Dados
-
-#### POST /api/v1/data/ingest
-
-Ingere dados de sensores no sistema Smart Maintenance para processamento e análise.
-
-**Corpo da Requisição:**
-```json
-{
-  "sensor_id": "TEMP_001",
-  "value": 25.5,
-  "sensor_type": "temperature",
-  "unit": "celsius",
-  "location": "Piso da Fábrica A",
-  "timestamp": "2025-06-11T10:30:00Z"
-}
-```
-
-**Resposta (200 OK):**
-```json
-{
-  "message": "Dados ingeridos com sucesso",
-  "timestamp": "2025-06-11T10:30:00Z",
-  "sensor_id": "TEMP_001",
-  "correlation_id": "req_123456789"
-}
-```
-
-**Tipos de Sensor Suportados:**
-- `temperature` (temperatura)
-- `vibration` (vibração)
-- `pressure` (pressão)
-- `humidity` (umidade)
-- `current` (corrente)
-- `voltage` (voltagem)
-
-### Geração de Relatórios
-
-#### POST /api/v1/reports/generate
-
-Gera vários relatórios de manutenção e sistema baseados no tipo de relatório especificado.
-
-**Corpo da Requisição:**
-```json
-{
-  "report_type": "anomaly_summary",
-  "start_date": "2025-05-11",
-  "end_date": "2025-06-11",
-  "output_format": "json",
-  "include_charts": false
-}
-```
-
-**Resposta (200 OK):**
-```json
-{
-  "report_id": "rpt_987654321",
-  "report_type": "anomaly_summary",
-  "generated_at": "2025-06-11T10:30:00Z",
-  "report_data": {
-    "summary": "Análise de anomalias dos últimos 30 dias",
-    "total_anomalies": 15,
-    "critical_anomalies": 3,
-    "anomalies_by_type": {
-      "temperature": 8,
-      "vibration": 5,
-      "pressure": 2
-    }
-  },
-  "metadata": {
-    "date_range": "2025-05-11 to 2025-06-11",
-    "total_sensors": 45,
-    "data_points_analyzed": 12450
-  }
-}
-```
-
-**Tipos de Relatório Disponíveis:**
-- `anomaly_summary` - Resumo de anomalias detectadas
-- `system_health` - Relatório geral de saúde do sistema
-- `maintenance_summary` - Resumo de atividades de manutenção
-- `performance_summary` - Métricas de performance do sistema
-
-### Submissão de Decisão Humana
-
-#### POST /api/v1/decisions/submit
-
-Submete feedback humano ou decisões sobre consultas solicitadas pelo sistema para aprovação/rejeição de manutenção.
-
-**Corpo da Requisição:**
-```json
-{
-  "request_id": "req_maintenance_123",
-  "decision": "approve",
-  "justification": "Equipamento crítico requer atenção imediata",
-  "submitted_by": "operator_001"
-}
-```
-
-**Resposta (200 OK):**
-```json
-{
-  "message": "Decisão submetida com sucesso",
-  "request_id": "req_maintenance_123",
-  "decision": "approve",
-  "timestamp": "2025-06-11T10:30:00Z",
-  "status": "processed"
-}
-```
-
-**Opções de Decisão:**
-- `approve` - Aprovar a solicitação de manutenção
-- `reject` - Rejeitar a solicitação de manutenção
-- `defer` - Adiar a decisão para revisão posterior
-
-## Endpoints de Verificação de Saúde
-
-### GET /health
-
-Endpoint básico de verificação de saúde para verificar disponibilidade da API.
-
-**Resposta (200 OK):**
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-06-11T10:30:00Z",
-  "version": "v1.0.0"
-}
-```
-
-### GET /health/detailed
-
-Verificação detalhada de saúde incluindo status do banco de dados e serviços.
-
-**Resposta (200 OK):**
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-06-11T10:30:00Z",
-  "services": {
-    "database": "healthy",
-    "event_bus": "healthy",
-    "ml_services": "healthy"
-  },
-  "version": "v1.0.0"
-}
-```
-
-## Tratamento de Erros
-
-A API usa códigos de status HTTP padrão e retorna respostas de erro estruturadas:
-
-### Formato de Resposta de Erro
-
-```json
-{
-  "error": {
-    "code": "INVALID_REQUEST",
-    "message": "O corpo da requisição é inválido",
-    "details": {
-      "field": "sensor_id",
-      "issue": "Este campo é obrigatório"
-    }
-  },
-  "timestamp": "2025-06-11T10:30:00Z",
-  "request_id": "req_error_123"
-}
-```
-
-### Códigos de Erro Comuns
-
-- `400 Bad Request` - Formato de requisição inválido ou campos obrigatórios ausentes
-- `401 Unauthorized` - Chave API ausente ou inválida
-- `403 Forbidden` - Permissões insuficientes para a operação solicitada
-- `404 Not Found` - Recurso solicitado não encontrado
-- `422 Unprocessable Entity` - Falha na validação da requisição
-- `500 Internal Server Error` - Erro inesperado do servidor
-
-## Limitação de Taxa
-
-A API implementa limitação de taxa para garantir uso justo:
-
-- **Ingestão de Dados**: 100 requisições por minuto por chave API
-- **Geração de Relatórios**: 10 requisições por minuto por chave API
-- **Submissão de Decisões**: 50 requisições por minuto por chave API
-
-Cabeçalhos de limite de taxa são incluídos em todas as respostas:
-
-```http
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 95
-X-RateLimit-Reset: 1623456789
-```
-
-## Exemplos
-
-### Fluxo de Trabalho Completo de Ingestão de Dados
+### Load Testing MLflow Registry
 
 ```bash
-# 1. Ingerir dados de sensor
-curl -X POST "http://localhost:8000/api/v1/data/ingest" \
-  -H "X-API-Key: sua-chave-api" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sensor_id": "TEMP_001",
-    "value": 85.5,
-    "sensor_type": "temperature",
-    "unit": "celsius",
-    "location": "Piso da Fábrica A"
-  }'
-
-# 2. Gerar relatório de anomalias
-curl -X POST "http://localhost:8000/api/v1/data/ingest" \
-  -H "X-API-Key: sua-chave-api" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "report_type": "anomaly_summary",
-    "start_date": "2025-05-11",
-    "end_date": "2025-06-11"
-  }'
-
-# 3. Submeter decisão de manutenção
-curl -X POST "http://localhost:8000/api/v1/decisions/submit" \
-  -H "X-API-Key: sua-chave-api" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "request_id": "req_maintenance_123",
-    "decision": "approve",
-    "justification": "Anomalia de temperatura requer atenção imediata"
-  }'
+# Run MLflow Registry load test with Locust
+docker compose run --rm -v $(pwd):/app -w /app --service-ports ml \
+  locust -f locustfile.py --host http://mlflow:5000 \
+  --users 5 --run-time 2m --headless --print-stats
 ```
+
+## Production Deployment Notes
+
+### Model Performance Achievements
+
+Based on the latest comprehensive system analysis (Sprint 10.5):
+
+#### Forecasting Performance
+- **Best Model**: Prophet Tuned (hyperparameter optimized)
+- **Performance**: 2.8258 MAE vs 3.5704 naive baseline
+- **Improvement**: 20.86% reduction in forecasting error
+- **Status**: Production-ready and validated
+
+#### Model Comparison Results
+```
+🏆 MODEL PERFORMANCE HIERARCHY:
+├── Prophet Tuned (Best):     2.8258 MAE ← RECOMMENDED
+├── Prophet v2 Enhanced:      2.8402 MAE
+├── LightGBM Challenger:      3.0994 MAE
+└── Naive Baseline:           3.5704 MAE
+```
+
+#### System Health Validation
+- **Infrastructure**: All 7 Docker containers operational (100% uptime)
+- **MLflow Integration**: Comprehensive experiment tracking at http://localhost:5000
+- **Database Performance**: TimescaleDB with 9,000+ sensor readings
+- **Load Testing**: MLflow Registry validated under concurrent access (0 failures)
+
+### Scalability Considerations
+
+- **Idempotency Cache**: Currently in-memory per replica. For multi-replica deployments, consider Redis backend
+- **Database**: TimescaleDB with compression policies for time-series data retention
+- **Event Bus**: Retry logic with exponential backoff prevents cascade failures
+- **ML Pipeline**: Containerized workflow supports horizontal scaling
+
+### Monitoring Integration
+
+- **Prometheus**: Native metrics endpoint ready for scraping
+- **Grafana**: Can be connected to visualize API performance
+- **Structured Logging**: JSON format ready for ELK/Loki ingestion
+- **Correlation IDs**: End-to-end request tracing across microservices
+- **MLflow Tracking**: Complete experiment lifecycle monitoring
+
+### Security Hardening
+
+- **STRIDE Analysis**: Comprehensive threat model in `docs/SECURITY.md`
+- **Input Validation**: Pydantic schemas prevent injection attacks
+- **Rate Limiting**: Prevents DoS and abuse
+- **API Key Management**: Scope-based permissions with rotation support
+- **Container Security**: Minimal attack surface with production-grade images
