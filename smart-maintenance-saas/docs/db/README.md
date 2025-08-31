@@ -1,288 +1,369 @@
-# Database Architecture Documentation
+# Smart Maintenance SaaS - Complete Documentation Index
 
-This document describes the production database architecture for Smart Maintenance SaaS, detailing our strategic design decisions, performance optimizations, and operational features.
+## Core Documentation
 
-## Overview
+### Getting Started
 
-Our database architecture leverages **TimescaleDB** for time-series data with PostgreSQL for relational integrity, designed specifically for industrial IoT sensor data ingestion and analysis at scale.
+- **[Main README](../../../README.md)** - Project overview, quick start, and repository structure
+- **[Backend README](../../README.md)** - Docker deployment and getting started guide
+- **[Development Orientation](../../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
 
-**Key Architectural Decisions (as of 2025-08-25)**:
-- **TimescaleDB Hypertables**: Optimized for high-volume time-series sensor data
-- **Composite Indexing Strategy**: Strategic indexing for ML query patterns
-- **Continuous Aggregates (CAGG)**: Pre-computed aggregations for dashboard performance
-- **Automated Data Lifecycle**: Compression and retention policies for storage efficiency
+### Project History & Changelog
 
-# Database Architecture Documentation
+- **[30-Day Sprint Changelog](../../../30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](../../../final_30_day_sprint.md)** - Executive summary of sprint achievements
 
-This document describes the production database architecture for Smart Maintenance SaaS, detailing our strategic design decisions, performance optimizations, and operational features.
+## System Architecture & Design
 
-## System Overview
+### Architecture Documentation
 
-Our database architecture leverages **TimescaleDB** for time-series data with PostgreSQL for relational integrity, designed specifically for industrial IoT sensor data ingestion and analysis at scale.
+- **[System and Architecture](../SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
+- **[System Screenshots](../SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
+- **[Comprehensive System Analysis](../COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
+- **[Microservice Migration Strategy](../MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
 
-**Key Architectural Decisions (as of 2025-08-25)**:
+### Database Design
 
-- **TimescaleDB Hypertables**: Optimized for high-volume time-series sensor data
-- **Composite Indexing Strategy**: Strategic indexing for ML query patterns
-- **Continuous Aggregates (CAGG)**: Pre-computed aggregations for dashboard performance
-- **Automated Data Lifecycle**: Compression and retention policies for storage efficiency
+- **[Database Documentation](./README.md)** - Database schema and design documentation
+- **[Database ERD](./erd.dbml)** - Entity Relationship Diagram source
+- **[Database ERD (PNG)](./erd.png)** - Entity Relationship Diagram visualization
+- **[Database ERD (Dark Mode)](./erd_darkmode.png)** - Entity Relationship Diagram (dark theme)
+- **[Database Schema](./schema.sql)** - Complete SQL schema definition
 
-## Schema Overview
+## API & Integration
 
-### Core Tables
+### API Documentation
 
-#### sensors (Asset Registry)
+- **[API Reference](../api.md)** - Complete REST API documentation and examples
+- **[Configuration Management](../../core/config/README.md)** - Centralized configuration system
+- **[Logging Configuration](../../core/logging_config.md)** - Structured JSON logging setup
 
-- `id` (uuid, PK, default gen_random_uuid())
-- `sensor_id` (varchar(255), unique, not null) — business identifier
-- `type` (varchar(50), not null) — sensor type (temperature, vibration, pressure, etc.)
-- `location` (varchar(255))
-- `status` (enum sensor_status, default 'active')
-- `created_at`, `updated_at` (timestamptz, defaults)
+## Performance & Testing
 
-**Purpose**: Central registry for all sensor assets with lifecycle management.
+### Performance Documentation
 
-#### sensor_readings (TimescaleDB Hypertable)
+- **[Performance Baseline](../PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
+- **[Day 17 Load Test Report](../DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
+- **[Day 18 Performance Results](../DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
+- **[Load Testing Instructions](../LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
 
-- `id` (integer, PK, auto-generated sequence)
-- `timestamp` (timestamptz, not null) — measurement timestamp
-- `sensor_id` (varchar(255), not null) — FK to sensors.sensor_id
-- `value` (float8, not null) — sensor measurement value
-- `unit` (varchar(50)) — measurement unit
-- `quality` (float8) — data quality score (0.0-1.0)
+### Testing Documentation
 
-**Purpose**: High-volume time-series data storage with TimescaleDB optimization.
+- **[Test Documentation](../../tests/README.md)** - Test organization and execution guide
+- **[Coverage Improvement Plan](../COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
 
-### Supporting Tables
+## Machine Learning & Data Science
 
-#### maintenance_logs
+### ML Documentation
 
-- Complete maintenance activity history
-- Links to sensor assets and maintenance tasks
-- Immutable log for audit and analysis
+- **[ML Documentation](../ml/README.md)** - Machine learning models and pipelines
+- **[Models Summary](../MODELS_SUMMARY.md)** - Overview of all 17+ production models
+- **[Project Gauntlet Plan](../PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
 
-#### anomaly_alerts
+## Security & Operations
 
-- ML-generated anomaly detection events
-- Severity classification and status tracking
-- Evidence storage for investigation
+### Security Documentation
 
-## TimescaleDB Integration
+- **[Security Documentation](../SECURITY.md)** - Security architecture and implementation
+- **[Security Audit Checklist](../SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
 
-### Hypertable Configuration
+### Service Documentation
 
-The `sensor_readings` table is configured as a **TimescaleDB hypertable** to handle high-volume time-series data efficiently:
+- **[Anomaly Service](../../services/anomaly_service/README.md)** - Future anomaly detection microservice
+- **[Prediction Service](../../services/prediction_service/README.md)** - Future ML prediction microservice
 
-- **Partitioning**: Automatic time-based partitioning for query performance
-- **Compression**: Automatic compression of older data chunks
-- **Parallel Processing**: Distributed query execution across partitions
+---
 
-### Benefits of TimescaleDB
+*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
 
-- **Insert Performance**: Optimized for high-volume concurrent sensor data ingestion
-- **Query Performance**: Time-based partitioning accelerates temporal queries
-- **Storage Efficiency**: Built-in compression reduces storage footprint by 90%+
-- **Scalability**: Horizontal scaling capabilities for enterprise deployments
+---
 
-## Performance Optimization Rationale
+# Database Architecture (TimescaleDB Production Design)
 
-### Composite Index Strategy
+Authoritative description of the production time‑series data layer powering ingestion, ML feature extraction, drift detection, and analytics. Synchronized with sprint changelog through Day 23.
 
-**Primary Index: `(sensor_id, timestamp DESC)`**
+---
 
-This composite index was strategically designed to accelerate the most common ML query pattern:
+## 1. Purpose
 
+Deliver a resilient, low‑latency, evolvable storage layer for:
+- High‑volume sensor ingestion (predictive maintenance telemetry)
+- Efficient sliding window & recent-history ML queries
+- Pre‑aggregated statistics to reduce CPU and IO during analytics
+- Lifecycle management (retention + compression) to control cost
+
+---
+
+## 2. Architectural Principles
+
+| Principle | Implementation |
+|-----------|----------------|
+| Time-series native | TimescaleDB hypertable (`sensor_readings`) |
+| Query locality | Composite descending index `(sensor_id, timestamp DESC)` |
+| Pre-compute heavy scans | Continuous Aggregate (hourly) with refresh policy |
+| Operational safety | Manual migrations (no auto-run at container start) |
+| Cost control | Compression ≥7d, retention at 180d (tunable) |
+| Observability | CAGG job + chunk stats inspectable via Timescale views |
+| Evolvability | Narrow, focused Alembic revisions; CAGG created manually (outside txn) |
+
+---
+
+## 3. Core Schema (Logical)
+
+Table | Purpose | Notes
+------|---------|------
+`sensors` | Asset registry | Business key = `sensor_id`
+`sensor_readings` (hypertable) | Raw time-series metrics | PK: (`timestamp`, `sensor_id`) + surrogate `id` (sequence)
+`anomaly_alerts` | Persisted anomaly events | Enriched by ML agents
+`maintenance_logs` | Action & intervention history | Downstream analytics
+(Plus) auxiliary alembic metadata tables.
+
+Key Columns (sensor_readings):
+- `timestamp TIMESTAMPTZ NOT NULL`
+- `sensor_id VARCHAR(255) NOT NULL`
+- `value DOUBLE PRECISION NOT NULL`
+- `unit VARCHAR(50)`
+- `quality DOUBLE PRECISION`
+- `id INT DEFAULT nextval('sensor_readings_id_seq')` (surrogate for ORM convenience)
+
+---
+
+## 4. Time-Series Strategy
+
+Feature | Rationale
+--------|----------
+Hypertable partitioning | Automatic chunking for time pruning & parallelism
+Descending composite index | Fast “latest N” retrieval (ML sliding windows)
+Additional timestamp index | Pure time-range scans & retention enforcement
+CAGG Hourly summary | Pre-aggregates reduce repeated raw scans
+Policies (compression + retention) | Keep working set hot; archive older compressed
+Manual CAGG creation | Timescale restriction: cannot create inside Alembic transaction
+
+---
+
+## 5. Migration & Evolution Timeline (Changelog Trace)
+
+| Day | Change | Outcome |
+|-----|--------|---------|
+| 5 | Primary key redesign attempt (compression constraints) | Avoided DROP on compressed hypertable; kept surrogate `id` |
+| 12 | Composite index addition | Enabled drift & prediction window acceleration |
+| 15 | Sequence recreation (`sensor_readings_id_seq`) | Fixed `NOT NULL` insert failures |
+| 18 | Performance-focused index + CAGG migration created (index only) | CAGG applied manually (non-transactional) |
+| 18 (Verification) | Idempotent upgrade/downgrade & refresh validation | Ensured safe replays |
+| 22 | Documentation & rationale formalized | Production hand-off readiness |
+
+---
+
+## 6. Indexing Strategy & Rationale
+
+Index | Purpose | Workloads Accelerated
+------|---------|-----------------------
+`(sensor_id, timestamp DESC)` | Locate most recent observations quickly | Drift tests, sliding ML feature windows, real-time dashboards
+`(timestamp)` | Pure chronological scans | Bulk exports, retention housekeeping, backfill jobs
+Primary Key (`timestamp`, `sensor_id`) | Natural uniqueness & time pruning | CAGG backfill, duplicate prevention (logical layer)
+
+Descending order on composite index aligns with “give me last 1k points” eliminating extra sort.
+
+---
+
+## 7. Continuous Aggregate (CAGG)
+
+Name: `sensor_readings_summary_hourly`  
+Definition (conceptual):
 ```sql
--- Optimized query pattern for ML feature engineering
-SELECT value, timestamp 
-FROM sensor_readings 
-WHERE sensor_id = 'sensor-001' 
-ORDER BY timestamp DESC 
-LIMIT 1000;
-```
-
-**Performance Impact**:
-
-- **Query Type**: Single-sensor time-series data retrieval
-- **Use Cases**: ML model inference, drift detection, anomaly analysis
-- **Optimization**: Index covers both filter condition and sort operation
-- **Result**: Sub-millisecond query execution for ML workloads
-
-### Continuous Aggregates (CAGG)
-
-**Implementation**: `sensor_readings_summary_hourly`
-
-Pre-computed hourly aggregations dramatically improve dashboard and analytics performance:
-
-```sql
--- CAGG automatically maintains these aggregations:
-SELECT 
-    sensor_id,
-    time_bucket('1 hour', timestamp) as hour,
-    avg(value) as avg_value,
-    min(value) as min_value,
-    max(value) as max_value,
-    count(*) as reading_count
+SELECT
+  sensor_id,
+  time_bucket('1 hour', timestamp) AS hour,
+  avg(value) AS avg_value,
+  max(value) AS max_value,
+  min(value) AS min_value,
+  count(*) AS reading_count
 FROM sensor_readings
 GROUP BY sensor_id, hour;
 ```
 
-**Performance Gains Achieved**:
+Refresh Policy:
+- Schedule: every 30 minutes
+- Window: start_offset = 2h (captures late arrivals), end_offset = 30m (stability)
+- Reasoning: Balances freshness vs avoiding constant recompute on “still-hot” hour
 
-- **Baseline Query Time**: ~2.4 seconds (full table scan)
-- **CAGG Query Time**: ~1.5 seconds (pre-computed aggregates)
-- **Performance Improvement**: **37.3% reduction** in query execution time
-- **Dashboard Impact**: Real-time analytics without performance degradation
+Transaction Limitation:
+- Created manually via psql (cannot occur within Alembic transactional block)
+- Migration includes documentation stub referencing manual step
 
-### Data Lifecycle Policies
+---
 
-#### Automated Compression
+## 8. Performance Benchmarks (Day 18)
 
-**Policy**: Compress data chunks older than 7 days
+Metric | Baseline (Raw) | Optimized (CAGG / Index) | Gain
+-------|----------------|--------------------------|-----
+Hourly aggregate fetch | ~2.4s (full scan) | ~1.5s | 37.3% faster
+Aggregation rows scanned (24h) | 1,439 | 240 | 83.3% fewer rows
+Single-sensor recent window lookup | Sort + filter | Index-only | Sub-ms stable
+Planning time (representative query) | 8.76ms | 3.51ms | 59.9% faster
 
-- **Storage Savings**: 90%+ compression ratio typical for sensor data
-- **Query Performance**: Transparent decompression during queries
-- **Cost Optimization**: Dramatic reduction in storage costs for historical data
+Impact:
+- Lower DB CPU under concurrent forecasting & drift
+- Predictable latency supports SLO (<5s drift check; achieved ~3ms endpoint time given DB offload)
 
-**Implementation**:
+---
 
-```sql
-SELECT add_compression_policy('sensor_readings', INTERVAL '7 days');
-```
+## 9. Data Lifecycle Policies
 
-#### Automated Retention
+Policy | Setting | Rationale
+-------|---------|----------
+Compression | Age ≥ 7 days | Keeps recent hot window uncompressed for frequent ML queries
+Retention | 180 days | Balance forensic horizon & storage cost; configurable via future migration
+Backfill | Natural via hypertable | CAGG recalculates historical windows on demand if needed
 
-**Policy**: Retain data for 180 days, automatically drop older chunks
+Compression reduces storage (target 90% typical sensor series) while keeping decompress cost acceptable for infrequent historical pulls.
 
-- **Compliance**: Configurable retention for regulatory requirements
-- **Storage Management**: Automatic cleanup prevents unlimited storage growth
-- **Performance**: Eliminates need for manual data purging operations
+---
 
-**Implementation**:
+## 10. Query Archetypes & Optimization Mapping
 
-```sql
-SELECT add_retention_policy('sensor_readings', INTERVAL '180 days');
-```
+Archetype | Example | Optimization Lever
+----------|---------|-------------------
+Latest N window | Last 1,000 rows for sensor | Composite DESC index
+Drift comparison | Reference vs current window (two ranges) | Composite index + narrowed range scans
+Hourly dashboard | 24h summary per sensor | CAGG (pre-aggregation)
+Long-range export | All rows > date | Timestamp index pruning
+Anomaly root cause | Outlier band + time filter | Index assists predicate + LIMIT ordering
 
-## Indexing Strategy
+---
 
-### Primary Indexes
+## 11. ML & Analytics Integration
 
-1. **Composite Index**: `(sensor_id, timestamp DESC)`
-   - **Purpose**: ML query optimization
-   - **Coverage**: Single-sensor time-series analysis
-   - **Performance**: Optimizes ORDER BY timestamp DESC operations
+Use Case | DB Dependency
+---------|--------------
+Feature Engineering | Rapid latest-window extraction (descending index)
+Drift Detection (KS / PSI) | Two time buckets; index ensures bounded scan
+Model Retraining Windows | Consistent slice retrieval ensures reproducibility
+Intelligent Model Selection (metadata tagging) | DB not primary; ensures fast sensor stats for UI context
+Forecasting | Hourly aggregates as engineered covariates (avoids repeated raw scans)
 
-2. **Foreign Key Indexes**: Automatic indexing on all FK relationships
-   - **sensor_readings.sensor_id** → sensors.sensor_id
-   - **maintenance_logs.task_id** → maintenance_tasks.id
-   - **anomaly_alerts.sensor_id** → sensors.sensor_id
+---
 
-### Query Optimization Examples
+## 12. Operational Runbook
 
-**Efficient ML Feature Extraction**:
+Action | Command / Procedure
+------|---------------------
+Apply migrations | `docker compose exec api alembic upgrade heads`
+Verify heads | `docker compose exec api alembic heads`
+List current revision | `docker compose exec api alembic current`
+Create new index migration | Inside container: `alembic revision -m "add_x"` then edit
+Backfill CAGG manually | `CALL refresh_continuous_aggregate('sensor_readings_summary_hourly', NULL, NULL);`
+Check refresh jobs | `SELECT * FROM timescaledb_information.jobs;`
+Inspect chunk compression | `SELECT * FROM timescaledb_information.hypertable_compression_stats;`
+Force export | `python scripts/export_sensor_data_csv.py [--incremental]`
+Sequence integrity check | `SELECT last_value FROM sensor_readings_id_seq;`
 
-```sql
--- Optimized by composite index
-SELECT value, timestamp, quality
-FROM sensor_readings 
-WHERE sensor_id = ? 
-  AND timestamp >= NOW() - INTERVAL '1 hour'
-ORDER BY timestamp DESC;
-```
+---
 
-**Dashboard Aggregations**:
+## 13. Troubleshooting Matrix
 
-```sql
--- Optimized by CAGG
-SELECT hour, avg_value, max_value 
-FROM sensor_readings_summary_hourly 
-WHERE sensor_id = ? 
-  AND hour >= NOW() - INTERVAL '24 hours';
-```
+Symptom | Likely Cause | Resolution
+--------|--------------|-----------
+CAGG not updating | Refresh policy not present / job disabled | Re-run `add_continuous_aggregate_policy`
+Slow drift endpoint | Missing composite index or huge window | Confirm index; reduce window_minutes
+Insert fails on `id` null | Sequence default missing (legacy migration) | Recreate sequence & set default (Day 15 fix)
+Multiple alembic heads | Parallel branch merges | Manual merge revision or upgrade both heads
+Permission denied during manual psql | Container user mismatch | Execute via `docker compose exec db psql …`
+Large query memory | Unbounded raw scan | Utilize CAGG or add predicate narrowing
 
-## Database Schema Files
+---
 
-### Current Schema Documentation
+## 14. Observability Focus
 
-- **ERD Source**: `docs/db/erd.dbml` - Authoritative schema definition
-- **ERD Visualization**: `docs/db/erd.png` - Generated entity-relationship diagram
-- **SQL Schema**: `docs/db/schema.sql` - Complete PostgreSQL/TimescaleDB schema
-- **Migration History**: `alembic_migrations/versions/` - Complete migration chain
+Metric / View | Purpose
+--------------|--------
+`timescaledb_information.jobs` | CAGG refresh job health
+Query latency (app metrics) | Detect regression post new index/migration
+Chunk count / size | Capacity planning
+Compression ratio | Storage efficiency tracking
+Dead tuples (VACUUM stats) | Assess bloat (less critical on append-only)
+Blocked sessions | Lock contention detection (should be minimal)
 
-### Schema Generation Commands
+---
 
-**Export Current Schema**:
+## 15. Resilience & Safety Considerations
+
+Aspect | Mitigation
+-------|-----------
+Migration Blast Radius | No auto-run; explicit manual invocation
+Sequence Drift | Documented recovery script (Day 15)
+CAGG Creation Failure | Manual interactive step w/ documented reason
+Duplicate Ingestion | Application idempotency (Redis) not DB-enforced (keeps DB lean)
+Late Arrivals | Refresh offsets (2h start) incorporate stragglers
+Rollback Safety | Downgrade scripts drop only objects they created (idempotent)
+
+---
+
+## 16. Security Posture
+
+Control | Note
+--------|-----
+Least Privilege | (Recommended) separate RW vs RO roles (future enhancement)
+Secrets | Connection via env (`DATABASE_URL`) only
+No Dynamic SQL | All queries parameterized (ORM / psycopg)
+Data Privacy | Sensor telemetry non-PII; expansion may require masking strategies
+Auditability | Structured app logs w/ correlation_id + request context
+
+---
+
+## 17. Future Enhancements (Roadmap Alignment)
+
+Planned | Rationale
+--------|----------
+Daily & weekly CAGGs | Long-horizon forecasts & seasonal analytics
+Adaptive refresh scheduling | Reduce redundant refresh when low write volume
+Partial indexes (quality threshold) | Specialized analytics acceleration
+Tiered retention (cold archive) | Move >180d data to cheaper storage
+Materialized feature snapshots | Consistent feature sets for retrain reproducibility
+Row-level security (if multi-tenant) | Segregate tenant sensor data
+
+---
+
+## 18. Changelog Traceability Mapping
+
+Feature / Decision | Day(s)
+-------------------|-------
+Hypertable + compression baseline | 5
+Composite index addition & predict stabilization | 12
+Manual migration safety (removal of auto-run) | 12
+Sequence recreation & idempotent ingestion synergy | 15
+Chaos & resilience validation (Redis outages) | 15
+Performance CAGG & benchmark | 18
+Verification & CI hardening (Poetry, idempotency) | 18 (verification)
+Documentation formalization (DB + ML) | 22
+Drift automation & hourly stats usage | 23
+
+---
+
+## 19. Summary
+
+Optimized TimescaleDB layer couples a descending composite index + hourly continuous aggregate + compression/retention to achieve sub‑millisecond sliding queries and 37.3% faster aggregation workloads, while maintaining operational safety through deliberate migration control and transparent performance instrumentation.
+
+---
+
+## 20. Reference Commands (Copy/Paste)
 
 ```bash
-./scripts/export_schema.sh
+# Show CAGG definition
+docker compose exec db psql -U smart_user -d smart_maintenance_db -c "\d+ sensor_readings_summary_hourly"
+
+# Manual CAGG refresh (all)
+docker compose exec db psql -U smart_user -d smart_maintenance_db -c \
+"CALL refresh_continuous_aggregate('sensor_readings_summary_hourly', NULL, NULL);"
+
+# Inspect jobs
+docker compose exec db psql -U smart_user -d smart_maintenance_db -c \
+"SELECT job_id, application_name, hypertable_name, last_run_started_at, next_start FROM timescaledb_information.jobs ORDER BY job_id;"
 ```
 
-**Generate Updated ERD**:
+---
 
-```bash
-./scripts/generate_erd.sh
-```
-
-## Operational Considerations
-
-### Performance Monitoring
-
-**Key Metrics to Monitor**:
-
-- TimescaleDB chunk compression ratios
-- Query execution times for common ML patterns
-- CAGG refresh performance and lag
-- Storage growth rates and retention policy effectiveness
-
-### Maintenance Operations
-
-**Regular Maintenance**:
-
-- Monitor compression policy effectiveness
-- Validate CAGG refresh schedules
-- Review retention policy compliance
-- Analyze query performance patterns
-
-**Scaling Considerations**:
-
-- Hypertable chunk sizing optimization
-- CAGG refresh interval tuning
-- Index usage analysis and optimization
-- Connection pooling for high-concurrency workloads
-
-## Integration with Application Stack
-
-### FastAPI Integration
-
-- **Connection Pooling**: SQLAlchemy async connection management
-- **Migration Management**: Alembic migration chain for schema evolution
-- **ORM Models**: Type-safe database operations with Pydantic validation
-
-### MLOps Integration
-
-- **Feature Engineering**: Optimized queries for ML model training
-- **Real-time Inference**: Fast single-sensor data retrieval for predictions
-- **Drift Detection**: Efficient time-windowed statistical comparisons
-- **Model Training**: Bulk data export capabilities for offline training
-
-### Analytics & Dashboards
-
-- **Streamlit Integration**: Real-time dashboard performance via CAGG
-- **Time-series Visualization**: Native TimescaleDB time-bucket functions
-- **Historical Analysis**: Compressed data access for long-term trend analysis
-
-## Future Enhancements
-
-### Scalability Roadmap
-
-- **Distributed TimescaleDB**: Multi-node deployment for extreme scale
-- **Read Replicas**: Dedicated analytics instances for heavy query workloads
-- **Advanced Compression**: Custom compression algorithms for sensor data patterns
-
-### Advanced Features
-
-- **Real-time Alerts**: Database triggers for immediate anomaly notification
+_All statements sourced from 30-day sprint changelog (authoritative history)._
 - **Automated Rebalancing**: Dynamic chunk management based on query patterns
 - **Advanced Analytics**: Built-in statistical functions and machine learning extensions
 
