@@ -1,285 +1,365 @@
-# Structured JSON Logging
+# Smart Maintenance SaaS - Complete Documentation Index
 
-🇧🇷 **[Clique aqui para ler em Português](#-logging-json-estruturado-português)** | 🇺🇸 **English Version Below**
+## Core Documentation
 
-## 📚 Documentation Links
+### Getting Started
 
-- **[Backend README](../README.md)** - Main documentation and Docker deployment
-- **[System Screenshots](../docs/SYSTEM_SCREENSHOTS.md)** - Complete visual system walkthrough with screenshots
-- **[System Architecture](../docs/SYSTEM_AND_ARCHITECTURE.md)** - Complete system overview
-- **[Future Roadmap](../docs/FUTURE_ROADMAP.md)** - Strategic vision and planned enhancements
-- **[Deployment Status](../docs/DEPLOYMENT_STATUS.md)** - Current system status
-- **[Performance Baseline](../docs/PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics
-- **[Load Testing Instructions](../docs/LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
-- **[API Documentation](../docs/api.md)** - Complete REST API reference and usage examples
+- **[Main README](../../../README.md)** - Project overview, quick start, and repository structure
+- **[Backend README](../../README.md)** - Docker deployment and getting started guide
+- **[Development Orientation](../../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
+
+### Project History & Changelog
+
+- **[30-Day Sprint Changelog](../../../30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](../../../final_30_day_sprint.md)** - Executive summary of sprint achievements
+
+## System Architecture & Design
+
+### Architecture Documentation
+
+- **[System and Architecture](../../docs/SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
+- **[System Screenshots](../../docs/SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
+- **[Comprehensive System Analysis](../../docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
+- **[Microservice Migration Strategy](../../docs/MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
+
+### Database Design
+
+- **[Database Documentation](../../docs/db/README.md)** - Database schema and design documentation
+- **[Database ERD](../../docs/db/erd.dbml)** - Entity Relationship Diagram source
+- **[Database ERD (PNG)](../../docs/db/erd.png)** - Entity Relationship Diagram visualization
+- **[Database ERD (Dark Mode)](../../docs/db/erd_darkmode.png)** - Entity Relationship Diagram (dark theme)
+- **[Database Schema](../../docs/db/schema.sql)** - Complete SQL schema definition
+
+## API & Integration
+
+### API Documentation
+
+- **[API Reference](../../docs/api.md)** - Complete REST API documentation and examples
+- **[Configuration Management](./config/README.md)** - Centralized configuration system
+- **[Logging Configuration](./logging_config.md)** - Structured JSON logging setup
+
+## Performance & Testing
+
+### Performance Documentation
+
+- **[Performance Baseline](../../docs/PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
+- **[Day 17 Load Test Report](../../docs/DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
+- **[Day 18 Performance Results](../../docs/DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
+- **[Load Testing Instructions](../../docs/LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
+
+### Testing Documentation
+
 - **[Test Documentation](../tests/README.md)** - Test organization and execution guide
-- **[Configuration Management](config/README.md)** - Centralized configuration system using Pydantic BaseSettings
-- **[Project Overview](../../README.md)** - High-level project information
+- **[Coverage Improvement Plan](../../docs/COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
+
+## Machine Learning & Data Science
+
+### ML Documentation
+
+- **[ML Documentation](../../docs/ml/README.md)** - Machine learning models and pipelines
+- **[Models Summary](../../docs/MODELS_SUMMARY.md)** - Overview of all 17+ production models
+- **[Project Gauntlet Plan](../../docs/PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
+
+## Security & Operations
+
+### Security Documentation
+
+- **[Security Documentation](../../docs/SECURITY.md)** - Security architecture and implementation
+- **[Security Audit Checklist](../../docs/SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
+
+### Service Documentation
+
+- **[Anomaly Service](../services/anomaly_service/README.md)** - Future anomaly detection microservice
+- **[Prediction Service](../services/prediction_service/README.md)** - Future ML prediction microservice
 
 ---
 
-This module provides structured JSON logging for the Smart Maintenance SaaS application. It configures the Python standard logging system to output logs in JSON format with consistent fields, making them easier to parse and analyze with log management systems.
+*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
 
-## Key Features
+---
 
-- **JSON Format**: All logs are formatted as JSON objects for easier parsing and indexing
-- **Standard Fields**: Every log entry includes timestamp, level, message, logger name, file, line number
-- **Service Information**: Service name and hostname are included in each log entry
-- **Request Tracking**: Support for correlation IDs to track requests across services
-- **Extra Fields**: Support for adding custom fields to log entries
-- **Async Support**: Works well with FastAPI and other async frameworks
+# Structured JSON Logging & Correlation Architecture
 
-## Usage
+This document specifies the production logging architecture for Smart Maintenance SaaS, synchronized with sprint changelog events (Days 4–23).
 
-### Basic Setup
+---
 
-```python
-from core.logging_config import setup_logging, get_logger
+## 1. Purpose
 
-# Initialize logging at application startup
-setup_logging()
+Provide:
+- Machine‑parsable JSON logs
+- Deterministic correlation across HTTP requests, background agents, and event bus messages
+- Low‑overhead diagnostics for performance, ML lifecycle, drift automation, and resilience testing
+- A secure baseline (no secrets / PII) ready for future OpenTelemetry expansion
 
-# Get a module-level logger
-logger = get_logger(__name__)
+---
 
-# Log messages
-logger.info("This is an info message")
-logger.warning("This is a warning message")
-logger.error("This is an error message")
-```
+## 2. Design Goals
 
-### Logging with Extra Fields
+| Goal | Implementation |
+|------|----------------|
+| Correlation across layers | X-Request-ID middleware + ContextVar filter |
+| JSON structure | Single custom Formatter (ISO8601 UTC) |
+| Low overhead | Synchronous stdlib logging (~ microseconds per call) |
+| Extensibility | `extra={}` passthrough & helper filters |
+| Failure transparency | Full exception trace with structured fields |
+| Event lineage | Correlation ID forwarded into events & agents |
+| Security hygiene | Whitelisted fields; no secret interpolation |
 
-```python
-logger.info(
-    "User performed action",
-    extra={
-        "user_id": 123,
-        "action": "login",
-        "duration_ms": 120,
-    },
-)
-```
+---
 
-### Class-based Logging
+## 3. Architecture Overview (Flow)
 
-```python
-class UserService:
-    def __init__(self):
-        self.logger = get_logger(f"{__name__}.UserService")
+Client → FastAPI Middleware (assign / propagate X-Request-ID) → Business / ML layer log calls (ContextVar supplies correlation_id) → Event Bus publisher adds same correlation_id into event payload → Background agent / retrain worker restores correlation context → JSON emitted to STDOUT (container runtime) → Aggregated by log collector (ELK / Loki future).
 
-    def authenticate(self, username):
-        self.logger.info("Authenticating user", extra={"username": username})
-        # ...
-```
+---
 
-### Exception Logging
+## 4. Core Components
 
-```python
-try:
-    result = 1 / 0  # This will raise a ZeroDivisionError
-except Exception as e:
-    logger.exception(
-        "Error during calculation",
-        extra={
-            "operation": "division",
-            "error_type": type(e).__name__,
-        },
-    )
-```
+| Component | Role |
+|-----------|------|
+| `setup_logging()` | Initializes root logger, sets JSON formatter, attaches stream handler (idempotent) |
+| `get_logger(name)` | Returns module / domain logger pre-configured |
+| `CorrelationIdFilter` (ContextVar) | Injects `correlation_id` into every record if present |
+| Request ID Middleware (`apps/api/middleware/request_id.py`) | Extract or create UUIDv4; sets header + context |
+| Event Bus (`core/events/event_bus.py`) | Includes correlation_id in published event dict |
+| Retry Wrapper (tenacity) | Emits attempt count & backoff semantics in structured logs |
 
-### Request Context Logging
+---
 
-The `RequestContextFilter` class can be used to add request context (like request IDs) to all logs during a request:
+## 5. Log Schema
 
-```python
-@app.middleware("http")
-async def log_request_middleware(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
-    request_filter = RequestContextFilter(request_id)
-    logger.addFilter(request_filter)
+Field | Description
+------|------------
+timestamp | UTC ISO8601 with microseconds
+level | Log level (INFO, WARNING, ERROR, DEBUG)
+message | Human-readable event description
+logger | Logger name (module dotted path)
+service | Static service identifier (e.g. api, drift_agent)
+correlation_id | Request / workflow trace UUID
+file | Origin filename
+line | Source line number
+process / thread | Execution context
+hostname | Container host identifier
+event_type (optional) | Domain event name (e.g. AnomalyDetectedEvent)
+model_name / model_version (optional) | ML operation context
+attempt / max_attempts (optional) | Retry metadata
+duration_ms (optional) | Operation latency
+extra-* | Any additional domain fields via `extra={}`
 
-    try:
-        # Process request
-        response = await call_next(request)
-        return response
-    finally:
-        # Always remove the filter
-        logger.removeFilter(request_filter)
-```
-
-## Examples
-
-The project includes practical examples of using the logging system:
-
-- **[Basic Logging Example](../examples/logging_example.py)** - Demonstrates basic logging functionality and best practices
-- **[FastAPI Logging Example](../examples/fastapi_logging_example.py)** - Shows integration with FastAPI including request context tracking
-
-These examples show real-world usage patterns and can serve as templates for implementing logging in your modules.
-
-## Production Usage
-
-The logging system is actively used throughout the application:
-
-- **API Layer**: FastAPI application logs requests and responses with correlation IDs
-- **Agent System**: Decision agents use structured logging for traceability
-- **Service Layer**: Business logic components log operations with contextual information
-- **Error Handling**: Comprehensive exception logging with stack traces and context
-
-## Log Format
-
-Each log entry includes:
-
-- `timestamp`: ISO8601 format timestamp (UTC)
-- `level`: Log level (INFO, WARNING, ERROR, etc.)
-- `name`: Logger name
-- `message`: Log message
-- `service`: Service name
-- `hostname`: Host identifier
-- `file`: Source file
-- `line`: Line number
-- `process` and `process_name`: Process info
-- `thread` and `thread_name`: Thread info
-- `correlation_id`: Request ID (when available)
-- Any additional fields passed via `extra`
-
-## Example Output
+Example (anomaly model load):
 
 ```json
 {
-  "timestamp": "2025-05-28T12:30:38.161550Z",
+  "timestamp": "2025-08-26T19:42:11.281904Z",
   "level": "INFO",
-  "name": "api",
-  "message": "User authenticated successfully",
-  "service": "smart-maintenance-saas",
-  "hostname": "server-01",
-  "file": "user_service.py",
-  "line": 56,
-  "process": 123456,
-  "process_name": "MainProcess",
-  "thread": 140123456789,
-  "thread_name": "MainThread",
-  "correlation_id": "44f05c3e-6723-4b97-a208-3d874a3c50c7",
-  "username": "john.doe",
-  "roles": ["user", "admin"],
-  "auth_method": "password"
+  "message": "Model loaded",
+  "logger": "apps.ml.model_loader",
+  "service": "api",
+  "correlation_id": "0b7e9e9c-0d3a-47bb-9a7b-a0d2f1f7c901",
+  "model_name": "vibration_anomaly_isolationforest",
+  "model_version": "3",
+  "duration_ms": 18.4
 }
 ```
 
-## 🇧🇷 Logging JSON Estruturado (Português)
+---
 
-Este módulo fornece logging JSON estruturado para a aplicação Smart Maintenance SaaS. Configura o sistema de logging padrão do Python para produzir logs em formato JSON com campos consistentes, facilitando a análise e parsing com sistemas de gerenciamento de logs.
+## 6. Correlation & Propagation
 
-## Características Principais
+Source | Mechanism
+-------|----------
+Inbound HTTP | `X-Request-ID` header (client-supplied or generated)
+Event Bus | Field copied when publishing
+Background Agents (drift / retrain) | Restored from event payload into ContextVar
+Nested Calls | Child loggers inherit filter
+External API / future microservices | Pass `X-Request-ID` forward; treat absence as new root span
 
-- **Formato JSON**: Todos os logs são formatados como objetos JSON para facilitar parsing e indexação
-- **Campos Padrão**: Cada entrada de log inclui timestamp, nível, mensagem, nome do logger, arquivo, número da linha
-- **Informações do Serviço**: Nome do serviço e hostname são incluídos em cada entrada de log
-- **Rastreamento de Requisições**: Suporte para IDs de correlação para rastrear requisições entre serviços
-- **Campos Extras**: Suporte para adicionar campos personalizados às entradas de log
-- **Suporte Assíncrono**: Funciona bem com FastAPI e outros frameworks assíncronos
+If correlation id missing in log lines → check middleware order or early import (see troubleshooting).
 
-## Uso
+---
 
-### Configuração Básica
+## 7. Usage Patterns
+
+### 7.1 Basic
 
 ```python
-from core.logging_config import setup_logging, get_logger
-
-# Inicializar logging na inicialização da aplicação
-setup_logging()
-
-# Obter um logger no nível do módulo
+from core.logging_config import get_logger
 logger = get_logger(__name__)
-
-# Registrar mensagens
-logger.info("Esta é uma mensagem de info")
-logger.warning("Esta é uma mensagem de aviso")
-logger.error("Esta é uma mensagem de erro")
+logger.info("Scheduled drift check started")
 ```
 
-### Logging com Campos Extras
+### 7.2 With Extra Fields
 
 ```python
 logger.info(
-    "Usuário realizou ação",
-    extra={
-        "user_id": 123,
-        "action": "login",
-        "duration_ms": 120,
-    },
+    "Drift metrics computed",
+    extra={"model_name": model, "p_value": round(p, 5), "ks_stat": stat}
 )
 ```
 
-### Logging Baseado em Classe
-
-```python
-class UserService:
-    def __init__(self):
-        self.logger = get_logger(f"{__name__}.UserService")
-
-    def authenticate(self, username):
-        self.logger.info("Autenticando usuário", extra={"username": username})
-        # ...
-```
-
-### Logging de Exceções
+### 7.3 Exception Logging
 
 ```python
 try:
-    result = 1 / 0  # Isso irá gerar um ZeroDivisionError
-except Exception as e:
-    logger.exception(
-        "Erro durante cálculo",
-        extra={
-            "operation": "division",
-            "error_type": type(e).__name__,
-        },
-    )
+    loader.load_model(name, version)
+except Exception:
+    logger.exception("Model load failed", extra={"model_name": name, "model_version": version})
 ```
 
-### Logging de Contexto de Requisição
+### 7.4 Retry (Event Bus Handler)
 
-A classe `RequestContextFilter` pode ser usada para adicionar contexto de requisição (como IDs de requisição) a todos os logs durante uma requisição:
+Inside retry-decorated function, augment with attempt metadata:
 
 ```python
-@app.middleware("http")
-async def log_request_middleware(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
-    request_filter = RequestContextFilter(request_id)
-    logger.addFilter(request_filter)
-
-    try:
-        # Processar requisição
-        response = await call_next(request)
-        return response
-    finally:
-        # Sempre remover o filtro
-        logger.removeFilter(request_filter)
+logger.warning(
+    "Event handler retry",
+    extra={"event_type": event.type, "attempt": attempt, "max_attempts": max_attempts}
+)
 ```
 
-## Exemplos
+### 7.5 ML Lifecycle
 
-O projeto inclui exemplos práticos de uso do sistema de logging:
+Stage | Recommended Fields
+------|-------------------
+Train start | model_name, dataset, run_id
+Train complete | model_name, metrics dict, duration_ms
+Drift detected | model_name, p_value, window_minutes
+Retrain scheduled | model_name, trigger="drift", cooldown_active(bool)
+Retrain skipped | model_name, reason
+Prediction | model_name, model_version, latency_ms
 
-- **[Exemplo de Logging Básico](../examples/logging_example.py)** - Demonstra funcionalidade básica de logging e melhores práticas
-- **[Exemplo de Logging FastAPI](../examples/fastapi_logging_example.py)** - Mostra integração com FastAPI incluindo rastreamento de contexto de requisição
+### 7.6 Idempotent Ingestion
 
-Estes exemplos mostram padrões de uso do mundo real e podem servir como templates para implementar logging em seus módulos.
+```python
+logger.info(
+  "Ingestion duplicate ignored",
+  extra={"sensor_id": sid, "idempotency_key": key, "event_id": original_id}
+)
+```
 
-## Uso em Produção
+### 7.7 Async Tasks
 
-O sistema de logging é usado ativamente em toda a aplicação:
+ContextVar handles async boundaries. If spawning threads (e.g. ThreadPoolExecutor) pass correlation id manually:
 
-- **Camada API**: Aplicação FastAPI registra requisições e respostas com IDs de correlação
-- **Sistema de Agentes**: Agentes de decisão usam logging estruturado para rastreabilidade
-- **Camada de Serviço**: Componentes de lógica de negócio registram operações com informações contextuais
-- **Tratamento de Erros**: Logging abrangente de exceções com stack traces e contexto
+```python
+cid = get_correlation_id()
+executor.submit(run_with_context, cid, task_fn)
+```
 
-## Formato do Log
+---
 
-Cada entrada de log inclui:
+## 8. Performance Characteristics
 
+Metric | Observation
+-------|------------
+Average log emit cost | < 0.2 ms (Day 6 validation)
+P95 request latency impact | Negligible (overall P95 2 ms under load Day 17)
+Memory overhead | Single handler; no accumulation
+Throughput verified | 100+ RPS sustained without log-induced backpressure
+
+---
+
+## 9. Security & Compliance
+
+Control | Status
+--------|-------
+Secret Redaction | Do not log API keys / tokens (enforced by review)
+PII | None collected / emitted
+Injection Safety | Structured JSON, no string eval
+Rate Limit Events | Logged without user-identifying payload
+Future | Add optional hashing for sensor IDs if privacy requirements evolve
+
+Optional future hook: implement a `SensitiveValueFilter` to whitelist keys.
+
+---
+
+## 10. Observability Integration
+
+- Metrics (Prometheus) supply quantitative latency; logs supply qualitative root cause.
+- Correlation IDs allow pairing a slow request metric sample with precise log sequence.
+- Drift / retrain events produce structured series enabling downstream alert rules (e.g. count of drift_detected per hour).
+
+---
+
+## 11. Troubleshooting
+
+Symptom | Likely Cause | Resolution
+--------|--------------|-----------
+Missing correlation_id | Middleware not registered first / early import | Ensure middleware added before routers
+Duplicate log lines | `setup_logging()` called twice | Guard with module-level flag (already implemented)
+Plain text output | External lib logger without propagation | Attach filter to 3rd-party logger or adjust log level
+JSON parse errors downstream | Out-of-band prints | Remove stray `print()` / use logger
+Model load 404 w/out stack trace | Exception swallowed pre-Day12 code | Confirm updated model_loader w/ `.exception()`
+
+---
+
+## 12. Extensibility
+
+Add global field:
+1. Extend custom formatter to inject `environment` (e.g. from settings)
+2. Adjust CI tests validating schema (future enhancement)
+3. Document new field in Section 5
+
+Planned extensions:
+- OpenTelemetry trace/span id injection
+- Structured sampling for high-volume success logs
+- Log shipping sidecar (Fluent Bit) configuration
+
+---
+
+## 13. Operational Guidelines
+
+Action | Recommendation
+-------|---------------
+High-frequency loops | Use DEBUG and guard by config
+Bulk data dumps | Avoid logging large payloads; summarize counts
+Exception floods | Add circuit breaker or temporary downgrade to WARNING
+Drift storm | Only first detection per model within cooldown logs at INFO; subsequent suppressed to DEBUG
+Cold model loads | Emit duration_ms; page if > threshold (future alert)
+
+---
+
+## 14. Minimal Public API (Code Reference)
+
+```python
+# core/logging_config.py (excerpt)
+def setup_logging():
+    # idempotent initialization
+    # create handler -> JSONFormatter -> add CorrelationIdFilter
+    ...
+
+def get_logger(name: str):
+    return logging.getLogger(name)
+```
+
+(Note: File implements ContextVar & filter registration; unchanged runtime code.)
+
+---
+
+## 15. Changelog Mapping
+
+Feature / Change | Changelog Day(s)
+-----------------|-----------------
+Request IDs added | Day 4
+Structured logging & correlation filter | Day 6
+Event bus retry visibility | Day 6
+Prediction endpoint instrumentation & error surfacing | Day 12
+Drift endpoint + statistical logging | Day 13
+Idempotent ingestion duplicate logging | Day 15
+Load test validation of negligible overhead | Day 17
+Performance optimization logs (CAGG rationale) | Day 18
+Model hash validation (integrity logging) | Day 21
+Intelligent model selection tagging logs | Day 21.5
+Drift + retrain agents lifecycle logging | Day 23
+
+---
+
+## 16. Summary
+
+The logging layer delivers low-latency structured observability across API, ML workflows, drift automation, and resilience subsystems, enabling rapid root-cause analysis while remaining compliant and production-ready.
+
+---
 - `timestamp`: Timestamp em formato ISO8601 (UTC)
 - `level`: Nível do log (INFO, WARNING, ERROR, etc.)
 - `name`: Nome do logger

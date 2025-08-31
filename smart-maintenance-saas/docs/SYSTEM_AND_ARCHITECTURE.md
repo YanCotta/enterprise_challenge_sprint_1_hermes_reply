@@ -1,78 +1,132 @@
 # Smart Maintenance SaaS - System and Architecture
 
-🇧🇷 **[Clique aqui para ler em Português](#-smart-maintenance-saas---sistema-e-arquitetura-português)** | 🇺🇸 **English Version Below**
+# Smart Maintenance SaaS - Complete Documentation Index
 
-## 📚 Documentation Navigation
+## Core Documentation
 
-This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
+### Getting Started
 
+- **[Main README](../../README.md)** - Project overview, quick start, and repository structure
 - **[Backend README](../README.md)** - Docker deployment and getting started guide
-- **[Deployment Status](./DEPLOYMENT_STATUS.md)** - Current deployment status and container information
-- **[API Documentation](./api.md)** - Complete REST API reference and usage examples  
-- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
-- **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
-- **[System Screenshots](./SYSTEM_SCREENSHOTS.md)** - Complete system demonstration with visual documentation
-- **[Future Roadmap](./FUTURE_ROADMAP.md)** - Planned enhancements and architectural evolution
+- **[Development Orientation](../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
+
+### Project History & Changelog
+
+- **[30-Day Sprint Changelog](../../30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](../../final_30_day_sprint.md)** - Executive summary of sprint achievements
+
+## System Architecture & Design
+
+### Architecture Documentation
+
+- **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
+- **[System Screenshots](./SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
+- **[Comprehensive System Analysis](./COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
+- **[Microservice Migration Strategy](./MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
+
+### Database Design
+
+- **[Database Documentation](./db/README.md)** - Database schema and design documentation
+- **[Database ERD](./db/erd.dbml)** - Entity Relationship Diagram source
+- **[Database Schema](./db/schema.sql)** - Complete SQL schema definition
+
+## API & Integration
+
+### API Documentation
+
+- **[API Reference](./api.md)** - Complete REST API documentation and examples
+- **[Configuration Management](../core/config/README.md)** - Centralized configuration system
+- **[Logging Configuration](../core/logging_config.md)** - Structured JSON logging setup
+
+## Performance & Testing
+
+### Performance Documentation
+
+- **[Performance Baseline](./PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
+- **[Day 17 Load Test Report](./DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
+- **[Day 18 Performance Results](./DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
+- **[Load Testing Instructions](./LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
+
+### Testing Documentation
+
 - **[Test Documentation](../tests/README.md)** - Test organization and execution guide
-- **[Logging Configuration](../core/logging_config.md)** - Structured JSON logging setup and configuration
-- **[Configuration Management](../core/config/README.md)** - Centralized configuration system using Pydantic BaseSettings
-- **[Original Architecture](./original_full_system_architecture.md)** - Complete Phase 1 documentation and initial system design
-- **[Project Overview](../../README.md)** - High-level project description and objectives
+- **[Coverage Improvement Plan](./COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
+
+## Machine Learning & Data Science
+
+### ML Documentation
+
+- **[ML Documentation](./ml/README.md)** - Machine learning models and pipelines
+- **[Models Summary](./MODELS_SUMMARY.md)** - Overview of all 17+ production models
+- **[Project Gauntlet Plan](./PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
+
+## Security & Operations
+
+### Security Documentation
+
+- **[Security Documentation](./SECURITY.md)** - Security architecture and implementation
+- **[Security Audit Checklist](./SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
+
+---
+
+*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
 
 ---
 
 ## 1. Introduction
 
-This document provides a comprehensive overview of the system architecture for the Smart Maintenance SaaS platform. The platform is designed as a cloud-native, multi-agent system that leverages an event-driven architecture to deliver a modular, scalable, and resilient solution for predictive maintenance in the industrial sector.
+This document provides a comprehensive overview of the production-ready system architecture for the Smart Maintenance SaaS platform. The platform is a cloud-native, event-driven system that delivers scalable, resilient predictive maintenance solutions for industrial applications.
 
-### 1.1. Project Objectives
+### 1.1. Project Achievement Summary
 
-The primary goal of this project is to create a sophisticated backend system that can:
+The system has successfully completed a 30-day sprint (August 2025) delivering:
 
-- **Ingest and Process Real-Time IoT Data:** Handle high volumes of sensor data from industrial equipment.
-- **Detect and Validate Anomalies:** Use a combination of machine learning and statistical models to identify potential issues and validate them to reduce false positives.
-- **Predict Failures:** Forecast potential equipment failures and estimate the time to failure (TTF).
-- **Automate Maintenance Workflows:** Orchestrate the entire maintenance lifecycle, from anomaly detection to scheduling and logging completed tasks.
-- **Learn and Adapt:** Continuously improve its performance by learning from system feedback and historical data.
+- **Production-Ready Performance:** 103.8 RPS peak throughput with sub-3ms response times
+- **Comprehensive ML Pipeline:** 17+ production models across classification, anomaly detection, and forecasting
+- **Real-World Dataset Validation:** 5 industrial datasets successfully integrated (AI4I, NASA, XJTU, MIMII, Kaggle)
+- **Event-Driven Architecture:** Custom high-performance event bus with retry logic and dead letter queues
+- **Time-Series Database:** Optimized TimescaleDB with continuous aggregates and indexing
+- **MLflow Integration:** Complete model lifecycle management with artifact storage and registry
+- **Security Hardening:** API rate limiting, vulnerability scanning, and comprehensive security audit framework
 
 ---
 
-## 🎯 2. System Architecture Visualizations
+## 2. System Architecture Visualizations
 
-This section provides multiple perspectives on the Smart Maintenance SaaS architecture through comprehensive diagrams. Each diagram focuses on different aspects of the system to provide a complete understanding.
-
-### 📊 2.1. High-Level System Overview
+### 2.1. High-Level System Overview
 
 ```mermaid
 graph TB
     subgraph "External Systems"
-        IOT[🏭 IoT Sensors]
-        USERS[👥 Users/Dashboard]
-        MOBILE[📱 Mobile Apps]
+        IOT[Industrial IoT Sensors]
+        USERS[Users/Dashboard]
+        MOBILE[Mobile Applications]
     end
 
     subgraph "API Layer"
-        LB[⚖️ Load Balancer]
-        API[🚀 FastAPI Gateway]
-        AUTH[🔐 Authentication]
+        LB[Load Balancer]
+        API[FastAPI Gateway]
+        AUTH[Authentication & Rate Limiting]
+        METRICS[Prometheus Metrics]
     end
 
     subgraph "Core Processing"
-        COORD[🎯 System Coordinator]
-        EVENT[📡 Event Bus]
-        AGENTS[🤖 Multi-Agent System]
+        COORD[System Coordinator]
+        EVENT[Event Bus with Retry Logic]
+        AGENTS[Multi-Agent System]
     end
 
     subgraph "Data Layer"
-        TS[(⏰ TimescaleDB)]
-        VEC[(🧠 ChromaDB)]
-        CACHE[(⚡ Redis Cache)]
+        TS[(TimescaleDB with Continuous Aggregates)]
+        REDIS[(Redis Cache & Sessions)]
+        MLFLOW[(MLflow Model Registry)]
     end
 
     subgraph "Infrastructure"
-        DOCKER[🐳 Docker Containers]
-        MONITOR[📊 Monitoring]
-        LOGS[📝 Centralized Logging]
+        DOCKER[Docker Containerized Services]
+        MONITOR[Health Monitoring]
+        LOGS[Centralized Logging]
+        SECURITY[Security Scanning]
     end
 
     IOT --> LB
@@ -84,11 +138,13 @@ graph TB
     COORD --> EVENT
     EVENT --> AGENTS
     AGENTS --> TS
-    AGENTS --> VEC
-    AGENTS --> CACHE
+    AGENTS --> REDIS
+    AGENTS --> MLFLOW
     COORD --> DOCKER
     AGENTS --> MONITOR
     EVENT --> LOGS
+    API --> METRICS
+    API --> SECURITY
 
     classDef external fill:#e1f5fe
     classDef api fill:#f3e5f5
@@ -97,11 +153,553 @@ graph TB
     classDef infra fill:#fce4ec
 
     class IOT,USERS,MOBILE external
-    class LB,API,AUTH api
+    class LB,API,AUTH,METRICS api
     class COORD,EVENT,AGENTS core
-    class TS,VEC,CACHE data
-    class DOCKER,MONITOR,LOGS infra
+    class TS,REDIS,MLFLOW data
+    class DOCKER,MONITOR,LOGS,SECURITY infra
 ```
+
+### 2.2. Production Event-Driven Architecture Flow
+
+```mermaid
+sequenceDiagram
+    participant API as FastAPI Gateway
+    participant AUTH as Rate Limiter
+    participant EB as Event Bus
+    participant DA as Data Acquisition
+    participant AD as Anomaly Detection
+    participant ML as MLflow Models
+    participant TS as TimescaleDB
+    participant REDIS as Redis Cache
+
+    API->>+AUTH: Request with API Key
+    AUTH->>AUTH: Rate Limit Check (10/min for ML endpoints)
+    AUTH->>+EB: Authenticated Event
+    EB->>+DA: DataIngestionEvent
+    DA->>TS: Store Sensor Data
+    DA->>EB: DataProcessedEvent
+    EB->>+AD: Process with IsolationForest
+    AD->>ML: Load Model from Registry
+    ML->>AD: Model Artifacts
+    AD->>REDIS: Cache Results
+    AD->>EB: AnomalyDetectedEvent
+    EB->>TS: Store Analysis Results
+    EB->>API: Response with Correlation ID
+    API->>-AUTH: JSON Response
+    AUTH->>-API: Rate Limited Response
+```
+
+### 2.3. MLflow Model Management Pipeline
+
+```mermaid
+flowchart LR
+    subgraph "Model Training"
+        NOTEBOOKS[Jupyter Notebooks]
+        DATASETS[Real-World Datasets]
+        TRAINING[Model Training Pipeline]
+    end
+
+    subgraph "MLflow Registry"
+        REGISTRY[Model Registry]
+        ARTIFACTS[Artifact Storage]
+        VERSIONING[Model Versioning]
+        METADATA[Experiment Metadata]
+    end
+
+    subgraph "Production Deployment"
+        LOADER[Model Loader]
+        CACHE[Model Cache]
+        INFERENCE[Real-time Inference]
+        MONITORING[Model Monitoring]
+    end
+
+    subgraph "Data Sources"
+        AI4I[AI4I Industrial Dataset]
+        NASA[NASA Bearing Dataset]
+        XJTU[XJTU Bearing Dataset]
+        MIMII[MIMII Audio Dataset]
+        KAGGLE[Kaggle Pump Dataset]
+    end
+
+    AI4I --> DATASETS
+    NASA --> DATASETS
+    XJTU --> DATASETS
+    MIMII --> DATASETS
+    KAGGLE --> DATASETS
+
+    DATASETS --> NOTEBOOKS
+    NOTEBOOKS --> TRAINING
+    TRAINING --> REGISTRY
+    REGISTRY --> ARTIFACTS
+    REGISTRY --> VERSIONING
+    REGISTRY --> METADATA
+
+    REGISTRY --> LOADER
+    LOADER --> CACHE
+    CACHE --> INFERENCE
+    INFERENCE --> MONITORING
+
+    classDef training fill:#e3f2fd
+    classDef registry fill:#e8f5e8
+    classDef deployment fill:#fff3e0
+    classDef data fill:#f3e5f5
+
+    class NOTEBOOKS,DATASETS,TRAINING training
+    class REGISTRY,ARTIFACTS,VERSIONING,METADATA registry
+    class LOADER,CACHE,INFERENCE,MONITORING deployment
+    class AI4I,NASA,XJTU,MIMII,KAGGLE data
+```
+
+### 2.4. TimescaleDB Performance Architecture
+
+```mermaid
+graph TD
+    subgraph "Data Ingestion Layer"
+        API_INGEST[API Ingestion Endpoint]
+        VALIDATION[Data Validation]
+        TRANSFORM[Data Transformation]
+    end
+
+    subgraph "TimescaleDB Core"
+        HYPERTABLE[sensor_readings Hypertable]
+        COMPRESSION[Automatic Compression]
+        PARTITIONING[Time-based Partitioning]
+    end
+
+    subgraph "Performance Optimization"
+        CONT_AGG[Continuous Aggregates]
+        INDEXES[Optimized Indexes]
+        RETENTION[Retention Policies]
+    end
+
+    subgraph "Query Performance"
+        HOURLY_VIEW[Hourly Summary Views]
+        SENSOR_INDEX[Sensor-Time Index]
+        TIME_INDEX[Time Range Index]
+    end
+
+    API_INGEST --> VALIDATION
+    VALIDATION --> TRANSFORM
+    TRANSFORM --> HYPERTABLE
+
+    HYPERTABLE --> COMPRESSION
+    HYPERTABLE --> PARTITIONING
+    HYPERTABLE --> CONT_AGG
+
+    CONT_AGG --> HOURLY_VIEW
+    INDEXES --> SENSOR_INDEX
+    INDEXES --> TIME_INDEX
+
+    COMPRESSION --> RETENTION
+    PARTITIONING --> INDEXES
+
+    classDef ingestion fill:#e1f5fe
+    classDef core fill:#e8f5e8
+    classDef optimization fill:#fff3e0
+    classDef performance fill:#f3e5f5
+
+    class API_INGEST,VALIDATION,TRANSFORM ingestion
+    class HYPERTABLE,COMPRESSION,PARTITIONING core
+    class CONT_AGG,INDEXES,RETENTION optimization
+    class HOURLY_VIEW,SENSOR_INDEX,TIME_INDEX performance
+```
+
+### 2.5. Production Performance Metrics Flow
+
+```mermaid
+flowchart TB
+    subgraph "Load Testing"
+        LOCUST[Locust Load Generator]
+        CONCURRENT[50 Concurrent Users]
+        DURATION[3 Minute Tests]
+    end
+
+    subgraph "Performance Results"
+        THROUGHPUT[103.8 RPS Peak]
+        LATENCY[P95: 2ms, P99: 3ms]
+        STABILITY[100% Uptime]
+        RESOURCE[6% CPU Usage]
+    end
+
+    subgraph "Monitoring Stack"
+        PROMETHEUS[Prometheus Metrics]
+        HEALTH[Health Endpoints]
+        LOGS[Structured Logging]
+        ALERTS[Performance Alerts]
+    end
+
+    subgraph "Infrastructure Stats"
+        API_CONTAINER[API: 0.07% CPU]
+        DB_CONTAINER[Database: 2.43% CPU]
+        REDIS_CONTAINER[Redis: 5.61% CPU]
+        MEMORY[Memory: <1GB Total]
+    end
+
+    LOCUST --> CONCURRENT
+    CONCURRENT --> DURATION
+    DURATION --> THROUGHPUT
+    THROUGHPUT --> LATENCY
+    LATENCY --> STABILITY
+    STABILITY --> RESOURCE
+
+    THROUGHPUT --> PROMETHEUS
+    LATENCY --> HEALTH
+    STABILITY --> LOGS
+    RESOURCE --> ALERTS
+
+    PROMETHEUS --> API_CONTAINER
+    HEALTH --> DB_CONTAINER
+    LOGS --> REDIS_CONTAINER
+    ALERTS --> MEMORY
+
+    classDef testing fill:#e3f2fd
+    classDef results fill:#e8f5e8
+    classDef monitoring fill:#fff3e0
+    classDef infrastructure fill:#f3e5f5
+
+    class LOCUST,CONCURRENT,DURATION testing
+    class THROUGHPUT,LATENCY,STABILITY,RESOURCE results
+    class PROMETHEUS,HEALTH,LOGS,ALERTS monitoring
+    class API_CONTAINER,DB_CONTAINER,REDIS_CONTAINER,MEMORY infrastructure
+```
+
+---
+
+## 3. Production System Architecture
+
+The architecture is implemented as a containerized, event-driven system optimized for high-performance industrial IoT data processing.
+
+### 3.1. Core Technology Stack
+
+#### API Layer
+- **FastAPI 0.104.1** with Starlette-compatible dependencies
+- **Prometheus metrics integration** via `prometheus-fastapi-instrumentator`
+- **API rate limiting** (10 requests/minute for ML endpoints)
+- **Request correlation IDs** for distributed tracing
+- **Idempotency support** with TTL-based deduplication
+
+#### Data Layer
+- **PostgreSQL with TimescaleDB 2.11+** optimized for time-series data
+- **Redis 7.0+** for caching and session management
+- **MLflow Model Registry** with SQLite backend and artifact storage
+- **Continuous aggregates** for real-time analytics performance
+- **Automatic data compression** and retention policies
+
+#### Event Processing
+- **Custom Event Bus** with exponential backoff retry logic
+- **Dead Letter Queue (DLQ)** for failed event handling
+- **Asynchronous processing** with correlation ID propagation
+- **Event persistence** with comprehensive audit trails
+
+### 3.2. Performance Characteristics
+
+#### Load Testing Results (Day 17)
+- **Peak Throughput:** 103.8 RPS with 50 concurrent users
+- **Response Times:** P50: 1ms, P95: 2ms, P99: 3ms
+- **Resource Efficiency:** <6% CPU usage across all containers
+- **Memory Usage:** <1GB total across entire stack
+- **Stability:** 100% uptime during 3-minute sustained load tests
+
+#### Database Performance
+- **TimescaleDB Optimization:** 37.3% performance improvement via indexing
+- **Continuous Aggregates:** Real-time hourly summaries for ML queries
+- **Query Optimization:** Composite indexes for sensor-time range queries
+- **Compression:** Automatic compression for data older than 7 days
+
+### 3.3. Multi-Agent System
+
+The platform implements a sophisticated multi-agent architecture for specialized task handling:
+
+#### Core Agents
+
+| Agent | Function | Implementation Status |
+|-------|----------|----------------------|
+| **DataAcquisitionAgent** | Sensor data ingestion, validation, and enrichment | Production Ready |
+| **AnomalyDetectionAgent** | ML-based anomaly detection using IsolationForest | Production Ready |
+| **ValidationAgent** | Rule-based anomaly validation and false positive reduction | Production Ready |
+| **OrchestratorAgent** | Workflow coordination and decision routing | Production Ready |
+| **PredictionAgent** | Prophet-based time-series forecasting | Production Ready |
+| **SchedulingAgent** | Maintenance task scheduling optimization | Core Implementation |
+| **NotificationAgent** | Multi-channel notification dispatch | Core Implementation |
+| **ReportingAgent** | Analytics and insights generation | Core Implementation |
+| **LearningAgent** | RAG-based system improvement | Core Implementation |
+| **MaintenanceLogAgent** | Maintenance history tracking | Core Implementation |
+
+#### Agent Communication Pattern
+
+```mermaid
+graph LR
+    DA[Data Acquisition] --> EB[Event Bus]
+    EB --> AD[Anomaly Detection]
+    AD --> EB
+    EB --> VA[Validation Agent]
+    VA --> EB
+    EB --> OA[Orchestrator]
+    OA --> EB
+    EB --> PA[Prediction Agent]
+    PA --> EB
+    EB --> SA[Scheduling Agent]
+
+    classDef agent fill:#e8f5e8
+    classDef eventbus fill:#f3e5f5
+
+    class DA,AD,VA,OA,PA,SA agent
+    class EB eventbus
+```
+
+### 3.4. Machine Learning Pipeline
+
+#### Model Registry Status
+- **Total Models:** 17+ production-ready models
+- **Classification Models:** AI4I (99.90% accuracy), Kaggle Pump (100% accuracy)
+- **Anomaly Detection:** NASA Bearing (72.8% accuracy), XJTU Bearing
+- **Audio Processing:** MIMII Sound (93.3% accuracy)
+- **Forecasting Models:** Prophet-based time-series prediction
+
+#### Model Categories
+
+```mermaid
+graph TD
+    subgraph "Classification Models"
+        AI4I[AI4I Industrial Failure - 99.90%]
+        PUMP[Kaggle Pump Maintenance - 100%]
+        MULTI[Multi-class Variants]
+    end
+
+    subgraph "Anomaly Detection"
+        NASA[NASA Bearing Vibration - 72.8%]
+        XJTU[XJTU Bearing Analysis]
+        ISOLATION[Isolation Forest Ensemble]
+    end
+
+    subgraph "Signal Processing"
+        VIBRATION[Vibration Signal Analysis]
+        AUDIO[MIMII Audio - 93.3%]
+        FFT[FFT Feature Extraction]
+    end
+
+    subgraph "Forecasting"
+        PROPHET[Prophet Time Series]
+        SEASONAL[Seasonal Decomposition]
+        TREND[Trend Analysis]
+    end
+
+    classDef classification fill:#e3f2fd
+    classDef anomaly fill:#e8f5e8
+    classDef signal fill:#fff3e0
+    classDef forecast fill:#f3e5f5
+
+    class AI4I,PUMP,MULTI classification
+    class NASA,XJTU,ISOLATION anomaly
+    class VIBRATION,AUDIO,FFT signal
+    class PROPHET,SEASONAL,TREND forecast
+```
+
+---
+
+## 4. Security and Operational Excellence
+
+### 4.1. Security Implementation
+
+#### API Security
+- **Rate Limiting:** 10 requests/minute for compute-intensive ML endpoints
+- **Authentication:** API key validation with secure header handling
+- **DoS Protection:** Computational resource limiting for expensive operations
+- **Input Validation:** Comprehensive request validation and sanitization
+
+#### Infrastructure Security
+- **Container Isolation:** Docker-based service separation
+- **Dependency Scanning:** Snyk integration for vulnerability detection
+- **Security Auditing:** Comprehensive security audit checklist framework
+- **Automated Scanning:** CI/CD pipeline security integration
+
+### 4.2. Monitoring and Observability
+
+#### Metrics Collection
+- **Prometheus Integration:** HTTP request metrics, latency distributions
+- **Health Endpoints:** `/health`, `/health/db`, `/metrics` endpoints
+- **Process Metrics:** Memory usage, file descriptors, CPU utilization
+- **Custom Metrics:** ML model load times, prediction latencies
+
+#### Logging Architecture
+- **Structured JSON Logging:** Centralized log aggregation
+- **Correlation IDs:** Request tracing across service boundaries
+- **Event Audit Trails:** Complete event processing history
+- **Error Tracking:** Comprehensive error logging with stack traces
+
+### 4.3. Deployment Architecture
+
+#### Container Architecture
+```yaml
+services:
+  api:          # FastAPI application server
+  db:           # PostgreSQL with TimescaleDB
+  redis:        # Cache and session storage
+  mlflow:       # Model registry and tracking
+  ui:           # Web interface (if applicable)
+  notebook_runner: # Jupyter execution environment
+```
+
+#### Resource Allocation
+- **API Container:** 300MB memory limit, optimized for request handling
+- **Database Container:** 1GB memory, SSD storage for time-series data
+- **Redis Container:** 100MB memory, in-memory caching optimization
+- **MLflow Container:** 500MB memory, artifact storage management
+
+---
+
+## 5. Performance Benchmarks and Scaling
+
+### 5.1. Current Performance Baseline
+
+#### Response Time Performance
+- **P50 Response Time:** 1ms (50th percentile)
+- **P95 Response Time:** 2ms (95th percentile) 
+- **P99 Response Time:** 3ms (99th percentile)
+- **Maximum Response Time:** 124ms (well below 200ms SLO)
+
+#### Throughput Capabilities
+- **Peak Throughput:** 103.8 RPS sustained
+- **Average Throughput:** 88.83 RPS over 3-minute test
+- **Event Processing:** >100 events/second capability validated
+- **Database Throughput:** Optimized for high-frequency time-series ingestion
+
+### 5.2. Scalability Analysis
+
+#### Horizontal Scaling Potential
+- **CPU Utilization:** Current 6% usage indicates 16x scaling potential
+- **Memory Efficiency:** <1GB total usage allows for significant scaling
+- **Database Performance:** TimescaleDB optimized for multi-tenant scaling
+- **Event Bus Capacity:** Custom implementation designed for high throughput
+
+#### Performance Optimization Opportunities
+- **Connection Pooling:** Database connection optimization
+- **Caching Strategies:** Redis-based model and result caching
+- **Async Processing:** Event-driven asynchronous workload distribution
+- **Load Balancing:** Multi-replica deployment with load distribution
+
+---
+
+## 6. Data Flow and Integration
+
+### 6.1. Data Pipeline Architecture
+
+```mermaid
+flowchart LR
+    subgraph "Data Sources"
+        SENSORS[IoT Sensors]
+        BATCH[Batch Imports]
+        EXTERNAL[External APIs]
+    end
+
+    subgraph "Ingestion Layer"
+        VALIDATE[Schema Validation]
+        ENRICH[Data Enrichment]
+        CORRELATION[ID Assignment]
+    end
+
+    subgraph "Processing Layer"
+        EVENT_BUS[Event Bus]
+        ML_PIPELINE[ML Processing]
+        BUSINESS_RULES[Business Logic]
+    end
+
+    subgraph "Storage Layer"
+        TIMESERIES[TimescaleDB]
+        CACHE[Redis Cache]
+        ARTIFACTS[MLflow Artifacts]
+    end
+
+    SENSORS --> VALIDATE
+    BATCH --> VALIDATE
+    EXTERNAL --> VALIDATE
+
+    VALIDATE --> ENRICH
+    ENRICH --> CORRELATION
+    CORRELATION --> EVENT_BUS
+
+    EVENT_BUS --> ML_PIPELINE
+    EVENT_BUS --> BUSINESS_RULES
+
+    ML_PIPELINE --> TIMESERIES
+    ML_PIPELINE --> CACHE
+    ML_PIPELINE --> ARTIFACTS
+
+    BUSINESS_RULES --> TIMESERIES
+    BUSINESS_RULES --> CACHE
+
+    classDef sources fill:#e1f5fe
+    classDef ingestion fill:#e8f5e8
+    classDef processing fill:#fff3e0
+    classDef storage fill:#f3e5f5
+
+    class SENSORS,BATCH,EXTERNAL sources
+    class VALIDATE,ENRICH,CORRELATION ingestion
+    class EVENT_BUS,ML_PIPELINE,BUSINESS_RULES processing
+    class TIMESERIES,CACHE,ARTIFACTS storage
+```
+
+### 6.2. Real-World Dataset Integration
+
+The system has been validated against diverse industrial datasets:
+
+#### Dataset Portfolio
+- **AI4I 2020 UCI Dataset:** Industrial machine failure classification
+- **NASA IMS Bearing Dataset:** Vibration signal anomaly detection  
+- **XJTU-SY Bearing Dataset:** Advanced run-to-failure analysis
+- **MIMII Sound Dataset:** Audio-based anomaly detection
+- **Kaggle Pump Sensor Data:** Maintenance prediction classification
+
+#### Processing Capabilities
+- **Tabular Data:** High-performance classification with 99%+ accuracy
+- **Vibration Signals:** FFT analysis with statistical feature engineering
+- **Audio Processing:** MFCC feature extraction for machine sound analysis
+- **Time Series:** Prophet-based forecasting with seasonal decomposition
+
+---
+
+## 7. System Evolution and Architecture Decisions
+
+### 7.1. Architectural Trade-offs Made
+
+#### Event Bus Implementation
+**Decision:** Custom in-memory event bus instead of Apache Kafka
+**Rationale:** Reduced operational complexity while maintaining event-driven benefits
+**Result:** High-performance, low-latency event processing with retry logic
+
+#### MLflow Integration
+**Decision:** File-based artifact storage with SQLite registry
+**Rationale:** Simplified deployment without requiring external object storage
+**Result:** Complete model lifecycle management with container-native storage
+
+#### Database Choice
+**Decision:** PostgreSQL with TimescaleDB extension
+**Rationale:** Combines relational capabilities with time-series optimization
+**Result:** 37.3% performance improvement through continuous aggregates
+
+### 7.2. Future Architecture Considerations
+
+#### Scaling Enhancements
+- **Redis Cluster:** Multi-node caching for horizontal scaling
+- **Database Sharding:** Multi-tenant data partitioning strategies  
+- **Event Bus Evolution:** Migration to Apache Kafka for massive scale
+- **Microservice Decomposition:** Agent-based service extraction
+
+#### Advanced Features
+- **Real-time Streaming:** Apache Kafka or Redis Streams integration
+- **Advanced Analytics:** Apache Spark for large-scale data processing
+- **Edge Computing:** Agent deployment on edge devices
+- **Multi-region Deployment:** Geographic distribution for latency optimization
+
+---
+
+## 8. Conclusion
+
+The Smart Maintenance SaaS platform represents a production-ready, event-driven architecture optimized for industrial IoT applications. With proven performance characteristics exceeding SLO requirements by orders of magnitude and comprehensive ML capabilities validated against real-world datasets, the system demonstrates enterprise-grade reliability and scalability.
+
+The platform's success in achieving 103.8 RPS throughput with sub-3ms response times, combined with its comprehensive security framework and operational excellence practices, positions it as a robust foundation for industrial predictive maintenance applications.
+
+Key architectural strengths include the custom event bus design for low-latency processing, TimescaleDB optimization for time-series performance, comprehensive MLflow integration for model lifecycle management, and containerized deployment for operational simplicity.
 
 ### 🔄 2.2. Agent Interaction Flow Diagram
 
@@ -645,644 +1243,3 @@ Our machine learning implementation is solid and aligns well with the project's 
 - **Rapid Development:** Enables quick prototyping and iteration.
 
 ---
-
-## Smart Maintenance SaaS - Sistema e Arquitetura (Português)
-
-## 📚 Navegação da Documentação
-
-Este documento faz parte da suíte de documentação do Smart Maintenance SaaS. Para um entendimento completo do sistema, consulte também:
-
-- **[README do Backend](../README.md)** - Guia de implantação Docker e introdução
-- **[Status de Implantação](./DEPLOYMENT_STATUS.md)** - Status atual de implantação e informações do container
-- **[Documentação da API](./api.md)** - Referência completa da API REST e exemplos de uso
-- **[Baseline de Performance](./PERFORMANCE_BASELINE.md)** - Resultados de testes de carga e baseline de métricas de performance
-- **[Instruções de Teste de Carga](./LOAD_TESTING_INSTRUCTIONS.md)** - Guia abrangente para executar testes de performance
-- **[Capturas de Tela do Sistema](./SYSTEM_SCREENSHOTS.md)** - Demonstração completa do sistema com documentação visual
-- **[Roadmap Futuro](./FUTURE_ROADMAP.md)** - Melhorias planejadas e evolução arquitetural
-- **[Documentação de Testes](../tests/README.md)** - Organização de testes e guia de execução
-- **[Configuração de Logging](../core/logging_config.md)** - Configuração de logging JSON estruturado
-- **[Gerenciamento de Configuração](../core/config/README.md)** - Sistema de configuração centralizado usando Pydantic BaseSettings
-- **[Arquitetura Original](./original_full_system_architecture.md)** - Documentação completa da Fase 1 e design inicial do sistema
-- **[Visão Geral do Projeto](../../README.md)** - Descrição de alto nível e objetivos do projeto
-
----
-
-## 1. Introdução
-
-Este documento fornece uma visão geral abrangente da arquitetura de sistema para a plataforma Smart Maintenance SaaS. A plataforma foi projetada como um sistema multi-agente nativo da nuvem, que utiliza uma arquitetura orientada a eventos para fornecer uma solução modular, escalável e resiliente para manutenção preditiva no setor industrial.
-
-### 1.1. Objetivos do Projeto
-
-O objetivo principal deste projeto é criar um sistema backend sofisticado que possa:
-
-- **Ingerir e Processar Dados IoT em Tempo Real:** Lidar com grandes volumes de dados de sensores de equipamentos industriais.
-- **Detectar e Validar Anomalias:** Usar uma combinação de aprendizado de máquina e modelos estatísticos para identificar problemas potenciais e validá-los para reduzir falsos positivos.
-- **Prever Falhas:** Prever falhas potenciais de equipamentos e estimar o tempo até a falha (TTF).
-- **Automatizar Fluxos de Trabalho de Manutenção:** Orquestrar todo o ciclo de vida da manutenção, desde a detecção de anomalias até o agendamento e registro de tarefas concluídas.
-- **Aprender e Adaptar:** Melhorar continuamente seu desempenho aprendendo com o feedback do sistema e dados históricos.
-
----
-
-## 🎯 2. Visualizações da Arquitetura do Sistema
-
-Esta seção fornece múltiplas perspectivas da arquitetura do Smart Maintenance SaaS através de diagramas abrangentes. Cada diagrama foca em diferentes aspectos do sistema para fornecer uma compreensão completa.
-
-### 📊 2.1. Visão Geral do Sistema de Alto Nível
-
-```mermaid
-graph TB
-    subgraph "Sistemas Externos"
-        IOT[🏭 Sensores IoT]
-        USERS[👥 Usuários/Dashboard]
-        MOBILE[📱 Aplicativos Móveis]
-    end
-
-    subgraph "Camada API"
-        LB[⚖️ Balanceador de Carga]
-        API[🚀 Gateway FastAPI]
-        AUTH[🔐 Autenticação]
-    end
-
-    subgraph "Processamento Central"
-        COORD[🎯 Coordenador do Sistema]
-        EVENT[📡 Barramento de Eventos]
-        AGENTS[🤖 Sistema Multi-Agente]
-    end
-
-    subgraph "Camada de Dados"
-        TS[(⏰ TimescaleDB)]
-        VEC[(🧠 ChromaDB)]
-        CACHE[(⚡ Cache Redis)]
-    end
-
-    subgraph "Infraestrutura"
-        DOCKER[🐳 Containers Docker]
-        MONITOR[📊 Monitoramento]
-        LOGS[📝 Logging Centralizado]
-    end
-
-    IOT --> LB
-    USERS --> LB
-    MOBILE --> LB
-    LB --> API
-    API --> AUTH
-    AUTH --> COORD
-    COORD --> EVENT
-    EVENT --> AGENTS
-    AGENTS --> TS
-    AGENTS --> VEC
-    AGENTS --> CACHE
-    COORD --> DOCKER
-    AGENTS --> MONITOR
-    EVENT --> LOGS
-
-    classDef external fill:#e1f5fe
-    classDef api fill:#f3e5f5
-    classDef core fill:#e8f5e8
-    classDef data fill:#fff3e0
-    classDef infra fill:#fce4ec
-
-    class IOT,USERS,MOBILE external
-    class LB,API,AUTH api
-    class COORD,EVENT,AGENTS core
-    class TS,VEC,CACHE data
-    class DOCKER,MONITOR,LOGS infra
-```
-
-### 🔄 2.2. Diagrama de Fluxo de Interação dos Agentes
-
-```mermaid
-sequenceDiagram
-    participant API as Gateway API
-    participant DAA as Aquisição de Dados
-    participant EB as Barramento de Eventos
-    participant ADA as Detecção de Anomalias
-    participant VA as Agente de Validação
-    participant OA as Orquestrador
-    participant PA as Agente de Previsão
-    participant SA as Agente de Agendamento
-    participant NA as Agente de Notificação
-    participant MLA as Log de Manutenção
-
-    API->>+DAA: Dados do Sensor
-    DAA->>DAA: Validar e Enriquecer
-    DAA->>EB: DataProcessedEvent
-    EB->>+ADA: Processar Dados
-    ADA->>ADA: Análise ML
-    ADA->>EB: AnomalyDetectedEvent
-    EB->>+VA: Validar Anomalia
-    VA->>VA: Aplicar Regras e Contexto
-    VA->>EB: AnomalyValidatedEvent
-    EB->>+OA: Orquestrar Decisão
-    OA->>OA: Lógica de Decisão
-    OA->>EB: TriggerPredictionEvent
-    EB->>+PA: Gerar Previsão
-    PA->>PA: Análise Prophet
-    PA->>EB: MaintenancePredictedEvent
-    EB->>+SA: Agendar Manutenção
-    SA->>SA: Otimizar Agenda
-    SA->>EB: MaintenanceScheduledEvent
-    EB->>+NA: Enviar Notificações
-    NA->>NA: Notificar Multi-canal
-    EB->>+MLA: Registrar Manutenção
-    MLA->>MLA: Gravar Histórico
-```
-
-### 🌊 2.3. Arquitetura do Pipeline de Dados
-
-```mermaid
-flowchart LR
-    subgraph "Ingestão de Dados"
-        SENSORS[📡 Sensores IoT]
-        API_IN[🔌 Endpoints da API]
-        BATCH[📦 Importação em Lote]
-    end
-
-    subgraph "Pipeline de Processamento"
-        VALIDATE[✅ Validação de Dados]
-        ENRICH[🔄 Enriquecimento de Dados]
-        NORMALIZE[⚖️ Normalização]
-        ANOMALY[🔍 Detecção de Anomalias]
-    end
-
-    subgraph "Armazenamento e Analytics"
-        TIMESERIES[(⏰ BD de Séries Temporais)]
-        VECTOR[(🧠 BD Vetorial)]
-        WAREHOUSE[(🏢 Data Warehouse)]
-        CACHE[(⚡ Camada de Cache)]
-    end
-
-    subgraph "Machine Learning"
-        TRAIN[🎓 Treinamento de Modelo]
-        PREDICT[🔮 Previsões]
-        FEEDBACK[🔄 Loop de Feedback]
-    end
-
-    subgraph "Sistemas de Saída"
-        DASHBOARD[📊 Dashboards]
-        ALERTS[🚨 Alertas]
-        REPORTS[📈 Relatórios]
-        API_OUT[📤 Respostas da API]
-    end
-
-    SENSORS --> VALIDATE
-    API_IN --> VALIDATE
-    BATCH --> VALIDATE
-    
-    VALIDATE --> ENRICH
-    ENRICH --> NORMALIZE
-    NORMALIZE --> ANOMALY
-    
-    ANOMALY --> TIMESERIES
-    ANOMALY --> VECTOR
-    NORMALIZE --> WAREHOUSE
-    ENRICH --> CACHE
-    
-    TIMESERIES --> TRAIN
-    VECTOR --> PREDICT
-    WAREHOUSE --> FEEDBACK
-    
-    TRAIN --> DASHBOARD
-    PREDICT --> ALERTS
-    FEEDBACK --> REPORTS
-    CACHE --> API_OUT
-
-    classDef ingestion fill:#e3f2fd
-    classDef processing fill:#e8f5e8
-    classDef storage fill:#fff3e0
-    classDef ml fill:#f3e5f5
-    classDef output fill:#fce4ec
-
-    class SENSORS,API_IN,BATCH ingestion
-    class VALIDATE,ENRICH,NORMALIZE,ANOMALY processing
-    class TIMESERIES,VECTOR,WAREHOUSE,CACHE storage
-    class TRAIN,PREDICT,FEEDBACK ml
-    class DASHBOARD,ALERTS,REPORTS,API_OUT output
-```
-
-### ⚡ 2.4. Fluxo da Arquitetura Orientada a Eventos
-
-```mermaid
-graph TD
-    subgraph "Fontes de Eventos"
-        DATA_IN[📊 Ingestão de Dados]
-        USER_ACTION[👤 Ações do Usuário]
-        SYSTEM_EVENT[⚙️ Eventos do Sistema]
-        TIMER[⏰ Tarefas Agendadas]
-    end
-
-    subgraph "Núcleo do Barramento de Eventos"
-        ROUTER[📡 Roteador de Eventos]
-        QUEUE[📬 Fila de Eventos]
-        DISPATCH[🚀 Despachador de Eventos]
-    end
-
-    subgraph "Processadores de Eventos"
-        ANOMALY_PROC[🔍 Processador de Anomalias]
-        VALIDATION_PROC[✅ Processador de Validação]
-        PREDICTION_PROC[🔮 Processador de Previsão]
-        SCHEDULE_PROC[📅 Processador de Agendamento]
-        NOTIFY_PROC[📢 Processador de Notificação]
-    end
-
-    subgraph "Persistência de Eventos"
-        EVENT_LOG[(📜 Log de Eventos)]
-        METRICS[(📊 Métricas de Eventos)]
-        AUDIT[(🔍 Trilha de Auditoria)]
-    end
-
-    subgraph "Consumidores de Eventos"
-        DASHBOARD_SUB[📊 Atualizações do Dashboard]
-        ALERT_SUB[🚨 Sistema de Alertas]
-        REPORT_SUB[📈 Relatórios]
-        API_SUB[🔌 Respostas da API]
-    end
-
-    DATA_IN --> ROUTER
-    USER_ACTION --> ROUTER
-    SYSTEM_EVENT --> ROUTER
-    TIMER --> ROUTER
-
-    ROUTER --> QUEUE
-    QUEUE --> DISPATCH
-
-    DISPATCH --> ANOMALY_PROC
-    DISPATCH --> VALIDATION_PROC
-    DISPATCH --> PREDICTION_PROC
-    DISPATCH --> SCHEDULE_PROC
-    DISPATCH --> NOTIFY_PROC
-
-    ANOMALY_PROC --> EVENT_LOG
-    VALIDATION_PROC --> METRICS
-    PREDICTION_PROC --> AUDIT
-    SCHEDULE_PROC --> EVENT_LOG
-    NOTIFY_PROC --> METRICS
-
-    DISPATCH --> DASHBOARD_SUB
-    DISPATCH --> ALERT_SUB
-    DISPATCH --> REPORT_SUB
-    DISPATCH --> API_SUB
-
-    classDef source fill:#e1f5fe
-    classDef core fill:#e8f5e8
-    classDef processor fill:#f3e5f5
-    classDef persistence fill:#fff3e0
-    classDef consumer fill:#fce4ec
-
-    class DATA_IN,USER_ACTION,SYSTEM_EVENT,TIMER source
-    class ROUTER,QUEUE,DISPATCH core
-    class ANOMALY_PROC,VALIDATION_PROC,PREDICTION_PROC,SCHEDULE_PROC,NOTIFY_PROC processor
-    class EVENT_LOG,METRICS,AUDIT persistence
-    class DASHBOARD_SUB,ALERT_SUB,REPORT_SUB,API_SUB consumer
-```
-
-### 🏗️ 2.5. Arquitetura de Implantação
-
-```mermaid
-graph TB
-    subgraph "Camada de Balanceador de Carga"
-        LB[⚖️ Balanceador de Carga]
-        SSL[🔒 Terminação SSL]
-    end
-
-    subgraph "Camada de Aplicação"
-        subgraph "Cluster API"
-            API1[🚀 Instância FastAPI 1]
-            API2[🚀 Instância FastAPI 2]
-            API3[🚀 Instância FastAPI 3]
-        end
-
-        subgraph "Cluster de Agentes"
-            AGENT1[🤖 Pod de Agente 1]
-            AGENT2[🤖 Pod de Agente 2]
-            AGENT3[🤖 Pod de Agente 3]
-        end
-
-        subgraph "Cluster de Workers"
-            WORKER1[⚙️ Worker em Background 1]
-            WORKER2[⚙️ Worker em Background 2]
-        end
-    end
-
-    subgraph "Camada de Dados"
-        subgraph "Banco de Dados Primário"
-            DB_MASTER[(🗄️ PostgreSQL Master)]
-            DB_REPLICA[(📚 PostgreSQL Replica)]
-        end
-
-        subgraph "Armazenamento Especializado"
-            TIMESCALE[(⏰ TimescaleDB)]
-            VECTOR[(🧠 ChromaDB)]
-            REDIS[(⚡ Cluster Redis)]
-        end
-    end
-
-    subgraph "Monitoramento e Observabilidade"
-        METRICS[📊 Prometheus]
-        LOGS[📝 Elasticsearch]
-        GRAFANA[📈 Grafana]
-        JAEGER[🔍 Jaeger Tracing]
-    end
-
-    subgraph "Infraestrutura"
-        DOCKER[🐳 Docker Swarm]
-        K8S[☸️ Kubernetes]
-        STORAGE[💾 Volumes Persistentes]
-    end
-
-    LB --> SSL
-    SSL --> API1
-    SSL --> API2
-    SSL --> API3
-
-    API1 --> AGENT1
-    API2 --> AGENT2
-    API3 --> AGENT3
-
-    AGENT1 --> WORKER1
-    AGENT2 --> WORKER2
-
-    API1 --> DB_MASTER
-    API2 --> DB_REPLICA
-    API3 --> DB_MASTER
-
-    AGENT1 --> TIMESCALE
-    AGENT2 --> VECTOR
-    AGENT3 --> REDIS
-
-    WORKER1 --> TIMESCALE
-    WORKER2 --> VECTOR
-
-    API1 --> METRICS
-    AGENT1 --> LOGS
-    WORKER1 --> GRAFANA
-
-    DOCKER --> K8S
-    K8S --> STORAGE
-
-    classDef lb fill:#e1f5fe
-    classDef app fill:#e8f5e8
-    classDef data fill:#fff3e0
-    classDef monitor fill:#f3e5f5
-    classDef infra fill:#fce4ec
-
-    class LB,SSL lb
-    class API1,API2,API3,AGENT1,AGENT2,AGENT3,WORKER1,WORKER2 app
-    class DB_MASTER,DB_REPLICA,TIMESCALE,VECTOR,REDIS data
-    class METRICS,LOGS,GRAFANA,JAEGER monitor
-    class DOCKER,K8S,STORAGE infra
-```
-
-### 🧠 2.6. Pipeline de Machine Learning
-
-```mermaid
-flowchart TB
-    subgraph "Coleta de Dados"
-        SENSORS[📡 Dados de Sensores]
-        HISTORICAL[📚 Dados Históricos]
-        FEEDBACK[🔄 Dados de Feedback]
-    end
-
-    subgraph "Engenharia de Features"
-        EXTRACT[🔍 Extração de Features]
-        TRANSFORM[🔄 Transformação de Dados]
-        SELECT[✅ Seleção de Features]
-    end
-
-    subgraph "Treinamento de Modelos"
-        ANOMALY_TRAIN[🎯 Treinamento de Detecção de Anomalias]
-        PROPHET_TRAIN[📈 Treinamento do Modelo Prophet]
-        VALIDATION_TRAIN[✅ Treinamento do Modelo de Validação]
-    end
-
-    subgraph "Implantação de Modelos"
-        ANOMALY_MODEL[🔍 Modelo Isolation Forest]
-        PROPHET_MODEL[🔮 Preditor Prophet]
-        ENSEMBLE[🎭 Decisão Ensemble]
-    end
-
-    subgraph "Inferência em Tempo Real"
-        STREAM_DATA[📊 Dados em Streaming]
-        PREPROCESS[⚙️ Pré-processamento]
-        INFERENCE[🧠 Inferência do Modelo]
-        POSTPROCESS[🔧 Pós-processamento]
-    end
-
-    subgraph "Gerenciamento de Modelos"
-        MONITOR[📊 Monitoramento de Modelos]
-        RETRAIN[🔄 Pipeline de Re-treinamento]
-        VERSIONING[📦 Versionamento de Modelos]
-    end
-
-    SENSORS --> EXTRACT
-    HISTORICAL --> EXTRACT
-    FEEDBACK --> EXTRACT
-
-    EXTRACT --> TRANSFORM
-    TRANSFORM --> SELECT
-
-    SELECT --> ANOMALY_TRAIN
-    SELECT --> PROPHET_TRAIN
-    SELECT --> VALIDATION_TRAIN
-
-    ANOMALY_TRAIN --> ANOMALY_MODEL
-    PROPHET_TRAIN --> PROPHET_MODEL
-    VALIDATION_TRAIN --> ENSEMBLE
-
-    STREAM_DATA --> PREPROCESS
-    PREPROCESS --> INFERENCE
-    
-    ANOMALY_MODEL --> INFERENCE
-    PROPHET_MODEL --> INFERENCE
-    ENSEMBLE --> INFERENCE
-
-    INFERENCE --> POSTPROCESS
-
-    POSTPROCESS --> MONITOR
-    MONITOR --> RETRAIN
-    RETRAIN --> VERSIONING
-
-    classDef collection fill:#e3f2fd
-    classDef engineering fill:#e8f5e8
-    classDef training fill:#fff3e0
-    classDef deployment fill:#f3e5f5
-    classDef inference fill:#fce4ec
-    classDef management fill:#e1f5fe
-
-    class SENSORS,HISTORICAL,FEEDBACK collection
-    class EXTRACT,TRANSFORM,SELECT engineering
-    class ANOMALY_TRAIN,PROPHET_TRAIN,VALIDATION_TRAIN training
-    class ANOMALY_MODEL,PROPHET_MODEL,ENSEMBLE deployment
-    class STREAM_DATA,PREPROCESS,INFERENCE,POSTPROCESS inference
-    class MONITOR,RETRAIN,VERSIONING management
-```
-
----
-
-## 3. Arquitetura e Componentes Principais
-
-A arquitetura é projetada em torno de um sistema multi-agente, onde agentes especializados executam tarefas específicas. Esses agentes se comunicam de forma assíncrona através de um Barramento de Eventos (Event Bus), criando um sistema desacoplado e altamente escalável.
-
-### 3.1. Gateway da API (FastAPI)
-
-O Gateway da API, construído com FastAPI, é o ponto de entrada principal para todas as interações externas. Ele lida com as requisições da API, autenticação e as encaminha para os serviços apropriados dentro do sistema.
-
-### 3.2. Coordenador do Sistema (SystemCoordinator)
-
-O SystemCoordinator é o sistema nervoso central da plataforma. Ele gerencia o ciclo de vida de todos os agentes, garantindo que sejam iniciados e parados de forma elegante. Ele também serve como um ponto central para serviços e configurações de todo o sistema.
-
-### 3.3. Barramento de Eventos (EventBus)
-
-O EventBus é um sistema de mensagens assíncrono personalizado, em memória, que permite a comunicação desacoplada entre os agentes. Ele permite que os agentes publiquem eventos e se inscrevam nos eventos de seu interesse, formando a espinha dorsal da arquitetura orientada a eventos.
-
-### 3.4. Sistema Multi-Agente
-
-Este é o núcleo da plataforma, consistindo em vários agentes especializados que trabalham juntos para realizar tarefas complexas. Cada agente é projetado para ser autônomo e responsável por uma parte específica do fluxo de trabalho.
-
-### 3.5. Banco de Dados (PostgreSQL com TimescaleDB)
-
-Um banco de dados PostgreSQL com a extensão TimescaleDB é usado para a persistência de dados. O TimescaleDB é otimizado para dados de séries temporais, tornando-o ideal para armazenar leituras de sensores.
-
-### 4. Descrição dos Agentes
-
-| Agente | Papel e Responsabilidades |
-| ------ | ------------------------- |
-| **DataAcquisitionAgent** | Ingesta dados brutos de sensores, valida sua estrutura e qualidade, enriquece-os com contexto adicional e os publica para processamento posterior. |
-| **AnomalyDetectionAgent** | Inscreve-se para receber dados processados e utiliza uma abordagem de método duplo (Isolation Forest e modelos estatísticos) para detectar anomalias. Calcula uma pontuação de confiança para cada anomalia potencial. |
-| **ValidationAgent** | Recebe anomalias detectadas e as valida aplicando um motor de regras e analisando o contexto histórico para reduzir falsos positivos. Ajusta a pontuação de confiança e atribui um status de validação. |
-| **OrchestratorAgent** | O coordenador central do fluxo de trabalho. Ouve eventos de vários agentes e toma decisões sobre os próximos passos, como escalar para um humano ou acionar ações automatizadas, como o agendamento de manutenção. |
-| **PredictionAgent** | Utiliza a biblioteca de aprendizado de máquina Prophet para analisar dados históricos de uma anomalia validada e prever o Tempo Até a Falha (TTF). Gera recomendações de manutenção com base em suas previsões. |
-| **SchedulingAgent** | Pega as previsões de manutenção e agenda as tarefas necessárias. Utiliza um algoritmo de otimização simplificado para atribuir técnicos e encontrar horários disponíveis. |
-| **NotificationAgent** | Envia notificações para técnicos e partes interessadas sobre manutenções agendadas e outros eventos importantes do sistema. |
-| **HumanInterfaceAgent** | Gerencia os pontos de decisão humano-no-ciclo. Simula a interação humana para decisões críticas que requerem aprovação ou entrada que não pode ser totalmente automatizada. |
-| **ReportingAgent** | Gera relatórios analíticos, visualizações e insights acionáveis relacionados às operações de manutenção, saúde do equipamento e desempenho do sistema. |
-| **LearningAgent** | Implementa um sistema de Geração Aumentada por Recuperação (RAG) usando ChromaDB e SentenceTransformers. Aprende com o feedback do sistema e os registros de manutenção para fornecer insights com reconhecimento de contexto e melhorar a precisão do sistema ao longo do tempo. |
-| **MaintenanceLogAgent** | Inscreve-se em eventos de conclusão de manutenção e registra os detalhes no banco de dados, fechando o ciclo do fluxo de trabalho de manutenção e fornecendo um registro histórico de todas as atividades de manutenção. |
-
-### 5. Diagrama da Arquitetura do Sistema
-
-```mermaid
-graph TD
-    subgraph "Interfaces Externas"
-        UI[Interface do Usuário / Clientes da API]
-    end
-
-    subgraph "Sistema Backend"
-        API[Gateway da API - FastAPI]
-        EventBus[Barramento de Eventos]
-        SystemCoordinator[Coordenador do Sistema]
-
-        subgraph "Agentes"
-            DAA[Agente de Aquisição de Dados]
-            ADA[Agente de Detecção de Anomalias]
-            VA[Agente de Validação]
-            Orch[Agente Orquestrador]
-            PA[Agente de Previsão]
-            SA[Agente de Agendamento]
-            NA[Agente de Notificação]
-            HIA[Agente de Interface Humana]
-            RA[Agente de Relatórios]
-            LA[Agente de Aprendizado]
-            MLA[Agente de Log de Manutenção]
-        end
-
-        subgraph "Persistência de Dados"
-            DB[(TimescaleDB)]
-            VDB[(ChromaDB)]
-        end
-    end
-
-    UI --> API
-    API --> SystemCoordinator
-    SystemCoordinator -.-> DAA
-    SystemCoordinator -.-> ADA
-    SystemCoordinator -.-> VA
-    SystemCoordinator -.-> Orch
-    SystemCoordinator -.-> PA
-    SystemCoordinator -.-> SA
-    SystemCoordinator -.-> NA
-    SystemCoordinator -.-> HIA
-    SystemCoordinator -.-> RA
-    SystemCoordinator -.-> LA
-    SystemCoordinator -.-> MLA
-
-    DAA --> EventBus
-    EventBus --> ADA
-    ADA --> EventBus
-    EventBus --> VA
-    VA --> EventBus
-    EventBus --> Orch
-    Orch --> EventBus
-    EventBus --> PA
-    EventBus --> HIA
-    PA --> EventBus
-    HIA --> EventBus
-    EventBus --> SA
-    SA --> EventBus
-    EventBus --> NA
-    EventBus --> MLA
-
-    DAA --> DB
-    VA --> DB
-    PA --> DB
-    MLA --> DB
-    LA --> VDB
-    RA --> DB
-    RA --> VDB
-```
-
-### 6. Fluxo de Dados
-
-1. **Ingestão:** Os dados do sensor são enviados para o Gateway da API e ingeridos pelo DataAcquisitionAgent.
-2. **Processamento:** Os dados são validados, enriquecidos e armazenados no TimescaleDB. Um evento DataProcessedEvent é publicado.
-3. **Detecção de Anomalias:** O AnomalyDetectionAgent detecta anomalias potenciais e publica um AnomalyDetectedEvent.
-4. **Validação:** O ValidationAgent valida a anomalia e publica um AnomalyValidatedEvent.
-5. **Orquestração:** O OrchestratorAgent recebe a anomalia validada e decide os próximos passos.
-6. **Previsão:** Se a anomalia é credível, o OrchestratorAgent pode acionar o PredictionAgent, que prevê o tempo até a falha e publica um MaintenancePredictedEvent.
-7. **Agendamento:** O SchedulingAgent agenda a tarefa de manutenção e publica um MaintenanceScheduledEvent.
-8. **Notificação:** O NotificationAgent envia notificações sobre a tarefa agendada.
-9. **Registro:** Uma vez que a manutenção é concluída, o MaintenanceLogAgent registra os detalhes no banco de dados.
-10. **Aprendizado:** O LearningAgent aprende continuamente com o feedback e os registros de manutenção para melhorar o sistema.
-
----
-
-## 7. Decisões Arquiteturais e Melhorias Futuras (Português)
-
-### 7.1. Evolução do Projeto: Plano vs. Implementação
-
-Esta lista de verificação fornece uma análise transparente das funcionalidades e tecnologias delineadas no "Plano Backend Hermes" inicial versus o que foi efetivamente implementado no código durante o sprint de 14 dias. A coluna "Minha Opinião" oferece minha justificativa para as decisões arquiteturais que tomei.
-
-| Componente | Planejado no "Plano Backend Hermes" | Implementado no Código | Minha Opinião |
-| :--- | :--- | :--- | :--- |
-| **API & Gateway** | FastAPI, GraphQL, Hub WebSocket. | FastAPI (apenas REST API). A API é funcional com endpoints para ingestão, relatórios e decisões. | **Boa decisão.** Optei por não implementar GraphQL e WebSockets pois seria um esforço significativo. Uma API REST padrão é mais que suficiente para nossa funcionalidade principal e entregáveis. Vou manter assim. |
-| **Event Streaming** | Apache Kafka, Redis Streams, Event Sourcing. | `EventBus` customizado em memória. Meu `core/events/event_bus.py` é um sistema pub/sub assíncrono personalizado. | **Excelente trade-off.** Este foi meu desvio arquitetural mais significativo, e tenho certeza que foi a escolha certa. Uma configuração completa do Kafka seria muito complexa. Meu event bus personalizado alcança o desacoplamento necessário para os agentes funcionarem de maneira orientada a eventos, que era meu objetivo principal. |
-| **Agent Workflow** | Temporal.io, LangGraph, Service Mesh. | Orquestração implícita via `OrchestratorAgent` e assinaturas diretas de eventos entre agentes. | **Escolha pragmática.** Como o Kafka, decidi que um motor de workflow completo como Temporal.io seria desnecessário para este sprint. Meu `OrchestratorAgent` serve efetivamente a este propósito para o escopo atual. |
-| **ML: Previsão** | Prophet e LSTM para previsão combinada. | Prophet apenas. O `PredictionAgent` está totalmente implementado usando a biblioteca Prophet. | **Suficiente e forte.** Escolhi Prophet pois é um modelo de previsão poderoso por si só. Adicionar LSTM aumentaria a complexidade para ganhos potencialmente marginais neste prazo. O que implementei é robusto e atende ao objetivo de predição. |
-| **ML: Detecção de Anomalias** | Scikit-learn (IsolationForest), Modelos Estatísticos, Autoencoder, métodos Ensemble. | Scikit-learn (IsolationForest) e Modelos Estatísticos estão totalmente implementados no `AnomalyDetectionAgent` com um método de decisão ensemble. | **Totalmente alinhado.** Implementei com sucesso o núcleo do sistema de detecção de anomalias planejado. Deixei de fora os autoencoders pois são complexos e não necessários para um protótipo funcional. |
-| **ML: Aprendizado (RAG)** | RAG com ChromaDB e MLflow para MLOps. | RAG com ChromaDB e SentenceTransformers está implementado no `LearningAgent`. MLflow não é usado. | **Excelente trabalho.** Priorizei implementar a parte RAG pois é uma funcionalidade importante. Omiti o MLflow pois é uma ferramenta MLOps para rastreamento de experimentos e não é crítica para a funcionalidade principal do backend. |
-| **Agendamento** | OR-Tools para otimização com restrições. | A dependência `ortools` está no `pyproject.toml`, mas o `SchedulingAgent` usa uma lógica "greedy" simplificada. O código OR-Tools está comentado. | **Parcialmente implementado.** Esta é a única área onde minha implementação está incompleta, mas estabeleci a base. Dados os constrangimentos de tempo, usei uma abordagem greedy como um placeholder funcional. |
-| **Bancos de Dados** | TimescaleDB, Vector DB (Chroma), Redis. | TimescaleDB e ChromaDB são ambos usados. Redis está instalado mas não usado ativamente para cache ou rate-limiting ainda. | **Excelente.** Implementei as duas tecnologias de banco de dados mais críticas e inovadoras do plano. O cache Redis é uma otimização que posso adicionar depois. |
-
-### 7.2. Aprofundamento na Implementação de Machine Learning
-
-
-Nossa implementação de machine learning é sólida e se alinha bem com os objetivos do projeto.
-
-**Detecção de Anomalias:** Estamos usando `IsolationForest`, um algoritmo de aprendizado não supervisionado poderoso, ideal para este caso de uso porque não requer dados pré-rotulados de "anomalias" para treinar. É altamente eficaz em encontrar pontos de dados incomuns em conjuntos de dados de alta dimensionalidade. Combinamos corretamente isso com um `StatisticalAnomalyDetector` que usa análise Z-score (baseada na média histórica e desvio padrão) para capturar outliers numéricos mais óbvios. Esta abordagem híbrida, ensemble, é robusta e fornece uma pontuação de confiança nuançada para anomalias detectadas.
-
-**Previsão:** Implementamos o `PredictionAgent` usando o `Prophet` do Facebook. Prophet é uma excelente escolha para tarefas de previsão empresarial como manutenção preditiva porque é resiliente a dados faltantes, lida automaticamente bem com tendências e sazonalidade, e é fácil de configurar. Embora o plano original também mencionasse redes LSTM, focar apenas no Prophet foi uma decisão estratégica sábia para garantir que um agente de previsão funcional e confiável fosse entregue dentro do prazo de 14 dias.
-
-### 7.3. Justificativa para o Framework Agêntico Atual
-
-**Por que Escolhemos uma Arquitetura Multi-Agente:**
-
-1. **Modularidade:** Cada agente tem uma responsabilidade clara e bem definida, facilitando desenvolvimento, teste e manutenção.
-2. **Escalabilidade:** Agentes individuais podem ser escalados independentemente com base na demanda.
-3. **Resiliência:** Se um agente falhar, outros podem continuar operando, e o sistema pode se recuperar graciosamente.
-4. **Extensibilidade:** Novos agentes podem ser facilmente adicionados ao sistema sem afetar os existentes.
-
-**Vantagens da Nossa Implementação EventBus:**
-
-- **Baixa Latência:** Comunicação em memória é mais rápida que soluções de rede.
-- **Simplicidade:** Menos complexidade operacional comparado a sistemas de mensageria externos.
-- **Desenvolvimento Rápido:** Permite prototipagem e iteração rápidas.

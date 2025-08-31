@@ -1,984 +1,480 @@
-# Smart Maintenance SaaS - Backend
+# Smart Maintenance SaaS - Complete Documentation Index
 
-🇧🇷 **[Clique aqui para ler em Português](#-smart-maintenance-saas---backend-português)** | 🇺🇸 **English Version Below**
+## Core Documentation
 
-## 📚 Documentation Navigation
+### Getting Started
 
-This document is part of the Smart Maintenance SaaS documentation suite. For complete system understanding, please also refer to:
+- **[Main README](../README.md)** - Project overview, quick start, and repository structure
+- **[Backend README](./README.md)** - Docker deployment and getting started guide
+- **[Development Orientation](../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
 
-- **[Deployment Status](./docs/DEPLOYMENT_STATUS.md)** - Current deployment status and container information
-- **[Performance Baseline](./docs/PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics baseline
-- **[System and Architecture](./docs/SYSTEM_AND_ARCHITECTURE.md)** - Complete system architecture and component overview
-- **[API Documentation](./docs/api.md)** - Complete REST API reference and usage examples  
-- **[Load Testing Instructions](./docs/LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
-- **[System Screenshots](./docs/SYSTEM_SCREENSHOTS.md)** - Complete system demonstration with visual documentation
-- **[Future Roadmap](./docs/FUTURE_ROADMAP.md)** - Planned enhancements and architectural evolution
-- **[Original Architecture](./docs/original_full_system_architecture.md)** - Complete Phase 1 documentation and initial system design
+### Project History & Changelog
+
+- **[30-Day Sprint Changelog](../30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](../final_30_day_sprint.md)** - Executive summary of sprint achievements
+
+## System Architecture & Design
+
+### Architecture Documentation
+
+- **[System and Architecture](./docs/SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
+- **[System Screenshots](./docs/SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
+- **[Comprehensive System Analysis](./docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
+- **[Microservice Migration Strategy](./docs/MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
+
+### Database Design
+
+- **[Database Documentation](./docs/db/README.md)** - Database schema and design documentation
+- **[Database ERD](./docs/db/erd.dbml)** - Entity Relationship Diagram source
+- **[Database ERD (PNG)](./docs/db/erd.png)** - Entity Relationship Diagram visualization
+- **[Database ERD (Dark Mode)](./docs/db/erd_darkmode.png)** - Entity Relationship Diagram (dark theme)
+- **[Database Schema](./docs/db/schema.sql)** - Complete SQL schema definition
+
+## API & Integration
+
+### API Documentation
+
+- **[API Reference](./docs/api.md)** - Complete REST API documentation and examples
+- **[Configuration Management](./core/config/README.md)** - Centralized configuration system
+- **[Logging Configuration](./core/logging_config.md)** - Structured JSON logging setup
+
+## Performance & Testing
+
+### Performance Documentation
+
+- **[Performance Baseline](./docs/PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
+- **[Day 17 Load Test Report](./docs/DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
+- **[Day 18 Performance Results](./docs/DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
+- **[Load Testing Instructions](./docs/LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
+
+### Testing Documentation
+
 - **[Test Documentation](./tests/README.md)** - Test organization and execution guide
-- **[Logging Configuration](./core/logging_config.md)** - Structured JSON logging setup and configuration
-- **[Configuration Management](./core/config/README.md)** - Centralized configuration system using Pydantic BaseSettings
-- **[Project Overview](../README.md)** - High-level project description and objectives
+- **[Coverage Improvement Plan](./docs/COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
+
+## Machine Learning & Data Science
+
+### ML Documentation
+
+- **[ML Documentation](./docs/ml/README.md)** - Machine learning models and pipelines
+- **[Models Summary](./docs/MODELS_SUMMARY.md)** - Overview of all 17+ production models
+- **[Project Gauntlet Plan](./docs/PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
+
+## Security & Operations
+
+### Security Documentation
+
+- **[Security Documentation](./docs/SECURITY.md)** - Security architecture and implementation
+- **[Security Audit Checklist](./docs/SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
+
+### Service Documentation
+
+- **[Anomaly Service](./services/anomaly_service/README.md)** - Future anomaly detection microservice
+- **[Prediction Service](./services/prediction_service/README.md)** - Future ML prediction microservice
 
 ---
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-Available-blue)](https://hub.docker.com/r/yancotta/smart-maintenance-saas)
+*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
+
+---
+
+# Smart Maintenance SaaS – Backend
+
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Production-green.svg)](https://fastapi.tiangolo.com/)
 [![Tests](https://img.shields.io/badge/Tests-410%2F411%20Passing-brightgreen.svg)](#test-status)
-[![Poetry](https://img.shields.io/badge/Poetry-Dependency%20Management-blue.svg)](https://python-poetry.org/)
-
-A robust, event-driven, multi-agent backend for an industrial predictive maintenance SaaS platform. This system provides a solid foundation for ingesting sensor data, detecting anomalies, predicting failures, and orchestrating maintenance workflows.
-
-**Current Status:** The system is fully functional, with a complete end-to-end workflow from data ingestion to maintenance scheduling and logging. All core agents are implemented and integrated through an event-driven architecture.
-
-## 🚀 Quick Start (One-Command Run)
-
-This project is fully containerized with Docker. To get the entire system (API, Database, UI) running, follow these steps:
-
-1.  **Prerequisite:** Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-2.  **Clone the repository.**
-3.  **Run the system:** Navigate to the `smart-maintenance-saas` directory in your terminal and run the single command:
-    ```bash
-    docker compose up -d --build
-    ```
-4.  **Access the services:**
-    * **User Interface:** [http://localhost:8501](http://localhost:8501)
-    * **API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-    * **Health Check:** `curl http://localhost:8000/health`
-    * **Metrics:** `curl http://localhost:8000/metrics`
-
-## 🏛️ Key Project Artifacts
-
-* **Database Schema:** [View the Entity-Relationship Diagram](./docs/db/erd.png) and the raw [SQL Schema](./docs/db/schema.sql).
-* **Master Dataset:** The training data is available at `data/sensor_data.csv`.
-* **Security Analysis:** Our proactive threat model can be found in [SECURITY.md](./docs/SECURITY.md).
-
-## 🚀 Recent Updates
-
-### Enhanced Streamlit UI & Async Fix (June 2025)
-
-**Key Improvements:**
-- **🔧 Resolved Async/Await Issue**: Fixed critical thread-blocking problems in `/api/v1/reports/generate` endpoint using ThreadPoolExecutor
-- **🎨 Enhanced UI Components**: Improved Streamlit interface with better formatting, success indicators, and metadata displays
-- **📊 Advanced Report Generation**: Added support for multiple report types, output formats (JSON/text), date ranges, and chart generation
-- **🖼️ Visual Charts**: Proper base64 image decoding and display for matplotlib-generated charts
-- **🛡️ Better Error Handling**: Comprehensive error messages and graceful degradation
-
-**Technical Details:**
-- Reports endpoint now uses `asyncio.loop.run_in_executor()` with ThreadPoolExecutor for non-blocking operations
-- Enhanced UI with date pickers, format selectors, and chart options
-- **410 out of 411 tests pass** - Only 1 E2E test fails due to scheduling constraints (see [Test Status](#test-status) below)
-- Fully functional integration between FastAPI backend and Streamlit frontend
-
-## Tech Stack
-
-- **Core:** Python 3.11+, FastAPI, Pydantic v2
-- **Database:** PostgreSQL, TimescaleDB, Alembic for migrations
-- **Communication:** Custom asynchronous EventBus
-- **Machine Learning:** Scikit-learn (Isolation Forest), Prophet
-- **Development:** Poetry, Docker, Pytest, Pre-commit hooks
-
-## Project Structure
-
-The project is organized into modular directories:
-
-- `apps/`: Contains the application logic, including the multi-agent system (`agents`), API endpoints (`api`), and workflows.
-- `core/`: Shared infrastructure, such as database connections, event bus, and configuration management.
-- `data/`: Data-related components, including Pydantic schemas, data generators, and validators.
-- `tests/`: A comprehensive test suite with unit, integration, and end-to-end tests.
-- `scripts/`: Utility scripts for development and maintenance.
-
-For a detailed architecture overview, please refer to the [System and Architecture Documentation](./docs/SYSTEM_AND_ARCHITECTURE.md).
-
-## Key Features
-
-- **Multi-Agent System:** A sophisticated system of specialized agents that handle different aspects of the maintenance workflow.
-- **Event-Driven Architecture:** Decoupled components that communicate asynchronously through an event bus.
-- **Predictive Maintenance:** Utilizes machine learning to predict equipment failures and recommend maintenance actions.
-- **Automated Workflows:** End-to-end automation from anomaly detection to maintenance logging.
-- **Comprehensive Testing:** A robust test suite ensures system reliability and stability.
-
-## Implemented Agents
-
-For detailed descriptions of each agent's role and responsibilities, please refer to the [System and Architecture Documentation](./docs/SYSTEM_AND_ARCHITECTURE.md#22-agent-descriptions).
-
-## API Endpoints
-
-The system exposes the following main API endpoints:
-
-- `POST /api/v1/data/ingest`: Ingests sensor data into the system.
-- `POST /api/v1/reports/generate`: Generates maintenance and system health reports.
-- `POST /api/v1/decisions/submit`: Submits human feedback or decisions on system-prompted queries.
-
-All endpoints are secured and require a valid `X-API-Key` in the header.
-
-## Getting Started
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Python 3.11+ (for local development)
-- Poetry (for local development)
-
-### Quick Start with Docker (Recommended)
-
-The simplest way to run the complete Smart Maintenance SaaS system:
-
-**Option 1: Using Docker Hub Image (Fastest)**
-
-1. **Pull and run the pre-built image:**
-
-    ```bash
-    # Pull the latest image from Docker Hub
-    docker pull yancotta/smart-maintenance-saas:latest
-    
-    # Run with environment variables
-    docker run -d \
-      --name smart-maintenance \
-      -p 8000:8000 \
-      -e DATABASE_URL=postgresql://user:pass@host:5432/db \
-      -e API_KEY=your_secure_api_key_min_32_characters \
-      -e SECRET_KEY=your_secure_secret_key_min_32_chars \
-      yancotta/smart-maintenance-saas:latest
-    ```
-
-2. **Access the application:**
-   - **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
-   - **Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
-
-**Option 2: Using Docker Compose (Full Stack)**
-
-1. **Clone the repository:**
-
-    ```bash
-    git clone <repository-url>
-    cd smart-maintenance-saas
-    ```
-
-2. **Configure environment variables (Important):**
-
-    ```bash
-    # Copy the production environment template
-    cp .env.prod.example .env
-    ```
-    
-    **📝 Configure your .env file:** Open the newly created `.env` file and update the following critical settings:
-    
-    - **DATABASE_URL**: Update the database connection string with your PostgreSQL credentials
-    - **API_KEY**: Set a secure API key for authentication (minimum 32 characters)
-    - **SECRET_KEY**: Set a secure secret key for JWT signing (minimum 32 characters)
-    
-    **Example minimal configuration:**
-    ```bash
-    DATABASE_URL=postgresql://smart_user:your_secure_password@localhost:5432/smart_maintenance_db
-    API_KEY=your_secure_api_key_min_32_characters_long_example
-    SECRET_KEY=your_secure_secret_key_for_jwt_signing_min_32_chars
-    DEBUG=false
-    ```
-    
-    > 💡 **Tip**: The `.env.prod.example` file contains comprehensive documentation for all available configuration options including optional services like WhatsApp notifications, email SMTP, and Redis caching.
-
-3. **Start the complete system:**
-
-    ```bash
-    docker compose up -d
-    ```
-
-4. **Access the applications:**
-   - **Streamlit UI:** [http://localhost:8501](http://localhost:8501) - Web-based control panel
-   - **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs) - Swagger UI
-   - **Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
-
-5. **Verify system status:**
-
-    ```bash
-    docker compose ps
-    ```
-
-    All services should show as "healthy":
-    - `smart_maintenance_db` - TimescaleDB database
-    - `smart_maintenance_api` - FastAPI backend
-    - `smart_maintenance_ui` - Streamlit interface
-
-### Docker Image Details
-
-- **Docker Hub:** [yancotta/smart-maintenance-saas](https://hub.docker.com/r/yancotta/smart-maintenance-saas)
-- **Image:** `yancotta/smart-maintenance-saas:latest`
-- **Size:** ~3.12 GB (optimized multi-stage build)
-- **Base:** Python 3.11 with Poetry, FastAPI, Streamlit, ML libraries
-- **Available Tags:** `latest`, `main`, `main-<commit-sha>`
-- **Health Checks:** Includes comprehensive health monitoring
-- **Architecture:** linux/amd64
-
-### Alternative: Local Development Setup
-
-For development and debugging:
-
-1. **Install dependencies:**
-
-    ```bash
-    poetry install
-    ```
-
-2. **Set up the environment:**
-
-    ```bash
-    cp .env.example .env
-    # Review and update .env if necessary
-    ```
-
-3. **Start only the database:**
-
-    ```bash
-    docker compose up -d db
-    ```
-
-4. **Run database migrations:**
-
-    ```bash
-    poetry run alembic upgrade head
-    ```
-
-5. **Start services separately:**
-
-    ```bash
-    # API Server
-    poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
-    
-    # Streamlit UI (in another terminal)
-    poetry run streamlit run ui/streamlit_app.py --server.port 8501
-    ```
-
-## Control Panel UI (Streamlit)
-
-The system includes a comprehensive web-based control panel built with Streamlit that provides an intuitive interface for interacting with the Smart Maintenance backend.
-
-### Features
-
-- **Manual Data Ingestion**: Submit sensor readings with real-time validation
-- **Advanced Report Generation**: Create detailed reports with customizable options:
-  - Multiple report types: performance_summary, anomaly_summary, maintenance_summary, system_health
-  - Selectable output formats: JSON or text
-  - Date range selection for historical analysis
-  - Optional chart generation with base64-encoded visualizations
-- **Human Decision Simulation**: Submit maintenance approval/rejection decisions
-- **System Health Monitoring**: Real-time backend connectivity and status checks
-- **Enhanced User Experience**: Improved formatting, metadata displays, and error handling
-
-### Accessing the Control Panel
-
-With Docker deployment, the Streamlit UI is automatically available at [http://localhost:8501](http://localhost:8501) when you run `docker compose up -d`.
-
-### Using the Control Panel
-
-**Data Ingestion:**
-
-- Enter sensor details (ID, value, type, unit)
-- Supported sensor types: temperature, vibration, pressure
-- Submit button validates and sends data to backend
-
-**Report Generation:**
-
-- Select report type: performance_summary, anomaly_summary, maintenance_summary, system_health
-- Choose output format: JSON (structured data) or text (human-readable)
-- Set date range for historical analysis (default: last 30 days)
-- Enable/disable chart generation for visual insights
-- View formatted report content with metadata and charts (when available)
-
-**Human Decisions:**
-
-- Enter request ID for maintenance decisions
-- Choose approve/reject with justification
-- Simulates human operator decision workflow
-
-**System Monitoring:**
-
-- Sidebar shows real-time backend status
-- Quick actions for testing and health checks
-- Enhanced error handling with descriptive messages
-
-### Technical Improvements
-
-- **Async/Await Resolution**: Fixed thread-blocking issues in the reports endpoint using ThreadPoolExecutor for non-blocking operations
-- **Enhanced UI Components**: Better formatting, success indicators, and collapsible metadata sections
-- **Real Chart Support**: Proper base64 image decoding and display for matplotlib-generated charts
-- **Improved Error Handling**: Comprehensive error messages and graceful degradation
-
-## Data Export
-
-The Smart Maintenance SaaS system provides robust data export capabilities for extracting sensor readings data for analysis, backup, or integration with external systems. The export functionality supports both full and incremental export modes for optimal efficiency.
-
-### Full Export
-
-Performs a complete export of all sensor readings in the database to a CSV file. This mode is ideal for initial data extraction or when you need a complete dataset.
-
-**Command:**
-```bash
-# Export all sensor data to the default location (data/sensor_data.csv)
-python scripts/export_sensor_data_csv.py
-
-# Export to a custom location
-python scripts/export_sensor_data_csv.py --output /path/to/custom/export.csv
-```
-
-**Features:**
-- Exports all historical sensor readings
-- Creates a new CSV file with headers
-- Includes all columns: sensor_id, sensor_type, value, unit, timestamp, quality
-- Data is sorted by sensor_id and timestamp for consistent ordering
-
-### Incremental Export
-
-Performs an efficient incremental export that only exports new sensor readings added since the last export. This mode is perfect for scheduled exports and maintaining up-to-date datasets without re-exporting existing data.
-
-**Command:**
-```bash
-# Incremental export to default location
-python scripts/export_sensor_data_csv.py --incremental
-
-# Incremental export to custom location
-python scripts/export_sensor_data_csv.py --incremental --output /path/to/export.csv
-```
-
-**Features:**
-- Automatically detects the most recent timestamp from existing CSV file
-- Appends only new data since the last export
-- Fallback to full export if no existing file is found
-- Preserves data integrity and prevents duplicate records
-- No redundant headers when appending data
-
-**Use Cases:**
-- Scheduled daily/hourly data exports
-- Continuous data pipeline feeds
-- Incremental backup strategies
-- Real-time analytics data preparation
-
-## Test Status
-
-**Current Test Results: 410 PASSED, 1 FAILED** ✅
-
-The Smart Maintenance SaaS backend has an extensive test suite with 411 total tests covering unit, integration, and end-to-end scenarios. Currently, 410 tests pass successfully with only 1 failing test.
-
-### Failing Tests and Errors
-
-**Failed Test:** `tests/e2e/test_e2e_full_system_workflow.py::test_full_workflow_from_ingestion_to_scheduling`
-**Status:** FAILED
-**Issue:** AssertionError: Expected at least 1 MaintenanceScheduledEvent, got 0
-
-
-### Root Cause Analysis
-
-The failing E2E test is due to a **scheduling constraint issue** in the `SchedulingAgent`. The complete workflow functions correctly:
-
-1. ✅ **Sensor Data Ingestion** - SensorDataReceivedEvent processed
-2. ✅ **Anomaly Detection** - Statistical anomalies detected with high confidence (0.80-0.90)
-3. ✅ **Anomaly Validation** - AnomalyValidatedEvent published with CREDIBLE_ANOMALY status
-4. ✅ **Maintenance Prediction** - MaintenancePredictedEvent generated (failure predicted in 1.0 days)
-5. ✅ **Orchestration Logic** - Auto-approval due to urgent maintenance and high confidence
-6. ❌ **Maintenance Scheduling** - FAILED: No available technician slots found
-
-### Technical Details
-
-The SchedulingAgent correctly receives `MaintenancePredictedEvent` and creates maintenance requests, but the `CalendarService` fails to find available technician slots due to:
-
-- **Business Hours Constraint**: Calendar service only allows scheduling 8 AM - 6 PM on weekdays
-- **Test Execution Time**: E2E tests run at ~4:28 PM, close to business hour limits
-- **Scheduling Window**: The algorithm attempts to schedule urgent maintenance (1-day prediction) for immediate slots
-
-### Impact Assessment
-
-- **Severity**: LOW - This is a timing/scheduling logic issue, not a core system failure
-- **Functional Impact**: All critical system components work correctly
-- **Business Logic**: The system correctly identifies anomalies, validates them, and generates predictions
-- **Event Flow**: Complete event-driven workflow functions as designed
-
-### Resolution Options
-
-1. **Mock Calendar Service** in E2E tests to always return available slots
-2. **Adjust Business Hours** in test environment to allow 24/7 scheduling
-3. **Modify Test Timing** to run during guaranteed available hours
-4. **Enhanced Scheduling Logic** to handle edge cases and fallback scenarios
-
-### Test Coverage
-
-- **Unit Tests**: 100% of individual component tests pass
-- **Integration Tests**: All agent integration scenarios pass
-- **E2E Coverage**: 99.8% success rate (410/411 tests)
-- **Overall Success Rate**: 410 PASSED, 1 FAILED, out of 411 total tests
-
-The failing test does not impact the system's core functionality or deployment readiness. All critical system components have been verified to work correctly through comprehensive testing.
-
-## Running Tests
-
-The system includes a comprehensive test suite with multiple types of tests organized in the `tests/` directory:
-
-### Test Organization
-
-```text
-tests/
-├── api/                    # API-specific tests
-│   └── test_actual_api.py  # Real API endpoint testing
-├── e2e/                    # End-to-end system tests  
-│   ├── final_system_test.py    # Complete system validation
-│   └── test_ui_functionality.py # UI integration testing
-├── unit/                   # Component unit tests
-├── integration/           # Service integration tests
-└── conftest.py           # Shared test configuration
-```
-
-### Running Different Test Types
-
-**Complete Test Suite:**
-```bash
-poetry run pytest
-```
-
-**API Tests Only:**
-```bash
-poetry run pytest tests/api/
-```
-
-**End-to-End Tests:**
-```bash
-poetry run pytest tests/e2e/
-```
-
-**Quick System Validation:**
-```bash
-# Run the comprehensive final system test
-python tests/e2e/final_system_test.py
-```
-
-### Docker-Based Testing
-
-You can also run tests within the Docker environment:
-
-```bash
-# Start the system
-docker compose up -d
-
-# Run tests in the API container
-docker exec smart_maintenance_api python tests/e2e/final_system_test.py
-
-# Run pytest inside container
-docker exec smart_maintenance_api pytest
-```
-
-### Test Files Description
-
-- **`final_system_test.py`**: Comprehensive end-to-end validation that tests the complete workflow from UI interactions to API responses
-- **`test_actual_api.py`**: Direct API endpoint testing with real HTTP requests
-- **`test_ui_functionality.py`**: UI integration testing focusing on the Streamlit interface
-
-To run the full test suite, use the following command:
-
-```bash
-poetry run pytest
-```
-
-## Security Considerations
-
-### Current Security Implementation (v1.0)
-
-The Smart Maintenance SaaS system includes basic security measures suitable for development and initial production deployments:
-
-- **API Key Authentication**: Static API key validation for endpoint access
-- **Environment-based Configuration**: Sensitive values stored in environment variables
-- **Database Security**: PostgreSQL with user authentication and connection encryption
-- **Container Isolation**: Docker containers provide process and network isolation
-- **Input Validation**: Pydantic models ensure data integrity and prevent injection attacks
-
-### Production Security Recommendations
-
-For hardened production environments, consider implementing the following enhanced security measures:
-
-#### 🔐 **Secrets Management**
-- **Recommended**: Replace static API keys with dynamic secrets management
-- **Solutions**: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, or Google Secret Manager
-- **Benefits**: Automatic secret rotation, audit logging, and centralized access control
-
-#### 🛡️ **Authentication & Authorization**
-- **JWT Tokens**: Implement time-limited JWT tokens instead of static API keys
-- **Role-Based Access Control (RBAC)**: Different access levels for operators, maintenance teams, and administrators
-- **Multi-Factor Authentication (MFA)**: Additional security layer for administrative access
-
-#### 🔒 **Network Security**
-- **HTTPS/TLS**: Enable SSL/TLS certificates for all external communications
-- **API Gateway**: Implement rate limiting, DDoS protection, and request filtering
-- **VPC/Private Networks**: Deploy in isolated network environments
-- **Firewall Rules**: Restrict access to only necessary ports and IP ranges
-
-#### 📊 **Monitoring & Compliance**
-- **Security Audit Logging**: Comprehensive logging of all API access and administrative actions
-- **Intrusion Detection**: Monitor for suspicious patterns and unauthorized access attempts
-- **Compliance**: SOC 2, ISO 27001, or industry-specific compliance standards
-- **Vulnerability Scanning**: Regular security assessments and dependency updates
-
-#### 🏗️ **Infrastructure Security**
-- **Container Security**: Regular base image updates and vulnerability scanning
-- **Database Encryption**: Encrypt data at rest and in transit
-- **Backup Security**: Encrypted backups with secure off-site storage
-- **Disaster Recovery**: Documented procedures and tested recovery processes
-
-> **⚠️ Important**: The current implementation provides a solid foundation for security but should be enhanced with enterprise-grade solutions for production deployments handling sensitive industrial data.
+[![Performance](https://img.shields.io/badge/Peak%20RPS-103.8-blueviolet)](.)
+[![Latency](https://img.shields.io/badge/P95-2ms-purple)](.)
+[![Models](https://img.shields.io/badge/MLflow-15%2B%20Models-blue)](.)
+
+Production‑grade, event‑driven backend powering industrial predictive & prescriptive maintenance: resilient ingestion, TimescaleDB time‑series optimization, multi‑modal ML (tabular, vibration, audio, forecasting), automated drift detection & retraining, intelligent model selection, security hardening, and microservice‑ready architecture.
 
 ---
 
-## 🇧🇷 Smart Maintenance SaaS - Backend (Português)
+## 1. Quick Start (Backend Stack)
 
-### 📚 Navegação da Documentação
+```bash
+git clone <repo>
+cd enterprise_challenge_sprint_1_hermes_reply
+docker compose up -d --build
+# API:        http://localhost:8000/docs
+# UI:         http://localhost:8501
+# MLflow:     http://localhost:5000
+# Metrics:    http://localhost:8000/metrics
+```
 
-Este documento faz parte do conjunto de documentação do Smart Maintenance SaaS. Para compreensão completa do sistema, consulte também:
+Stop (preserve volumes):
+```bash
+docker compose down
+```
 
-- **[Status de Implantação](./docs/DEPLOYMENT_STATUS.md)** - Status atual de implantação e informações do container
-- **[Baseline de Performance](./docs/PERFORMANCE_BASELINE.md)** - Resultados de testes de carga e métricas de performance
-- **[Sistema e Arquitetura](./docs/SYSTEM_AND_ARCHITECTURE.md)** - Visão geral completa da arquitetura e componentes do sistema
-- **[Documentação da API](./docs/api.md)** - Referência completa da API REST e exemplos de uso
-- **[Instruções de Teste de Carga](./docs/LOAD_TESTING_INSTRUCTIONS.md)** - Guia abrangente para execução de testes de performance
-- **[Capturas de Tela do Sistema](./docs/SYSTEM_SCREENSHOTS.md)** - Demonstração completa do sistema com documentação visual
-- **[Roadmap Futuro](./docs/FUTURE_ROADMAP.md)** - Melhorias planejadas e evolução arquitetural
-- **[Arquitetura Original](./docs/original_full_system_architecture.md)** - Documentação completa da Fase 1 e design inicial do sistema
-- **[Documentação de Testes](./tests/README.md)** - Organização e guia de execução de testes
-- **[Configuração de Logging](./core/logging_config.md)** - Configuração de logging JSON estruturado
-- **[Gerenciamento de Configuração](./core/config/README.md)** - Sistema centralizado de configuração usando Pydantic BaseSettings
-- **[Visão Geral do Projeto](../README.md)** - Descrição de alto nível e objetivos do projeto
+Run migrations manually (intentional design – see Migration Strategy):
+```bash
+docker compose exec api alembic upgrade heads
+```
 
 ---
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![Testes](https://img.shields.io/badge/Testes-410%2F411%20Aprovados-brightgreen.svg)](#status-dos-testes)
-[![Poetry](https://img.shields.io/badge/Poetry-Gerenciamento%20de%20Dependências-blue.svg)](https://python-poetry.org/)
+## 2. Repository Structure (Backend Focus)
 
-Um backend robusto, orientado a eventos e multi-agente para uma plataforma SaaS de manutenção preditiva industrial. Este sistema fornece uma base sólida para ingestão de dados de sensores, detecção de anomalias, previsão de falhas e orquestração de fluxos de trabalho de manutenção.
+```
+smart-maintenance-saas/
+  apps/
+    api/                 # FastAPI routers, ML endpoints, drift endpoint
+    agents/              # Event-driven multi-agent (anomaly, scheduling, etc.)
+  core/
+    config/              # Pydantic settings
+    events/              # Event bus + base event types (retry, DLQ-ready)
+    logging_config.py    # JSON structured logging + correlation IDs
+    redis_client.py      # Redis (idempotency + pub/sub)
+  scripts/
+    seed_data.py
+    export_sensor_data_csv.py
+    run_drift_check_agent.py
+    retrain_models_on_drift.py
+  tests/                 # 410/411 passing (1 scheduling edge case)
+  alembic_migrations/    # Schema + performance index revisions
+  docker/ & infrastructure/k8s/ (scaffolding)
+```
 
-**Status Atual:** O sistema está totalmente funcional, com um fluxo de trabalho completo de ponta a ponta desde a ingestão de dados até o agendamento e registro de manutenção. Todos os agentes principais estão implementados e integrados através de uma arquitetura orientada a eventos.
+---
 
-## 🚀 Atualizações Recentes
+## 3. Core Capabilities (Synchronized to Changelog)
 
-### Interface Streamlit Melhorada e Correção Async (Junho 2025)
+| Capability | Status | Implementation Highlights |
+|------------|--------|---------------------------|
+| Ingestion Idempotency | ✅ | Redis SET NX EX (10m TTL), fallback to non-idempotent w/ warning |
+| Correlation / Request IDs | ✅ | Middleware adds/propagates X-Request-ID |
+| Structured Logging | ✅ | JSON logs + correlation_id ContextVar |
+| Event Bus Resilience | ✅ | Tenacity retries (exp backoff: 2s/4s/6s) + DLQ hook |
+| Time-Series Storage | ✅ | TimescaleDB hypertable + compression + retention |
+| Performance Indexing | ✅ | (sensor_id, timestamp DESC) + timestamp index |
+| Continuous Aggregate (CAGG) | ✅ | Hourly summary (avg/max/min/count) + 30m refresh policy |
+| Data Export | ✅ | Full + incremental CSV export script |
+| Drift Detection Endpoint | ✅ | /api/v1/ml/check_drift (KS test; PSI via agents) |
+| Automated Drift Agent | ✅ | APScheduler + Redis events + Slack/webhook ready |
+| Automated Retrain Agent | ✅ | Event-driven, cooldown & concurrency guard |
+| ML Registry Persistence | ✅ | MLflow (SQLite backend + shared /mlruns volume) |
+| Model Loader | ✅ | Cached, run URI fallback, structured exception logging |
+| Intelligent Model Selection | ✅ | MLflow tags (domain=bearing|audio|tabular|forecast|pump) |
+| Model Hash Validation (CI) | ✅ | Prevent silent artifact drift |
+| Rate Limiting | ✅ | slowapi (example: drift endpoint 10/min per API key) |
+| Security Audit & STRIDE | ✅ | SECURITY.md + SECURITY_AUDIT_CHECKLIST.md |
+| Vulnerability Scanning | ✅ | Snyk job + fail on high/critical |
+| Resilience / Chaos | ✅ | Toxiproxy (latency, timeout, partition) |
+| Microservice Scaffolding | ✅ (Dormant) | prediction_service / anomaly_service |
+| Performance Tuning | ✅ | 37.3% aggregation speed gain (CAGG) |
+| Load Test Baseline | ✅ | 103.8 peak RPS, P95=2ms, P99=3ms |
+| CI/CD Hardening | ✅ | Jobs: lint, tests, coverage≥80%, hash validate, ML validations |
 
-**Principais Melhorias:**
-- **🔧 Problema Async/Await Resolvido**: Corrigidos problemas críticos de bloqueio de thread no endpoint `/api/v1/reports/generate` usando ThreadPoolExecutor
-- **🎨 Componentes de UI Melhorados**: Interface Streamlit aprimorada com melhor formatação, indicadores de sucesso e exibições de metadados
-- **📊 Geração Avançada de Relatórios**: Suporte adicionado para múltiplos tipos de relatório, formatos de saída (JSON/texto), intervalos de datas e geração de gráficos
-- **🖼️ Gráficos Visuais**: Decodificação e exibição adequada de imagens base64 para gráficos gerados pelo matplotlib
-- **🛡️ Melhor Tratamento de Erros**: Mensagens de erro abrangentes e degradação elegante
+---
 
-**Detalhes Técnicos:**
-- Endpoint de relatórios agora usa `asyncio.loop.run_in_executor()` com ThreadPoolExecutor para operações não-bloqueantes
-- UI melhorada com seletores de data, seletores de formato e opções de gráfico
-- **410 de 411 testes aprovados** - Apenas 1 teste E2E falha devido a restrições de agendamento
-- Integração totalmente funcional entre backend FastAPI e frontend Streamlit
+## 4. Architecture Overview
 
-## Stack Tecnológica
+### 4.1 Event-Driven Flow
+Sensor ingestion → Validation → Anomaly detection → (Optional scheduling / prediction pipeline) → Drift monitoring events → Automated retrain → Registry update → Selection UI surfacing best model.
 
-- **Principal:** Python 3.11+, FastAPI, Pydantic v2
-- **Banco de Dados:** PostgreSQL, TimescaleDB, Alembic para migrações
-- **Comunicação:** EventBus assíncrono personalizado
-- **Aprendizado de Máquina:** Scikit-learn (Isolation Forest), Prophet
-- **Desenvolvimento:** Poetry, Docker, Pytest, Pre-commit hooks
+### 4.2 Why Event-Driven?
+- Decouples anomaly detection, prediction, validation, scheduling.
+- Enables safe future activation of microservices (strangler pattern).
+- Retry + DLQ semantics allow localized failure recovery.
 
-## Estrutura do Projeto
+### 4.3 Database Strategy (TimescaleDB)
+| Feature | Rationale |
+|---------|-----------|
+| Hypertable | Native partitioning for high-ingest time-series |
+| Composite Index (sensor_id, timestamp DESC) | Accelerates sliding windows + recent drift spans |
+| Timestamp Index | Pure time-range scans (bulk export / analytics) |
+| Continuous Aggregate (hourly) | Pre-compute statistics → 37.3% faster ML feature queries & dashboards |
+| Refresh Policy (start_offset 2h, end_offset 30m, 30m schedule) | Ensures late-arriving data stability & predictable refresh cadence |
+| Compression (≥7d) + Retention (180d) | Linear cost control + historical analytic viability |
 
-O projeto está organizado em diretórios modulares:
+CAGG creation is executed outside Alembic (Timescale restriction: cannot create inside a transaction). Migration documents non-transactional manual step.
 
-- `apps/`: Contém a lógica da aplicação, incluindo o sistema multi-agente (`agents`), endpoints da API (`api`) e workflows.
-- `core/`: Infraestrutura compartilhada, como conexões de banco de dados, event bus e gerenciamento de configuração.
-- `data/`: Componentes relacionados a dados, incluindo schemas Pydantic, geradores de dados e validadores.
-- `tests/`: Conjunto abrangente de testes com testes unitários, de integração e end-to-end.
-- `scripts/`: Scripts utilitários para desenvolvimento e manutenção.
+---
 
-Para uma visão detalhada da arquitetura, consulte a [Documentação de Sistema e Arquitetura](./docs/SYSTEM_AND_ARCHITECTURE.md).
+## 5. Data & Export
 
-## Características Principais
-
-- **Sistema Multi-Agente:** Sistema sofisticado de agentes especializados que lidam com diferentes aspectos do fluxo de trabalho de manutenção.
-- **Arquitetura Orientada a Eventos:** Componentes desacoplados que se comunicam de forma assíncrona através de um event bus.
-- **Manutenção Preditiva:** Utiliza aprendizado de máquina para prever falhas de equipamentos e recomendar ações de manutenção.
-- **Fluxos de Trabalho Automatizados:** Automação end-to-end desde detecção de anomalias até registro de manutenção.
-- **Testes Abrangentes:** Conjunto robusto de testes garante confiabilidade e estabilidade do sistema.
-
-## Agentes Implementados
-
-Para descrições detalhadas do papel e responsabilidades de cada agente, consulte a [Documentação de Sistema e Arquitetura](./docs/SYSTEM_AND_ARCHITECTURE.md#22-agent-descriptions).
-
-## Endpoints da API
-
-O sistema expõe os seguintes endpoints principais da API:
-
-- `POST /api/v1/data/ingest`: Ingere dados de sensores no sistema.
-- `POST /api/v1/reports/generate`: Gera relatórios de manutenção e saúde do sistema.
-- `POST /api/v1/decisions/submit`: Submete feedback humano ou decisões sobre consultas solicitadas pelo sistema.
-
-Todos os endpoints são seguros e requerem um `X-API-Key` válido no cabeçalho.
-
-## Primeiros Passos
-
-### Pré-requisitos
-
-- Docker e Docker Compose
-- Python 3.11+ (para desenvolvimento local)
-- Poetry (para desenvolvimento local)
-
-### Início Rápido com Docker (Recomendado)
-
-**Opção 1: Usando Imagem do Docker Hub (Mais Rápido)**
-
+Full export:
 ```bash
-# Baixe a imagem mais recente do Docker Hub
-docker pull yancotta/smart-maintenance-saas:latest
-
-# Execute o container
-docker run -d \
-  --name smart-maintenance-saas \
-  -p 8000:8000 \
-  -e DATABASE_URL="postgresql://user:password@host:5432/dbname" \
-  -e API_KEY="your-secure-api-key-min-32-chars" \
-  -e SECRET_KEY="your-secure-secret-key-min-32-chars" \
-  yancotta/smart-maintenance-saas:latest
-
-# Acesse em http://localhost:8000/docs
+docker compose exec api python scripts/export_sensor_data_csv.py
 ```
 
-> 🐳 **Docker Hub**: [yancotta/smart-maintenance-saas](https://hub.docker.com/r/yancotta/smart-maintenance-saas)  
-> 📦 **Tags disponíveis**: `latest`, `main`, `main-{commit}`
-
-**Opção 2: Usando Docker Compose (Stack Completa)**
-
-A maneira mais simples de executar o sistema completo Smart Maintenance SaaS:
-
-1. **Clone o repositório:**
-
-    ```bash
-    git clone <repository-url>
-    cd smart-maintenance-saas
-    ```
-
-2. **Configure variáveis de ambiente (Importante):**
-
-    ```bash
-    # Copie o template do ambiente de produção
-    cp .env.prod.example .env
-    ```
-    
-    **📝 Configure seu arquivo .env:** Abra o arquivo `.env` recém-criado e atualize as seguintes configurações críticas:
-    
-    - **DATABASE_URL**: Atualize a string de conexão do banco de dados com suas credenciais PostgreSQL
-    - **API_KEY**: Defina uma chave API segura para autenticação (mínimo 32 caracteres)
-    - **SECRET_KEY**: Defina uma chave secreta segura para assinatura JWT (mínimo 32 caracteres)
-    
-    **Exemplo de configuração mínima:**
-    ```bash
-    DATABASE_URL=postgresql://smart_user:sua_senha_segura@localhost:5432/smart_maintenance_db
-    API_KEY=sua_chave_api_segura_min_32_caracteres_exemplo
-    SECRET_KEY=sua_chave_secreta_segura_para_jwt_min_32_chars
-    DEBUG=false
-    ```
-    
-    > 💡 **Dica**: O arquivo `.env.prod.example` contém documentação abrangente para todas as opções de configuração disponíveis, incluindo serviços opcionais como notificações WhatsApp, email SMTP e cache Redis.
-
-3. **Inicie o sistema completo:**
-
-    ```bash
-    docker compose up -d
-    ```
-
-4. **Acesse as aplicações:**
-   - **Interface Streamlit:** [http://localhost:8501](http://localhost:8501) - Painel de controle baseado na web
-   - **Documentação da API:** [http://localhost:8000/docs](http://localhost:8000/docs) - Interface Swagger
-   - **Verificação de Saúde:** [http://localhost:8000/health](http://localhost:8000/health)
-
-5. **Verifique o status do sistema:**
-
-    ```bash
-    docker compose ps
-    ```
-
-    Todos os serviços devem aparecer como "healthy":
-    - `smart_maintenance_db` - Banco de dados TimescaleDB
-    - `smart_maintenance_api` - Backend FastAPI
-    - `smart_maintenance_ui` - Interface Streamlit
-
-### Detalhes da Imagem Docker
-
-- **Repositório Docker Hub:** [yancotta/smart-maintenance-saas](https://hub.docker.com/r/yancotta/smart-maintenance-saas)
-- **Imagem:** `yancotta/smart-maintenance-saas:latest`
-- **Tamanho:** ~3.12GB (otimizada com build multi-stage)
-- **Base:** Python 3.11 slim com Poetry, FastAPI, e dependências ML
-- **Arquitetura:** linux/amd64 
-- **Tags disponíveis:** 
-  - `latest` - versão mais recente da branch main
-  - `main` - última versão estável
-  - `main-{commit}` - builds específicos por commit
-- **Verificações de Saúde:** Monitoramento integrado de saúde do container
-- **Usuário:** Executa como usuário não-root para segurança
-
-### Alternativa: Configuração de Desenvolvimento Local
-
-Para desenvolvimento e depuração:
-
-1. **Instale dependências:**
-
-    ```bash
-    poetry install
-    ```
-
-2. **Configure o ambiente:**
-
-    ```bash
-    cp .env.example .env
-    # Revise e atualize .env se necessário
-    ```
-
-3. **Inicie apenas o banco de dados:**
-
-    ```bash
-    docker compose up -d db
-    ```
-
-4. **Execute migrações do banco de dados:**
-
-    ```bash
-    poetry run alembic upgrade head
-    ```
-
-5. **Inicie serviços separadamente:**
-
-    ```bash
-    # Servidor da API
-    poetry run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
-    
-    # Interface Streamlit (em outro terminal)
-    poetry run streamlit run ui/streamlit_app.py --server.port 8501
-    ```
-
-## Interface do Painel de Controle (Streamlit)
-
-O sistema inclui um painel de controle abrangente baseado na web construído com Streamlit que fornece uma interface intuitiva para interagir com o backend Smart Maintenance.
-
-### Funcionalidades
-
-- **Ingestão Manual de Dados**: Submeta leituras de sensores com validação em tempo real
-- **Geração Avançada de Relatórios**: Crie relatórios detalhados com opções personalizáveis:
-  - Múltiplos tipos de relatório: performance_summary, anomaly_summary, maintenance_summary, system_health
-  - Formatos de saída selecionáveis: JSON ou texto
-  - Seleção de intervalo de datas para análise histórica
-  - Geração opcional de gráficos com visualizações codificadas em base64
-- **Simulação de Decisão Humana**: Submeta decisões de aprovação/rejeição de manutenção
-- **Monitoramento de Saúde do Sistema**: Verificações de conectividade e status do backend em tempo real
-- **Experiência do Usuário Melhorada**: Formatação aprimorada, exibições de metadados e tratamento de erros
-
-### Acessando o Painel de Controle
-
-Com a implantação Docker, a interface Streamlit fica automaticamente disponível em [http://localhost:8501](http://localhost:8501) quando você executa `docker compose up -d`.
-
-### Usando o Painel de Controle
-
-**Ingestão de Dados:**
-
-- Insira detalhes do sensor (ID, valor, tipo, unidade)
-- Tipos de sensor suportados: temperatura, vibração, pressão
-- Botão de submissão valida e envia dados para o backend
-
-**Geração de Relatórios:**
-
-- Selecione tipo de relatório: performance_summary, anomaly_summary, maintenance_summary, system_health
-- Escolha formato de saída: JSON (dados estruturados) ou texto (legível por humanos)
-- Defina intervalo de datas para análise histórica (padrão: últimos 30 dias)
-- Habilite/desabilite geração de gráficos para insights visuais
-- Visualize conteúdo de relatório formatado com metadados e gráficos (quando disponível)
-
-**Decisões Humanas:**
-
-- Insira ID de solicitação para decisões de manutenção
-- Escolha aprovar/rejeitar com justificativa
-- Simula fluxo de trabalho de decisão do operador humano
-
-**Monitoramento do Sistema:**
-
-- Barra lateral mostra status do backend em tempo real
-- Ações rápidas para testes e verificações de saúde
-- Tratamento de erros melhorado com mensagens descritivas
-
-### Melhorias Técnicas
-
-- **Resolução Async/Await**: Corrigidos problemas de bloqueio de thread no endpoint de relatórios usando ThreadPoolExecutor para operações não-bloqueantes
-- **Componentes de UI Melhorados**: Melhor formatação, indicadores de sucesso e seções de metadados colapsáveis
-- **Suporte Real a Gráficos**: Decodificação e exibição adequada de imagens base64 para gráficos gerados pelo matplotlib
-- **Tratamento de Erros Melhorado**: Mensagens de erro abrangentes e degradação elegante
-
-## Status dos Testes
-
-**Resultados Atuais dos Testes: 410 APROVADOS, 1 FALHARAM** ✅
-
-O backend Smart Maintenance SaaS possui um conjunto extensivo de testes com 411 testes totais cobrindo cenários unitários, de integração e end-to-end. Atualmente, 410 testes passam com sucesso com apenas 1 teste falhando.
-
-### Testes Falhando
-
-**Teste Falhando:** `tests/e2e/test_e2e_full_system_workflow.py::test_full_workflow_from_ingestion_to_scheduling`
-**Status:** FALHARAM
-**Problema:** AssertionError: Esperado pelo menos 1 MaintenanceScheduledEvent, obtido 0
-
-**Nota:** O problema com o teste está relacionado à lógica de agendamento e não afeta a funcionalidade real do sistema, que foi verificada funcionar corretamente através de testes manuais.
-
-### Análise da Causa Raiz
-
-O teste E2E falhando é devido a um **problema de restrição de agendamento** no `SchedulingAgent`. O fluxo de trabalho completo funciona corretamente:
-
-1. ✅ **Ingestão de Dados de Sensor** - SensorDataReceivedEvent processado
-2. ✅ **Detecção de Anomalia** - Anomalias estatísticas detectadas com alta confiança (0.80-0.90)
-3. ✅ **Validação de Anomalia** - AnomalyValidatedEvent publicado com status CREDIBLE_ANOMALY
-4. ✅ **Previsão de Manutenção** - MaintenancePredictedEvent gerado (falha prevista em 1.0 dias)
-5. ✅ **Lógica de Orquestração** - Auto-aprovação devido à manutenção urgente e alta confiança
-6. ❌ **Agendamento de Manutenção** - FALHARAM: Nenhum slot de técnico disponível encontrado
-
-### Detalhes Técnicos
-
-O SchedulingAgent recebe corretamente `MaintenancePredictedEvent` e cria solicitações de manutenção, mas o `CalendarService` falha ao encontrar slots de técnico disponíveis devido a:
-
-- **Restrição de Horário Comercial**: Serviço de calendário só permite agendamento 8h - 18h em dias úteis
-- **Tempo de Execução do Teste**: Testes E2E executam às ~16:28, próximo aos limites do horário comercial
-- **Janela de Agendamento**: O algoritmo tenta agendar manutenção urgente (previsão de 1 dia) para slots imediatos
-
-### Avaliação de Impacto
-
-- **Severidade**: BAIXA - Este é um problema de lógica de timing/agendamento, não uma falha do sistema principal
-- **Impacto Funcional**: Todos os componentes críticos do sistema funcionam corretamente
-- **Lógica de Negócio**: O sistema identifica corretamente anomalias, as valida e gera previsões
-- **Fluxo de Eventos**: Fluxo de trabalho completo orientado a eventos funciona conforme projetado
-
-### Opções de Resolução
-
-1. **Mock Calendar Service** em testes E2E para sempre retornar slots disponíveis
-2. **Ajustar Horário Comercial** no ambiente de teste para permitir agendamento 24/7
-3. **Modificar Timing do Teste** para executar durante horas garantidamente disponíveis
-4. **Lógica de Agendamento Aprimorada** para lidar com casos extremos e cenários de fallback
-
-### Cobertura de Testes
-
-- **Testes Unitários**: 100% dos testes de componentes individuais passam
-- **Testes de Integração**: Todos os cenários de integração de agentes passam
-- **Cobertura E2E**: 99,8% de taxa de sucesso (410/411 testes)
-- **Taxa de Sucesso Geral**: 410 APROVADOS, 1 FALHARAM de 411 testes totais
-
-O teste falhando não impacta a funcionalidade principal do sistema ou a prontidão para implantação. Todos os componentes críticos do sistema foram verificados funcionar corretamente através de testes abrangentes.
-
-## Executando Testes
-
-O sistema inclui um conjunto abrangente de testes com múltiplos tipos de testes organizados no diretório `tests/`:
-
-### Organização dos Testes
-
-```text
-tests/
-├── api/                    # Testes específicos da API
-│   └── test_actual_api.py  # Teste real de endpoints da API
-├── e2e/                    # Testes de sistema end-to-end
-│   ├── final_system_test.py    # Validação completa do sistema
-│   └── test_ui_functionality.py # Testes de integração de UI
-├── unit/                   # Testes unitários de componentes
-├── integration/           # Testes de integração de serviços
-└── conftest.py           # Configuração compartilhada de testes
-```
-
-### Executando Diferentes Tipos de Testes
-
-**Conjunto Completo de Testes:**
+Incremental (appends new rows):
 ```bash
-poetry run pytest
+docker compose exec api python scripts/export_sensor_data_csv.py --incremental
 ```
 
-**Apenas Testes de API:**
+Custom path:
 ```bash
-poetry run pytest tests/api/
+docker compose exec api python scripts/export_sensor_data_csv.py --output /tmp/readings.csv
 ```
 
-**Testes End-to-End:**
-```bash
-poetry run pytest tests/e2e/
+---
+
+## 6. ML Platform (Project Gauntlet Consolidation)
+
+| Phase | Domain | Outcome |
+|-------|--------|---------|
+| 0 | Synthetic Validation | Pipeline + infra verified |
+| 1 | AI4I Classification | 99.90% accuracy ceiling identified |
+| 2 | NASA Vibration | IsolationForest + OneClassSVM (10% anomaly separation) |
+| 3 | MIMII Audio | MFCC + RandomForest (93.3% acc, fallback pipeline) |
+| 4 | Pump Classification | 100% accuracy (perfect separation) |
+| 5 | XJTU Vibration | Dual-channel advanced bearing anomaly features (22) |
+| 6 | Drift & Lifecycle | Drift endpoint + agents + retraining automation |
+| 7 | Intelligent Selection | Tag-based filtered model recommendations in UI |
+
+Model Families: anomaly (IF, OCSVM), forecasting (Prophet tuned + challengers), classification (RandomForest, SVC, LightGBM), audio (MFCC + RF), vibration (statistical + frequency features), retrainable pipelines.
+
+Intelligent Selection UI uses MLflow tags:
 ```
-
-**Validação Rápida do Sistema:**
-```bash
-# Execute o teste final abrangente do sistema
-python tests/e2e/final_system_test.py
+domain=audio|bearing|forecast|tabular|pump
 ```
+Exposes recommended subset for chosen sensor type; manual override supported.
 
-### Testes Baseados em Docker
+Feature Contract: Each registered model persists `feature_names.txt`; CI hash validator enforces integrity.
 
-Você também pode executar testes dentro do ambiente Docker:
+---
 
-```bash
-# Inicie o sistema
-docker compose up -d
+## 7. Drift & Automated Retraining
 
-# Execute testes no container da API
-docker exec smart_maintenance_api python tests/e2e/final_system_test.py
+| Component | Function |
+|-----------|----------|
+| /api/v1/ml/check_drift | On-demand KS test (reference vs current window) |
+| Drift Agent (scheduler) | Periodic KS + PSI (Evidently-style) → emits Redis event |
+| Retrain Agent | Consumes events, enforces cooldown, triggers notebook/Make targets |
+| Notifications | Slack/Webhook (configurable placeholders) |
+| Safety | Concurrency guard & per-model cooldown (24h default) |
+| Output | New MLflow model version + updated feature manifest |
 
-# Execute pytest dentro do container
-docker exec smart_maintenance_api pytest
-```
+Benefit: Zero-touch lifecycle; prevents silent performance decay.
 
-### Descrição dos Arquivos de Teste
+---
 
-- **`final_system_test.py`**: Validação end-to-end abrangente que testa o fluxo de trabalho completo desde interações de UI até respostas da API
-- **`test_actual_api.py`**: Teste direto de endpoints da API com solicitações HTTP reais
-- **`test_ui_functionality.py`**: Testes de integração de UI focando na interface Streamlit
+## 8. Resilience & Chaos Engineering
 
-Para executar o conjunto completo de testes, use o seguinte comando:
+| Mechanism | Detail |
+|-----------|--------|
+| Idempotent Ingestion | Redis SET NX — duplicate rejected returns original event_id |
+| Graceful Degradation | Missing Redis → logs warning, continues (no idempotency) |
+| Event Retry | Exponential backoff (2,4,6s) then DLQ hook |
+| Toxiproxy | Latency / timeout / partition tests for DB & Redis |
+| Manual Migration Strategy | Auto-migrate removed (prevents restart storms) |
+| Recovery Lessons | Day 12 & Day 15 documented: sequence recreation & multi-head resolution |
+| SLO Baseline | P95 API < 200ms (actual 2ms); Drift endpoint P95 <5s (actual ~3ms) |
 
-```bash
-poetry run pytest
-```
+---
 
-## Considerações de Segurança
+## 9. Security & Compliance
 
-### Implementação de Segurança Atual (v1.0)
+| Area | Implementation |
+|------|----------------|
+| Auth | API Key header (`X-API-Key`) |
+| Rate Limiting | slowapi (per key; drift endpoint 10/min) |
+| Threat Model | STRIDE documented (Spoofing→Tampering→…) |
+| Audit Checklist | SECURITY_AUDIT_CHECKLIST.md |
+| Dependency Scans | Snyk CI (fail on high/critical) |
+| Code Scans | Snyk code + bandit/safety (pipeline) |
+| Logging Hygiene | No secrets; correlation IDs |
+| Future Roadmap | Scope-based keys & signed model manifests |
 
-O sistema Smart Maintenance SaaS inclui medidas básicas de segurança adequadas para desenvolvimento e implantações iniciais de produção:
+---
 
-- **Autenticação por Chave API**: Validação de chave API estática para acesso a endpoints
-- **Configuração Baseada em Ambiente**: Valores sensíveis armazenados em variáveis de ambiente
-- **Segurança do Banco de Dados**: PostgreSQL com autenticação de usuário e criptografia de conexão
-- **Isolamento de Container**: Containers Docker fornecem isolamento de processo e rede
-- **Validação de Entrada**: Modelos Pydantic garantem integridade de dados e previnem ataques de injeção
+## 10. Performance (Validated)
 
-### Recomendações de Segurança para Produção
+| Metric | Result | Source |
+|--------|--------|--------|
+| Peak Throughput | 103.8 RPS | Day 17 load test (50 users / 3m) |
+| Avg Throughput | 88.8 RPS sustained | Day 17 |
+| API Latency P95 | 2 ms | Day 17 |
+| API Latency P99 | 3 ms | Day 17 |
+| Max Observed | 124 ms | Day 17 |
+| Aggregation Speed Gain | 37.3% faster | Day 18 (CAGG + indexes) |
+| Rows Scanned Reduction | 83.3% fewer | CAGG hourly pre-compute |
+| Forecast MAE Improvement | 20.86% vs naive | Prophet tuned |
+| Pump Classification | 100% accuracy | Phase 4 |
+| Vibration Anomaly Rate | 10% (clean separation) | NASA/XJTU |
 
-Para ambientes de produção enrijecidos, considere implementar as seguintes medidas de segurança aprimoradas:
+---
 
-#### 🔐 **Gerenciamento de Segredos**
+## 11. CI/CD Workflow
 
-- **Recomendado**: Substitua chaves API estáticas por gerenciamento dinâmico de segredos
-- **Soluções**: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault ou Google Secret Manager
-- **Benefícios**: Rotação automática de segredos, logging de auditoria e controle de acesso centralizado
+| Job | Purpose |
+|-----|---------|
+| Lint & Type | Enforces code quality |
+| Tests | 410/411 passing (1 scheduling E2E edge) |
+| Coverage | Enforce ≥80% |
+| Security Scan | Snyk + safety/bandit |
+| Model Hash Validation | Detect unexpected artifact drift |
+| ML Train Validation | Reproducibility check (anomaly / forecast matrices) |
+| (Optional) Load Test | Registry & API read stress |
 
-#### 🛡️ **Autenticação e Autorização**
+Poetry install hardened (pip install fallback + retries) after transient SSL issues (Day 18 verification + Day 19 refinement).
 
-- **Tokens JWT**: Implemente tokens JWT com limite de tempo ao invés de chaves API estáticas
-- **Controle de Acesso Baseado em Função (RBAC)**: Diferentes níveis de acesso para operadores, equipes de manutenção e administradores
-- **Autenticação Multi-Fator (MFA)**: Camada adicional de segurança para acesso administrativo
+---
 
-#### 🔒 **Segurança de Rede**
+## 12. Microservice Migration (Dormant Scaffolding)
 
-- **HTTPS/TLS**: Habilite certificados SSL/TLS para todas as comunicações externas
-- **Gateway de API**: Implemente limitação de taxa, proteção DDoS e filtragem de solicitações
-- **VPC/Redes Privadas**: Implante em ambientes de rede isolados
-- **Regras de Firewall**: Restrinja acesso apenas às portas e faixas de IP necessárias
+Services prepared (commented in compose & k8s):
+- prediction_service (inference offload)
+- anomaly_service (statistical & streaming analysis)
 
-#### 📊 **Monitoramento e Conformidade**
+Activation Triggers (docs/MICROSERVICE_MIGRATION_STRATEGY.md):
+- P95 latency > 50ms sustained
+- Throughput > 200 RPS
+- Infra saturation >80% CPU/memory
+- Deployment coupling friction
 
-- **Logging de Auditoria de Segurança**: Logging abrangente de todo acesso à API e ações administrativas
-- **Detecção de Intrusão**: Monitore padrões suspeitos e tentativas de acesso não autorizado
-- **Conformidade**: Padrões SOC 2, ISO 27001 ou conformidade específica da indústria
-- **Varredura de Vulnerabilidades**: Avaliações regulares de segurança e atualizações de dependências
+Migration Path: Strangler — shift inference & anomaly endpoints first; preserve shared event bus & registry.
 
-#### 🏗️ **Segurança de Infraestrutura**
+---
 
-- **Segurança de Container**: Atualizações regulares de imagem base e varredura de vulnerabilidades
-- **Criptografia de Banco de Dados**: Criptografar dados em repouso e em trânsito
-- **Segurança de Backup**: Backups criptografados com armazenamento seguro off-site
-- **Recuperação de Desastres**: Procedimentos documentados e processos de recuperação testados
+## 13. Known Constraints / Lessons
 
-> **⚠️ Importante**: A implementação atual fornece uma base sólida para segurança, mas deve ser aprimorada com soluções de nível empresarial para implantações de produção lidando com dados industriais sensíveis.
+| Topic | Lesson |
+|-------|--------|
+| Continuous Aggregates | Must create outside Alembic transaction |
+| Automatic Migrations | Removed (restart storm risk) |
+| Multi-Head Alembic | Resolve intentionally; document no-op fixes |
+| MLflow Persistence | Run URIs fallback + consistent /mlruns mount essential |
+| Permissions | Use consistent UID:GID & tempfile artifact pattern to avoid cross-container denial |
+| Feature Mismatch | Always validate against stored `feature_names.txt` |
+
+---
+
+## 14. API (Selected Endpoints)
+
+| Endpoint | Method | Summary | Notes |
+|----------|--------|---------|-------|
+| /api/v1/data/ingest | POST | Ingest sensor reading | Idempotency-Key supported |
+| /api/v1/ml/check_drift | POST | KS-based drift evaluation | Rate-limited |
+| /api/v1/reports/generate | POST | System / anomaly / maintenance reports | Async executor offload |
+| /api/v1/decisions/submit | POST | Human feedback / approval | Supports orchestration loop |
+| /health | GET | Basic health | Add DB/Redis checks upcoming |
+| /metrics | GET | Prometheus metrics | Instrumentator integration |
+
+All protected endpoints require `X-API-Key`.
+
+---
+
+## 15. Testing Status
+
+| Layer | Coverage |
+|-------|----------|
+| Unit | Model utils, feature transformers |
+| Integration | DB, Redis, drift logic, export |
+| E2E | Full anomaly→prediction (1 scheduling window edge failing) |
+| Load | API + Registry (Locust) |
+| Resilience | Toxiproxy latency/timeouts |
+| Security | Rate limit & auth rejection |
+| ML Integrity | Hash + artifact presence |
+
+Failing Test Context: Maintenance scheduling slot timing (business hour constraint late in day). Low severity; workflow validated manually.
+
+---
+
+## 16. Operational Runbook (Essentials)
+
+| Action | Command |
+|--------|---------|
+| Migrate DB | `docker compose exec api alembic upgrade heads` |
+| Rebuild ML image | `make build-ml` |
+| Train anomaly | `make train-anomaly` |
+| Train forecast | `make train-forecast` |
+| Pump classification | `make pump-gauntlet` |
+| Run drift agent (already in compose) | `docker compose logs -f drift_agent` |
+| Manual drift check | POST /api/v1/ml/check_drift |
+| Export data (incremental) | See Data Export section |
+| Validate model hashes | `python scripts/validate_model_hashes.py` |
+
+---
+
+## 17. Migration Strategy (Schema)
+
+Principles:
+- No automatic migrations at container start (avoid cascading crashes).
+- Each performance-focused migration isolates only required changes (e.g., adding composite index).
+- Continuous aggregate creation documented & executed manually (non-transactional constraint).
+- Sequence restoration (Day 15) codified for future schema evolution sanity.
+
+---
+
+## 18. Troubleshooting Guide
+
+| Symptom | Likely Cause | Action |
+|---------|--------------|-------|
+| Model 404 in predict | Artifact path / registry mismatch | Use run URI; verify /mlruns mount |
+| Feature count mismatch | Serving payload stale | Fetch `feature_names.txt` from model artifacts |
+| Drift endpoint slow | Large window or unindexed query | Ensure composite index present; window size tune |
+| High 403 rate in load test | Missing API key | Add header X-API-Key |
+| Duplicate ingestion accepted | Redis unavailable | Check logs for “idempotency disabled” warning |
+| CAGG missing rows | Refresh lag | Verify refresh policy; run manual `refresh_continuous_aggregate` |
+
+---
+
+## 19. Performance Rationale Summary
+
+| Optimization | Why | Result |
+|--------------|-----|--------|
+| Composite Index (sensor_id, timestamp DESC) | Sliding window + per-sensor drift/forecast queries | Microsecond-range lookups |
+| Hourly CAGG | Pre-aggregation for ML features & dashboards | 37.3% faster aggregation; 83% fewer rows scanned |
+| Retry Event Publish | Absorb transient handler failures | Prevents lost anomalies |
+| Cached Model Loader | Avoid repeated MLflow artifact fetch | Sub-ms warm inference |
+| Manual Migrations | Stability & blast radius control | Eliminated restart storms |
+
+---
+
+## 20. Future Enhancements (Tracked)
+
+- Scope-based API keys & key rotation
+- Signed model manifests + provenance
+- Multi-replica Redis for distributed idempotency
+- Expanded drift algorithms (population stability index already in agents; add Jensen-Shannon)
+- Daily CAGG + long-horizon retention tiering
+- Canary retrain validation pre-promotion
+
+(See FUTURE_ROADMAP / migration strategy doc.)
+
+---
+
+## 21. References
+
+| Document | Purpose |
+|----------|---------|
+| ../README.md | High-level platform overview |
+| docs/SYSTEM_AND_ARCHITECTURE.md | Deep architecture narrative |
+| docs/db/README.md | TimescaleDB optimization & schema |
+| docs/ml/README.md | ML lifecycle, drift, retrain |
+| docs/MICROSERVICE_MIGRATION_STRATEGY.md | Activation triggers |
+| docs/PERFORMANCE_BASELINE.md | Load & latency SLOs |
+| docs/SECURITY.md | Threat model (STRIDE) |
+| docs/SECURITY_AUDIT_CHECKLIST.md | Audit workflow |
+| 30-day-sprint-changelog.md | Source of truth history |
+
+---
+
+## 22. Changelog Authority
+
+All statements trace to 30-day-sprint-changelog.md (Days 4–23: ingestion hardening, observability, ML phases, drift automation, performance, security, scaffolding).
+
+---
+
+## 23. License
+
+Proprietary – see LICENSE.
+
+---
+
+## 24. Support Diagnostic Order
+
+1. /health + logs (correlation_id presence?)  
+2. Redis availability (idempotency + events)  
+3. Timescale indexes & CAGG refresh state  
+4. MLflow registry (model list & artifact accessible)  
+5. Drift & retrain agent logs (event flow)  
+6. Hash validation (integrity)  
+
+---
+
+<sub>Document synchronized with sprint changelog through Day 23 (drift automation & ML documentation). </sub>

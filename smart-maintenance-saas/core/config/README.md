@@ -1,260 +1,350 @@
-# Configuration Management
+# Smart Maintenance SaaS - Complete Documentation Index
 
-🇧🇷 **[Clique aqui para ler em Português](#-gerenciamento-de-configuração-português)** | 🇺🇸 **English Version Below**
+## Core Documentation
 
-## 📚 Documentation Links
+### Getting Started
 
-- **[Backend README](../../README.md)** - Main documentation and Docker deployment
-- **[System Screenshots](../../docs/SYSTEM_SCREENSHOTS.md)** - Complete visual system walkthrough with screenshots
-- **[System Architecture](../../docs/SYSTEM_AND_ARCHITECTURE.md)** - Complete system overview
-- **[Future Roadmap](../../docs/FUTURE_ROADMAP.md)** - Strategic vision and planned enhancements
-- **[Deployment Status](../../docs/DEPLOYMENT_STATUS.md)** - Current system status
-- **[Performance Baseline](../../docs/PERFORMANCE_BASELINE.md)** - Load testing results and performance metrics
-- **[Load Testing Instructions](../../docs/LOAD_TESTING_INSTRUCTIONS.md)** - Comprehensive guide for running performance tests
-- **[API Documentation](../../docs/api.md)** - Complete REST API reference and usage examples
+- **[Main README](../../../../README.md)** - Project overview, quick start, and repository structure
+- **[Backend README](../../../README.md)** - Docker deployment and getting started guide
+- **[Development Orientation](../../../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
+
+### Project History & Changelog
+
+- **[30-Day Sprint Changelog](../../../../30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](../../../../final_30_day_sprint.md)** - Executive summary of sprint achievements
+
+## System Architecture & Design
+
+### Architecture Documentation
+
+- **[System and Architecture](../../../docs/SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
+- **[System Screenshots](../../../docs/SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
+- **[Comprehensive System Analysis](../../../docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
+- **[Microservice Migration Strategy](../../../docs/MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
+
+### Database Design
+
+- **[Database Documentation](../../../docs/db/README.md)** - Database schema and design documentation
+- **[Database ERD](../../../docs/db/erd.dbml)** - Entity Relationship Diagram source
+- **[Database ERD (PNG)](../../../docs/db/erd.png)** - Entity Relationship Diagram visualization
+- **[Database ERD (Dark Mode)](../../../docs/db/erd_darkmode.png)** - Entity Relationship Diagram (dark theme)
+- **[Database Schema](../../../docs/db/schema.sql)** - Complete SQL schema definition
+
+## API & Integration
+
+### API Documentation
+
+- **[API Reference](../../../docs/api.md)** - Complete REST API documentation and examples
+- **[Configuration Management](./README.md)** - Centralized configuration system
+- **[Logging Configuration](../../core/logging_config.md)** - Structured JSON logging setup
+
+## Performance & Testing
+
+### Performance Documentation
+
+- **[Performance Baseline](../../../docs/PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
+- **[Day 17 Load Test Report](../../../docs/DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
+- **[Day 18 Performance Results](../../../docs/DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
+- **[Load Testing Instructions](../../../docs/LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
+
+### Testing Documentation
+
 - **[Test Documentation](../../tests/README.md)** - Test organization and execution guide
-- **[Logging Configuration](../logging_config.md)** - Structured JSON logging setup and configuration
-- **[Project Overview](../../../README.md)** - High-level project information
+- **[Coverage Improvement Plan](../../../docs/COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
+
+## Machine Learning & Data Science
+
+### ML Documentation
+
+- **[ML Documentation](../../../docs/ml/README.md)** - Machine learning models and pipelines
+- **[Models Summary](../../../docs/MODELS_SUMMARY.md)** - Overview of all 17+ production models
+- **[Project Gauntlet Plan](../../../docs/PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
+
+## Security & Operations
+
+### Security Documentation
+
+- **[Security Documentation](../../../docs/SECURITY.md)** - Security architecture and implementation
+- **[Security Audit Checklist](../../../docs/SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
+
+### Service Documentation
+
+- **[Anomaly Service](../../services/anomaly_service/README.md)** - Future anomaly detection microservice
+- **[Prediction Service](../../services/prediction_service/README.md)** - Future ML prediction microservice
 
 ---
 
-This module provides a centralized configuration system for the Smart Maintenance SaaS application using Pydantic's `BaseSettings`.
+*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
 
-## Usage
+---
 
-### Basic Import
+# Configuration Management (Pydantic BaseSettings)
+
+Centralized, explicit, 12‑factor aligned runtime configuration for the Smart Maintenance SaaS backend. Synchronized with changelog (Days 4–23).
+
+---
+
+## 1. Purpose
+
+Provide a single, declarative source of runtime behavior (database, security, ML, event handling, orchestration) enabling:
+- Predictable container start (no hidden "magic" defaults)
+- Reproducible ML & drift automationtion Management (Pydantic BaseSettings)
+
+Centralized, explicit, 12‑factor aligned runtime configuration for the Smart Maintenance SaaS backend. Synchronized with changelog (Days 4–23).
+
+---
+
+## 1. Purpose
+
+Provide a single, declarative source of runtime behavior (database, security, ML, event handling, orchestration) enabling:
+- Predictable container start (no hidden “magic” defaults)
+- Reproducible ML & drift automation
+- Safe resilience tuning (retries, DLQ)
+- Observability correlation (static metadata + dynamic toggles)
+
+---
+
+## 2. Design Principles
+
+| Principle | Implementation |
+|-----------|----------------|
+| Explicit over implicit | All tunables declared in `core/config/settings.py` |
+| 12‑Factor config | Environment variables (.env for dev only) |
+| Immutable at runtime | Settings loaded once at process start (no hot reload) |
+| Separation of concerns | Infra (DB, Redis) vs Domain (orchestrator) vs ML |
+| Fail fast | Missing mandatory secrets raise ValidationError |
+| Safe defaults | Conservative retry counts, disabled advanced schedulers |
+| Traceability | Changelog references for new settings (e.g. retries Day 6) |
+
+---
+
+## 3. Load & Precedence Order
+
+1. Environment variables (highest)
+2. `.env` file (development / local only)
+3. In‑class default values (fallback)
+4. Code overrides (test fixtures using `get_settings()`)
+
+No dynamic mutation after instantiation. Use dependency injection (`Depends(get_settings)`) in FastAPI endpoints / background tasks.
+
+---
+
+## 4. Access Patterns
 
 ```python
 from core.config import settings
-
-# Use settings directly
-database_url = settings.database_url
-api_port = settings.api_port
+db_url = settings.database_url
 ```
 
-### Dependency Injection (FastAPI)
+FastAPI DI:
 
 ```python
 from fastapi import Depends
 from core.config import get_settings, Settings
 
-@app.get("/items")
-def read_items(settings: Settings = Depends(get_settings)):
-    return {"database": settings.database_url, "debug": settings.debug}
+@router.get("/health/config")
+def config_probe(cfg: Settings = Depends(get_settings)):
+    return {"debug": cfg.debug, "dlq_enabled": cfg.dlq_enabled}
 ```
-
-### Class-based Usage
-
-```python
-from core.config import settings
-
-class DatabaseService:
-    def __init__(self):
-        self.connection_string = settings.database_url
-        # Use other settings as needed
-```
-
-## Environment Variables
-
-Configuration can be set via environment variables or a `.env` file. The `.env.example` file in the project root shows all available configuration options.
-
-For Docker Compose setups, use service names (e.g., `db`) instead of `localhost`.
-
-## Available Settings
-
-### Database Configuration
-
-- `DATABASE_URL`: PostgreSQL connection string
-- `DB_HOST`: Database host (default: localhost)
-- `DB_PORT`: Database port (default: 5432)
-- `DB_USER`: Database username (default: smart_user)
-- `DB_PASSWORD`: Database password
-- `DB_NAME`: Database name (default: smart_maintenance_db)
-- `TEST_DATABASE_URL`: Test database connection string
-
-### Cache & Message Queue
-
-- `REDIS_URL`: Redis connection string (for future use)
-- `KAFKA_BOOTSTRAP_SERVERS`: Kafka bootstrap servers (for future use)
-
-### API Configuration
-
-- `API_HOST`: Host to bind the API server (default: 0.0.0.0)
-- `API_PORT`: Port for the API server (default: 8000)
-- `DEBUG`: Debug mode flag (default: false)
-
-### Security
-
-- `SECRET_KEY`: Secret key for security features
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time (default: 60)
-- `API_KEY`: Static API Key for basic authentication
-
-### Agent System
-
-- `AGENT_COMMUNICATION_TIMEOUT`: Timeout for agent communication (default: 30)
-
-### Scheduling
-
-- `USE_OR_TOOLS_SCHEDULER`: Enable advanced OR-Tools constraint programming scheduler (default: false)
-
-### Machine Learning
-
-- `MODEL_REGISTRY_PATH`: Path to ML model storage (default: ./models)
-
-### Notification Services
-
-- `WHATSAPP_API_KEY`: WhatsApp API key for notifications
-- `EMAIL_SMTP_HOST`: SMTP server host
-- `EMAIL_SMTP_PORT`: SMTP server port (default: 587)
-- `EMAIL_SMTP_USER`: SMTP username
-- `EMAIL_SMTP_PASSWORD`: SMTP password
-
-### Logging
-
-- `LOG_LEVEL`: Logging level (default: INFO)
-
-### Event Bus & Dead Letter Queue
-
-- `EVENT_HANDLER_MAX_RETRIES`: Maximum retry attempts for event handlers (default: 3)
-- `EVENT_HANDLER_RETRY_DELAY_SECONDS`: Delay between retries (default: 1.0)
-- `DLQ_ENABLED`: Enable Dead Letter Queue for failed events (default: true)
-- `DLQ_LOG_FILE`: Path to DLQ log file (default: logs/dlq_events.log)
-
-### Orchestrator Settings
-
-- `ORCHESTRATOR_URGENT_MAINTENANCE_DAYS`: Threshold for urgent maintenance (default: 30)
-- `ORCHESTRATOR_HIGH_CONFIDENCE_THRESHOLD`: High confidence level (default: 0.90)
-- `ORCHESTRATOR_MODERATE_CONFIDENCE_THRESHOLD`: Moderate confidence level (default: 0.75)
-- `ORCHESTRATOR_AUTO_APPROVAL_MAX_DAYS_MODERATE_CONFIDENCE`: Auto-approval threshold (default: 15)
-- `ORCHESTRATOR_VERY_URGENT_MAINTENANCE_DAYS_FACTOR`: Very urgent factor (default: 0.5)
-
-## Adding New Settings
-
-To add new settings:
-
-1. Add the setting to the `Settings` class in `settings.py`
-2. Add a default value
-3. Update the `.env.example` file
-4. Use the setting in your application via `settings.your_new_setting`
 
 ---
 
-## 🇧🇷 Gerenciamento de Configuração (Português)
+## 5. Settings Reference (Current Surface)
 
-Este módulo fornece um sistema centralizado de configuração para a aplicação Smart Maintenance SaaS usando `BaseSettings` do Pydantic.
+Group | Keys (prefix) | Notes / Changelog
+------|---------------|------------------
+Database | DATABASE_URL / DB_* | Composite index + CAGG (Day 18) rely on correct target DB
+API Core | API_HOST, API_PORT, DEBUG | DEBUG=false recommended in prod
+Security | SECRET_KEY, API_KEY, ACCESS_TOKEN_EXPIRE_MINUTES | API_KEY used by rate limiting (Day 16)
+Orchestrator | ORCHESTRATOR_* | Threshold logic for maintenance prediction & auto‑approval
+Event Bus & DLQ | EVENT_HANDLER_MAX_RETRIES, EVENT_HANDLER_RETRY_DELAY_SECONDS, DLQ_ENABLED, DLQ_LOG_FILE | Retry & resilience improvements (Day 6, Day 12)
+Logging | LOG_LEVEL | Structured JSON layer (Day 6)
+ML / Registry | MODEL_REGISTRY_PATH | MLflow now persistent volume (Days 9–13 infra hardening)
+Agent Ops | AGENT_COMMUNICATION_TIMEOUT | Agent-to-agent / workflow deadlines
+Scheduling | USE_OR_TOOLS_SCHEDULER | Advanced solver deferred (placeholder)
+Notification | WHATSAPP_API_KEY, EMAIL_SMTP_* | Optional; not required for core flows
+Cache / MQ (future) | REDIS_URL, KAFKA_BOOTSTRAP_SERVERS | Redis used for idempotency & events (Days 4, 15); Kafka future
+Testing | TEST_DATABASE_URL | Isolated DB for integration / CI tests
 
-## Uso
+(See Section 6 for critical rationale.)
 
-### Importação Básica
+---
 
+## 6. Critical Settings & Rationale
+
+| Setting | Why It Matters | Failure Mode if Misconfigured |
+|---------|----------------|-------------------------------|
+| DATABASE_URL | Timescale hypertable + CAGG (Day 18) rely on correct instance | Startup DB errors, drift endpoint fails |
+| API_KEY | Auth + rate limiting identity (Day 16) | 403 on protected endpoints or no isolation |
+| SECRET_KEY | Token / signing primitives (future) | Weak cryptographic posture |
+| EVENT_HANDLER_MAX_RETRIES | Backoff window for anomaly / drift events (Day 6) | Lost events under transient faults |
+| DLQ_ENABLED | Post‑retry capture for investigation | Silent event loss |
+| MODEL_REGISTRY_PATH | Legacy local model storage fallback | Inference fails if MLflow unreachable |
+| ORCHESTRATOR_* thresholds | Auto-approval business logic gating | Over / under scheduling of maintenance |
+| REDIS_URL | Idempotent ingestion (Days 4, 15) & event pub/sub | Duplicate events, reduced resilience |
+| LOG_LEVEL | Noise vs signal in production analysis | Debug noise or missing forensic detail |
+
+---
+
+## 7. Drift & ML Lifecycle Dependencies
+
+Automated drift / retrain agents (Day 23) expect:
+- Stable DB connection (reference & current windows)
+- Redis (event emission & consumption)
+- Persistent MLflow volume (model version increment)
+Configuration alignment ensures: drift event → retrain agent → new model version registered → selection UI tags.
+
+---
+
+## 8. Production Hardening Recommendations
+
+Area | Short Term | Future (Roadmap)
+-----|------------|-----------------
+Secrets | Move API_KEY / SECRET_KEY to vault | Dynamic rotation + audit
+Rate Limiting | Code constant | Externalize limit/window per endpoint
+Drift Windows | Hard-coded logic | Expose DRIFT_WINDOW_MINUTES, DRIFT_MIN_SAMPLES
+Retrain Cooldowns | In-script defaults | CONFIG: MODEL_RETRAIN_COOLDOWN_HOURS
+Redis | Single instance | Sentinel / cluster aware URL
+Scopes | Single API_KEY | Add SCOPED_KEYS mapping (JSON env)
+
+(Do not add env vars until implemented.)
+
+---
+
+## 9. Adding a New Setting (Checklist)
+
+1. Add field to `Settings` class with type + default.
+2. Update `.env.example` (document intent & security sensitivity).
+3. Reference via `settings.new_value` (avoid re-import caches).
+4. Add test: override with `monkeypatch.setenv` → assert propagation.
+5. Update this README (Section 5 or 6).
+6. If security / performance critical: add to SECURITY_AUDIT_CHECKLIST / PERFORMANCE_BASELINE.
+
+---
+
+## 10. Patterns & Anti‑Patterns
+
+Good:
 ```python
-from core.config import settings
-
-# Use as configurações diretamente
-database_url = settings.database_url
-api_port = settings.api_port
+timeout = settings.agent_communication_timeout
+```
+Bad:
+```python
+from core.config.settings import Settings; Settings().agent_communication_timeout  # new instance
 ```
 
-### Injeção de Dependência (FastAPI)
+Avoid constructing new Settings instances; single instantiation preserves consistent view.
+
+---
+
+## 11. Precedence & Environment Profiles
+
+Profile | Mechanism | Notes
+--------|-----------|------
+Local Dev | `.env` + docker compose | Compose service names (db, redis) not localhost
+CI | Explicit env injection | Avoid `.env` leakage
+Prod | Managed secrets store export | No `.env` file baked into image
+
+---
+
+## 12. Security Considerations
+
+- No secrets logged (logging layer redacts by omission).
+- `.env` excluded from VCS (validated Day 7).
+- Future: add `ALLOWED_ORIGINS`, `RATE_LIMIT_REDIS_URL` when multi-replica.
+
+---
+
+## 13. Observability Tie‑Ins
+
+LOG_LEVEL influences:
+- Event bus retry visibility (Day 6)
+- Drift detection diagnostic lines (Day 13)
+- Migration recovery logs (Days 12, 15)
+Changing to DEBUG in prod only during incident windows.
+
+---
+
+## 14. Microservice Migration Impact (Days 19–20)
+
+Extraction of prediction / anomaly services will:
+- Introduce per-service configuration subsets (shared core via env prefix or dedicated Settings modules).
+- Require consistent API_KEY & Redis / MLflow settings across services (pass through deployment orchestrator).
+
+Plan ahead: keep naming stable to allow sidecar reuse.
+
+---
+
+## 15. Troubleshooting Matrix
+
+Symptom | Check | Likely Setting Issue
+--------|-------|----------------------
+403 everywhere | API key header mismatch | API_KEY incorrect / unset
+Prediction model not found | Path fallback used | MODEL_REGISTRY_PATH stale or MLflow volume missing
+Duplicate ingestion accepted | Redis warnings in logs | REDIS_URL unset / unreachable
+Event retries exhausted rapidly | Short delays | EVENT_HANDLER_RETRY_DELAY_SECONDS too low
+Unexpected auto approvals | Maintenance predictions frequent | ORCHESTRATOR_* thresholds mis-tuned
+High log noise | Excess debug lines | LOG_LEVEL accidentally DEBUG
+Drift endpoint slow | Large unindexed scans? | Database URL pointing to wrong instance (missing index migration)
+
+---
+
+## 16. Minimal Code Surface (Excerpt)
 
 ```python
-from fastapi import Depends
-from core.config import get_settings, Settings
+# settings.py excerpt (illustrative)
+from pydantic_settings import BaseSettings
 
-@app.get("/items")
-def read_items(settings: Settings = Depends(get_settings)):
-    return {"database": settings.database_url, "debug": settings.debug}
+class Settings(BaseSettings):
+    database_url: str
+    api_key: str
+    secret_key: str
+    event_handler_max_retries: int = 3
+    dlq_enabled: bool = True
+    log_level: str = "INFO"
+    # ...additional fields...
+
+settings = Settings()
+def get_settings() -> Settings:
+    return settings
 ```
 
-### Uso Baseado em Classe
+---
 
-```python
-from core.config import settings
+## 17. Change Log Mapping (Selected)
 
-class DatabaseService:
-    def __init__(self):
-        self.connection_string = settings.database_url
-        # Use outras configurações conforme necessário
-```
+Feature / Setting | Changelog Day
+------------------|--------------
+Idempotency (Redis fallback) | Day 4 / Day 15
+Event retries & DLQ toggles | Day 6 / Day 12
+Structured logging level | Day 6
+MLflow persistence path assurance | Days 9–13.5 hardening
+Composite index & DB perf | Day 12 + Day 18
+Drift endpoint dependency (DB + Redis) | Day 13
+Model hash validation (CI context) | Day 21
+Microservice scaffolding alignment | Days 19–20
+Drift/retrain automation | Day 23
 
-## Variáveis de Ambiente
+---
 
-A configuração pode ser definida via variáveis de ambiente ou um arquivo `.env`. O arquivo `.env.example` na raiz do projeto mostra todas as opções de configuração disponíveis.
+## 18. Future (Planned Config Keys — Not Yet Implemented)
 
-Para configurações do Docker Compose, use nomes de serviços (ex: `db`) ao invés de `localhost`.
+| Planned | Purpose |
+|---------|---------|
+| DRIFT_WINDOW_MINUTES | Standardized drift window tuning |
+| MODEL_RETRAIN_COOLDOWN_HOURS | Guardrail for retrain frequency |
+| RATE_LIMIT_REDIS_URL | Shared distributed rate limiting backend |
+| SIGNED_MODEL_MANIFESTS_ENABLED | Supply chain integrity |
 
-## Configurações Disponíveis
+(Do not predefine until code integration committed.)
 
-### Configuração do Banco de Dados
+---
 
-- `DATABASE_URL`: String de conexão PostgreSQL
-- `DB_HOST`: Host do banco de dados (padrão: localhost)
-- `DB_PORT`: Porta do banco de dados (padrão: 5432)
-- `DB_USER`: Nome de usuário do banco (padrão: smart_user)
-- `DB_PASSWORD`: Senha do banco de dados
-- `DB_NAME`: Nome do banco de dados (padrão: smart_maintenance_db)
-- `TEST_DATABASE_URL`: String de conexão do banco de testes
+## 19. Summary
 
-### Cache e Fila de Mensagens
+Configuration surface is lean, explicit, and aligned with resilience, ML lifecycle automation, and observability goals. Expansion follows documented checklist to prevent drift or hidden coupling.
 
-- `REDIS_URL`: String de conexão Redis (para uso futuro)
-- `KAFKA_BOOTSTRAP_SERVERS`: Servidores bootstrap Kafka (para uso futuro)
-
-### Configuração da API
-
-- `API_HOST`: Host para vincular o servidor da API (padrão: 0.0.0.0)
-- `API_PORT`: Porta para o servidor da API (padrão: 8000)
-- `DEBUG`: Flag do modo debug (padrão: false)
-
-### Segurança
-
-- `SECRET_KEY`: Chave secreta para recursos de segurança
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: Tempo de expiração do token (padrão: 60)
-- `API_KEY`: Chave API estática para autenticação básica
-
-### Sistema de Agentes
-
-- `AGENT_COMMUNICATION_TIMEOUT`: Timeout para comunicação entre agentes (padrão: 30)
-
-### Agendamento
-
-- `USE_OR_TOOLS_SCHEDULER`: Habilitar agendador avançado OR-Tools (padrão: false)
-
-### Aprendizado de Máquina
-
-- `MODEL_REGISTRY_PATH`: Caminho para armazenamento de modelos ML (padrão: ./models)
-
-### Serviços de Notificação
-
-- `WHATSAPP_API_KEY`: Chave API WhatsApp para notificações
-- `EMAIL_SMTP_HOST`: Host do servidor SMTP
-- `EMAIL_SMTP_PORT`: Porta do servidor SMTP (padrão: 587)
-- `EMAIL_SMTP_USER`: Nome de usuário SMTP
-- `EMAIL_SMTP_PASSWORD`: Senha SMTP
-
-### Sistema de Logs
-
-- `LOG_LEVEL`: Nível de logging (padrão: INFO)
-
-### Event Bus e Dead Letter Queue
-
-- `EVENT_HANDLER_MAX_RETRIES`: Máximo de tentativas para handlers de eventos (padrão: 3)
-- `EVENT_HANDLER_RETRY_DELAY_SECONDS`: Delay entre tentativas (padrão: 1.0)
-- `DLQ_ENABLED`: Habilitar Dead Letter Queue para eventos falhados (padrão: true)
-- `DLQ_LOG_FILE`: Caminho para arquivo de log DLQ (padrão: logs/dlq_events.log)
-
-### Configurações do Orquestrador
-
-- `ORCHESTRATOR_URGENT_MAINTENANCE_DAYS`: Limite para manutenção urgente (padrão: 30)
-- `ORCHESTRATOR_HIGH_CONFIDENCE_THRESHOLD`: Nível de alta confiança (padrão: 0.90)
-- `ORCHESTRATOR_MODERATE_CONFIDENCE_THRESHOLD`: Nível de confiança moderada (padrão: 0.75)
-- `ORCHESTRATOR_AUTO_APPROVAL_MAX_DAYS_MODERATE_CONFIDENCE`: Limite para aprovação automática (padrão: 15)
-- `ORCHESTRATOR_VERY_URGENT_MAINTENANCE_DAYS_FACTOR`: Fator para urgência muito alta (padrão: 0.5)
-
-## Adicionando Novas Configurações
-
-Para adicionar novas configurações:
-
+---
 1. Adicione a configuração à classe `Settings` em `settings.py`
 2. Adicione um valor padrão
 3. Atualize o arquivo `.env.example`

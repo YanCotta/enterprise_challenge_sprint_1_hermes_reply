@@ -1,292 +1,372 @@
-# Testing Strategy for Smart Maintenance SaaS
+# Smart Maintenance SaaS - Complete Documentation Index
 
-🇧🇷 **[Clique aqui para ler em Português](#-estratégia-de-testes-português)** | 🇺🇸 **English Version Below**
+## Core Documentation
 
-📖 **Quick Navigation**
+### Getting Started
 
-- [📚 Main Documentation](../README.md) | [🏗️ System Architecture](../docs/SYSTEM_AND_ARCHITECTURE.md) | [📸 System Screenshots](../docs/SYSTEM_SCREENSHOTS.md)
-- [🚀 Future Roadmap](../docs/FUTURE_ROADMAP.md) | [🚀 Deployment Status](../docs/DEPLOYMENT_STATUS.md) | [⚡ Performance Baseline](../docs/PERFORMANCE_BASELINE.md)
-- [📈 Load Testing](../docs/LOAD_TESTING_INSTRUCTIONS.md) | [🔧 API Documentation](../docs/api.md) | [📝 Logging Config](../core/logging_config.md)
-- [⚙️ Configuration Management](../core/config/README.md) | [📋 Original Architecture](../docs/original_full_system_architecture.md)
+- **[Main README](../../README.md)** - Project overview, quick start, and repository structure
+- **[Backend README](../README.md)** - Docker deployment and getting started guide
+- **[Development Orientation](../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
 
----
+### Project History & Changelog
 
-This directory contains tests for the Smart Maintenance SaaS application. The testing strategy is designed to ensure code quality and prevent regressions while keeping tests fast and reliable.
+- **[30-Day Sprint Changelog](../../30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](../../final_30_day_sprint.md)** - Executive summary of sprint achievements
 
-## 📊 Current Test Status
+## System Architecture & Design
 
-**Total Tests: 411** | **✅ Passed: 410** | **❌ Failed: 1**
+### Architecture Documentation
 
-### Test Results Summary
-- **Success Rate**: 99.8% (410/411 tests passing)
-- **Known Issues**: 1 scheduling constraint failure
-- **Core Functionality**: 100% operational
+- **[System and Architecture](../docs/SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
+- **[System Screenshots](../docs/SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
+- **[Comprehensive System Analysis](../docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
+- **[Microservice Migration Strategy](../docs/MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
 
-### Known Issues
+### Database Design
 
-**1. Scheduling Constraint Failure (1 test):**
-- **Test**: `test_full_workflow_from_ingestion_to_scheduling`
-- **Issue**: No available technician slots found during business hours
-- **Impact**: Low - Core system functionality works correctly
-- **Details**: Scheduling agent correctly processes events but calendar service constraints prevent scheduling
+- **[Database Documentation](../docs/db/README.md)** - Database schema and design documentation
+- **[Database ERD](../docs/db/erd.dbml)** - Entity Relationship Diagram source
+- **[Database ERD (PNG)](../docs/db/erd.png)** - Entity Relationship Diagram visualization
+- **[Database ERD (Dark Mode)](../docs/db/erd_darkmode.png)** - Entity Relationship Diagram (dark theme)
+- **[Database Schema](../docs/db/schema.sql)** - Complete SQL schema definition
 
-## Test Organization
+## API & Integration
 
-```text
-tests/
-├── api/                    # API endpoint tests
-│   ├── test_actual_api.py  # Real API endpoint validation
-│   └── test_api_endpoints.py # Additional API endpoint tests
-├── e2e/                    # End-to-end system tests  
-│   ├── final_system_test.py    # Complete system validation
-│   ├── test_ui_functionality.py # UI integration testing
-│   └── test_e2e_full_system_workflow.py # Full workflow testing
-├── unit/                   # Component unit tests
-│   ├── agents/            # Agent system unit tests
-│   ├── core/              # Core module unit tests
-│   ├── data/              # Data layer unit tests
-│   ├── ml/                # ML component unit tests
-│   └── rules/             # Business rules unit tests
-├── integration/           # Service integration tests
-│   ├── agents/            # Agent integration tests
-│   ├── core/              # Core system integration tests
-│   ├── workflows/         # Workflow integration tests
-│   ├── test_full_workflow.py    # Complete workflow testing
-│   └── test_rbac_enforcement.py # Security and RBAC tests
-├── data/                  # Test data and generators
-│   └── generators/        # Test data generation utilities
-├── conftest.py           # Shared test configuration and fixtures
-├── test_db_example.py    # Database testing examples
-├── test_settings.py      # Configuration testing utilities
-└── test_validation_changes.py # Data validation tests
-```
+### API Documentation
 
-## Test Types
+- **[API Reference](../docs/api.md)** - Complete REST API documentation and examples
+- **[Configuration Management](../core/config/README.md)** - Centralized configuration system
+- **[Logging Configuration](../core/logging_config.md)** - Structured JSON logging setup
 
-### Unit Tests
+## Performance & Testing
 
-- Test individual components in isolation
-- Fast execution, no external dependencies
-- Marker: `@pytest.mark.unit`
+### Performance Documentation
 
-### Integration Tests
+- **[Performance Baseline](../docs/PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
+- **[Day 17 Load Test Report](../docs/DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
+- **[Day 18 Performance Results](../docs/DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
+- **[Load Testing Instructions](../docs/LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
 
-- Test interactions between components
-- May require external services like databases
-- Marker: `@pytest.mark.integration`
+### Testing Documentation
 
-### API Tests
+- **[Test Documentation](./README.md)** - Test organization and execution guide
+- **[Coverage Improvement Plan](../docs/COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
 
-- Test HTTP endpoints and responses
-- Marker: `@pytest.mark.api`
+## Machine Learning & Data Science
 
-### Additional Test Markers
+### ML Documentation
 
-Based on the project's `pytest.ini` configuration, the following markers are available:
+- **[ML Documentation](../docs/ml/README.md)** - Machine learning models and pipelines
+- **[Models Summary](../docs/MODELS_SUMMARY.md)** - Overview of all 17+ production models
+- **[Project Gauntlet Plan](../docs/PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
 
-- `@pytest.mark.db`: Tests that require database access
-- `@pytest.mark.slow`: Tests that are known to be slow
-- `@pytest.mark.smoke`: Critical path functionality tests for CI
+## Security & Operations
 
-## Database Testing Strategy
+### Security Documentation
 
-We use multiple approaches for database testing to accommodate different testing scenarios:
+- **[Security Documentation](../docs/SECURITY.md)** - Security architecture and implementation
+- **[Security Audit Checklist](../docs/SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
 
-### 1. Docker Container Approach (Default)
+### Service Documentation
 
-We use `testcontainers` to spin up a PostgreSQL with TimescaleDB container for integration tests:
-
-**Pros:**
-- Tests run against a real database instance
-- Complete isolation from development and production databases
-- Tests can freely modify data without affecting other environments
-- Each test session gets a fresh database state
-- No need for manual database setup
-
-**Cons:**
-- Requires Docker to be installed and running
-- Slower startup time for the test suite
-- Resource-intensive
-
-### 2. Dedicated Test Database Approach
-
-Alternatively, you can use a pre-configured test database by running tests with `--no-container`:
-
-**Pros:**
-- Faster startup time for the test suite
-- Doesn't require Docker
-- Good for CI/CD environments with pre-configured databases
-
-**Cons:**
-- Requires manual setup of a test database
-- Potential for test interference if multiple test runs occur simultaneously
-
-## Running Tests
-
-Use the provided script to run tests:
-
-```bash
-# Run all tests with Docker container for database
-./scripts/run_tests.sh
-
-# Run only unit tests (no database required)
-./scripts/run_tests.sh -m unit
-
-# Run only integration tests
-./scripts/run_tests.sh -m integration
-
-# Run tests without using Docker container
-./scripts/run_tests.sh --no-container
-
-# Run tests with coverage report
-./scripts/run_tests.sh --cov
-```
-
-## Test Database Configuration
-
-The test database connection is configured via the `.env.test` file or environment variables:
-
-- When using the Docker container approach, connection details are managed automatically
-- When using the direct database approach (`--no-container`), the test database URL is determined from:
-  1. The `DATABASE_TEST_URL` environment variable, if set
-  2. The standard `DATABASE_URL` with the database name appended with `_test`
-
-## Best Practices
-
-1. **Isolation**: Each test should be independent and leave no side effects
-2. **Fixtures**: Use pytest fixtures for test setup and teardown
-3. **Async**: Use `@pytest.mark.asyncio` for async tests
-4. **Markers**: Apply appropriate markers to categorize tests
-5. **Mocking**: Use mocks for external services when appropriate
-6. **Coverage**: Aim for high test coverage, especially for critical components
+- **[Anomaly Service](../services/anomaly_service/README.md)** - Future anomaly detection microservice
+- **[Prediction Service](../services/prediction_service/README.md)** - Future ML prediction microservice
 
 ---
 
-## 🇧🇷 Estratégia de Testes (Português)
+*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
 
-Este diretório contém testes para a aplicação Smart Maintenance SaaS. A estratégia de testes é projetada para garantir qualidade do código e prevenir regressões, mantendo os testes rápidos e confiáveis.
+---
 
-## 📊 Status Atual dos Testes
+# Testing Strategy (Synchronized with Changelog Days 4–23)
 
-**Total de Testes: 411** | **✅ Aprovados: 410** | **❌ Falharam: 1**
+Status: 410 PASSED / 1 FAILED (known low‑severity scheduling edge case)
 
-### Resumo dos Resultados dos Testes 
+---
 
-- **Taxa de Sucesso**: 99,8% (410/411 testes aprovados)
-- **Problemas Conhecidos**: 1 falha de restrição de agendamento
-- **Funcionalidade Principal**: 100% operacional
+## 1. Objectives
 
-### Problemas Conhecidos
+Ensure:
+- Functional correctness across ingestion → anomaly → prediction → drift → retrain.
+- Performance & scalability baselines (load, query optimization).
+- Resilience under infra faults (Redis / DB latency, network partitions).
+- Security controls (auth, rate limiting, dependency scanning).
+- ML lifecycle integrity (model reproducibility, hash stability, drift automation).
 
-**1. Falha de Restrição de Agendamento (1 teste):**
-- **Teste**: `test_full_workflow_from_ingestion_to_scheduling`
-- **Problema**: Nenhum slot de técnico disponível encontrado durante horário comercial
-- **Impacto**: Baixo - Funcionalidade principal do sistema funciona corretamente
-- **Detalhes**: Agente de agendamento processa eventos corretamente, mas restrições do serviço de calendário impedem agendamento
+---
 
-## Organização dos Testes
+## 2. Layered Test Taxonomy
 
-```text
+| Layer | Scope | Key Focus | Changelog Link |
+|-------|-------|-----------|----------------|
+| Unit | Pure functions, feature transformers, utility classes | Determinism, edge cases | Days 8–10 (feature eng) |
+| Integration | DB, Redis, event bus, model loader, drift logic | Schema, indexing, retries | Days 12,13,18 |
+| End-to-End | Full workflow (ingest→anomaly→prediction→(sched)→drift) | Cross-component flow | Days 12–13 |
+| Load (Locust) | High concurrency endpoints & registry | Latency, throughput SLOs | Day 17 |
+| Resilience / Chaos | Toxiproxy (latency, timeouts, partitions) | Graceful degradation, retries | Day 15 |
+| Security | Rate limiting, auth rejection, Snyk, dependency scan | DoS protection, supply chain | Days 16,21 |
+| ML Integrity | Model hash validation, feature contract, drift detection | Reproducibility, lifecycle | Days 21,23 |
+| Data Export | Full + incremental CSV correctness | Timestamp delta logic | Day 14 |
+| Performance DB | Index & CAGG impact | Query plan / speed gain | Day 18 |
+
+---
+
+## 3. Current Test Status
+
+| Metric | Value |
+|--------|-------|
+| Total Tests | 411 |
+| Passed | 410 |
+| Failed | 1 (Scheduling slot availability timing) |
+| Success Rate | 99.8% |
+| Coverage (Line) | ≥80% (CI enforced) |
+
+Failing Test: `tests/e2e/test_e2e_full_system_workflow.py::test_full_workflow_from_ingestion_to_scheduling`  
+Reason: Calendar window edge near business-hour cutoff → no technician slot. Business logic validated manually; deferral accepted (see Day 12/15 recovery notes).
+
+---
+
+## 4. Day-to-Test Mapping (Traceability)
+
+| Day(s) | Feature / Change | Representative Tests |
+|--------|------------------|----------------------|
+| 4 | Idempotent ingestion (Idempotency-Key) + request IDs | api ingest duplicate test |
+| 6 | Structured logging, event retry | integration event bus retry test |
+| 7 | Dataset & docs readiness | data seeding validation tests |
+| 8–10 | Feature engineering, anomaly & forecast models | unit/ml feature transformer tests |
+| 10.5 | Forecast tuning challenger evaluation | ML integrity comparison tests |
+| 11 | MLflow loader + registry load | registry load / model cache tests |
+| 12 | Predict endpoint recovery + composite index | prediction path integration test |
+| 13 | Drift endpoint (KS test) + async infra | e2e drift workflow test |
+| 13.5–13.8 | MLflow persistence & multi‑model catalog | model hash & loader tests |
+| 14 | Incremental export | export incremental append tests |
+| 15 | Redis idempotency + resilience (Toxiproxy) | resilience tests (redis timeout) |
+| 16 | Rate limiting (slowapi) | rate limit exceed test |
+| 17 | 50-user load baseline | locust scenario (manual / CI optional) |
+| 18 | Timescale CAGG & index perf | aggregation speed / row reduction assertion |
+| 19–20 | Microservice scaffolding (dormant) | presence / health stub tests |
+| 21 | Model hash validation CI job | hash baseline comparison |
+| 23 | Drift agent + retrain agent events | simulated event emission & cooldown tests |
+
+---
+
+## 5. Directory Structure (Relevant)
+
+```
 tests/
-├── api/                    # Testes de endpoints da API
-│   ├── test_actual_api.py  # Validação de endpoints reais da API
-│   └── test_api_endpoints.py # Testes adicionais de endpoints da API
-├── e2e/                    # Testes de sistema end-to-end
-│   ├── final_system_test.py    # Validação completa do sistema
-│   ├── test_ui_functionality.py # Testes de integração de UI
-│   └── test_e2e_full_system_workflow.py # Testes de fluxo completo
-├── unit/                   # Testes unitários de componentes
-│   ├── agents/            # Testes unitários do sistema de agentes
-│   ├── core/              # Testes unitários dos módulos principais
-│   ├── data/              # Testes unitários da camada de dados
-│   ├── ml/                # Testes unitários de componentes ML
-│   └── rules/             # Testes unitários de regras de negócio
-├── integration/           # Testes de integração de serviços
-│   ├── agents/            # Testes de integração de agentes
-│   ├── core/              # Testes de integração do sistema principal
-│   ├── workflows/         # Testes de integração de workflows
-│   ├── test_full_workflow.py    # Testes de workflow completo
-│   └── test_rbac_enforcement.py # Testes de segurança e RBAC
-├── data/                  # Dados de teste e geradores
-│   └── generators/        # Utilitários de geração de dados de teste
-├── conftest.py           # Configuração e fixtures compartilhados
-├── test_db_example.py    # Exemplos de testes de banco de dados
-├── test_settings.py      # Utilitários de teste de configuração
-└── test_validation_changes.py # Testes de validação de dados
+  unit/              # Pure logic & transformers
+  integration/       # DB / Redis / event bus / drift
+  e2e/               # Multi-step workflows
+  api/               # Endpoint contract & auth/rate limit
+  data/              # Generators / fixtures
+  performance/ (opt) # DB/query benchmarks
+  conftest.py        # Async loop, fixtures, testcontainers
 ```
 
-## Tipos de Teste
+---
 
-### Testes Unitários
+## 6. Key Fixtures & Infrastructure
 
-- Testam componentes individuais isoladamente
-- Execução rápida, sem dependências externas
-- Marcador: `@pytest.mark.unit`
+| Fixture | Purpose | Notes |
+|---------|---------|-------|
+| event_loop (session) | Stable asyncio loop | Prevents cross-loop errors (Day 13) |
+| db_session | Async DB session bound to test DB / testcontainer | Ensures isolation |
+| redis_client | Idempotency + pub/sub simulation | Falls back if offline |
+| toxiproxy_client | Injects latency / timeouts | Resilience assertions |
+| model_registry_tmp | Loads MLflow artifacts (read-only) | Caches run URIs |
 
-### Testes de Integração
+---
 
-- Testam interações entre componentes
-- Podem requerer serviços externos como bancos de dados
-- Marcador: `@pytest.mark.integration`
+## 7. Markers & Selection
 
-### Testes de API
+| Marker | Usage |
+|--------|-------|
+| unit | Fast isolated logic |
+| integration | External services (DB/Redis) |
+| e2e | Full business flow |
+| slow | Optional long or perf |
+| db | Direct DB dependency |
+| smoke | Minimal deploy gate |
+| resilience | Chaos / fault injection |
 
-- Testam endpoints HTTP e respostas
-- Marcador: `@pytest.mark.api`
+Examples:
+```
+pytest -m unit
+pytest -m "integration and not slow"
+pytest -m resilience -k redis
+```
 
-### Marcadores de Teste Adicionais
+---
 
-Baseado na configuração `pytest.ini` do projeto, os seguintes marcadores estão disponíveis:
+## 8. Running Tests
 
-- `@pytest.mark.db`: Testes que requerem acesso ao banco de dados
-- `@pytest.mark.slow`: Testes que são conhecidamente lentos
-- `@pytest.mark.smoke`: Testes de funcionalidade de caminho crítico para CI
+| Scenario | Command |
+|----------|---------|
+| Full suite (host) | `poetry run pytest` |
+| Unit only | `poetry run pytest -m unit` |
+| Integration only | `poetry run pytest -m integration` |
+| E2E workflows | `poetry run pytest tests/e2e/` |
+| With coverage | `poetry run pytest --cov=apps --cov=core` |
+| Single test debug | `pytest tests/e2e/test_drift_workflow.py::test_drift_detected` |
+| Inside container | `docker compose exec api pytest -m api` |
 
-## Estratégia de Teste de Banco de Dados
+---
 
-Usamos múltiplas abordagens para testes de banco de dados para acomodar diferentes cenários de teste:
+## 9. Load & Performance Testing
 
-### 1. Abordagem de Container Docker (Padrão)
+Locust (baseline 50 users / 3m):
+```
+docker compose exec api locust -f locustfile.py --host http://localhost:8000 --users 50 --spawn-rate 10 --run-time 3m --headless --print-stats
+```
+KPIs (Day 17):
+- Peak RPS: 103.8
+- Avg RPS: 88.8
+- P95: 2ms; P99: 3ms
+- Max: 124ms
 
-Usamos `testcontainers` para criar um container PostgreSQL com TimescaleDB para testes de integração:
+DB Aggregation (Day 18):
+- CAGG speed gain: 37.3%
+- Rows scanned reduction: 83.3%
 
-**Vantagens:**
-- Testes executam contra uma instância real de banco de dados
-- Isolamento completo dos bancos de desenvolvimento e produção
-- Testes podem modificar dados livremente sem afetar outros ambientes
-- Cada sessão de teste obtém um estado limpo de banco de dados
-- Não necessita configuração manual de banco de dados
+---
 
-**Desvantagens:**
-- Requer Docker instalado e executando
-- Tempo de inicialização mais lento para a suíte de testes
-- Uso intensivo de recursos
+## 10. ML Integrity & Hash Validation
 
-### 2. Abordagem de Banco de Dados de Teste Dedicado
+| Aspect | Mechanism |
+|--------|-----------|
+| Feature Contract | `feature_names.txt` persisted with model |
+| Hash Baseline | `baseline_hashes.json` compared in CI |
+| Drift Tests | KS p-value + PSI (agent scripts) |
+| Retrain Tests | Event → cooldown → version increment assertion |
+| Model Loader | Run URI fallback (prevents registry partial issues) |
 
-Alternativamente, você pode usar um banco de dados de teste pré-configurado executando testes com `--no-container`:
+Run manual hash validation:
+```
+python scripts/validate_model_hashes.py
+```
 
-**Vantagens:**
-- Tempo de inicialização mais rápido para a suíte de testes
-- Não requer Docker
-- Bom para ambientes CI/CD com bancos de dados pré-configurados
+---
 
-**Desvantagens:**
-- Requer configuração manual de um banco de dados de teste
-- Potencial para interferência de teste se múltiplas execuções de teste ocorrerem simultaneamente
+## 11. Resilience & Chaos Tests
 
-## Executando Testes
+| Fault | Injection | Expected Behavior |
+|-------|-----------|------------------|
+| Redis timeout | Toxiproxy timeout toxic | Idempotency disabled warning; ingestion proceeds |
+| DB latency | Latency toxic (e.g. 500ms) | Retry budget respected; SLA monitored |
+| Network partition | Bandwidth/timeout + cut | Event retries (tenacity) escalate then DLQ hook |
+| Combined | Sequential toxics | Degradation logged; no crash |
 
-Use o script fornecido para executar testes:
+---
 
-```bash
-# Executar todos os testes com container Docker para banco de dados
-./scripts/run_tests.sh
+## 12. Security & Rate Limiting Tests
 
-# Executar apenas testes unitários (sem banco de dados necessário)
-./scripts/run_tests.sh -m unit
+| Test | Validation |
+|------|-----------|
+| Missing API key | 403 |
+| Invalid key | 403 (no timing leak) |
+| Rate limit exceed (drift endpoint) | 429 with retry headers |
+| Dependency scan (CI) | Snyk job fail on high/critical |
+| Input schema | Pydantic validation rejects malformed payloads |
 
-# Executar apenas testes de integração
+---
+
+## 13. Known Limitations
+
+| Area | Detail | Mitigation |
+|------|--------|-----------|
+| Scheduling E2E | Time-of-day slot scarcity | Mock calendar / widen window future |
+| Multi-replica idempotency | In-memory duplication not tested cluster-wide | Redis cluster test (future) |
+| Long-horizon drift | Limited synthetic volume | Add historical backfill fixtures |
+| Forecast backtest | Not continuous in CI | Scheduled periodic job (roadmap) |
+
+---
+
+## 14. CI Pipeline (Relevant Jobs)
+
+| Job | Purpose |
+|-----|---------|
+| lint-type | Style & (optionally) mypy/static checks |
+| tests | Executes full suite (excl. optional slow) |
+| security-scan | Snyk + bandit + safety |
+| model-hash-validation | Ensures artifact integrity |
+| ml-train-validation | Re-trains anomaly / forecast (repro check) |
+| (optional) load-test | Short read-only performance smoke |
+
+---
+
+## 15. Adding Tests (Checklist)
+
+1. Identify layer & marker.
+2. Use existing fixtures (avoid new global state).
+3. Keep test ≤2s (unit) or justify `slow`.
+4. Assert structure + boundary cases (not only "happy path").
+5. Add docstring: intent & linkage to changelog day if applicable.
+6. If new migration required for test data pattern—document rationale.
+
+---
+
+## 16. Troubleshooting Matrix
+
+| Symptom | Cause | Action |
+|---------|-------|--------|
+| Async loop errors | Multiple event loops | Ensure session-scoped `event_loop` fixture |
+| Model 404 in predict test | Registry not seeded | Run training Make target or use synthetic model fixture |
+| Drift test returns insufficient data | Window too large / fresh DB | Seed readings before call |
+| Hash mismatch failure | Model re-trained unintentionally | Reproduce locally; update baseline only if validated |
+| Rate limit flakiness | Shared API key across parallel tests | Use unique test key per case |
+| Redis connection refused | Container start order / network latency | Re-run after confirming service health |
+
+---
+
+## 17. Minimal Example (Pattern)
+
+```python
+@pytest.mark.integration
+async def test_drift_endpoint_detects_no_drift(async_client, seeded_sensor_data):
+    resp = await async_client.post("/api/v1/ml/check_drift", json={
+        "sensor_id": "sensor-001",
+        "window_minutes": 30,
+        "p_value_threshold": 0.05,
+        "min_samples": 10
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "p_value" in data
+    assert data["reference_count"] >= 0
+```
+
+---
+
+## 18. Exit Criteria Verification
+
+| Criterion | Status |
+|-----------|--------|
+| Core workflows covered | ✅ |
+| ML lifecycle reproducibility enforced | ✅ |
+| Performance SLO validated | ✅ |
+| Drift automation tested | ✅ |
+| Security (rate limit + auth) verified | ✅ |
+| Resilience scenarios covered | ✅ |
+| Remaining test gap low risk | ✅ |
+
+---
+
+## 19. References
+
+- Changelog: `../../30-day-sprint-changelog.md`
+- Performance Baseline: `../docs/PERFORMANCE_BASELINE.md`
+- DB Architecture: `../docs/db/README.md`
+- ML Platform: `../docs/ml/README.md`
+- Security Model: `../docs/SECURITY.md`
+- Migration Strategy: `../docs/MICROSERVICE_MIGRATION_STRATEGY.md`
+
+---
+
+## 20. Summary
+
+Test suite provides high-confidence coverage of functional flows, ML integrity, performance, resilience, and security controls with traceability to sprint deliverables. Single known failure is a low-impact scheduling edge case; all critical SLO and lifecycle assurances pass.
+
+---
 ./scripts/run_tests.sh -m integration
 
 # Executar testes sem usar container Docker
