@@ -186,6 +186,72 @@ services:
     depends_on:
       - mlflow
 
+  # Automated Drift Detection Agent
+  drift_agent:
+    build: .
+    image: smart-maintenance-saas:latest
+    container_name: smart_maintenance_drift_agent
+    environment:
+      - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
+      - REDIS_URL=redis://redis:6379/0
+      - PYTHONPATH=/app
+      - DRIFT_CHECK_ENABLED=true
+      - DRIFT_CHECK_SCHEDULE="0 */6 * * *"  # Every 6 hours
+      - DRIFT_THRESHOLD=0.05
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    restart: unless-stopped
+    user: "1000:1000"
+    volumes:
+      - ./logs:/app/logs
+      - ./mlflow_data:/mlruns
+    command: ["python", "scripts/run_drift_check_agent.py"]
+    networks:
+      - smart-maintenance-network
+
+  # Model Retraining Agent (triggered by drift events)
+  retrain_agent:
+    build: .
+    image: smart-maintenance-saas:latest
+    container_name: smart_maintenance_retrain_agent
+    environment:
+      - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
+      - REDIS_URL=redis://redis:6379/0
+      - PYTHONPATH=/app
+      - RETRAINING_ENABLED=true
+      - RETRAINING_COOLDOWN_HOURS=24
+      - MAX_CONCURRENT_RETRAINING=1
+      - MODELS_TO_RETRAIN=anomaly:train-anomaly,forecast:train-forecast
+      - TRAINING_TIMEOUT_MINUTES=60
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    restart: unless-stopped
+    user: "1000:1000"
+    volumes:
+      - ./logs:/app/logs
+      - ./mlflow_data:/mlruns
+      - .:/app  # Full access for make commands
+    command: ["python", "scripts/retrain_models_on_drift.py"]
+    networks:
+      - smart-maintenance-network
+
   # --- Future Microservices: Uncomment when MICROSERVICE_MIGRATION_STRATEGY triggers are met ---
   # 
   # # Prediction Service - Handles ML model predictions and inference
