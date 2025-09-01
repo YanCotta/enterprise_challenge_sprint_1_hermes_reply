@@ -10,6 +10,13 @@ import base64
 import os
 import uuid
 import pandas as pd
+import matplotlib.pyplot as plt
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
 
@@ -70,6 +77,94 @@ def make_api_request(method: str, endpoint: str, data: Dict[Any, Any] = None) ->
         return {"success": False, "error": "Request timed out"}
     except Exception as e:
         return {"success": False, "error": f"Unexpected error: {str(e)}"}
+
+def get_system_metrics():
+    """Fetch system metrics from the /metrics endpoint."""
+    try:
+        # Use plain text request (not JSON) since /metrics returns Prometheus format
+        response = requests.get(f"{API_BASE_URL}/metrics", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            # Parse Prometheus metrics (simplified)
+            metrics_text = response.text
+            metrics = {}
+            
+            # Extract some key metrics
+            lines = metrics_text.split('\n')
+            for line in lines:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                    
+                try:
+                    if 'process_resident_memory_bytes' in line and 'process_resident_memory_bytes ' in line:
+                        metrics['memory_bytes'] = float(line.split()[-1])
+                    elif 'process_cpu_seconds_total' in line and 'process_cpu_seconds_total ' in line:
+                        metrics['cpu_seconds'] = float(line.split()[-1])
+                    elif 'http_requests_total{' in line and 'status="2xx"' in line:
+                        metrics['successful_requests'] = metrics.get('successful_requests', 0) + float(line.split()[-1])
+                    elif 'http_requests_total{' in line and 'status="4xx"' in line:
+                        metrics['client_errors'] = metrics.get('client_errors', 0) + float(line.split()[-1])
+                    elif 'http_requests_total{' in line and 'status="5xx"' in line:
+                        metrics['server_errors'] = metrics.get('server_errors', 0) + float(line.split()[-1])
+                except (ValueError, IndexError):
+                    # Skip lines that can't be parsed
+                    continue
+            
+            return metrics if metrics else None
+        else:
+            return None
+    except Exception as e:
+        print(f"Debug - metrics fetch error: {e}")  # For debugging
+        return None
+
+def display_shap_visualization(shap_values, feature_importance):
+    """Display SHAP visualizations using matplotlib and plotly."""
+    if not shap_values or not feature_importance:
+        st.warning("No SHAP data available for visualization")
+        return
+    
+    # Feature importance bar chart
+    st.subheader("🎯 Feature Importance (SHAP Values)")
+    
+    # Create DataFrame for plotting
+    importance_df = pd.DataFrame(
+        list(feature_importance.items()),
+        columns=['Feature', 'Importance']
+    )
+    importance_df = importance_df.reindex(importance_df.Importance.abs().sort_values(ascending=False).index)
+    
+    # Plotly bar chart if available
+    if PLOTLY_AVAILABLE:
+        fig = px.bar(
+            importance_df, 
+            x='Importance', 
+            y='Feature',
+            orientation='h',
+            title='Feature Importance from SHAP Analysis',
+            color='Importance',
+            color_continuous_scale='RdYlBu_r'
+        )
+        fig.update_layout(height=400)
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        # Fallback to matplotlib
+        fig, ax = plt.subplots(figsize=(10, 6))
+        features = list(feature_importance.keys())
+        values = list(feature_importance.values())
+        colors = ['red' if v < 0 else 'blue' for v in values]
+        
+        ax.barh(features, values, color=colors, alpha=0.7)
+        ax.set_xlabel('SHAP Value (Impact on Model Output)')
+        ax.set_title('Feature Impact Analysis')
+        ax.grid(True, alpha=0.3)
+        
+        # Add value labels
+        for i, v in enumerate(values):
+            ax.text(v + (0.01 if v >= 0 else -0.01), i, f'{v:.3f}', 
+                   ha='left' if v >= 0 else 'right', va='center')
+        
+        st.pyplot(fig)
+        plt.close(fig)
 
 def main():
     # Main title
@@ -542,6 +637,220 @@ def main():
                 st.json(result["data"])
             else:
                 st.error(f"❌ System health check failed: {result['error']}")
+
+    st.markdown("---")
+    
+    # === SYSTEM DASHBOARD SECTION (Day 1 Enhancement) ===
+    st.header("📈 System Dashboard")
+    
+    st.subheader("🔍 System Metrics")
+    
+    # Initial metrics load
+    metrics = get_system_metrics()
+    
+    if st.button("🔄 Refresh Metrics", key="refresh_system_metrics"):
+        metrics = get_system_metrics()
+    
+    if metrics:
+        # Display metrics in a nice layout
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            memory_mb = metrics.get('memory_bytes', 0) / (1024 * 1024)
+            st.metric(
+                label="💾 Memory Usage", 
+                value=f"{memory_mb:.1f} MB"
+            )
+        
+        with col2:
+            st.metric(
+                label="🖥️ CPU Time", 
+                value=f"{metrics.get('cpu_seconds', 0):.1f}s"
+            )
+        
+        with col3:
+            st.metric(
+                label="✅ Successful Requests", 
+                value=f"{int(metrics.get('successful_requests', 0))}"
+            )
+        
+        with col4:
+            total_errors = metrics.get('client_errors', 0) + metrics.get('server_errors', 0)
+            st.metric(
+                label="❌ Total Errors", 
+                value=f"{int(total_errors)}"
+            )
+        
+        # System health visualization
+        st.subheader("📊 System Health Visualization")
+        
+        if st.button("📈 Generate Health Chart", key="health_chart") and PLOTLY_AVAILABLE:
+            # Sample time series data for demonstration
+            dates = pd.date_range(start='2024-01-01', end='2024-01-20', freq='D')
+            cpu_usage = [45 + i * 2 + (i % 3) * 5 for i in range(len(dates))]
+            memory_usage = [60 + i * 1.5 + (i % 4) * 3 for i in range(len(dates))]
+            
+            health_df = pd.DataFrame({
+                'Date': dates,
+                'CPU Usage (%)': cpu_usage,
+                'Memory Usage (%)': memory_usage
+            })
+            
+            # Plotly line chart
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=health_df['Date'], y=health_df['CPU Usage (%)'], 
+                                   mode='lines+markers', name='CPU Usage', line=dict(color='blue')))
+            fig.add_trace(go.Scatter(x=health_df['Date'], y=health_df['Memory Usage (%)'], 
+                                   mode='lines+markers', name='Memory Usage', line=dict(color='red')))
+            
+            fig.update_layout(
+                title='System Resource Usage Over Time',
+                xaxis_title='Date',
+                yaxis_title='Usage (%)',
+                hovermode='x unified'
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+        elif not PLOTLY_AVAILABLE:
+            st.info("📊 Install plotly for interactive charts: `pip install plotly`")
+        
+        # Raw metrics display
+        with st.expander("🔧 Raw Metrics Data"):
+            st.json(metrics)
+    
+    else:
+        st.warning("📊 Could not fetch metrics from /metrics endpoint")
+        
+        # Show example metrics for demo
+        st.info("📋 **Example Metrics Structure:**")
+        example_metrics = {
+            "memory_bytes": 433332224,
+            "cpu_seconds": 8.15,
+            "successful_requests": 15,
+            "client_errors": 4,
+            "server_errors": 3
+        }
+        st.json(example_metrics)
+    
+    # Show raw metrics endpoint test
+    if st.button("🔍 Test Raw Metrics Endpoint", key="test_raw_metrics"):
+        st.write("**Testing /metrics endpoint directly:**")
+        try:
+            response = requests.get(f"{API_BASE_URL}/metrics", headers=HEADERS, timeout=10)
+            st.write(f"**Status Code:** {response.status_code}")
+            st.write(f"**Content Type:** {response.headers.get('Content-Type', 'Unknown')}")
+            if response.status_code == 200:
+                st.text_area("Raw Response (first 1000 chars):", value=response.text[:1000], height=200)
+            else:
+                st.error(f"Error: {response.text}")
+        except Exception as e:
+            st.error(f"Failed to fetch metrics: {e}")    # === ML PREDICTION WITH SHAP SECTION (Day 1 Enhancement) ===
+    st.header("🤖 ML Prediction with Explainability")
+    
+    st.subheader("🎯 Make Prediction with SHAP Analysis")
+    
+    # Model version mapping for correct MLflow versions
+    MODEL_VERSION_MAP = {
+        "anomaly_detector_refined_v2": "auto",  # Let API resolve automatically
+        "ai4i_classifier_randomforest_baseline": "auto", 
+        "vibration_anomaly_isolationforest": "auto",
+        "synthetic_validation_isolation_forest": "auto"
+    }
+    
+    with st.form("ml_prediction_with_shap_form"):
+        st.write("**Model Configuration:**")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            model_name = st.selectbox(
+                "Model Name",
+                ["ai4i_classifier_randomforest_baseline", "anomaly_detector_refined_v2", "vibration_anomaly_isolationforest"],
+                help="Select a model for prediction"
+            )
+        with col2:
+            # Auto-set version based on model, but allow manual override
+            default_version = MODEL_VERSION_MAP.get(model_name, "1")
+            model_version = st.text_input("Model Version", value=default_version, help="Model version to use")
+        
+        st.write("**Feature Input:**")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            air_temp = st.number_input("Air Temperature (K)", value=298.1)
+            process_temp = st.number_input("Process Temperature (K)", value=308.6)
+            rotation_speed = st.number_input("Rotational Speed (RPM)", value=1551)
+        
+        with col2:
+            torque = st.number_input("Torque (Nm)", value=42.8)
+            tool_wear = st.number_input("Tool Wear (min)", value=108)
+            sensor_id = st.text_input("Sensor ID", value="ml_test_sensor")
+        
+        predict_button = st.form_submit_button("🔮 Get Prediction with SHAP Analysis")
+        
+        if predict_button:
+            # Prepare prediction payload
+            prediction_payload = {
+                "model_name": model_name,
+                "model_version": model_version,
+                "features": {
+                    "Air_temperature_K": air_temp,
+                    "Process_temperature_K": process_temp,
+                    "Rotational_speed_rpm": rotation_speed,
+                    "Torque_Nm": torque,
+                    "Tool_wear_min": tool_wear
+                },
+                "sensor_id": sensor_id
+            }
+            
+            # Make prediction API call
+            result = make_api_request("POST", "/api/v1/ml/predict", prediction_payload)
+            
+            if result["success"]:
+                prediction_data = result["data"]
+                
+                st.success("✅ Prediction completed successfully!")
+                
+                # Display prediction results
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.subheader("🎯 Prediction Results")
+                    st.write(f"**Prediction:** {prediction_data.get('prediction', 'N/A')}")
+                    if 'confidence' in prediction_data and prediction_data['confidence']:
+                        st.write(f"**Confidence:** {prediction_data['confidence']:.3f}")
+                    st.write(f"**Request ID:** `{prediction_data.get('request_id', 'N/A')}`")
+                
+                with col2:
+                    st.subheader("📋 Model Information")
+                    model_info = prediction_data.get('model_info', {})
+                    st.json(model_info)
+                
+                # Display SHAP analysis if available
+                if 'shap_values' in prediction_data and prediction_data['shap_values']:
+                    st.subheader("🧠 Explainable AI Analysis (SHAP)")
+                    
+                    shap_values = prediction_data['shap_values']
+                    feature_importance = prediction_data.get('feature_importance', {})
+                    
+                    if feature_importance:
+                        display_shap_visualization(shap_values, feature_importance)
+                    else:
+                        st.info("SHAP values computed but feature importance data not available")
+                        st.json(shap_values)
+                else:
+                    st.info("💡 SHAP explainability analysis not available for this model/prediction")
+                
+                # Raw response data
+                with st.expander("📋 Raw Response Data"):
+                    st.json(prediction_data)
+            
+            else:
+                st.error("❌ Prediction failed!")
+                st.error(result["error"])
+                
+                # Show helpful information about the error
+                if "feature" in result["error"].lower() or "expecting" in result["error"].lower():
+                    st.info("💡 **Tip**: This model may require different features or feature engineering. Try using a different model or check the model's expected input format.")
 
     # Footer
     st.markdown("---")
