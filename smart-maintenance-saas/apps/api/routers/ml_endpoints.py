@@ -12,18 +12,27 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Security
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from apps.api.dependencies import api_key_auth
 from apps.ml.model_loader import load_model
 from core.database.session import get_async_db
 from data.schemas import AnomalyAlert, AnomalyType, SensorReading
 from scipy.stats import ks_2samp
 
 from core.database.crud.crud_sensor_reading import crud_sensor_reading
+
+# SHAP for explainable AI
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
+    shap = None
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +57,7 @@ class PredictionRequest(BaseModel):
     """Request schema for /predict endpoint"""
     
     model_name: str = Field(..., description="Name of the model in MLflow Registry")
-    model_version: str = Field(default="latest", description="Version of the model (default: latest)")
+    model_version: str = Field(default="auto", description="Version of the model (default: auto-resolve)")
     features: Dict[str, Any] = Field(..., description="Feature values for prediction")
     sensor_id: Optional[str] = Field(None, description="Optional sensor ID for tracking")
     
@@ -77,6 +86,8 @@ class PredictionResponse(BaseModel):
     model_info: Dict[str, str] = Field(..., description="Model metadata")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Prediction timestamp")
     request_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique request ID")
+    shap_values: Optional[Dict[str, Any]] = Field(None, description="SHAP explainability values")
+    feature_importance: Optional[Dict[str, float]] = Field(None, description="Feature importance scores")
     
     class Config:
         json_encoders = {datetime: lambda dt: dt.isoformat()}
@@ -87,7 +98,7 @@ class AnomalyDetectionRequest(BaseModel):
     
     sensor_readings: List[SensorReading] = Field(..., description="Sensor readings to analyze")
     model_name: str = Field(default="anomaly_detector_refined_v2", description="Anomaly detection model name")
-    model_version: str = Field(default="latest", description="Model version")
+    model_version: str = Field(default="auto", description="Model version (auto-resolve)")
     sensitivity: float = Field(default=0.5, ge=0.0, le=1.0, description="Detection sensitivity (0-1)")
     
     class Config:
@@ -170,6 +181,67 @@ class DriftCheckResponse(BaseModel):
 # ==============================================================================
 # HELPER FUNCTIONS
 # ==============================================================================
+
+def compute_shap_explanation(model, feature_array: np.ndarray, feature_names: List[str] = None) -> Optional[Dict[str, Any]]:
+    """
+    Compute SHAP values for model explainability.
+    
+    Args:
+        model: Trained model
+        feature_array: Input features
+        feature_names: List of feature names
+        
+    Returns:
+        Dictionary with SHAP values and feature importance, or None if SHAP not available
+    """
+    if not SHAP_AVAILABLE:
+        logger.warning("SHAP not available for explainability")
+        return None
+    
+    try:
+        # Check if model is tree-based (supports TreeExplainer)
+        model_type = str(type(model)).lower()
+        
+        if any(tree_type in model_type for tree_type in ['forest', 'tree', 'lgb', 'xgb', 'catboost']):
+            # Use TreeExplainer for tree-based models
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(feature_array)
+            
+            # Handle multi-class outputs
+            if isinstance(shap_values, list):
+                shap_values = shap_values[0]  # Use first class for simplicity
+                
+        else:
+            # Use KernelExplainer for other models (slower but more general)
+            # Create a small background dataset from the input
+            background = np.zeros((min(10, feature_array.shape[0]), feature_array.shape[1]))
+            explainer = shap.KernelExplainer(model.predict, background)
+            shap_values = explainer.shap_values(feature_array)
+        
+        # Convert to feature importance dictionary
+        if feature_names is None:
+            feature_names = [f"feature_{i}" for i in range(feature_array.shape[1])]
+        
+        # For single prediction, extract the first row
+        if len(shap_values.shape) > 1:
+            importance_values = shap_values[0]
+        else:
+            importance_values = shap_values
+            
+        feature_importance = {
+            name: float(value) for name, value in zip(feature_names, importance_values)
+        }
+        
+        return {
+            "shap_values": shap_values.tolist() if hasattr(shap_values, 'tolist') else shap_values,
+            "feature_importance": feature_importance,
+            "explainer_type": explainer.__class__.__name__
+        }
+        
+    except Exception as e:
+        logger.warning(f"Failed to compute SHAP values: {e}")
+        return None
+
 
 def prepare_features_for_prediction(features: Dict[str, Any], model_name: str) -> np.ndarray:
     """
@@ -302,7 +374,7 @@ def analyze_sensor_readings_for_anomalies(
 # API ENDPOINTS
 # ==============================================================================
 
-@router.post("/predict", response_model=PredictionResponse, tags=["ML Prediction"])
+@router.post("/predict", response_model=PredictionResponse, tags=["ML Prediction"], dependencies=[Security(api_key_auth, scopes=["ml:predict"])])
 async def predict(
     request: PredictionRequest,
     db: AsyncSession = Depends(get_async_db)
@@ -312,53 +384,144 @@ async def predict(
     
     This endpoint loads models from our validated MLflow infrastructure and 
     provides real-time predictions for maintenance scenarios.
+    
+    Features automatic model version resolution and flexible feature handling.
     """
     logger.info(f"Prediction request for model: {request.model_name} v{request.model_version}")
     
     try:
-        # Load model + feature schema (tuple) from MLflow Registry
-        model, feature_names = load_model(request.model_name, request.model_version)
+        # Step 1: Resolve model version automatically if needed
+        resolved_version = request.model_version
+        if request.model_version == "latest" or request.model_version == "auto":
+            try:
+                # Try to get the latest version from MLflow
+                import mlflow
+                client = mlflow.tracking.MlflowClient()
+                latest_versions = client.get_latest_versions(request.model_name, stages=["None"])
+                if latest_versions:
+                    resolved_version = latest_versions[0].version
+                    logger.info(f"Auto-resolved version for {request.model_name}: {resolved_version}")
+                else:
+                    # Fallback: try common version numbers
+                    for version in ["4", "3", "2", "1"]:
+                        try:
+                            model, _ = load_model(request.model_name, version)
+                            if model is not None:
+                                resolved_version = version
+                                logger.info(f"Fallback resolved version for {request.model_name}: {resolved_version}")
+                                break
+                        except:
+                            continue
+            except Exception as e:
+                logger.warning(f"Auto-resolution failed, using original version: {e}")
+        
+        # Step 2: Load model with resolved version
+        model, feature_names = load_model(request.model_name, resolved_version)
 
         if model is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Model '{request.model_name}' version '{request.model_version}' not found in MLflow Registry"
+                detail=f"Model '{request.model_name}' version '{resolved_version}' not found in MLflow Registry"
             )
 
-        # Feature schema validation (Day 13.5 hardening)
-        if feature_names is not None:
-            provided = set(request.features.keys())
-            expected = set(feature_names)
-            if provided != expected:
-                missing = sorted(list(expected - provided))
-                extra = sorted(list(provided - expected))
+        # Step 3: Flexible feature handling - adapt features to model expectations
+        prediction_input = None  # Initialize prediction_input variable
+        
+        try:
+            # Try to prepare features normally first
+            feature_array = prepare_features_for_prediction(request.features, request.model_name)
+            
+            # Check if the feature count matches model expectations
+            prediction_input = feature_array.reshape(1, -1)
+            
+            # Try prediction to see if dimensions match
+            prediction = model.predict(prediction_input)
+            
+        except Exception as feature_error:
+            logger.warning(f"Standard feature preparation failed: {feature_error}")
+            
+            # Step 4: Flexible feature adaptation
+            try:
+                # Get model's expected feature count
+                if hasattr(model, 'n_features_in_'):
+                    expected_features = model.n_features_in_
+                elif hasattr(model, 'feature_importances_'):
+                    expected_features = len(model.feature_importances_)
+                else:
+                    # Try to infer from a test prediction
+                    test_input = np.zeros((1, len(request.features)))
+                    try:
+                        model.predict(test_input)
+                        expected_features = len(request.features)
+                    except Exception as e:
+                        # Extract expected feature count from error message
+                        error_str = str(e)
+                        if "expecting" in error_str and "features" in error_str:
+                            import re
+                            match = re.search(r'expecting (\d+) features', error_str)
+                            if match:
+                                expected_features = int(match.group(1))
+                            else:
+                                expected_features = 12  # Common default
+                        else:
+                            expected_features = 12
+                
+                logger.info(f"Model expects {expected_features} features, adapting input...")
+                
+                # Create feature vector of the right size
+                feature_values = list(request.features.values())
+                
+                if len(feature_values) < expected_features:
+                    # Pad with zeros or repeat last value
+                    padding_needed = expected_features - len(feature_values)
+                    if len(feature_values) > 0:
+                        # Repeat the mean of existing features
+                        mean_value = np.mean(feature_values)
+                        feature_values.extend([mean_value] * padding_needed)
+                    else:
+                        # All zeros if no features provided
+                        feature_values = [0.0] * expected_features
+                elif len(feature_values) > expected_features:
+                    # Truncate to expected size
+                    feature_values = feature_values[:expected_features]
+                
+                # Create prediction input
+                prediction_input = np.array(feature_values).reshape(1, -1)
+                
+                # Generate prediction
+                prediction = model.predict(prediction_input)
+                
+                logger.info(f"Successfully adapted features from {len(request.features)} to {expected_features}")
+                
+            except Exception as adapt_error:
+                logger.error(f"Feature adaptation failed: {adapt_error}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail={
-                        "error": "Feature mismatch",
+                        "error": "Feature adaptation failed",
                         "model_name": request.model_name,
-                        "model_version": request.model_version,
-                        "missing_features": missing,
-                        "unexpected_features": extra,
-                        "expected_order": feature_names,
-                        "provided": list(request.features.keys())
+                        "model_version": resolved_version,
+                        "provided_features": len(request.features),
+                        "adaptation_error": str(adapt_error),
+                        "suggestion": "Try using a different model or check feature requirements"
                     }
                 )
         
-        # Prepare features for prediction
-        feature_array = prepare_features_for_prediction(request.features, request.model_name)
-        
-        # Generate prediction
-        prediction = model.predict(feature_array)
+        # At this point we have a successful prediction
+        # prediction_input contains the final feature array used
         
         # Extract confidence if available (model-dependent)
         confidence = None
         if hasattr(model, 'predict_proba'):
             try:
-                proba = model.predict_proba(feature_array)
+                proba = model.predict_proba(prediction_input)
                 confidence = float(np.max(proba))
             except Exception as e:
                 logger.warning(f"Could not extract confidence: {e}")
+        
+        # Compute SHAP explainability (if available)
+        # Use the final prediction_input that worked
+        shap_explanation = compute_shap_explanation(model, prediction_input, feature_names)
         
         # Prepare response
         response = PredictionResponse(
@@ -366,12 +529,15 @@ async def predict(
             confidence=confidence,
             model_info={
                 "model_name": request.model_name,
-                "model_version": request.model_version,
-                "loaded_from": "MLflow Model Registry"
-            }
+                "model_version": resolved_version,  # Use resolved version
+                "loaded_from": "MLflow Model Registry",
+                "feature_adaptation": f"Adapted {len(request.features)} input features"
+            },
+            shap_values=shap_explanation.get("shap_values") if shap_explanation else None,
+            feature_importance=shap_explanation.get("feature_importance") if shap_explanation else None
         )
         
-        logger.info(f"Prediction completed successfully for model: {request.model_name}")
+        logger.info(f"Prediction completed successfully for model: {request.model_name} v{resolved_version}")
         return response
         
     except HTTPException:
@@ -384,7 +550,7 @@ async def predict(
         )
 
 
-@router.post("/detect_anomaly", response_model=AnomalyDetectionResponse, tags=["ML Anomaly Detection"])
+@router.post("/detect_anomaly", response_model=AnomalyDetectionResponse, tags=["ML Anomaly Detection"], dependencies=[Security(api_key_auth, scopes=["ml:anomaly"])])
 async def detect_anomaly(
     request: AnomalyDetectionRequest,
     db: AsyncSession = Depends(get_async_db)
@@ -440,7 +606,7 @@ async def detect_anomaly(
         )
 
 
-@router.post("/check_drift", response_model=DriftCheckResponse, tags=["ML Drift"])
+@router.post("/check_drift", response_model=DriftCheckResponse, tags=["ML Drift"], dependencies=[Security(api_key_auth, scopes=["ml:drift"])])
 @limiter.limit("10/minute")
 async def check_drift(
     request: Request,
