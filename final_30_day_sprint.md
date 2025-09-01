@@ -596,9 +596,3 @@ This plan assumes 4-6 hours of focused work per day, assisted by an AI coding pa
 * **Focus:** Produce the final video and freeze the codebase for submission.
 * **Objective:** Record a polished demo video, tag a final release, and prepare for submission.
 
-#### **Step-by-Step Tasks**
-1.  **Record and Edit Video (3 hours):** Record the demo using the live, deployed URL. Edit the footage to align with your script, ensuring it's concise and impactful.
-2.  **Final Code Review and Freeze (1 hour):** Give the entire codebase one last look.
-3.  **Tag Final Release (30 mins):** Create a final Git tag to mark the competition submission version: `git tag v1.0.0-competition && git push --tags`.
-4.  **Prepare Submission (1 hour):** Gather the repository link, live demo URL, and final video link. Double-check them before the final submission.
-
