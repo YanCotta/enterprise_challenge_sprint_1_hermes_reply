@@ -1,10 +1,30 @@
 from fastapi import Security, HTTPException, status, Depends
 from fastapi.security import SecurityScopes
 from fastapi.security.api_key import APIKeyHeader
+import os
 from core.config.settings import settings
 
 API_KEY_NAME = "X-API-Key" # Ensure this matches the client-side header name
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key: str = Security(api_key_header)):
+    """
+    Simple API key authentication dependency that validates against environment variable.
+    """
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key missing: X-API-KEY header is required"
+        )
+    
+    expected_api_key = os.getenv("API_KEY", settings.API_KEY if hasattr(settings, 'API_KEY') else None)
+    if not expected_api_key or api_key != expected_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key"
+        )
+    
+    return api_key
 
 async def api_key_auth(
     security_scopes: SecurityScopes,
