@@ -40,6 +40,9 @@ class CRUDSensorReading:
         if "metadata" in orm_data:
             orm_data["sensor_metadata"] = orm_data.pop("metadata")
 
+        # CRITICAL FIX: Never pass id field to ORM constructor - let database auto-generate
+        orm_data.pop("id", None)  # Remove id if present to allow auto-increment
+
         db_obj = SensorReadingORM(**orm_data)
         db.add(db_obj)
         await db.commit()
