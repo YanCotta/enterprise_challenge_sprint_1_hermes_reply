@@ -852,6 +852,264 @@ def main():
                 if "feature" in result["error"].lower() or "expecting" in result["error"].lower():
                     st.info("💡 **Tip**: This model may require different features or feature engineering. Try using a different model or check the model's expected input format.")
 
+    # === LIVE DEMO SIMULATOR SECTION (Day 2 Enhancement) ===
+    st.markdown("---")
+    st.header("🚀 Live System Demo Simulator")
+    st.markdown("**Demonstrate the complete MLOps loop in real-time!**")
+    
+    st.markdown("""
+    This simulator generates synthetic sensor data with various patterns (normal, drift, anomalies) 
+    and injects it into the system to demonstrate:
+    - Real-time data ingestion
+    - Automated drift detection
+    - Anomaly detection
+    - Email/Slack notifications
+    - Model retraining triggers
+    """)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.subheader("📊 Generate Drift Event")
+        st.markdown("Create synthetic data that exhibits statistical drift to trigger drift detection algorithms.")
+        
+        with st.form("drift_simulation_form"):
+            drift_sensor_id = st.text_input("Sensor ID", value="demo-sensor-001")
+            drift_magnitude = st.slider("Drift Magnitude (σ)", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
+            drift_samples = st.number_input("Number of Samples", min_value=10, max_value=200, value=50)
+            
+            simulate_drift = st.form_submit_button("🌊 Simulate Drift Event", use_container_width=True)
+            
+            if simulate_drift:
+                payload = {
+                    "sensor_id": drift_sensor_id,
+                    "drift_magnitude": drift_magnitude,
+                    "num_samples": drift_samples,
+                    "base_value": 25.0,
+                    "noise_level": 1.0
+                }
+                
+                with st.status("Generating drift simulation...", expanded=True) as status:
+                    st.write("Creating synthetic drift data...")
+                    result = make_api_request("POST", "/api/v1/simulate/drift-event", payload)
+                    
+                    if result["success"]:
+                        response_data = result["data"]
+                        status.update(label="✅ Drift simulation started!", state="complete", expanded=False)
+                        
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.metric("Events Generated", response_data.get('events_generated', 0))
+                        with col_b:
+                            st.metric("Simulation ID", response_data.get('simulation_id', 'N/A')[:8] + "...")
+                        
+                        st.success(response_data.get('message', 'Drift simulation completed'))
+                        
+                        # Show what happens next
+                        st.info("🔄 **What happens next:**\n"
+                               "1. Synthetic data is being ingested into the system\n"
+                               "2. Drift detection will automatically run in ~30 seconds\n"
+                               "3. If drift is detected, email notifications will be sent\n"
+                               "4. System may trigger automatic model retraining")
+                        
+                        with st.expander("📋 Simulation Details"):
+                            st.json(response_data)
+                    else:
+                        status.update(label="❌ Drift simulation failed", state="error", expanded=True)
+                        st.error(f"Simulation failed: {result['error']}")
+    
+    with col2:
+        st.subheader("🚨 Generate Anomaly Event")
+        st.markdown("Create synthetic data with clear anomalies to trigger anomaly detection systems.")
+        
+        with st.form("anomaly_simulation_form"):
+            anomaly_sensor_id = st.text_input("Sensor ID", value="demo-sensor-002")
+            anomaly_magnitude = st.slider("Anomaly Magnitude", min_value=1.0, max_value=10.0, value=5.0, step=0.5)
+            num_anomalies = st.number_input("Number of Anomalies", min_value=1, max_value=50, value=10)
+            
+            simulate_anomaly = st.form_submit_button("⚡ Simulate Anomaly Event", use_container_width=True)
+            
+            if simulate_anomaly:
+                with st.status("Generating anomaly simulation...", expanded=True) as status:
+                    st.write("Creating synthetic anomaly data...")
+                    
+                    # Make API request for anomaly simulation
+                    params = {
+                        "sensor_id": anomaly_sensor_id,
+                        "anomaly_magnitude": anomaly_magnitude,
+                        "num_anomalies": num_anomalies
+                    }
+                    
+                    # Convert to query string for GET request with parameters
+                    result = make_api_request("POST", 
+                        f"/api/v1/simulate/anomaly-event?sensor_id={anomaly_sensor_id}&anomaly_magnitude={anomaly_magnitude}&num_anomalies={num_anomalies}")
+                    
+                    if result["success"]:
+                        response_data = result["data"]
+                        status.update(label="✅ Anomaly simulation started!", state="complete", expanded=False)
+                        
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.metric("Events Generated", response_data.get('events_generated', 0))
+                        with col_b:
+                            st.metric("Anomalies Created", num_anomalies)
+                        
+                        st.success(response_data.get('message', 'Anomaly simulation completed'))
+                        
+                        # Show what happens next
+                        st.info("🔄 **What happens next:**\n"
+                               "1. Synthetic anomaly data is being ingested\n"
+                               "2. Anomaly detection algorithms will process the data\n"
+                               "3. Anomalous readings will be flagged\n"
+                               "4. Alerts may be generated for maintenance teams")
+                        
+                        with st.expander("📋 Simulation Details"):
+                            st.json(response_data)
+                    else:
+                        status.update(label="❌ Anomaly simulation failed", state="error", expanded=True)
+                        st.error(f"Simulation failed: {result['error']}")
+    
+    with col3:
+        st.subheader("📈 Generate Normal Data")
+        st.markdown("Create realistic baseline sensor data to establish normal system behavior patterns.")
+        
+        with st.form("normal_data_simulation_form"):
+            normal_sensor_id = st.text_input("Sensor ID", value="demo-sensor-003")
+            num_samples = st.number_input("Number of Samples", min_value=10, max_value=500, value=100)
+            duration_minutes = st.number_input("Duration (minutes)", min_value=10, max_value=1440, value=60)
+            
+            simulate_normal = st.form_submit_button("📊 Generate Normal Data", use_container_width=True)
+            
+            if simulate_normal:
+                with st.status("Generating normal data...", expanded=True) as status:
+                    st.write("Creating synthetic normal sensor data...")
+                    
+                    # Make API request for normal data simulation
+                    params = {
+                        "sensor_id": normal_sensor_id,
+                        "num_samples": num_samples,
+                        "duration_minutes": duration_minutes
+                    }
+                    
+                    result = make_api_request("POST", 
+                        f"/api/v1/simulate/normal-data?sensor_id={normal_sensor_id}&num_samples={num_samples}&duration_minutes={duration_minutes}")
+                    
+                    if result["success"]:
+                        response_data = result["data"]
+                        status.update(label="✅ Normal data generation started!", state="complete", expanded=False)
+                        
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.metric("Events Generated", response_data.get('events_generated', 0))
+                        with col_b:
+                            st.metric("Duration", f"{duration_minutes} min")
+                        
+                        st.success(response_data.get('message', 'Normal data generation completed'))
+                        
+                        # Show what happens next
+                        st.info("🔄 **What happens next:**\n"
+                               "1. Realistic sensor data is being ingested\n"
+                               "2. Data will establish baseline patterns\n"
+                               "3. Future drift/anomaly detection will use this as reference\n"
+                               "4. System learns normal operating parameters")
+                        
+                        with st.expander("📋 Simulation Details"):
+                            st.json(response_data)
+                    else:
+                        status.update(label="❌ Normal data generation failed", state="error", expanded=True)
+                        st.error(f"Simulation failed: {result['error']}")
+    
+    # Demo Control Panel
+    st.markdown("---")
+    st.subheader("🎮 Demo Control Panel")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**🔄 Complete MLOps Demo Sequence**")
+        if st.button("🚀 Run Full Demo Sequence", use_container_width=True):
+            with st.status("Running complete MLOps demonstration...", expanded=True) as status:
+                st.write("Step 1: Generating normal baseline data...")
+                
+                # Step 1: Generate normal data
+                result1 = make_api_request("POST", "/api/v1/simulate/normal-data?sensor_id=demo-full-001&num_samples=50&duration_minutes=30")
+                if result1["success"]:
+                    st.write("✅ Baseline data generated")
+                else:
+                    st.write("❌ Baseline data failed")
+                
+                st.write("Step 2: Generating drift event...")
+                
+                # Step 2: Generate drift
+                drift_payload = {
+                    "sensor_id": "demo-full-001",
+                    "drift_magnitude": 3.0,
+                    "num_samples": 30,
+                    "base_value": 25.0,
+                    "noise_level": 1.0
+                }
+                result2 = make_api_request("POST", "/api/v1/simulate/drift-event", drift_payload)
+                if result2["success"]:
+                    st.write("✅ Drift event simulated")
+                else:
+                    st.write("❌ Drift simulation failed")
+                
+                st.write("Step 3: Generating anomalies...")
+                
+                # Step 3: Generate anomalies
+                result3 = make_api_request("POST", "/api/v1/simulate/anomaly-event?sensor_id=demo-full-001&anomaly_magnitude=4.0&num_anomalies=5")
+                if result3["success"]:
+                    st.write("✅ Anomalies generated")
+                else:
+                    st.write("❌ Anomaly simulation failed")
+                
+                status.update(label="✅ Complete demo sequence initiated!", state="complete", expanded=False)
+                
+                st.success("🎯 **Demo sequence started!** Check the system logs and monitoring tools to see the MLOps pipeline in action.")
+                st.info("📧 **Note**: If email notifications are configured, you should receive alerts for the drift detection.")
+    
+    with col2:
+        st.markdown("**📊 Monitor Simulation Results**")
+        if st.button("📈 Check Recent Simulations", use_container_width=True):
+            st.info("🔄 **Monitoring features coming soon!**\n\n"
+                   "Future enhancements will include:\n"
+                   "- Real-time simulation status tracking\n"
+                   "- Drift detection results dashboard\n"
+                   "- Anomaly detection outcomes\n"
+                   "- Email notification logs\n"
+                   "- Model retraining status")
+        
+        if st.button("🔍 View System Logs", use_container_width=True):
+            st.info("📋 **Log viewing features coming soon!**\n\n"
+                   "Future log viewing will show:\n"
+                   "- Real-time ingestion logs\n"
+                   "- Drift detection processing\n"
+                   "- Anomaly detection results\n"
+                   "- Notification delivery status\n"
+                   "- Model performance metrics")
+    
+    # Simulation Settings
+    with st.expander("⚙️ Advanced Simulation Settings"):
+        st.markdown("**Global Simulation Configuration**")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.text_input("API Base URL", value=API_BASE_URL, disabled=True)
+            st.text_input("Correlation ID Prefix", value="streamlit-sim")
+        
+        with col2:
+            st.selectbox("Simulation Environment", ["development", "staging", "demo"], index=2)
+            st.checkbox("Enable Verbose Logging", value=False)
+        
+        st.markdown("**Email Notification Settings**")
+        st.info("Configure `DRIFT_ALERT_EMAIL` and `RETRAIN_SUCCESS_EMAIL` environment variables to receive email notifications during simulations.")
+        
+        st.markdown("**Simulation Data Characteristics**")
+        st.write("- **Normal Data**: Follows realistic daily temperature cycles with small random variations")
+        st.write("- **Drift Data**: Gradually shifts values by the specified magnitude in standard deviations")
+        st.write("- **Anomaly Data**: Creates outliers that are 3-5x the specified magnitude from baseline")
+        st.write("- **Timing**: All data is timestamped in reverse chronological order to appear as recent readings")
+
     # Footer
     st.markdown("---")
     st.markdown(
