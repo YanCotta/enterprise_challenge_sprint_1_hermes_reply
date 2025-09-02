@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     PrimaryKeyConstraint,
     String,
@@ -23,8 +24,10 @@ from core.database.base import Base
 class SensorReadingORM(Base):
     __tablename__ = "sensor_readings"
 
-    # Use integer id column with sequence for TimescaleDB compatibility
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
+    # TimescaleDB hypertable requires composite primary key (timestamp, sensor_id)
+    # The id column exists with auto-increment sequence but is NOT the primary key
+    # This aligns with the actual database schema created by TimescaleDB migrations
+    id = Column(Integer, autoincrement=True, nullable=False, index=True)
     sensor_id = Column(String(255), index=True, nullable=False)
     sensor_type = Column(
         String(50), nullable=False
@@ -44,9 +47,11 @@ class SensorReadingORM(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    # Define composite primary key matching the DB migration
+    # TimescaleDB hypertable configuration - composite primary key required
+    # This matches the actual database schema: PRIMARY KEY (timestamp, sensor_id)
     __table_args__ = (
         PrimaryKeyConstraint('timestamp', 'sensor_id', name='sensor_readings_pkey'),
+        Index('ix_sensor_readings_sensor_id_timestamp', 'sensor_id', 'timestamp'),
     )
 
     # We'll handle creating the hypertable in Alembic migrations instead of using SQLAlchemy
