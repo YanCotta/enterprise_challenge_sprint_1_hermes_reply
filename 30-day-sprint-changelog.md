@@ -4400,3 +4400,71 @@ Successfully implemented email notification system for key system events and com
 
 5. **Production-Ready**: All fixes follow enterprise patterns from project documentation
 
+# TimescaleDB Schema Fix Documentation
+
+## Issue Resolution: SQLAlchemy Primary Key Conflict
+
+### Problem Statement
+SQLAlchemy was generating warnings about primary key mismatch between ORM model and database schema:
+```
+sqlalchemy.exc.SAWarning: Table 'sensor_readings' specifies columns 'id' as primary_key=True, not matching locally specified columns 'timestamp', 'sensor_id'
+```
+
+### Root Cause Analysis
+- **Database Schema**: TimescaleDB hypertable with composite primary key `(timestamp, sensor_id)`
+- **ORM Model**: Expected single primary key on `id` column with autoincrement
+- **TimescaleDB Constraint**: Hypertables with compression cannot modify primary key structure via DDL
+- **Historical Pattern**: This issue recurred multiple times (Day 5, Day 15, Day 21) requiring manual PostgreSQL commands
+
+### Professional Solution Applied
+
+#### 1. Automated Fix Script (`scripts/fix_timescaledb_schema.sh`)
+- **Purpose**: Applies the historical Day 15/21 sequence fix automatically on container startup
+- **Features**: 
+  - Idempotent operations (safe to run multiple times)
+  - Database connection validation
+  - Comprehensive error handling
+  - Detailed logging and status reporting
+
+#### 2. Updated ORM Model (`core/database/orm_models.py`)
+- **Changed**: Removed `primary_key=True` from `id` column
+- **Added**: Composite primary key constraint matching database schema
+- **Result**: Eliminates SQLAlchemy warnings by aligning ORM with database reality
+
+#### 3. Integration with Container Startup (`entrypoint.sh`)
+- **Automatic Execution**: Fix script runs after migrations, before API startup
+- **Environment Integration**: Uses existing database connection parameters
+- **Fail-Safe Design**: Issues warnings but doesn't block startup if fix fails
+
+#### 4. Updated Migration Documentation
+- **Migration 27b669e05b9d**: Documents TimescaleDB limitations and solution approach
+- **Clear Comments**: Explains why primary key changes must be handled outside migrations
+
+### Verification Results
+
+✅ **SQLAlchemy Warnings**: Eliminated - ORM model matches database schema  
+✅ **Database Schema**: Composite primary key preserved for TimescaleDB compatibility  
+✅ **Auto-increment Sequence**: `sensor_readings_id_seq` properly configured  
+✅ **API Health**: FastAPI service starts without errors  
+✅ **Container Integration**: Fix automatically applied on every container rebuild  
+✅ **CI/CD Compatibility**: Resolves pipeline failures due to SQLAlchemy warnings  
+
+### Files Modified
+1. `core/database/orm_models.py` - Updated ORM to use composite primary key
+2. `scripts/fix_timescaledb_schema.sh` - New automated fix script (executable)
+3. `entrypoint.sh` - Integrated fix script into container startup
+4. `alembic_migrations/versions/27b669e05b9d_*.py` - Updated migration documentation
+
+### Technical Architecture
+- **TimescaleDB Compatibility**: Preserves hypertable structure and compression
+- **Performance**: Composite primary key maintains time-series query efficiency
+- **Reliability**: Idempotent operations prevent duplicate sequence issues
+- **Maintenance**: Automatic execution eliminates manual intervention need
+
+### Operational Impact
+- **Zero Downtime**: Fix integrates with existing startup process
+- **Developer Friendly**: Automatic resolution for new deployments
+- **Production Ready**: Battle-tested solution from Day 15/21 operational history
+- **Documentation**: Clear explanation prevents future confusion
+
+This solution permanently resolves the recurring SQLAlchemy primary key conflict while maintaining TimescaleDB hypertable functionality and ensuring CI/CD pipeline stability.
