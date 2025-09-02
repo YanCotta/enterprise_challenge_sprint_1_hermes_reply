@@ -50,6 +50,7 @@ tqdm = "^4.66.0"  # For progress bars in data processing
 slowapi = "^0.1.9"  # Rate limiting for API endpoints
 apscheduler = "^3.10.4"  # Job scheduling for automated drift monitoring
 aiohttp = "^3.8.0"  # HTTP client for API calls in drift agent
+requests = "^2.31.0"  # HTTP client for simulation API calls
 shap = "^0.46.0"  # SHAP values for explainable AI and model interpretability
 plotly = "^5.17.0"  # Interactive plotting for SHAP visualizations and dashboards
 
