@@ -19,8 +19,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      toxiproxy:
-        condition: service_started
+      toxiproxy_init:
+        condition: service_completed_successfully
     restart: unless-stopped
     user: "1000:1000"  # Match host user for consistent file ownership across containers
     volumes:
@@ -124,6 +124,23 @@ services:
     networks:
       - smart-maintenance-network
 
+  # Toxiproxy Initialization Service - Automatically configures proxies on startup
+  toxiproxy_init:
+    build: .
+    image: smart-maintenance-saas:latest
+    container_name: smart_maintenance_toxiproxy_init
+    command: ["./scripts/toxiproxy_init.sh"]
+    depends_on:
+      toxiproxy:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"  # Only run once per stack startup
+    networks:
+      - smart-maintenance-network
+
   # MLflow Service (hardened)
   mlflow:
     build:
@@ -196,7 +213,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - PYTHONPATH=/app
       - DRIFT_CHECK_ENABLED=true
-      - DRIFT_CHECK_SCHEDULE="0 */6 * * *"  # Every 6 hours
+      - DRIFT_CHECK_SCHEDULE=0 */6 * * *  # Every 6 hours
       - DRIFT_THRESHOLD=0.05
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
       - MLFLOW_TRACKING_URI=http://mlflow:5000
@@ -209,6 +226,8 @@ services:
         condition: service_healthy
       mlflow:
         condition: service_started
+      toxiproxy_init:
+        condition: service_completed_successfully
     restart: unless-stopped
     user: "1000:1000"
     volumes:
@@ -242,6 +261,8 @@ services:
         condition: service_healthy
       mlflow:
         condition: service_started
+      toxiproxy_init:
+        condition: service_completed_successfully
     restart: unless-stopped
     user: "1000:1000"
     volumes:
