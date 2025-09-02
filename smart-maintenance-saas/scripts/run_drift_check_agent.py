@@ -18,6 +18,7 @@ import asyncio
 import json
 import logging
 import os
+import sys
 import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -26,6 +27,10 @@ import aiohttp
 import redis.asyncio as redis
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+
+# Add project root to path for importing our modules
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from core.notifications.email_service import email_service
 
 # Configure structured logging
 logging.basicConfig(
@@ -203,6 +208,9 @@ class DriftCheckAgent:
         # Publish to Redis event bus
         await self.publish_drift_event(drift_event)
         
+        # Send email notification for drift detection
+        await self.send_email_notification(drift_event)
+        
         # Send Slack notification if configured
         if self.slack_webhook_url:
             await self.send_slack_notification(drift_event, drift_result)
@@ -256,6 +264,32 @@ class DriftCheckAgent:
                     
         except Exception as e:
             logger.error(f"❌ Slack notification error: {e}")
+    
+    async def send_email_notification(self, event: DriftDetectedEvent):
+        """Send email notification for drift detection"""
+        try:
+            # Get email recipient from environment variable
+            recipient = os.getenv('DRIFT_ALERT_EMAIL')
+            if not recipient:
+                logger.info("📧 No email recipient configured for drift alerts (DRIFT_ALERT_EMAIL not set)")
+                return
+            
+            # Use the email service to send drift alert
+            success = email_service.send_drift_alert(
+                model_name=f"sensor-{event.sensor_id}",
+                drift_score=event.drift_score,
+                threshold=event.threshold,
+                timestamp=event.timestamp,
+                correlation_id=event.correlation_id
+            )
+            
+            if success:
+                logger.info(f"📧 Drift alert email sent to {recipient} for sensor {event.sensor_id}")
+            else:
+                logger.error(f"❌ Failed to send drift alert email for sensor {event.sensor_id}")
+                
+        except Exception as e:
+            logger.error(f"❌ Email notification error: {e}")
     
     async def stop(self):
         """Gracefully stop the drift monitoring agent"""
