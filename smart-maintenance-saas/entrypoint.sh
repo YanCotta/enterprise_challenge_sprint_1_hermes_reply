@@ -17,6 +17,21 @@ export DATABASE_URL="$MIGRATION_DATABASE_URL"
 
 alembic upgrade head
 
+# Apply TimescaleDB schema fix (addresses recurring sequence issue from Day 15/21)
+echo "Applying TimescaleDB schema fix..."
+if [ -f "/app/scripts/fix_timescaledb_schema.sh" ]; then
+    # Set environment variables for the fix script
+    export DB_HOST="db"
+    export DB_PORT="5432"
+    export DB_NAME="smart_maintenance_db"
+    export DB_USER="smart_user"
+    export PGPASSWORD="strong_password"
+    
+    /app/scripts/fix_timescaledb_schema.sh
+else
+    echo "Warning: TimescaleDB fix script not found"
+fi
+
 # Restore original DATABASE_URL for the application
 export DATABASE_URL="$ORIGINAL_DATABASE_URL"
 
