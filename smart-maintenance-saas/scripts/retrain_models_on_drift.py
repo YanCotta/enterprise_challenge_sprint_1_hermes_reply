@@ -19,12 +19,17 @@ import json
 import logging
 import os
 import subprocess
+import sys
 import time
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
 import redis.asyncio as redis
+
+# Add project root to path for importing our modules
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from core.notifications.email_service import email_service
 
 # Configure structured logging
 logging.basicConfig(
@@ -198,6 +203,9 @@ class ModelRetrainingAgent:
             # Log retraining completion
             logger.info(f"🎯 Model retraining cycle completed for sensor {sensor_id} [correlation_id={correlation_id}]")
             
+            # Send email notification for successful retraining
+            await self.send_email_notification(sensor_id, correlation_id)
+            
             # Publish retraining completion event
             await self.publish_retraining_event(sensor_id, drift_event, correlation_id)
             
@@ -264,6 +272,42 @@ class ModelRetrainingAgent:
             
         except Exception as e:
             logger.error(f"❌ Failed to publish retraining event: {e}")
+    
+    async def send_email_notification(self, sensor_id: str, correlation_id: str):
+        """Send email notification for successful retraining"""
+        try:
+            # Get email recipient from environment variable
+            recipient = os.getenv('RETRAIN_SUCCESS_EMAIL')
+            if not recipient:
+                logger.info("📧 No email recipient configured for retraining notifications (RETRAIN_SUCCESS_EMAIL not set)")
+                return
+            
+            # Prepare model information
+            model_name = f"sensor-{sensor_id}-models"
+            new_version = datetime.utcnow().strftime("%Y%m%d_%H%M%S")  # Timestamp-based version
+            
+            # Collect metrics if available (mock for now)
+            metrics = {
+                "retrained_models": ", ".join(self.models_to_retrain.keys()),
+                "training_duration": "N/A",  # Could be tracked in future
+                "correlation_id": correlation_id
+            }
+            
+            # Use the email service to send retraining success notification
+            success = email_service.send_retrain_success(
+                model_name=model_name,
+                new_version=new_version,
+                correlation_id=self.correlation_id,
+                metrics=metrics
+            )
+            
+            if success:
+                logger.info(f"📧 Retraining success email sent to {recipient} for sensor {sensor_id}")
+            else:
+                logger.error(f"❌ Failed to send retraining success email for sensor {sensor_id}")
+                
+        except Exception as e:
+            logger.error(f"❌ Email notification error: {e}")
     
     async def stop(self):
         """Gracefully stop the retraining agent"""

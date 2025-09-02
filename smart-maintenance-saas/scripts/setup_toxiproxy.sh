@@ -32,13 +32,13 @@ curl -X POST http://localhost:8474/proxies \
     "enabled": true
   }' || echo "Redis proxy might already exist"
 
-# Create PostgreSQL proxy (API -> toxiproxy:5433 -> db:5432)
+# Create PostgreSQL proxy (API -> toxiproxy:5434 -> db:5432)
 echo "Creating PostgreSQL proxy..."
 curl -X POST http://localhost:8474/proxies \
   -H "Content-Type: application/json" \
   -d '{
     "name": "postgres", 
-    "listen": "0.0.0.0:5433",
+    "listen": "0.0.0.0:5434",
     "upstream": "db:5432",
     "enabled": true
   }' || echo "PostgreSQL proxy might already exist"
@@ -51,6 +51,6 @@ echo "✅ Toxiproxy setup complete!"
 echo ""
 echo "Proxy endpoints:"
 echo "  - Redis: localhost:6380 -> redis:6379"
-echo "  - PostgreSQL: localhost:5433 -> db:5432"
+echo "  - PostgreSQL: localhost:5434 -> db:5432"
 echo ""
 echo "Use these in chaos tests to simulate network failures."

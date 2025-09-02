@@ -24,7 +24,7 @@ class SensorReadingORM(Base):
     __tablename__ = "sensor_readings"
 
     # Use integer id column with sequence for TimescaleDB compatibility
-    id = Column(Integer, nullable=False, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
     sensor_id = Column(String(255), index=True, nullable=False)
     sensor_type = Column(
         String(50), nullable=False

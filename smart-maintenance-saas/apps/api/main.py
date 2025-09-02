@@ -202,6 +202,13 @@ app.include_router(
     tags=["Machine Learning"]
 )
 
+# Include simulation router for Day 2 live demo
+from apps.api.routers import simulate
+app.include_router(
+    simulate.router,
+    tags=["Live Demo Simulation"]
+)
+
 # Root endpoint (optional)
 @app.get("/", tags=["Root"])
 async def read_root():
