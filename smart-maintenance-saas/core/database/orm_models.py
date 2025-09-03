@@ -27,7 +27,8 @@ class SensorReadingORM(Base):
     # TimescaleDB hypertable requires composite primary key (timestamp, sensor_id)
     # The id column exists with auto-increment sequence but is NOT the primary key
     # This aligns with the actual database schema created by TimescaleDB migrations
-    id = Column(Integer, autoincrement=True, nullable=False, index=True)
+    # Use server_default to ensure the database sequence is used for auto-increment
+    id = Column(Integer, nullable=False, index=True, server_default=func.nextval('sensor_readings_id_seq'))
     sensor_id = Column(String(255), index=True, nullable=False)
     sensor_type = Column(
         String(50), nullable=False
