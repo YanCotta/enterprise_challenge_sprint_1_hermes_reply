@@ -234,6 +234,12 @@ services:
       - ./logs:/app/logs
       - ./mlflow_data:/mlruns
     command: ["python", "scripts/run_drift_check_agent.py"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - smart-maintenance-network
 
@@ -245,7 +251,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
       - REDIS_URL=redis://redis:6379/0
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/.venv/lib/python3.11/site-packages
+      - PATH=/app/.venv/bin:$PATH
       - RETRAINING_ENABLED=true
       - RETRAINING_COOLDOWN_HOURS=24
       - MAX_CONCURRENT_RETRAINING=1
