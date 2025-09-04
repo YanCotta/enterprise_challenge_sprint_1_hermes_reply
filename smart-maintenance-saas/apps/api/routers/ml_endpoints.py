@@ -232,8 +232,18 @@ def compute_shap_explanation(model, feature_array: np.ndarray, feature_names: Li
             name: float(value) for name, value in zip(feature_names, importance_values)
         }
         
+        # Convert SHAP values to dictionary format expected by Pydantic model
+        if len(shap_values.shape) > 1:
+            shap_values_dict = {
+                name: float(value) for name, value in zip(feature_names, shap_values[0])
+            }
+        else:
+            shap_values_dict = {
+                name: float(value) for name, value in zip(feature_names, shap_values)
+            }
+        
         return {
-            "shap_values": shap_values.tolist() if hasattr(shap_values, 'tolist') else shap_values,
+            "shap_values": shap_values_dict,  # Return as dictionary instead of list
             "feature_importance": feature_importance,
             "explainer_type": explainer.__class__.__name__
         }
