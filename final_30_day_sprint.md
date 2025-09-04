@@ -503,26 +503,7 @@ This plan assumes 4-6 hours of focused work per day, assisted by an AI coding pa
 
 ---
 
-### **Day 3: MLOps Safeguards & Multi-Tenancy Foundations**
-* **Focus:** Address commercial and technical gaps to demonstrate foresight and scalability.
-* **Objective:** Implement a crucial model promotion safeguard and lay the architectural groundwork for multi-tenancy.
-
-#### **Step-by-Step Tasks**
-1.  **Implement Model Promotion Safeguards (2 hours):**
-    * In `smart-maintenance-saas/scripts/retrain_models_on_drift.py`, after a new model is trained and registered in MLflow, add a validation step.
-    * Compare the new model's performance on a holdout dataset against the current production model.
-    * If the new model is better, use the `mlflow.MlflowClient` to automatically transition its stage from `None` to **`Staging`**, logging that it's ready for manual review before production.
-2.  **Add Multi-Tenancy Foundations (2-3 hours):**
-    * Create a new Alembic migration: `alembic revision -m "add_tenant_id_to_tables"`.
-    * In the new migration file, add a `tenant_id` column (e.g., `sa.Column('tenant_id', sa.String, nullable=False, server_default='default_tenant')`) to the `sensor_readings` and `maintenance_logs` tables.
-    * Update the Pydantic models (e.g., `SensorReadingPayload`) and CRUD operations (`crud_sensor_reading.py`) to handle and store the new `tenant_id` field.
-
-#### **Copilot Prompt**
-"In `scripts/retrain_models_on_drift.py`, after registering a new model, use the `mlflow.MlflowClient` to transition the model version to the 'Staging' stage only if its evaluation metrics are better than the current production model's. Next, create an Alembic migration to add a `tenant_id` string column to the `sensor_readings` and `maintenance_logs` tables. Finally, update the Pydantic models and CRUD operations in `apps/api/routers/data_ingestion.py` and `core/database/crud/crud_sensor_reading.py` to handle this new `tenant_id` field."
-
----
-
-### **Day 4: Monitoring & Redis Resilience**
+### **Day 3: Monitoring & Redis Resilience**
 * **Focus:** Bolster production-ready claims with professional monitoring and improved fault tolerance.
 * **Objective:** Integrate Prometheus for application monitoring and configure Redis for high availability.
 
@@ -540,7 +521,7 @@ This plan assumes 4-6 hours of focused work per day, assisted by an AI coding pa
 
 ---
 
-### **Day 5: Reproducibility with DVC**
+### **Day 4: Reproducibility with DVC**
 * **Focus:** Ensure anyone can easily run and evaluate the project.
 * **Objective:** Use Data Version Control (DVC) to manage datasets and models, making the project fully reproducible.
 
@@ -559,7 +540,7 @@ This plan assumes 4-6 hours of focused work per day, assisted by an AI coding pa
 
 ---
 
-### **Day 6: Deployment Preparation**
+### **Day 5: Deployment Preparation**
 * **Focus:** Prepare for a polished, professional, and always-on public demo.
 * **Objective:** Deploy the backend services and the user interface to modern cloud platforms.
 
@@ -571,7 +552,7 @@ This plan assumes 4-6 hours of focused work per day, assisted by an AI coding pa
 
 ---
 
-### **Day 7: Presentation Assets & Deployment Guide**
+### **Day 6: Presentation Assets & Deployment Guide**
 * **Focus:** Craft a compelling and clear narrative for the judges.
 * **Objective:** Create the final documentation and video script, highlighting the project's key strengths.
 
@@ -581,7 +562,7 @@ This plan assumes 4-6 hours of focused work per day, assisted by an AI coding pa
 
 ---
 
-### **Day 8: Final Polish & Testing**
+### **Day 7: Final Polish & Testing**
 * **Focus:** Iron out any remaining bugs and refine the user experience.
 * **Objective:** Conduct comprehensive end-to-end testing on the deployed application and polish all documentation.
 
@@ -592,7 +573,7 @@ This plan assumes 4-6 hours of focused work per day, assisted by an AI coding pa
 
 ---
 
-### **Day 9: Video Production & Final Submission**
+### **Day 8: Video Production & Final Submission**
 * **Focus:** Produce the final video and freeze the codebase for submission.
 * **Objective:** Record a polished demo video, tag a final release, and prepare for submission.
 
