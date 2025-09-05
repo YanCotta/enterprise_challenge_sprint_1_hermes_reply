@@ -565,6 +565,19 @@ class MaintenanceLog(MaintenanceLogCreate):
         from_attributes = True  # For SQLAlchemy ORM compatibility
 
 
+# =============================================================================
+# HEALTH CHECK MODELS
+# =============================================================================
+
+class HealthStatus(BaseModel):
+    """Schema for health check response."""
+    
+    status: str = Field(..., description="Overall health status (ok, degraded, failed)")
+    database: str = Field(..., description="Database connection status (ok, failed)")
+    redis: str = Field(..., description="Redis connection status (ok, failed)")
+    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat(), description="Timestamp of health check")
+
+
 # Ensure all necessary imports are at the top
 # (Pydantic, datetime, Enum, typing modules are already imported)
 
