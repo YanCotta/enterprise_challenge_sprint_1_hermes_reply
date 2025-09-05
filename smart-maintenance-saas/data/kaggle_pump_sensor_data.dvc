@@ -1,0 +1,6 @@
+outs:
+- md5: 7e93e702b9232d02d06e280229411f15.dir
+  size: 85566
+  nfiles: 1
+  hash: md5
+  path: kaggle_pump_sensor_data
