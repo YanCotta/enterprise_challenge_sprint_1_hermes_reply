@@ -1,0 +1,6 @@
+outs:
+- md5: 070b0b8480de7ec50871446026b055ca.dir
+  size: 4614683624
+  nfiles: 2161
+  hash: md5
+  path: nasa_bearing_dataset
