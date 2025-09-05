@@ -1,8 +1,12 @@
 from fastapi import Security, HTTPException, status, Depends
 from fastapi.security import SecurityScopes
 from fastapi.security.api_key import APIKeyHeader
+from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis
 import os
 from core.config.settings import settings
+from core.database.session import get_async_db
+from core.redis_client import get_redis_client
 
 API_KEY_NAME = "X-API-Key" # Ensure this matches the client-side header name
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
@@ -58,3 +62,22 @@ async def api_key_auth(
     # Return a dictionary that could be used by the endpoint if needed,
     # e.g., to access user details or validated scopes.
     return {"api_key": api_key_header_value, "scopes": security_scopes.scopes}
+
+
+# Database dependency
+async def get_db() -> AsyncSession:
+    """
+    Dependency to get database session.
+    """
+    async for session in get_async_db():
+        yield session
+
+
+# Redis dependency
+async def get_redis_client_dep() -> Redis:
+    """
+    Dependency to get Redis client.
+    """
+    redis_client = await get_redis_client()
+    async with redis_client.get_redis() as redis:
+        yield redis
