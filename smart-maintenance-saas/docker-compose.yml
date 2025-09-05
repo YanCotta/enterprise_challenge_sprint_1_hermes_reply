@@ -1,5 +1,7 @@
 services:
-  # FastAPI Backend Service
+  # Main API Service (FastAPI): The heart of the application, handles data ingestion,
+  # ML endpoints, and serves the business logic. Depends on DB and Redis for core functionality.
+  # Uses toxiproxy connections for chaos engineering and resilience testing.
   api:
     build: .
     image: smart-maintenance-saas:latest
@@ -36,7 +38,9 @@ services:
     networks:
       - smart-maintenance-network
 
-  # Streamlit UI Service
+  # Streamlit UI Service: Interactive web interface for data visualization, model monitoring,
+  # and system administration. Communicates with the API service for data access and operations.
+  # Provides real-time dashboards and user-friendly interfaces for predictive maintenance insights.
   ui:
     build: .
     image: smart-maintenance-saas:latest
@@ -67,7 +71,9 @@ services:
     networks:
       - smart-maintenance-network
 
-  # Database Service
+  # TimescaleDB Database: Stores all time-series sensor data and application metadata.
+  # TimescaleDB provides optimized time-series operations, hypertables, and continuous aggregates.
+  # The 'pg_data' volume ensures data persistence across container restarts and deployments.
   db:
     image: timescale/timescaledb:latest-pg14
     container_name: smart_maintenance_db
@@ -90,7 +96,9 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # Redis Service for distributed caching and idempotency
+  # Redis Service: Provides distributed caching, session management, and idempotency control.
+  # Essential for preventing duplicate data ingestion and enabling event-driven architecture.
+  # Supports pub/sub messaging for agent communication and real-time notifications.
   redis:
     image: redis:7.2-alpine
     container_name: smart_maintenance_redis
@@ -112,7 +120,9 @@ services:
     networks:
       - smart-maintenance-network
 
-  # Toxiproxy for chaos engineering and network failure simulation
+  # Toxiproxy Service: Chaos engineering proxy for simulating network failures and latency.
+  # Sits between services to enable resilience testing by injecting faults, delays, and timeouts.
+  # Critical for validating system behavior under adverse network conditions.
   toxiproxy:
     image: ghcr.io/shopify/toxiproxy:2.5.0
     container_name: smart_maintenance_toxiproxy
@@ -124,7 +134,9 @@ services:
     networks:
       - smart-maintenance-network
 
-  # Toxiproxy Initialization Service - Automatically configures proxies on startup
+  # Toxiproxy Initialization Service: One-time setup service that configures proxy rules
+  # and establishes connections between services and Toxiproxy for chaos engineering.
+  # Runs once per stack startup to ensure proper proxy configuration.
   toxiproxy_init:
     build: .
     image: smart-maintenance-saas:latest
@@ -141,7 +153,9 @@ services:
     networks:
       - smart-maintenance-network
 
-  # MLflow Service (hardened)
+  # MLflow Tracking Server: Centralized ML experiment tracking, model versioning, and artifact storage.
+  # Provides REST API for logging experiments, storing model artifacts, and managing ML lifecycle.
+  # The 'mlflow_data' and 'mlflow_db' volumes are crucial for preserving ML models and experiment history.
   mlflow:
     build:
       context: .
@@ -158,7 +172,9 @@ services:
     networks:
       - smart-maintenance-network
 
-  # One-off notebook runner service for ML training / experimentation
+  # Jupyter Notebook Runner: Automated execution service for ML training notebooks and experiments.
+  # Runs parameterized notebooks using Papermill for reproducible ML pipeline execution.
+  # Shares volumes with other services to access datasets and store experiment results.
   notebook_runner:
     build:
       context: .
@@ -181,7 +197,9 @@ services:
     depends_on:
       - mlflow
 
-  # Generic ML utility container (used for ad-hoc commands like Locust load testing)
+  # ML Utility Container: General-purpose container for ad-hoc ML operations and load testing.
+  # Provides access to full project directory for running scripts, Locust tests, and data analysis.
+  # Used for development tasks, debugging, and manual ML operations outside of automated pipelines.
   ml:
     build:
       context: .
@@ -203,7 +221,9 @@ services:
     depends_on:
       - mlflow
 
-  # Automated Drift Detection Agent
+  # Automated Drift Detection Agent: Continuously monitors ML model performance and data drift.
+  # Runs scheduled checks (every 6 hours) to detect statistical changes in data distribution.
+  # Publishes drift events to Redis for triggering automated model retraining workflows.
   drift_agent:
     build: .
     image: smart-maintenance-saas:latest
@@ -243,7 +263,9 @@ services:
     networks:
       - smart-maintenance-network
 
-  # Model Retraining Agent (triggered by drift events)
+  # Model Retraining Agent: Event-driven service that automatically retrains ML models
+  # when drift is detected. Implements cooldown periods and concurrency controls to prevent
+  # resource exhaustion. Coordinates with MLflow for model versioning and deployment.
   retrain_agent:
     build: .
     image: smart-maintenance-saas:latest
