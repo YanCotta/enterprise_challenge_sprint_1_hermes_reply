@@ -75,3 +75,6 @@ data/XJTU_SY_bearing_datasets/
 #MLFlow
 mlflow_data/
 mlflow_db/
+dvc_env/
+/mlflow_data
+/mlflow_db
