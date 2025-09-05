@@ -72,9 +72,15 @@ data/MIMII_sound_dataset/
 data/nasa_bearing_dataset/
 data/XJTU_SY_bearing_datasets/
 
-#MLFlow
+# MLFlow
 mlflow_data/
 mlflow_db/
 dvc_env/
 /mlflow_data
 /mlflow_db
+
+# DVC and Google Drive Credentials (SECURITY - NEVER COMMIT)
+gdrive_credentials.json
+*.json.credentials
+.dvc/tmp/
+.dvc/cache/
