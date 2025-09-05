@@ -1,0 +1,6 @@
+outs:
+- md5: 412bc6635eccdb02308ba602749018f7.dir
+  size: 522048
+  nfiles: 1
+  hash: md5
+  path: AI4I_2020_uci_dataset
