@@ -93,6 +93,36 @@ Production‑grade, event‑driven backend powering industrial predictive & pres
 
 ## 1. Quick Start (Backend Stack)
 
+### Environment and Reproducibility
+
+This project uses Docker to ensure a consistent environment and DVC to manage large data files and models. To replicate the environment and access all artifacts, follow the steps below:
+
+1. **Clone the Repository:**
+   ```bash
+   git clone <REPOSITORY_URL>
+   cd enterprise_challenge_sprint_1_hermes_reply
+   ```
+
+2. **Install Dependencies:**
+   ```bash
+   pip install dvc dvc-gdrive
+   ```
+
+3. **Synchronize Data and Models:**
+   ```bash
+   dvc pull
+   ```
+   *This command will download all versioned datasets and ML models. It may take a few minutes.*
+
+4. **Start the Environment:**
+   ```bash
+   docker compose up --build
+   ```
+
+After these steps, all services, including the API, the UI, and MLflow with the pre-trained models, will be available.
+
+### Quick Start Commands
+
 ```bash
 git clone <repo>
 cd enterprise_challenge_sprint_1_hermes_reply
