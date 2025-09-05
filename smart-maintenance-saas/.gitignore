@@ -84,3 +84,11 @@ gdrive_credentials.json
 *.json.credentials
 .dvc/tmp/
 .dvc/cache/
+
+/sensor_data.csv
+/AI4I_2020_uci_dataset
+/kaggle_pump_sensor_data
+/MIMII_sound_dataset
+/nasa_bearing_dataset
+/XJTU_SY_bearing_datasets
+
