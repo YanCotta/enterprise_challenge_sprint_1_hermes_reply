@@ -7,8 +7,11 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from apps.api.routers import data_ingestion, reporting, human_decision
 from apps.api.middleware.request_id import RequestIDMiddleware
-from sqlalchemy import select  # Import select
+from sqlalchemy import select, text  # Import text for raw SQL
 from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis
+from data.schemas import HealthStatus  # Import the new schema
+from apps.api.dependencies import get_db, get_redis_client_dep  # Import new dependencies
 
 # Import setup_logging from your logging configuration
 try:
@@ -118,10 +121,67 @@ instrumentator = Instrumentator().instrument(app)
 app.add_middleware(RequestIDMiddleware)
 
 
-# Health check endpoint
-@app.get("/health", tags=["Health"])
-async def health_check():
-    return {"status": "healthy"}
+# Comprehensive health check endpoint
+@app.get("/health", response_model=HealthStatus)
+async def health_check() -> HealthStatus:
+    """
+    Endpoint de health check que verifica a conectividade com dependências críticas.
+    
+    Retorna:
+    - HTTP 200 OK se todas as dependências estiverem funcionando
+    - HTTP 503 Service Unavailable se alguma dependência falhar
+    
+    Verifica:
+    - Conexão com o banco de dados TimescaleDB
+    - Conexão com o Redis
+    """
+    db_status = "ok"
+    redis_status = "ok"
+    overall_status = "ok"
+    http_status = 200
+    
+    # Verificar conexão com o banco de dados
+    try:
+        async for db in get_async_db():
+            await db.execute(text("SELECT 1"))
+            break  # Just need one session to test
+        db_status = "ok"
+    except Exception as e:
+        logging.error(f"Database health check failed: {e}")
+        db_status = "failed"
+        overall_status = "degraded"
+        http_status = 503
+    
+    # Verificar conexão com o Redis
+    try:
+        # Try to get Redis client from app state first, fallback to dependency
+        if hasattr(app.state, 'redis_client') and app.state.redis_client:
+            async with app.state.redis_client.get_redis() as redis:
+                await redis.ping()
+        else:
+            # Fallback - try to create a temporary connection
+            from core.redis_client import get_redis_client
+            redis_client = await get_redis_client()
+            async with redis_client.get_redis() as redis:
+                await redis.ping()
+        redis_status = "ok"
+    except Exception as e:
+        logging.error(f"Redis health check failed: {e}")
+        redis_status = "failed"
+        overall_status = "degraded"
+        http_status = 503
+    
+    response = HealthStatus(
+        status=overall_status,
+        database=db_status,
+        redis=redis_status
+    )
+    
+    # Se houver falhas, retornar com código de status apropriado
+    if http_status != 200:
+        raise HTTPException(status_code=http_status, detail=response.dict())
+    
+    return response
 
 
 # Database health check endpoint
