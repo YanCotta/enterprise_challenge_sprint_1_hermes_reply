@@ -1,0 +1,6 @@
+outs:
+- md5: 10e0f8f89dd5cd987f7e0b007b96cd5a.dir
+  size: 21440670000
+  nfiles: 8375
+  hash: md5
+  path: MIMII_sound_dataset
