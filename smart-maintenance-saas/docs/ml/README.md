@@ -5,13 +5,13 @@
 ### Getting Started
 
 - **[Main README](../../../README.md)** - Project overview, quick start, and repository structure
-- **[Backend README](../../README.md)** - Docker deployment and getting started guide
-- **[Development Orientation](../../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
+- **[Backend README](../../../README.md)** - Docker deployment and getting started guide
+- **[Development Orientation](../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
 
 ### Project History & Changelog
 
-- **[30-Day Sprint Changelog](../../../30-day-sprint-changelog.md)** - Complete development history and daily progress
-- **[Final Sprint Summary](../../../final_30_day_sprint.md)** - Executive summary of sprint achievements
+- **[30-Day Sprint Changelog](../30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](../final_30_day_sprint.md)** - Executive summary of sprint achievements
 
 ## System Architecture & Design
 
@@ -58,6 +58,7 @@
 
 - **[ML Documentation](./README.md)** - Machine learning models and pipelines
 - **[Models Summary](../MODELS_SUMMARY.md)** - Overview of all 17+ production models
+- **[Intelligent Model Selection (Live)](../MODELS_SUMMARY.md#intelligent-dynamic-model-selection-live-system)** - Dynamic recommendations by sensor type via MLflow tags
 - **[Project Gauntlet Plan](../PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
 
 ## Security & Operations
