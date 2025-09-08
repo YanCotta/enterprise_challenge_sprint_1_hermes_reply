@@ -1,91 +1,73 @@
-# Smart Maintenance SaaS - Complete Documentation Index
-
-## Core Documentation
-
-### Getting Started
-
-- **[Main README](./README.md)** - Project overview, quick start, and repository structure
-- **[Backend README](./smart-maintenance-saas/README.md)** - Docker deployment and getting started guide
-- **[Development Orientation](./DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
-
-### Project History & Changelog
-
-- **[30-Day Sprint Changelog](./30-day-sprint-changelog.md)** - Complete development history and daily progress
-- **[Final Sprint Summary](./final_30_day_sprint.md)** - Executive summary of sprint achievements
-
-## System Architecture & Design
-
-### Architecture Documentation
-
-- **[System and Architecture](./smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
-- **[System Screenshots](./smart-maintenance-saas/docs/SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
-- **[Comprehensive System Analysis](./smart-maintenance-saas/docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
-- **[Microservice Migration Strategy](./smart-maintenance-saas/docs/MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
-
-### Database Design
-
-- **[Database Documentation](./smart-maintenance-saas/docs/db/README.md)** - Database schema and design documentation
-- **[Database ERD](./smart-maintenance-saas/docs/db/erd.dbml)** - Entity Relationship Diagram source
-- **[Database ERD (PNG)](./smart-maintenance-saas/docs/db/erd.png)** - Entity Relationship Diagram visualization
-- **[Database ERD (Dark Mode)](./smart-maintenance-saas/docs/db/erd_darkmode.png)** - Entity Relationship Diagram (dark theme)
-- **[Database Schema](./smart-maintenance-saas/docs/db/schema.sql)** - Complete SQL schema definition
-
-## API & Integration
-
-### API Documentation
-
-- **[API Reference](./smart-maintenance-saas/docs/api.md)** - Complete REST API documentation and examples
-- **[Configuration Management](./smart-maintenance-saas/core/config/README.md)** - Centralized configuration system
-- **[Logging Configuration](./smart-maintenance-saas/core/logging_config.md)** - Structured JSON logging setup
-
-## Performance & Testing
-
-### Performance Documentation
-
-- **[Performance Baseline](./smart-maintenance-saas/docs/PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
-- **[Day 17 Load Test Report](./smart-maintenance-saas/docs/DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
-- **[Day 18 Performance Results](./smart-maintenance-saas/docs/DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
-- **[Load Testing Instructions](./smart-maintenance-saas/docs/LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
-
-### Testing Documentation
-
-- **[Test Documentation](./smart-maintenance-saas/tests/README.md)** - Test organization and execution guide
-- **[Coverage Improvement Plan](./smart-maintenance-saas/docs/COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
-
-## Machine Learning & Data Science
-
-### ML Documentation
-
-- **[ML Documentation](./smart-maintenance-saas/docs/ml/README.md)** - Machine learning models and pipelines
-- **[Models Summary](./smart-maintenance-saas/docs/MODELS_SUMMARY.md)** - Overview of all 17+ production models
-- **[Project Gauntlet Plan](./smart-maintenance-saas/docs/PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
-
-## Security & Operations
-
-### Security Documentation
-
-- **[Security Documentation](./smart-maintenance-saas/docs/SECURITY.md)** - Security architecture and implementation
-- **[Security Audit Checklist](./smart-maintenance-saas/docs/SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
-
-### Service Documentation
-
-- **[Anomaly Service](./smart-maintenance-saas/services/anomaly_service/README.md)** - Future anomaly detection microservice
-- **[Prediction Service](./smart-maintenance-saas/services/prediction_service/README.md)** - Future ML prediction microservice
-
----
-
-*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
-
----
-
 # Smart Maintenance SaaS
 
-[![Proprietary License](https://img.shields.io/badge/License-Proprietary-red.svg)](./LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](.)
 [![Models](https://img.shields.io/badge/MLflow-15%2B%20Models-blue)](.)
 [![Performance](https://img.shields.io/badge/P95%20Latency-2ms%20(@50u)-purple)](.)
 
 A production‑ready Predictive & Prescriptive Industrial Maintenance platform combining IoT ingestion, TimescaleDB time-series optimization, multi‑modal ML (tabular, vibration, audio, forecasting), automated drift detection & retraining, and resilient event-driven architecture.
+
+---
+
+
+
+## 📚 Documentation Index
+
+### Core
+
+- Main: this README
+- Backend: [smart-maintenance-saas/README.md](smart-maintenance-saas/README.md)
+- Development Orientation: [DEVELOPMENT_ORIENTATION.md](smart-maintenance-saas/docs/DEVELOPMENT_ORIENTATION.md)
+- 30-Day Sprint Changelog: [30-day-sprint-changelog.md](smart-maintenance-saas/docs/30-day-sprint-changelog.md)
+- Final Sprint Summary: [final_30_day_sprint.md](smart-maintenance-saas/docs/final_30_day_sprint.md)
+- Future Roadmap: [FUTURE_ROADMAP.md](smart-maintenance-saas/docs/FUTURE_ROADMAP.md)
+
+### Architecture & Design
+
+- System & Architecture: [SYSTEM_AND_ARCHITECTURE.md](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md)
+- System Screenshots: [SYSTEM_SCREENSHOTS.md](smart-maintenance-saas/docs/SYSTEM_SCREENSHOTS.md)
+- Comprehensive System Analysis: [COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md](smart-maintenance-saas/docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)
+- Microservice Migration Strategy: [MICROSERVICE_MIGRATION_STRATEGY.md](smart-maintenance-saas/docs/MICROSERVICE_MIGRATION_STRATEGY.md)
+
+### Database
+
+- Database Docs: [db/README.md](smart-maintenance-saas/docs/db/README.md)
+- ERD (dbml/png): [erd.dbml](smart-maintenance-saas/docs/db/erd.dbml), [erd.png](smart-maintenance-saas/docs/db/erd.png), [erd_darkmode.png](smart-maintenance-saas/docs/db/erd_darkmode.png)
+- SQL Schema: [schema.sql](smart-maintenance-saas/docs/db/schema.sql)
+
+### API & Config
+
+- API Reference: [api.md](smart-maintenance-saas/docs/api.md)
+- Config System: [core/config/README.md](smart-maintenance-saas/core/config/README.md)
+- Logging Config: [core/logging_config.md](smart-maintenance-saas/core/logging_config.md)
+
+### Performance & Testing
+
+- Performance Baseline: [PERFORMANCE_BASELINE.md](smart-maintenance-saas/docs/PERFORMANCE_BASELINE.md)
+- Load Test Report (Day 17): [DAY_17_LOAD_TEST_REPORT.md](smart-maintenance-saas/docs/DAY_17_LOAD_TEST_REPORT.md)
+- DB Perf (Day 18): [DAY_18_PERFORMANCE_RESULTS.md](smart-maintenance-saas/docs/DAY_18_PERFORMANCE_RESULTS.md)
+- Load Testing Instructions: [LOAD_TESTING_INSTRUCTIONS.md](smart-maintenance-saas/docs/LOAD_TESTING_INSTRUCTIONS.md)
+- Coverage Plan: [COVERAGE_IMPROVEMENT_PLAN.md](smart-maintenance-saas/docs/COVERAGE_IMPROVEMENT_PLAN.md)
+- Tests Guide: [tests/README.md](smart-maintenance-saas/tests/README.md)
+
+### ML & Data
+
+- ML Docs: [ml/README.md](smart-maintenance-saas/docs/ml/README.md)
+- Models Summary: [MODELS_SUMMARY.md](smart-maintenance-saas/docs/MODELS_SUMMARY.md)
+- Project Gauntlet Plan: [PROJECT_GAUNTLET_PLAN.md](smart-maintenance-saas/docs/PROJECT_GAUNTLET_PLAN.md)
+- DVC Setup Guide: [DVC_SETUP_GUIDE.md](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md)
+- DVC Setup Commands: [dvc_setup_commands.md](smart-maintenance-saas/docs/dvc_setup_commands.md)
+
+### Security & UI
+
+- Security: [SECURITY.md](smart-maintenance-saas/docs/SECURITY.md)
+- Security Audit Checklist: [SECURITY_AUDIT_CHECKLIST.md](smart-maintenance-saas/docs/SECURITY_AUDIT_CHECKLIST.md)
+- UI Features (Comprehensive): [UI_FEATURES_COMPREHENSIVE.md](smart-maintenance-saas/docs/UI_FEATURES_COMPREHENSIVE.md)
+
+### Services (Future)
+
+- Anomaly Service: [services/anomaly_service/README.md](smart-maintenance-saas/services/anomaly_service/README.md)
+- Prediction Service: [services/prediction_service/README.md](smart-maintenance-saas/services/prediction_service/README.md)
 
 ---
 
@@ -104,27 +86,20 @@ docker compose up -d --build
 # Metrics:    http://localhost:8000/metrics
 ```
 
+Datasets & models (optional, requires DVC):
+
+```bash
+cd smart-maintenance-saas
+dvc pull
+```
+See DVC guides: [DVC_SETUP_GUIDE.md](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md), [dvc_setup_commands.md](smart-maintenance-saas/docs/dvc_setup_commands.md). Public data mirror: <https://drive.google.com/drive/folders/1cJvSRaBG0Fzs4D_wlUeVPM9l47RP_k3G?usp=sharing>
+
+
 Stop & clean (non-destructive):
+
 ```bash
 docker compose down
 ```
-
----
-
-## 📁 Documentation Index
-
-| Area | Reference |
-|------|-----------|
-| Backend & Architecture | smart-maintenance-saas/README.md |
-| System Architecture | smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md |
-| API Reference | smart-maintenance-saas/docs/api.md |
-| Tests Guide | smart-maintenance-saas/tests/README.md |
-| Performance & Load | smart-maintenance-saas/docs/PERFORMANCE_BASELINE.md |
-| Security Model | docs/SECURITY.md & docs/SECURITY_AUDIT_CHECKLIST.md |
-| DB Architecture | docs/db/README.md |
-| ML Platform | docs/ml/README.md |
-| Migration Strategy (Microservices) | docs/MICROSERVICE_MIGRATION_STRATEGY.md |
-| Changelog (Source of Truth) | 30-day-sprint-changelog.md |
 
 ---
 
@@ -135,12 +110,12 @@ docker compose down
 | Ingestion & Idempotency | ✅ | Redis-backed SET NX EX (10m TTL) |
 | Time-Series Storage | ✅ | TimescaleDB hypertable + compression + retention |
 | Query Optimization | ✅ | Composite index (sensor_id, timestamp DESC) + hourly continuous aggregate |
-| Observability | ✅ | Prometheus (/metrics), structured JSON logs, correlation IDs |
+| Observability | ✅ | Prometheus (/metrics), structured JSON logs, correlation IDs, health endpoints |
 | ML Model Registry | ✅ | MLflow persistent (SQLite + volume) |
 | Model Catalog | ✅ | 15+ models (anomaly, forecasting, classification, audio, vibration) |
-| Drift Detection | ✅ | Scheduled KS + PSI + event emission |
+| Drift Detection | ✅ | KS/PSI tests, /api/v1/ml/check_drift endpoint, agentized monitoring |
 | Automated Retraining | ✅ | Event-driven (Redis pub/sub) retrain agent with cooldown policies |
-| Security Hardening | ✅ | API key auth, rate limiting, Snyk scan, STRIDE audit |
+| Security Hardening | ✅ | API key auth (X-API-Key), rate limiting (slowapi), STRIDE checklist |
 | Chaos & Resilience | ✅ | Toxiproxy latency/timeout tests; retrying event bus; graceful degradation |
 | Microservice Scaffolding | ✅ (Dormant) | prediction_service & anomaly_service (future activation triggers) |
 
@@ -152,31 +127,43 @@ docker compose down
 **Table:** sensor_readings (hypertable)  
 **Primary Key:** (timestamp, sensor_id)  
 **Indexes:**  
+
 - `(sensor_id, timestamp DESC)` → accelerates ML sliding windows & drift queries  
 - `(timestamp)` → time-range scans  
+
 **Continuous Aggregate:** `sensor_readings_summary_hourly` (avg, max, min, count)  
+
 - Refresh policy: every 30m, window start offset 2h, end offset 30m  
 - Achieved **37.3% query speed improvement** on aggregation workloads (validated Day 18)  
+
 **Policies:** compression ≥ 7 days, retention 180 days (tunable)  
 
 Benefits:
+
 - Pre-computed hourly stats accelerate feature engineering & dashboards
 - Reduced row scans (83% fewer rows for 24h aggregate queries)
 - Predictable performance under load
+
+Related docs: `./smart-maintenance-saas/docs/db/README.md`, `./smart-maintenance-saas/docs/DAY_18_PERFORMANCE_RESULTS.md`
 
 ---
 
 ## 📤 Data Export
 
 Full export:
+
 ```bash
 docker compose exec api python scripts/export_sensor_data_csv.py
 ```
+ 
 Incremental export (appends only new rows since last run):
+
 ```bash
 docker compose exec api python scripts/export_sensor_data_csv.py --incremental
 ```
+ 
 Custom output:
+
 ```bash
 docker compose exec api python scripts/export_sensor_data_csv.py --output /tmp/readings.csv
 ```
@@ -187,18 +174,31 @@ docker compose exec api python scripts/export_sensor_data_csv.py --output /tmp/r
 
 | Aspect | Implementation |
 |--------|----------------|
-| Metrics | prometheus-fastapi-instrumentator (/metrics) |
+| Metrics | Prometheus via prometheus-fastapi-instrumentator (`/metrics`) |
 | Logging | Structured JSON + correlation_id (ContextVar) |
-| Tracing Keys | X-Request-ID propagation |
+| Tracing | X-Request-ID propagation (RequestIDMiddleware) |
 | Load Test (Day 17) | 50 users / 3m → Peak 103.8 RPS, P95 2ms, P99 3ms |
 | Event Throughput | >100 events/sec capability validated |
 | Performance Gains | 10× latency reduction vs baseline, DB agg 37.3% faster |
 
 SLO Baseline:
+
 - API P95 < 200ms (current P95 2–4ms)
 - Predict cold load P99 < 3s (cached <1s)
 - Drift check P95 < 5s (current 3–4ms)
 - Error rate < 0.1% (core endpoints)
+
+Key environment variables (selection):
+
+- `API_KEY` (required for API auth); UI reads from `.env`
+- `DATABASE_URL`, `REDIS_URL` (compose set via Toxiproxy for chaos testing)
+- `MLFLOW_TRACKING_URI`, `MLFLOW_S3_ENDPOINT_URL` (MLflow client)
+- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `FROM_EMAIL` (email)
+- `SLACK_WEBHOOK_URL` (optional drift alerts)
+- `DRIFT_CHECK_ENABLED`, `DRIFT_CHECK_SCHEDULE`, `DRIFT_THRESHOLD`
+- `RETRAINING_ENABLED`, `RETRAINING_COOLDOWN_HOURS`, `MAX_CONCURRENT_RETRAINING`
+- `DISABLE_CHROMADB` (feature store embedding off when true)
+- `API_BASE_URL` for UI (use `http://api:8000` inside Docker)
 
 ---
 
@@ -206,6 +206,7 @@ SLO Baseline:
 
 **Registry:** MLflow (persistent volume)  
 **Model Families:**  
+
 - Anomaly Detection: IsolationForest (synthetic + vibration), OneClassSVM (vibration)  
 - Forecasting: Prophet tuned (20.86% MAE improvement) + challenger models  
 - Classification: AI4I, Pump (100% accuracy), metadata-informed feature engineering  
@@ -213,6 +214,7 @@ SLO Baseline:
 - Vibration (NASA + XJTU): Statistical + FFT features (RMS, kurtosis, crest factor, spectral energy)  
 
 **Project Gauntlet Phases:**  
+
 1. AI4I Classification (ceiling performance)  
 2. NASA Vibration Anomaly  
 3. MIMII Audio Anomaly  
@@ -222,14 +224,68 @@ SLO Baseline:
 7. Intelligent Model Selection UI  
 
 **Intelligent Model Selection (UI):**
+
 - MLflow model tags (e.g. `domain=bearing|audio|tabular`)
 - Recommended subset by sensor type; manual override allowed
 
 **Drift & Automation:**
+
 - Drift Agent (`scripts/run_drift_check_agent.py`) – scheduled KS & PSI, emits Redis events
 - Retrain Agent (`scripts/retrain_models_on_drift.py`) – rate-limited retraining with cooldown + MLflow version increment
 - Slack/Webhook notification integration (configurable)
 - CI model hash validation (`scripts/validate_model_hashes.py`) prevents silent drift/source mismatch
+
+Model portfolio (champions):
+
+| Task | Model | Dataset | Key Metric |
+| :--- | :--- | :--- | :--- |
+| Anomaly Detection | `anomaly_detector_refined_v2` | Synthetic Sensor | Unsupervised |
+| Forecasting | `prophet_forecaster_enhanced_sensor-001` | Synthetic Sensor | +20.86% MAE |
+| Classification | `ai4i_classifier_randomforest_baseline` | AI4I 2020 UCI | 99.9% Acc |
+| Vibration Anomaly | `vibration_anomaly_isolationforest` | NASA IMS | 10% Anomaly Rate |
+| Audio Classification | `RandomForest_MIMII_Audio_Benchmark` | MIMII | 93.3% Acc |
+| Classification | `pump_randomforest_baseline` | Kaggle Pump | 100% Acc |
+| Vibration Anomaly | `xjtu_anomaly_isolation_forest` | XJTU-SY | 10% Anomaly Rate |
+
+---
+
+## 🖥️ UI Highlights
+
+- System Dashboard: real-time metrics (memory, CPU time, requests, errors) parsed from `/metrics`
+- Data Ingestion & Management: manual and CSV uploads with validation
+- ML Predictions with Explainable AI: SHAP integration with TreeExplainer/KernelExplainer fallback
+- Predictive Analytics Dashboard: trends, anomalies, forecasts
+- Maintenance Management: schedule/track/record tasks
+- Visualizations: matplotlib/plotly; export reports (PDF, CSV)
+
+Related docs: `./smart-maintenance-saas/docs/UI_FEATURES_COMPREHENSIVE.md`
+
+---
+
+## ✉️ Notifications
+
+- Email Service: `core/notifications/email_service.py` (STARTTLS, HTML/plain, drift/retrain templates)
+- Slack/Webhook: optional drift alerts via `SLACK_WEBHOOK_URL`
+- Graceful degradation when creds missing (logs instead of failing)
+
+Configure via `.env` (see `./smart-maintenance-saas/.env.example`).
+Also available: `.env.prod.example`, `.env.test` for environment-specific overrides.
+
+---
+
+## 🎛️ Live Demo Simulator
+
+FastAPI router `apps/api/routers/simulate.py` provides:
+
+- `POST /api/v1/simulate/drift-event` – generate statistical drift
+- `POST /api/v1/simulate/anomaly-event` – create outliers
+- `POST /api/v1/simulate/normal-data` – baseline data
+
+Implements background ingestion, network resilience (Docker internal + localhost), and automatic drift check trigger.
+
+UI integrates a “Live System Demo Simulator” panel for one-click demonstrations.
+
+---
 
 ---
 
@@ -260,6 +316,11 @@ SLO Baseline:
 | Feature Contract | feature_names.txt persisted with models |
 | Automated Recovery | Drift → Event → Retrain → Registry update |
 
+Operational notes:
+
+- `toxiproxy_init` service auto-configures DB/Redis proxies on startup
+- Entry script applies TimescaleDB sequence/PK alignment fix during container boot
+
 ---
 
 ## 🛠️ Development & CI/CD
@@ -274,15 +335,31 @@ SLO Baseline:
 | Load Tests | Locust scenarios (API + drift + model interactions) |
 | Integration Tests | Async FastAPI + DB + Redis + Toxiproxy resilience tests |
 
+Auth & Networking:
+
+- API authentication via `X-API-Key`; UI sends headers automatically (see `API_KEY` in `.env`)
+- Docker inter-service networking via service names (`API_BASE_URL=http://api:8000` in UI)
+
+Makefile highlights (`smart-maintenance-saas/Makefile`):
+
+- `make build-ml` / `make rebuild-ml` – build ML image
+- `make synthetic-forecast` / `make synthetic-anomaly` – run training notebooks
+- `make classification-gauntlet` / `make vibration-gauntlet` / `make audio-gauntlet`
+- `make run-final-analysis` – project gauntlet report
+- `make test-features` – feature engineering tests
+- `make logs-api` / `make logs-mlflow` / `make logs-db`
+
 ---
 
 ## 🔀 Microservice Migration (Future Triggered)
 
 Scaffolded but dormant services:
+
 - prediction_service (port 8001)
 - anomaly_service (port 8002)
 
 Activation triggers (docs/MICROSERVICE_MIGRATION_STRATEGY.md):
+
 - P95 latency > 50ms sustained
 - >200 req/s sustained API throughput
 - Team / deployment coupling friction
@@ -327,22 +404,23 @@ Gradual strangler pattern: migrate ML inference & analytics endpoints first.
 | Apply migrations | `docker compose exec api alembic upgrade heads` |
 | Rebuild ML image | `make build-ml` |
 | Execute forecasting notebook | `make train-forecast` |
-| List MLflow models | Open http://localhost:5000 |
-| Manual drift check | POST /api/v1/ml/check_drift |
+| List MLflow models | Open <http://localhost:5000> |
+| Manual drift check | POST `/api/v1/ml/check_drift` |
 | Force retrain (manual) | Trigger via retrain agent or notebook |
 | Export data incremental | See Data Export section |
 
 ---
 
+
 ## 📄 License
 
-Proprietary – see [LICENSE](./LICENSE)
+MIT – see [LICENSE](./LICENSE)
 
 ---
 
 ## 🧾 Changelog Authority
 
-All architectural & feature claims trace to: [30-day-sprint-changelog.md](./30-day-sprint-changelog.md)
+All architectural & feature claims trace to: `./smart-maintenance-saas/docs/30-day-sprint-changelog.md`
 
 ---
 
