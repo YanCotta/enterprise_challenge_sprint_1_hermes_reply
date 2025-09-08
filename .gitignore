@@ -1,11 +1,7 @@
 # Root gitignore for the entire repository
 
 # --- Editors/OS ---
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
+.vscode/
 .idea/
 .DS_Store
 
@@ -116,17 +112,4 @@ smart-maintenance-saas/data/MIMII_sound_dataset/
 smart-maintenance-saas/data/nasa_bearing_dataset/
 smart-maintenance-saas/data/XJTU_SY_bearing_datasets/
 
-# Root gitignore for workspace-scoped files
-
-# VS Code (ignore developer-specific state)
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-
-# IntelliJ IDEs
-.idea/
-
-# macOS
-.DS_Store
+# (rest of file unchanged)
