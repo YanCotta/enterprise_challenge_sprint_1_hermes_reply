@@ -5,13 +5,13 @@
 ### Getting Started
 
 - **[Main README](../../../README.md)** - Project overview, quick start, and repository structure
-- **[Backend README](../../README.md)** - Docker deployment and getting started guide
-- **[Development Orientation](../../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
+- **[Backend Quick Start](../../../README.md)** - Docker deployment and getting started
+- **[Development Orientation](../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
 
 ### Project History & Changelog
 
-- **[30-Day Sprint Changelog](../../../30-day-sprint-changelog.md)** - Complete development history and daily progress
-- **[Final Sprint Summary](../../../final_30_day_sprint.md)** - Executive summary of sprint achievements
+- **[30-Day Sprint Changelog](../30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](../final_30_day_sprint.md)** - Executive summary of sprint achievements
 
 ## System Architecture & Design
 
@@ -76,7 +76,7 @@
 
 # Database Architecture (TimescaleDB Production Design)
 
-Authoritative description of the production time‑series data layer powering ingestion, ML feature extraction, drift detection, and analytics. Synchronized with sprint changelog through Day 23.
+Authoritative description of the production time‑series data layer powering ingestion, ML feature extraction, drift detection, and analytics. Synchronized with sprint changelog through Day 23 (plus subsequent fixes).
 
 #### Core Tables (Quick Summary)
 
@@ -126,7 +126,7 @@ Deliver a resilient, low‑latency, evolvable storage layer for:
 | Time-series native | TimescaleDB hypertable (`sensor_readings`) |
 | Query locality | Composite descending index `(sensor_id, timestamp DESC)` |
 | Pre-compute heavy scans | Continuous Aggregate (hourly) with refresh policy |
-| Operational safety | Manual migrations (no auto-run at container start) |
+| Operational safety | Alembic migrations auto-run at container start; CAGG created manually (outside txn) |
 | Cost control | Compression ≥7d, retention at 180d (tunable) |
 | Observability | CAGG job + chunk stats inspectable via Timescale views |
 | Evolvability | Narrow, focused Alembic revisions; CAGG created manually (outside txn) |
@@ -271,6 +271,8 @@ Forecasting | Hourly aggregates as engineered covariates (avoids repeated raw sc
 
 ## 12. Operational Runbook
 
+Note: Alembic migrations run automatically at container startup; use the following commands for manual control, local debugging, or recovery procedures.
+
 Action | Command / Procedure
 ------|---------------------
 Apply migrations | `docker compose exec api alembic upgrade heads`
@@ -355,7 +357,7 @@ Feature / Decision | Day(s)
 -------------------|-------
 Hypertable + compression baseline | 5
 Composite index addition & predict stabilization | 12
-Manual migration safety (removal of auto-run) | 12
+Entrypoint migration automation + CAGG manual step | 12+
 Sequence recreation & idempotent ingestion synergy | 15
 Chaos & resilience validation (Redis outages) | 15
 Performance CAGG & benchmark | 18
