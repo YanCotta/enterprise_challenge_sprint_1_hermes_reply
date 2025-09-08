@@ -153,11 +153,11 @@ graph TB
     API --> METRICS
     API --> SECURITY
 
-    classDef external fill:#e1f5fe
-    classDef api fill:#f3e5f5
-    classDef core fill:#e8f5e8
-    classDef data fill:#fff3e0
-    classDef infra fill:#fce4ec
+    classDef external fill:#1565C0,color:#ffffff
+    classDef api fill:#6A1B9A,color:#ffffff
+    classDef core fill:#2E7D32,color:#ffffff
+    classDef data fill:#EF6C00,color:#ffffff
+    classDef infra fill:#AD1457,color:#ffffff
 
     class IOT,USERS,MOBILE external
     class LB,API,AUTH,METRICS api
@@ -245,10 +245,10 @@ flowchart LR
     CACHE --> INFERENCE
     INFERENCE --> MONITORING
 
-    classDef training fill:#e3f2fd
-    classDef registry fill:#e8f5e8
-    classDef deployment fill:#fff3e0
-    classDef data fill:#f3e5f5
+    classDef training fill:#00695C,color:#ffffff
+    classDef registry fill:#2E7D32,color:#ffffff
+    classDef deployment fill:#EF6C00,color:#ffffff
+    classDef data fill:#6A1B9A,color:#ffffff
 
     class NOTEBOOKS,DATASETS,TRAINING training
     class REGISTRY,ARTIFACTS,VERSIONING,METADATA registry
@@ -299,10 +299,10 @@ graph TD
     COMPRESSION --> RETENTION
     PARTITIONING --> INDEXES
 
-    classDef ingestion fill:#e1f5fe
-    classDef core fill:#e8f5e8
-    classDef optimization fill:#fff3e0
-    classDef performance fill:#f3e5f5
+    classDef ingestion fill:#1565C0,color:#ffffff
+    classDef core fill:#2E7D32,color:#ffffff
+    classDef optimization fill:#EF6C00,color:#ffffff
+    classDef performance fill:#6A1B9A,color:#ffffff
 
     class API_INGEST,VALIDATION,TRANSFORM ingestion
     class HYPERTABLE,COMPRESSION,PARTITIONING core
@@ -358,10 +358,10 @@ flowchart TB
     LOGS --> REDIS_CONTAINER
     ALERTS --> MEMORY
 
-    classDef testing fill:#e3f2fd
-    classDef results fill:#e8f5e8
-    classDef monitoring fill:#fff3e0
-    classDef infrastructure fill:#f3e5f5
+    classDef testing fill:#00695C,color:#ffffff
+    classDef results fill:#2E7D32,color:#ffffff
+    classDef monitoring fill:#6A1B9A,color:#ffffff
+    classDef infrastructure fill:#AD1457,color:#ffffff
 
     class LOCUST,CONCURRENT,DURATION testing
     class THROUGHPUT,LATENCY,STABILITY,RESOURCE results
@@ -461,17 +461,22 @@ graph LR
     EB --> LA[Learning Agent]
     LA --> EB
     EB --> MLA[Maintenance Log Agent]
+    EB --> DCA[Drift Check Agent]
+    DCA --> EB
+    EB --> RTR[Retrain Agent]
+    RTR --> EB
 
-    classDef agent fill:#e8f5e8
-    classDef eventbus fill:#f3e5f5
+    classDef agent fill:#2E7D32,color:#ffffff
+    classDef eventbus fill:#6A1B9A,color:#ffffff
 
-    class DA,AD,VA,OA,PA,SA,NA,RA,HIA,LA,MLA agent
+    class DA,AD,VA,OA,PA,SA,NA,RA,HIA,LA,MLA,DCA,RTR agent
     class EB eventbus
 ```
 
 ### 3.4. Machine Learning Pipeline
 
 #### Model Registry Status
+
 - **Total Models:** 17+ production-ready models
 - **Classification Models:** AI4I (99.90% accuracy), Kaggle Pump (100% accuracy)
 - **Anomaly Detection:** NASA Bearing (72.8% accuracy), XJTU Bearing
@@ -509,10 +514,10 @@ graph TD
         TREND[Trend Analysis]
     end
 
-    classDef classification fill:#e3f2fd
-    classDef anomaly fill:#e8f5e8
-    classDef signal fill:#fff3e0
-    classDef forecast fill:#f3e5f5
+    classDef classification fill:#1565C0,color:#ffffff
+    classDef anomaly fill:#2E7D32,color:#ffffff
+    classDef signal fill:#EF6C00,color:#ffffff
+    classDef forecast fill:#6A1B9A,color:#ffffff
 
     class AI4I,PUMP,MULTI classification
     class NASA,XJTU,ISOLATION anomaly
@@ -527,10 +532,10 @@ The system implements comprehensive model drift detection and automated response
 ```mermaid
 graph TD
     subgraph "Drift Detection Pipeline"
-        MONITOR[Drift Monitoring Agent]
+        DCA[Drift Check Agent]
         DETECT[Statistical Drift Detection]
         ALERT[Alert Generation]
-        RETRAIN[Automated Retraining]
+        RTR[Retrain Agent]
     end
 
     subgraph "Intelligent Model Selection"
@@ -539,12 +544,12 @@ graph TD
         SELECT[Context-Aware Selection]
     end
 
-    MONITOR --> DETECT
+    DCA --> DETECT
     DETECT --> ALERT
-    ALERT --> RETRAIN
+    ALERT --> RTR
     ROUTER --> PERF
     PERF --> SELECT
-    SELECT --> MONITOR
+    SELECT --> DCA
 ```
 
 **Key Features:**
@@ -554,6 +559,64 @@ graph TD
 - **Model Performance Comparison:** Intelligent routing based on real-time performance metrics
 - **Notification System:** Integration with system event bus for drift alerts
 
+### 3.5. Event-Driven MLOps Automation
+
+Day 23 added a fully automated MLOps loop powered by the Redis-backed event bus, a Drift Check Agent, and a Retrain Agent.
+
+```mermaid
+flowchart LR
+    subgraph Monitoring
+        DCA[Drift Check Agent]
+        METRICS[(Perf/Drift Metrics)]
+    end
+    subgraph Control
+        EB[Redis Event Bus]
+        DLQ[Dead Letter Queue]
+    end
+    subgraph Retraining
+        RTR[Retrain Agent]
+        JOB[Training Job]
+        MLR[MLflow Registry]
+    end
+    subgraph Serving
+        CACHE[(Model Cache)]
+        API[FastAPI Inference]
+    end
+    subgraph Ops
+        EMAIL[Email Notification Service]
+    end
+
+    DCA --> METRICS
+    DCA -->|DriftDetected| EB
+    EB --> RTR
+    RTR -->|start| JOB
+    JOB -->|artifacts| MLR
+    JOB -->|RetrainCompleted/Failed| EB
+    EB --> EMAIL
+    MLR -->|promote| CACHE
+    CACHE --> API
+    EB --> DLQ
+
+    classDef mon fill:#00695C,color:#ffffff
+    classDef bus fill:#6A1B9A,color:#ffffff
+    classDef rt fill:#EF6C00,color:#ffffff
+    classDef serve fill:#2E7D32,color:#ffffff
+    classDef ops fill:#AD1457,color:#ffffff
+
+    class DCA,METRICS mon
+    class EB,DLQ bus
+    class RTR,JOB,MLR rt
+    class CACHE,API serve
+    class EMAIL ops
+```
+
+Operational notes:
+
+- Drift Check Agent publishes `DriftDetected` when monitored metrics breach thresholds.
+- Retrain Agent executes training scripts, logs to MLflow, and emits `RetrainCompleted/Failed` events.
+- Successful models are promoted in MLflow and pre-warmed into the model cache for safe rollout.
+- Email Notification Service (`core/notifications/email_service.py`) dispatches drift and retraining notifications.
+
 ---
 
 ## 4. Security and Operational Excellence
@@ -561,12 +624,14 @@ graph TD
 ### 4.1. Security Implementation
 
 #### API Security
+
 - **Rate Limiting:** 10 requests/minute for compute-intensive ML endpoints
 - **Authentication:** API key validation with secure header handling
 - **DoS Protection:** Computational resource limiting for expensive operations
 - **Input Validation:** Comprehensive request validation and sanitization
 
 #### Infrastructure Security
+
 - **Container Isolation:** Docker-based service separation
 - **Dependency Scanning:** Snyk integration for vulnerability detection
 - **Security Auditing:** Comprehensive security audit checklist framework
@@ -575,12 +640,14 @@ graph TD
 ### 4.2. Monitoring and Observability
 
 #### Metrics Collection
+
 - **Prometheus Integration:** HTTP request metrics, latency distributions
 - **Health Endpoints:** `/health`, `/health/db`, `/metrics` endpoints
 - **Process Metrics:** Memory usage, file descriptors, CPU utilization
 - **Custom Metrics:** ML model load times, prediction latencies
 
 #### Logging Architecture
+
 - **Structured JSON Logging:** Centralized log aggregation
 - **Correlation IDs:** Request tracing across service boundaries
 - **Event Audit Trails:** Complete event processing history
@@ -606,6 +673,7 @@ The system implements a comprehensive microservice scaffolding strategy for modu
 - **Team Autonomy:** Different teams can own and deploy services independently
 
 #### Container Architecture
+
 ```yaml
 services:
   api:          # FastAPI application server
@@ -617,6 +685,7 @@ services:
 ```
 
 #### Resource Allocation
+
 - **API Container:** 300MB memory limit, optimized for request handling
 - **Database Container:** 1GB memory, SSD storage for time-series data
 - **Redis Container:** 100MB memory, in-memory caching optimization
@@ -629,12 +698,14 @@ services:
 ### 5.1. Current Performance Baseline
 
 #### Response Time Performance
+
 - **P50 Response Time:** 1ms (50th percentile)
 - **P95 Response Time:** 2ms (95th percentile) 
 - **P99 Response Time:** 3ms (99th percentile)
 - **Maximum Response Time:** 124ms (well below 200ms SLO)
 
 #### Throughput Capabilities
+
 - **Peak Throughput:** 103.8 RPS sustained
 - **Average Throughput:** 88.83 RPS over 3-minute test
 - **Event Processing:** >100 events/second capability validated
@@ -643,6 +714,7 @@ services:
 ### 5.2. Scalability Analysis
 
 #### Horizontal Scaling Potential
+
 - **CPU Utilization:** Current 6% usage indicates 16x scaling potential
 - **Memory Efficiency:** <1GB total usage allows for significant scaling
 - **Database Performance:** TimescaleDB optimized for multi-tenant scaling
@@ -725,10 +797,10 @@ flowchart LR
     BUSINESS_RULES --> TIMESERIES
     BUSINESS_RULES --> CACHE
 
-    classDef sources fill:#e1f5fe
-    classDef ingestion fill:#e8f5e8
-    classDef processing fill:#fff3e0
-    classDef storage fill:#f3e5f5
+    classDef sources fill:#1565C0,color:#ffffff
+    classDef ingestion fill:#2E7D32,color:#ffffff
+    classDef processing fill:#EF6C00,color:#ffffff
+    classDef storage fill:#6A1B9A,color:#ffffff
 
     class SENSORS,BATCH,EXTERNAL sources
     class VALIDATE,ENRICH,CORRELATION ingestion
@@ -896,11 +968,11 @@ flowchart LR
     FEEDBACK --> REPORTS
     CACHE --> API_OUT
 
-    classDef ingestion fill:#e3f2fd
-    classDef processing fill:#e8f5e8
-    classDef storage fill:#fff3e0
-    classDef ml fill:#f3e5f5
-    classDef output fill:#fce4ec
+    classDef ingestion fill:#1565C0,color:#ffffff
+    classDef processing fill:#2E7D32,color:#ffffff
+    classDef storage fill:#EF6C00,color:#ffffff
+    classDef ml fill:#6A1B9A,color:#ffffff
+    classDef output fill:#AD1457,color:#ffffff
 
     class SENSORS,API_IN,BATCH ingestion
     class VALIDATE,ENRICH,NORMALIZE,ANOMALY processing
@@ -972,11 +1044,11 @@ graph TD
     DISPATCH --> REPORT_SUB
     DISPATCH --> API_SUB
 
-    classDef source fill:#e1f5fe
-    classDef core fill:#e8f5e8
-    classDef processor fill:#f3e5f5
-    classDef persistence fill:#fff3e0
-    classDef consumer fill:#fce4ec
+    classDef source fill:#1565C0,color:#ffffff
+    classDef core fill:#2E7D32,color:#ffffff
+    classDef processor fill:#6A1B9A,color:#ffffff
+    classDef persistence fill:#EF6C00,color:#ffffff
+    classDef consumer fill:#AD1457,color:#ffffff
 
     class DATA_IN,USER_ACTION,SYSTEM_EVENT,TIMER source
     class ROUTER,QUEUE,DISPATCH core
@@ -1069,11 +1141,11 @@ graph TB
     DOCKER --> K8S
     K8S --> STORAGE
 
-    classDef lb fill:#e1f5fe
-    classDef app fill:#e8f5e8
-    classDef data fill:#fff3e0
-    classDef monitor fill:#f3e5f5
-    classDef infra fill:#fce4ec
+    classDef lb fill:#1565C0,color:#ffffff
+    classDef app fill:#2E7D32,color:#ffffff
+    classDef data fill:#EF6C00,color:#ffffff
+    classDef monitor fill:#6A1B9A,color:#ffffff
+    classDef infra fill:#AD1457,color:#ffffff
 
     class LB,SSL lb
     class API1,API2,API3,AGENT1,AGENT2,AGENT3,WORKER1,WORKER2 app
@@ -1151,12 +1223,12 @@ flowchart TB
     MONITOR --> RETRAIN
     RETRAIN --> VERSIONING
 
-    classDef collection fill:#e3f2fd
-    classDef engineering fill:#e8f5e8
-    classDef training fill:#fff3e0
-    classDef deployment fill:#f3e5f5
-    classDef inference fill:#fce4ec
-    classDef management fill:#e1f5fe
+    classDef collection fill:#1565C0,color:#ffffff
+    classDef engineering fill:#2E7D32,color:#ffffff
+    classDef training fill:#EF6C00,color:#ffffff
+    classDef deployment fill:#6A1B9A,color:#ffffff
+    classDef inference fill:#AD1457,color:#ffffff
+    classDef management fill:#455A64,color:#ffffff
 
     class SENSORS,HISTORICAL,FEEDBACK collection
     class EXTRACT,TRANSFORM,SELECT engineering
@@ -1283,10 +1355,10 @@ graph TD
     ADA --> MLF
     PA --> MLF
 
-    classDef api fill:#f3e5f5
-    classDef agent fill:#e8f5e8
-    classDef eventbus fill:#fff3e0
-    classDef database fill:#e1f5fe
+    classDef api fill:#6A1B9A,color:#ffffff
+    classDef agent fill:#2E7D32,color:#ffffff
+    classDef eventbus fill:#EF6C00,color:#ffffff
+    classDef database fill:#1565C0,color:#ffffff
 
     class UI,API api
     class DAA,ADA,VA,Orch,PA,SA,NA,HIA,RA,LA,MLA agent
