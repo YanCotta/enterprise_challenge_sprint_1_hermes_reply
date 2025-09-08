@@ -7,20 +7,18 @@
 ### Getting Started
 
 - **[Main README](../../README.md)** - Project overview, quick start, and repository structure
-- **[Backend README](../README.md)** - Docker deployment and getting started guide
-- **[Development Orientation](../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
+- **[Development Orientation](./DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
 
 ### Project History & Changelog
 
-- **[30-Day Sprint Changelog](../../30-day-sprint-changelog.md)** - Complete development history and daily progress
-- **[Final Sprint Summary](../../final_30_day_sprint.md)** - Executive summary of sprint achievements
+- **[30-Day Sprint Changelog](./30-day-sprint-changelog.md)** - Complete development history and daily progress
+- **[Final Sprint Summary](./final_30_day_sprint.md)** - Executive summary of sprint achievements
 
 ## System Architecture & Design
 
 ### Architecture Documentation
 
 - **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
-- **[System Screenshots](./SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
 - **[Comprehensive System Analysis](./COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
 - **[Microservice Migration Strategy](./MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
 
@@ -80,10 +78,13 @@ The Smart Maintenance SaaS API provides a comprehensive RESTful interface for in
 **Base URL**: `http://localhost:8000` (Docker deployment)  
 **API Version**: v1  
 **Production Status**: ✅ Ready  
-**Documentation**: 
+**Documentation**:
+
 - Interactive API Docs: `http://localhost:8000/docs`
 - ReDoc Documentation: `http://localhost:8000/redoc`
 - Prometheus Metrics: `http://localhost:8000/metrics`
+
+Root endpoint: `GET /` returns a welcome message with name and version.
 
 ## Quick Start with Docker
 
@@ -120,6 +121,7 @@ See the [Backend README](../README.md#control-panel-ui-streamlit) for detailed u
 The API includes production-grade observability features implemented during the development sprint:
 
 #### Prometheus Metrics (`/metrics`)
+
 - **Endpoint**: `GET /metrics`
 - **Format**: Standard Prometheus exposition format
 - **Metrics Available**:
@@ -129,12 +131,14 @@ The API includes production-grade observability features implemented during the 
   - FastAPI-specific application metrics
 
 #### Correlation IDs & Request Tracing
+
 - **Automatic Request ID Generation**: UUIDv4 generated for each request
 - **Custom Request ID Support**: Include `X-Request-ID` header to use custom correlation ID
 - **Response Headers**: All responses include `X-Request-ID` for end-to-end tracing
 - **Structured Logging**: JSON-formatted logs with correlation ID propagation
 
 #### Event Bus Reliability
+
 - **Retry Logic**: Exponential backoff with 3 attempts (2s, 4s, 6s delays)
 - **Dead Letter Queue**: Failed events automatically sent to DLQ after retries
 - **Circuit Breaker Pattern**: Graceful degradation for downstream service failures
@@ -158,19 +162,24 @@ X-API-Key: your-api-key-here
 
 The API uses a scope-based permission system:
 
-- `data:ingest` - Permission to ingest sensor data
-- `reports:generate` - Permission to generate reports  
-- `tasks:update` - Permission to submit human decisions
+- `data:ingest` - Ingest sensor data
+- `reports:generate` - Generate reports
+- `tasks:update` - Submit human decisions
+- `ml:predict` - Run ML predictions
+- `ml:anomaly` - Run anomaly detection
+- `ml:drift` - Run drift checks
 
 ### Request Headers
 
 #### Required Headers
+
 - `X-API-Key`: Your API authentication key
 - `Content-Type`: `application/json` (for POST requests)
 
 #### Optional Headers
+
 - `X-Request-ID`: Custom correlation ID for request tracing (auto-generated if not provided)
-- `Idempotency-Key`: Prevents duplicate processing for data ingestion (10-minute TTL)
+- `Idempotency-Key`: Prevents duplicate processing for data ingestion (Redis-backed, 10-minute TTL)
 
 ## Core Endpoints
 
@@ -178,7 +187,7 @@ The API uses a scope-based permission system:
 
 #### POST /api/v1/data/ingest
 
-Ingests sensor data into the Smart Maintenance system for processing and analysis. Enhanced with idempotency support to prevent duplicate event processing.
+Ingests sensor data into the Smart Maintenance system. Idempotency is enforced via Redis to prevent duplicate event processing across replicas.
 
 **Headers:**
 ```http
@@ -203,23 +212,20 @@ Content-Type: application/json
 **Response (200 OK):**
 ```json
 {
-  "message": "Data ingested successfully",
-  "timestamp": "2025-06-11T10:30:00Z",
-  "sensor_id": "TEMP_001",
-  "correlation_id": "req_123456789",
-  "event_id": "evt_987654321"
+  "status": "event_published",
+  "event_id": "1f8b1d7c-0a6d-4b1b-8d2f-9a9b7e0c1234",
+  "correlation_id": "e0c4d7a0-1234-4b2a-9a8b-001122334455",
+  "sensor_id": "TEMP_001"
 }
 ```
 
 **Response (200 OK - Duplicate):**
 ```json
 {
-  "message": "Data ingested successfully",
-  "timestamp": "2025-06-11T10:30:00Z", 
-  "sensor_id": "TEMP_001",
-  "correlation_id": "req_123456789",
-  "event_id": "evt_987654321",
-  "status": "duplicate_ignored"
+  "status": "duplicate_ignored",
+  "event_id": "1f8b1d7c-0a6d-4b1b-8d2f-9a9b7e0c1234",
+  "correlation_id": "e0c4d7a0-1234-4b2a-9a8b-001122334455",
+  "sensor_id": "TEMP_001"
 }
 ```
 
@@ -234,9 +240,8 @@ Content-Type: application/json
 
 **Idempotency Behavior:**
 - Include `Idempotency-Key` header to prevent duplicate processing
-- Duplicate requests with same key return original `event_id`
-- 10-minute TTL cache prevents memory growth
-- Designed for single-replica deployment (in-memory cache)
+- Duplicate requests with same key return the original `event_id`
+- Redis-backed store with 10-minute TTL (safe across replicas)
 
 ### Reports Generation
 
@@ -248,10 +253,11 @@ Generates various maintenance and system reports based on the specified report t
 ```json
 {
   "report_type": "anomaly_summary",
-  "start_date": "2025-05-11",
-  "end_date": "2025-06-11",
-  "output_format": "json",
-  "include_charts": false
+  "format": "json",
+  "time_range_start": "2025-05-11T00:00:00Z",
+  "time_range_end": "2025-06-11T00:00:00Z",
+  "include_charts": true,
+  "parameters": {}
 }
 ```
 
@@ -260,22 +266,11 @@ Generates various maintenance and system reports based on the specified report t
 {
   "report_id": "rpt_987654321",
   "report_type": "anomaly_summary",
+  "format": "json",
+  "content": "...",
   "generated_at": "2025-06-11T10:30:00Z",
-  "report_data": {
-    "summary": "Anomaly analysis for the past 30 days",
-    "total_anomalies": 15,
-    "critical_anomalies": 3,
-    "anomalies_by_type": {
-      "temperature": 8,
-      "vibration": 5,
-      "pressure": 2
-    }
-  },
-  "metadata": {
-    "date_range": "2025-05-11 to 2025-06-11",
-    "total_sensors": 45,
-    "data_points_analyzed": 12450
-  }
+  "charts_encoded": {},
+  "metadata": {"date_range": "2025-05-11 to 2025-06-11"}
 }
 ```
 
@@ -291,24 +286,24 @@ Generates various maintenance and system reports based on the specified report t
 
 Submits human feedback or decisions on system-prompted queries for maintenance approval/rejection.
 
+Status code: 201 Created
+
 **Request Body:**
 ```json
 {
   "request_id": "req_maintenance_123",
   "decision": "approve",
   "justification": "Critical equipment requires immediate attention",
-  "submitted_by": "operator_001"
+  "operator_id": "operator_001"
 }
 ```
 
-**Response (200 OK):**
+**Response (201 Created):**
 ```json
 {
-  "message": "Decision submitted successfully",
-  "request_id": "req_maintenance_123",
-  "decision": "approve",
-  "timestamp": "2025-06-11T10:30:00Z",
-  "status": "processed"
+  "status": "success",
+  "event_id": "3d3c2a1b-9e8f-4a7b-b6a1-0c9d12345678",
+  "request_id": "req_maintenance_123"
 }
 ```
 
@@ -326,28 +321,27 @@ Basic health check endpoint to verify API availability.
 **Response (200 OK):**
 ```json
 {
-  "status": "healthy",
-  "timestamp": "2025-06-11T10:30:00Z",
-  "version": "v1.0.0"
+  "status": "ok",
+  "database": "ok",
+  "redis": "ok",
+  "timestamp": "2025-06-11T10:30:00Z"
 }
 ```
 
-### GET /health/detailed
-
-Detailed health check including database and service status.
+### GET /health/db
+Checks database connectivity.
 
 **Response (200 OK):**
 ```json
-{
-  "status": "healthy",
-  "timestamp": "2025-06-11T10:30:00Z",
-  "services": {
-    "database": "healthy",
-    "event_bus": "healthy",
-    "ml_services": "healthy"
-  },
-  "version": "v1.0.0"
-}
+{ "db_status": "connected" }
+```
+
+### GET /health/redis
+Checks Redis connectivity and basic stats.
+
+**Response (200 OK):**
+```json
+{ "status": "healthy", "info": { "mode": "standalone" } }
 ```
 
 ### GET /metrics
@@ -379,7 +373,21 @@ http_requests_total{method="GET",handler="/health"} 42.0
 
 ## ML Services Integration
 
-The API integrates with MLflow for model management and provides endpoints for accessing trained models:
+The API integrates with MLflow for model management and provides endpoints for accessing trained models. For convenience, key ML endpoints are also exposed via the API:
+
+### Machine Learning API
+
+- POST `/api/v1/ml/predict` (scope: `ml:predict`)
+  - Body: `{ "model_name": "ai4i_classifier_randomforest_baseline", "model_version": "auto", "features": { ... } }`
+  - Response: `{ prediction, confidence?, model_info, shap_values?, feature_importance?, timestamp }`
+
+- POST `/api/v1/ml/detect_anomaly` (scope: `ml:anomaly`)
+  - Body: `{ "sensor_readings": [ { sensor_id, sensor_type, value, unit, timestamp, quality } ], "model_name": "anomaly_detector_refined_v2", "model_version": "auto", "sensitivity": 0.7 }`
+  - Response: `{ anomalies_detected: [...], anomaly_count, total_readings_analyzed, model_info, analysis_timestamp }`
+
+- POST `/api/v1/ml/check_drift` (scope: `ml:drift`, rate limited: 10/min per API key)
+  - Body: `{ "sensor_id": "sensor_001", "window_minutes": 60, "p_value_threshold": 0.05, "min_samples": 30 }`
+  - Response: `{ drift_detected, p_value, ks_statistic, recent_count, baseline_count, notes? }`
 
 ### MLflow Integration
 - **MLflow UI**: Available at `http://localhost:5000`
@@ -458,20 +466,11 @@ The API uses standard HTTP status codes and returns structured error responses:
 
 ## Rate Limiting
 
-The API implements rate limiting to ensure fair usage:
+The API uses slowapi for rate limiting where enabled. Currently enforced:
 
-- **Data Ingestion**: 100 requests per minute per API key
-- **Report Generation**: 10 requests per minute per API key
-- **Decision Submission**: 50 requests per minute per API key
+- `/api/v1/ml/check_drift`: 10 requests per minute per API key
 
-Rate limit headers are included in all responses:
-
-```http
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 95
-X-RateLimit-Reset: 1623456789
-X-Request-ID: correlation-id-for-tracing
-```
+Additional per-endpoint limits can be configured. When limits apply, responses include standard `X-RateLimit-*` headers and `Retry-After` when exceeded.
 
 ## Examples
 
@@ -492,15 +491,17 @@ curl -X POST "http://localhost:8000/api/v1/data/ingest" \
     "location": "Factory Floor A"
   }'
 
-# 2. Generate anomaly report
+# 2. Generate anomaly report (updated schema)
 curl -X POST "http://localhost:8000/api/v1/reports/generate" \
   -H "X-API-Key: your-api-key" \
   -H "X-Request-ID: report-correlation-789" \
   -H "Content-Type: application/json" \
   -d '{
     "report_type": "anomaly_summary",
-    "start_date": "2025-05-11",
-    "end_date": "2025-06-11"
+    "format": "json",
+    "time_range_start": "2025-05-11T00:00:00Z",
+    "time_range_end": "2025-06-11T00:00:00Z",
+    "include_charts": true
   }'
 
 # 3. Submit maintenance decision
@@ -511,14 +512,41 @@ curl -X POST "http://localhost:8000/api/v1/decisions/submit" \
   -d '{
     "request_id": "req_maintenance_123",
     "decision": "approve",
-    "justification": "Temperature anomaly requires immediate attention"
+    "justification": "Temperature anomaly requires immediate attention",
+    "operator_id": "operator_001"
   }'
 
 # 4. Check system health and metrics
 curl -H "X-API-Key: your-api-key" "http://localhost:8000/health/detailed"
 curl "http://localhost:8000/metrics"
 
-# 5. Access MLflow models
+# 5. Run ML endpoints
+curl -X POST "http://localhost:8000/api/v1/ml/predict" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_name": "ai4i_classifier_randomforest_baseline",
+    "model_version": "auto",
+    "features": {
+      "Air_temperature_K": 298.1,
+      "Process_temperature_K": 308.6,
+      "Rotational_speed_rpm": 1551,
+      "Torque_Nm": 42.8,
+      "Tool_wear_min": 108
+    }
+  }'
+
+curl -X POST "http://localhost:8000/api/v1/ml/check_drift" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sensor_id": "sensor_001",
+    "window_minutes": 60,
+    "p_value_threshold": 0.05,
+    "min_samples": 30
+  }'
+
+# 6. Access MLflow models (registry)
 curl "http://localhost:5000/api/2.0/mlflow/registered-models/list"
 ```
 
@@ -528,7 +556,7 @@ curl "http://localhost:5000/api/2.0/mlflow/registered-models/list"
 # Check Prometheus metrics
 curl "http://localhost:8000/metrics" | grep -E "(http_requests|python_gc)"
 
-# Verify correlation ID propagation
+# Verify correlation ID propagation (middleware echoes header)
 curl -H "X-Request-ID: test-trace-123" "http://localhost:8000/health" -v
 
 # Monitor TimescaleDB sensor data
@@ -567,14 +595,14 @@ Based on the latest comprehensive system analysis (Sprint 10.5):
 ```
 
 #### System Health Validation
-- **Infrastructure**: All 7 Docker containers operational (100% uptime)
+- **Infrastructure**: All core Docker containers operational
 - **MLflow Integration**: Comprehensive experiment tracking at http://localhost:5000
 - **Database Performance**: TimescaleDB with 9,000+ sensor readings
 - **Load Testing**: MLflow Registry validated under concurrent access (0 failures)
 
 ### Scalability Considerations
 
-- **Idempotency Cache**: Currently in-memory per replica. For multi-replica deployments, consider Redis backend
+- **Idempotency**: Redis-backed idempotency for ingestion supports multi-replica deployments
 - **Database**: TimescaleDB with compression policies for time-series data retention
 - **Event Bus**: Retry logic with exponential backoff prevents cascade failures
 - **ML Pipeline**: Containerized workflow supports horizontal scaling
