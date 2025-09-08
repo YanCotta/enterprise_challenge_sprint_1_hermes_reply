@@ -16,7 +16,6 @@ A production‑ready Predictive & Prescriptive Industrial Maintenance platform c
 ### Core
 
 - Main: this README
-- Backend: [smart-maintenance-saas/README.md](smart-maintenance-saas/README.md)
 - Development Orientation: [DEVELOPMENT_ORIENTATION.md](smart-maintenance-saas/docs/DEVELOPMENT_ORIENTATION.md)
 - 30-Day Sprint Changelog: [30-day-sprint-changelog.md](smart-maintenance-saas/docs/30-day-sprint-changelog.md)
 - Final Sprint Summary: [final_30_day_sprint.md](smart-maintenance-saas/docs/final_30_day_sprint.md)
@@ -25,7 +24,6 @@ A production‑ready Predictive & Prescriptive Industrial Maintenance platform c
 ### Architecture & Design
 
 - System & Architecture: [SYSTEM_AND_ARCHITECTURE.md](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md)
-- System Screenshots: [SYSTEM_SCREENSHOTS.md](smart-maintenance-saas/docs/SYSTEM_SCREENSHOTS.md)
 - Comprehensive System Analysis: [COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md](smart-maintenance-saas/docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)
 - Microservice Migration Strategy: [MICROSERVICE_MIGRATION_STRATEGY.md](smart-maintenance-saas/docs/MICROSERVICE_MIGRATION_STRATEGY.md)
 
@@ -54,6 +52,7 @@ A production‑ready Predictive & Prescriptive Industrial Maintenance platform c
 
 - ML Docs: [ml/README.md](smart-maintenance-saas/docs/ml/README.md)
 - Models Summary: [MODELS_SUMMARY.md](smart-maintenance-saas/docs/MODELS_SUMMARY.md)
+- Intelligent Model Selection (Live): [Dynamic Selection Section](smart-maintenance-saas/docs/MODELS_SUMMARY.md#intelligent-dynamic-model-selection-live-system)
 - Project Gauntlet Plan: [PROJECT_GAUNTLET_PLAN.md](smart-maintenance-saas/docs/PROJECT_GAUNTLET_PLAN.md)
 - DVC Setup Guide: [DVC_SETUP_GUIDE.md](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md)
 - DVC Setup Commands: [dvc_setup_commands.md](smart-maintenance-saas/docs/dvc_setup_commands.md)
@@ -92,6 +91,7 @@ Datasets & models (optional, requires DVC):
 cd smart-maintenance-saas
 dvc pull
 ```
+ 
 See DVC guides: [DVC_SETUP_GUIDE.md](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md), [dvc_setup_commands.md](smart-maintenance-saas/docs/dvc_setup_commands.md). Public data mirror: <https://drive.google.com/drive/folders/1cJvSRaBG0Fzs4D_wlUeVPM9l47RP_k3G?usp=sharing>
 
 
