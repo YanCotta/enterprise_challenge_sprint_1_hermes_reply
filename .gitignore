@@ -1,0 +1,132 @@
+# Root gitignore for the entire repository
+
+# --- Editors/OS ---
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+.DS_Store
+
+# --- Python environments & bytecode ---
+venv/
+.venv/
+env/
+.env
+.env.*
+**/__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# --- Packaging / build artifacts (anywhere) ---
+**/dist/
+**/build/
+**/*.egg-info/
+*.egg
+
+# --- Tests / coverage ---
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+**/.pytest_cache/
+cover/
+
+# --- mypy ---
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# --- Logs ---
+**/*.log
+**/logs/
+
+# --- SQLite / DB files ---
+**/*.db
+**/*.sqlite3
+**/*.sqlite
+
+# --- Docker local files ---
+**/.docker/
+
+# --- Runtime dumps ---
+dump.rdb
+kafka-logs/
+
+# --- MLflow local volumes (repo root) ---
+/mlflow_data
+/mlflow_db
+
+# --- MLflow and environments inside app folder ---
+smart-maintenance-saas/mlflow_data/
+smart-maintenance-saas/mlflow_db/
+smart-maintenance-saas/dvc_env/
+smart-maintenance-saas/.dvc/
+smart-maintenance-saas/.dvc/tmp/
+smart-maintenance-saas/.dvc/cache/
+
+# --- App-level envs and caches ---
+smart-maintenance-saas/.venv/
+smart-maintenance-saas/venv/
+smart-maintenance-saas/env/
+smart-maintenance-saas/.pytest_cache/
+smart-maintenance-saas/.mypy_cache/
+
+# --- App-level datasets (duplicates retained from previous .gitignore) ---
+smart-maintenance-saas/data/AI4I_2020_uci_dataset/
+smart-maintenance-saas/data/kaggle_pump_sensor_data/
+smart-maintenance-saas/data/MIMII_sound_dataset/
+smart-maintenance-saas/data/nasa_bearing_dataset/
+smart-maintenance-saas/data/XJTU_SY_bearing_datasets/
+
+# Legacy anchored dataset paths from app .gitignore (harmless if absent)
+smart-maintenance-saas/AI4I_2020_uci_dataset/
+smart-maintenance-saas/kaggle_pump_sensor_data/
+smart-maintenance-saas/MIMII_sound_dataset/
+smart-maintenance-saas/nasa_bearing_dataset/
+smart-maintenance-saas/XJTU_SY_bearing_datasets/
+
+# App-level generated files
+smart-maintenance-saas/sensor_data.csv
+smart-maintenance-saas/logs/
+smart-maintenance-saas/*.log
+
+# Credentials in app folder
+smart-maintenance-saas/gdrive_credentials.json
+
+# --- DVC and credentials (security) ---
+smart-maintenance-saas/gdrive_credentials.json
+*.json.credentials
+.dvc/tmp/
+.dvc/cache/
+
+# --- Project datasets (inside app folder) ---
+smart-maintenance-saas/data/AI4I_2020_uci_dataset/
+smart-maintenance-saas/data/kaggle_pump_sensor_data/
+smart-maintenance-saas/data/MIMII_sound_dataset/
+smart-maintenance-saas/data/nasa_bearing_dataset/
+smart-maintenance-saas/data/XJTU_SY_bearing_datasets/
+
+# Root gitignore for workspace-scoped files
+
+# VS Code (ignore developer-specific state)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# IntelliJ IDEs
+.idea/
+
+# macOS
+.DS_Store
