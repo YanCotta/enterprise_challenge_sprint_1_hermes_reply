@@ -172,15 +172,41 @@ The **Models** tab contains the curated list of production-ready "champion" mode
 
 ---
 
+### Intelligent, Dynamic Model Selection (Live System)
+
+While this document summarizes the foundational models as of 2025-08-19, the live system (added on Day 21.5) selects models dynamically based on sensor type using tags read from MLflow.
+
+- What it does: Recommends the best-suited registered models for a chosen `sensor_type` (e.g., `bearing`, `pump`, `audio`, `vibration`, `temperature`). General-purpose models can be included as fallback.
+- Where it lives:
+	- Logic: `apps/ml/model_utils.py`
+		- `get_all_registered_models()` — lists registered models with model- and version-level tags
+		- `get_models_by_sensor_type()` — groups models by `sensor_type` tag (checks version tags first, then model tags; untagged models go to `general`)
+		- `get_model_recommendations(sensor_type, include_general=True)` — returns an ordered, de-duplicated recommendation list
+		- `suggest_sensor_types()` — returns available types (union of tagged types plus helpful defaults)
+		- `add_sensor_type_tag(model_name, version, sensor_type)` — helper to tag versions programmatically
+	- UI: `ui/streamlit_app.py` under the "Intelligent Model Selection" section. Users pick a sensor type, the UI calls the utilities above to show recommendations, and then pipes the selection into the prediction interface. It also supports manual selection and sensible fallbacks if MLflow is unavailable.
+- How it works: The utilities query the MLflow Model Registry and read the `sensor_type` tag from model version tags first (most specific) and then model-level tags. Recommendations include specific matches first and optionally add `general` models.
+- Configuration: The MLflow tracking server is taken from `MLFLOW_TRACKING_URI` (default `http://mlflow:5000`). Ensure this environment variable points to your MLflow instance used by the UI/backend.
+- Tagging models: Tag via the MLflow UI or programmatically, e.g.:
+
+```python
+from apps.ml.model_utils import add_sensor_type_tag
+add_sensor_type_tag("vibration_anomaly_isolationforest", "1", "vibration")
+```
+
+This dynamic selection means the system’s “current best” models are sourced live from MLflow based on tags, while this document serves as a stable summary of the original champion portfolio.
+
+---
+
 ## 5. Final Conclusion & Next Steps
 
 This R&D sprint has been a resounding success. We have systematically proven the platform's ability to tackle a wide range of real-world predictive maintenance challenges across multiple data modalities (tabular, vibration signals, audio streams, and time-series). The infrastructure has been significantly hardened through comprehensive Docker optimization, dependency resolution, and multi-stage containerization. The MLOps workflow is robust with complete experiment tracking, model versioning, and artifact management through MLflow.
 
 **Key Technical Achievements:**
 
-* **Multi-Modal Processing**: Successful implementation of tabular classification, signal processing (time/frequency domain features), audio analysis (MFCC extraction), and time-series forecasting
-* **Production-Ready Pipeline**: Docker-based training with papermill execution, MLflow integration, and automated artifact generation
-* **Infrastructure Hardening**: Build optimization reducing contexts by 99.9%, dependency conflict resolution, and containerized reproducibility
-* **Industrial Validation**: Models align with bearing fault detection physics, audio anomaly patterns, and maintenance decision-making processes
+- **Multi-Modal Processing**: Successful implementation of tabular classification, signal processing (time/frequency domain features), audio analysis (MFCC extraction), and time-series forecasting
+- **Production-Ready Pipeline**: Docker-based training with papermill execution, MLflow integration, and automated artifact generation
+- **Infrastructure Hardening**: Build optimization reducing contexts by 99.9%, dependency conflict resolution, and containerized reproducibility
+- **Industrial Validation**: Models align with bearing fault detection physics, audio anomaly patterns, and maintenance decision-making processes
 
 The project is now officially ready to move forward with the original 30-day plan, beginning with the **Day 11 tasks: MLflow Registry Integration and Loader implementation**. The `PROJECT_GAUNTLET_PLAN.md` file can now be safely deleted as all objectives have been successfully completed and documented.
