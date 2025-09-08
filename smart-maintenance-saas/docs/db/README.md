@@ -74,13 +74,38 @@
 
 ---
 
-*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
-
----
-
 # Database Architecture (TimescaleDB Production Design)
 
 Authoritative description of the production time‑series data layer powering ingestion, ML feature extraction, drift detection, and analytics. Synchronized with sprint changelog through Day 23.
+
+#### Core Tables (Quick Summary)
+
+- sensors: Asset registry of physical/virtual devices.
+  - Key: `sensor_id` (unique business identifier), surrogate `id` (UUID)
+  - Fields: `type`, `location`, `status`, timestamps
+- sensor_readings: Time-series measurements (TimescaleDB hypertable).
+  - PK: `(timestamp, sensor_id)`; surrogate `id` (sequence-backed, non-PK)
+  - Fields: `sensor_type`, `value`, `unit`, `quality`, `sensor_metadata`, timestamps
+  - Indexes: `(sensor_id, timestamp DESC)` for latest-N windows; `(timestamp)` for range scans
+- anomaly_alerts: Events produced by anomaly detection.
+  - PK: `id` (UUID)
+  - Fields: `sensor_id`, `anomaly_type`, `severity`, `confidence`, `description`, `evidence` (JSONB), `recommended_actions` (text[]), `status`
+  - Rel: FK to `sensors(sensor_id)`
+- maintenance_tasks: Work items to address issues or scheduled upkeep.
+  - PK: `id` (UUID)
+  - Fields: `equipment_id`, `task_type`, `priority`, `status`, scheduling times, `required_skills` (text[]), `parts_needed` (text[]), timestamps
+  - Rel: optional FK to `sensors(sensor_id)`; indexed on `equipment_id` and `sensor_id`
+- maintenance_logs: Execution records capturing actual work performed.
+  - PK: `id` (UUID)
+  - Fields: `task_id`, `equipment_id`, `completion_date`, `technician_id`, `status`, `actual_duration_hours`, `notes`, timestamps
+  - Rel: logically references `maintenance_tasks(id)` via `task_id`
+
+Relationships at a glance:
+
+- sensors 1:N sensor_readings
+- sensors 1:N anomaly_alerts
+- sensors 0..1:N maintenance_tasks (optional link by `sensor_id`)
+- maintenance_tasks 1:N maintenance_logs (via `task_id`)
 
 ---
 
