@@ -75,11 +75,11 @@ graph TB
     API --> METRICS
     API --> SECURITY
 
-    classDef external fill:#e1f5fe
-    classDef api fill:#f3e5f5
-    classDef core fill:#e8f5e8
-    classDef data fill:#fff3e0
-    classDef infra fill:#fce4ec
+    classDef external fill:#1565C0,color:#ffffff
+    classDef api fill:#6A1B9A,color:#ffffff
+    classDef core fill:#2E7D32,color:#ffffff
+    classDef data fill:#EF6C00,color:#ffffff
+    classDef infra fill:#AD1457,color:#ffffff
 
     class IOT,USERS,MOBILE external
     class LB,API,AUTH,METRICS api
@@ -167,10 +167,10 @@ flowchart LR
     CACHE --> INFERENCE
     INFERENCE --> MONITORING
 
-    classDef training fill:#e3f2fd
-    classDef registry fill:#e8f5e8
-    classDef deployment fill:#fff3e0
-    classDef data fill:#f3e5f5
+    classDef training fill:#00695C,color:#ffffff
+    classDef registry fill:#2E7D32,color:#ffffff
+    classDef deployment fill:#EF6C00,color:#ffffff
+    classDef data fill:#6A1B9A,color:#ffffff
 
     class NOTEBOOKS,DATASETS,TRAINING training
     class REGISTRY,ARTIFACTS,VERSIONING,METADATA registry
@@ -221,10 +221,10 @@ graph TD
     COMPRESSION --> RETENTION
     PARTITIONING --> INDEXES
 
-    classDef ingestion fill:#e1f5fe
-    classDef core fill:#e8f5e8
-    classDef optimization fill:#fff3e0
-    classDef performance fill:#f3e5f5
+    classDef ingestion fill:#1565C0,color:#ffffff
+    classDef core fill:#2E7D32,color:#ffffff
+    classDef optimization fill:#EF6C00,color:#ffffff
+    classDef performance fill:#6A1B9A,color:#ffffff
 
     class API_INGEST,VALIDATION,TRANSFORM ingestion
     class HYPERTABLE,COMPRESSION,PARTITIONING core
@@ -280,10 +280,10 @@ flowchart TB
     LOGS --> REDIS_CONTAINER
     ALERTS --> MEMORY
 
-    classDef testing fill:#e3f2fd
-    classDef results fill:#e8f5e8
-    classDef monitoring fill:#fff3e0
-    classDef infrastructure fill:#f3e5f5
+    classDef testing fill:#00695C,color:#ffffff
+    classDef results fill:#2E7D32,color:#ffffff
+    classDef monitoring fill:#455A64,color:#ffffff
+    classDef infrastructure fill:#AD1457,color:#ffffff
 
     class LOCUST,CONCURRENT,DURATION testing
     class THROUGHPUT,LATENCY,STABILITY,RESOURCE results
@@ -368,11 +368,15 @@ graph LR
     EB --> LA[Learning Agent]
     LA --> EB
     EB --> MLA[Maintenance Log Agent]
+    EB --> DCA[Drift Check Agent]
+    DCA --> EB
+    EB --> RTR[Retrain Agent]
+    RTR --> EB
 
-    classDef agent fill:#e8f5e8
-    classDef eventbus fill:#f3e5f5
+    classDef agent fill:#2E7D32,color:#ffffff
+    classDef eventbus fill:#6A1B9A,color:#ffffff
 
-    class DA,AD,VA,OA,PA,SA,NA,RA,HIA,LA,MLA agent
+    class DA,AD,VA,OA,PA,SA,NA,RA,HIA,LA,MLA,DCA,RTR agent
     class EB eventbus
 ```
 
@@ -417,10 +421,10 @@ graph TD
         TREND[Trend Analysis]
     end
 
-    classDef classification fill:#e3f2fd
-    classDef anomaly fill:#e8f5e8
-    classDef signal fill:#fff3e0
-    classDef forecast fill:#f3e5f5
+    classDef classification fill:#00695C,color:#ffffff
+    classDef anomaly fill:#2E7D32,color:#ffffff
+    classDef signal fill:#EF6C00,color:#ffffff
+    classDef forecast fill:#6A1B9A,color:#ffffff
 
     class AI4I,PUMP,MULTI classification
     class NASA,XJTU,ISOLATION anomaly
@@ -435,10 +439,10 @@ The system implements comprehensive model drift detection and automated response
 ```mermaid
 graph TD
     subgraph "Drift Detection Pipeline"
-        MONITOR[Drift Monitoring Agent]
+        MONITOR[Drift Check Agent]
         DETECT[Statistical Drift Detection]
         ALERT[Alert Generation]
-        RETRAIN[Automated Retraining]
+        RETRAIN[Retrain Agent]
     end
 
     subgraph "Intelligent Model Selection"
@@ -455,25 +459,92 @@ graph TD
     SELECT --> MONITOR
 ```
 
+### 5.4. Event-Driven MLOps Automation
+
+Day 23 introduced a fully automated MLOps loop using the Redis event bus, Drift Check Agent, and Retrain Agent. This loop continuously monitors model performance, detects drift, retrains, and promotes models with minimal human intervention.
+
+```mermaid
+flowchart LR
+    subgraph "Monitoring"
+        DCA[Drift Check Agent]
+        METRICS[(Perf/Drift Metrics)]
+    end
+
+    subgraph "Control Plane"
+        EB[Redis Event Bus]
+        DLQ[Dead Letter Queue]
+    end
+
+    subgraph "Retraining"
+        RTR[Retrain Agent]
+        JOB[Training Job/Script]
+        MLR[MLflow Registry]
+    end
+
+    subgraph "Serving"
+        CACHE[(Model Cache)]
+        API[FastAPI Inference]
+    end
+
+    subgraph "Ops"
+        EMAIL[Email Notification Service]
+    end
+
+    DCA --> METRICS
+    DCA -->|DriftDetected| EB
+    EB --> RTR
+    RTR -->|start| JOB
+    JOB -->|log artifacts| MLR
+    JOB -->|RetrainCompleted/Failed| EB
+    EB --> EMAIL
+    MLR -->|promote| CACHE
+    CACHE --> API
+    EB --> DLQ
+
+    classDef mon fill:#00695C,color:#ffffff
+    classDef bus fill:#6A1B9A,color:#ffffff
+    classDef rt fill:#EF6C00,color:#ffffff
+    classDef serve fill:#2E7D32,color:#ffffff
+    classDef ops fill:#AD1457,color:#ffffff
+
+    class DCA,METRICS mon
+    class EB,DLQ bus
+    class RTR,JOB,MLR rt
+    class CACHE,API serve
+    class EMAIL ops
+```
+
+Operational notes:
+
+- Drift Check Agent publishes `DriftDetected` when thresholds are exceeded.
+- Retrain Agent executes training scripts, logs to MLflow, and emits `RetrainCompleted/Failed`.
+- Successful retrains are promoted and warmed into cache for seamless rollout.
+- Email Notification Service (`core/notifications/email_service.py`) dispatches drift and retrain alerts.
+
 **Key Features:**
+
 - **Real-time Performance Tracking:** Continuous monitoring of model accuracy and prediction quality
 - **Statistical Drift Detection:** Automated detection of data distribution changes
 - **Event-driven Retraining:** Automatic model updates triggered by drift alerts
 - **Model Performance Comparison:** Intelligent routing based on real-time performance metrics
 - **Notification System:** Integration with system event bus for drift alerts
 
+
 ---
+
 ## 6. Security and Operational Excellence
 
 ### 6.1. Security Implementation
 
 #### API Security
+
 - **Rate Limiting:** 10 requests/minute for compute-intensive ML endpoints
 - **Authentication:** API key validation with secure header handling
 - **DoS Protection:** Computational resource limiting for expensive operations
 - **Input Validation:** Comprehensive request validation and sanitization
 
 #### Infrastructure Security
+
 - **Container Isolation:** Docker-based service separation
 - **Dependency Scanning:** Snyk integration for vulnerability detection
 - **Security Auditing:** Comprehensive security audit checklist framework
@@ -482,29 +553,35 @@ graph TD
 ### 6.2. Monitoring and Observability
 
 #### Metrics Collection
+
 - **Prometheus Integration:** HTTP request metrics, latency distributions
 - **Health Endpoints:** `/health`, `/health/db`, `/metrics` endpoints
 - **Process Metrics:** Memory usage, file descriptors, CPU utilization
 - **Custom Metrics:** ML model load times, prediction latencies
 
 #### Logging Architecture
+
 - **Structured JSON Logging:** Centralized log aggregation
 - **Correlation IDs:** Request tracing across service boundaries
 - **Event Audit Trails:** Complete event processing history
 - **Error Tracking:** Comprehensive error logging with stack traces
 
+
 ---
+
 ## 7. Performance Benchmarks and Scaling
 
 ### 7.1. Current Performance Baseline
 
 #### Response Time Performance
+
 - **P50 Response Time:** 1ms (50th percentile)
 - **P95 Response Time:** 2ms (95th percentile)
 - **P99 Response Time:** 3ms (99th percentile)
 - **Maximum Response Time:** 124ms (well below 200ms SLO)
 
 #### Throughput Capabilities
+
 - **Peak Throughput:** 103.8 RPS sustained
 - **Average Throughput:** 88.83 RPS over 3-minute test
 - **Event Processing:** >100 events/second capability validated
@@ -513,12 +590,15 @@ graph TD
 ### 7.2. Scalability Analysis
 
 #### Horizontal Scaling Potential
+
 - **CPU Utilization:** Current 6% usage indicates 16x scaling potential
 - **Memory Efficiency:** <1GB total usage allows for significant scaling
 - **Database Performance:** TimescaleDB optimized for multi-tenant scaling
 - **Event Bus Capacity:** Custom implementation designed for high throughput
 
+
 ---
+
 ## 8. Data Flow and Integration
 
 ### 8.1. Data Pipeline Architecture
@@ -567,10 +647,10 @@ flowchart LR
     BUSINESS_RULES --> TIMESERIES
     BUSINESS_RULES --> CACHE
 
-    classDef sources fill:#e1f5fe
-    classDef ingestion fill:#e8f5e8
-    classDef processing fill:#fff3e0
-    classDef storage fill:#f3e5f5
+    classDef sources fill:#1565C0,color:#ffffff
+    classDef ingestion fill:#2E7D32,color:#ffffff
+    classDef processing fill:#EF6C00,color:#ffffff
+    classDef storage fill:#6A1B9A,color:#ffffff
 
     class SENSORS,BATCH,EXTERNAL sources
     class VALIDATE,ENRICH,CORRELATION ingestion
@@ -583,13 +663,16 @@ flowchart LR
 The system has been validated against diverse industrial datasets:
 
 #### Dataset Portfolio
+
 - **AI4I 2020 UCI Dataset:** Industrial machine failure classification
 - **NASA IMS Bearing Dataset:** Vibration signal anomaly detection
 - **XJTU-SY Bearing Dataset:** Advanced run-to-failure analysis
 - **MIMII Sound Dataset:** Audio-based anomaly detection
 - **Kaggle Pump Sensor Data:** Maintenance prediction classification
 
+
 ---
+
 ## 9. Getting Started
 
 ```bash
@@ -603,16 +686,19 @@ docker compose up -d --build
 ```
 
 Stop (preserve volumes):
+
 ```bash
 docker compose down
 ```
 
 Run migrations manually (intentional design – see Migration Strategy):
+
 ```bash
 docker compose exec api alembic upgrade heads
 ```
 
 ---
+
 ## 10. API Reference
 
 For detailed API documentation, please see the [API Reference](./api.md).
