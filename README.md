@@ -1,5 +1,7 @@
 # Smart Maintenance SaaS
 
+*[**English**](README.md) | [Português](README_PORTUGUES.md)*
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](.)
 [![Models](https://img.shields.io/badge/MLflow-15%2B%20Models-blue)](.)
