@@ -297,7 +297,7 @@ class ModelRetrainingAgent:
             success = email_service.send_retrain_success(
                 model_name=model_name,
                 new_version=new_version,
-                correlation_id=self.correlation_id,
+                correlation_id=correlation_id,
                 metrics=metrics
             )
             
