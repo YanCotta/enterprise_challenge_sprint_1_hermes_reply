@@ -424,46 +424,61 @@ async def trigger_drift_check(correlation_id: str, simulation_id: str):
     checking for drift after injecting synthetic drift data.
     """
     try:
-        # Use the internal API endpoint for drift check
-        drift_check_url = "http://api:8000/api/v1/ml/check_drift"
-        fallback_url = "http://localhost:8000/api/v1/ml/check_drift"
-        
+        # Prefer loopback first (same container), then service DNS
+        urls = [
+            "http://localhost:8000/api/v1/ml/check_drift",
+            "http://api:8000/api/v1/ml/check_drift",
+        ]
+
         headers = {
             "Content-Type": "application/json",
             "X-Request-ID": correlation_id,
             "X-Simulation-ID": simulation_id,
-            "X-API-KEY": os.getenv("API_KEY", "")
+            # Use canonical header casing; header names are case-insensitive, kept consistent here
+            "X-API-Key": os.getenv("API_KEY", ""),
         }
-        
-        # Check drift for the demo sensor
+
         payload = {
             "sensor_id": "demo-sensor-001",
             "window_minutes": 60,
             "p_value_threshold": 0.05,
-            "min_samples": 10
+            "min_samples": 10,
         }
-        
-        for url in [drift_check_url, fallback_url]:
-            try:
-                response = requests.post(
-                    url,
-                    json=payload,
-                    headers=headers,
-                    timeout=30
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    logger.info(f"🔍 Triggered drift check: drift_detected={result.get('drift_detected', False)} [simulation_id={simulation_id}]")
-                    break
-                else:
-                    logger.warning(f"⚠️  Drift check failed: HTTP {response.status_code}")
-                    
-            except requests.exceptions.ConnectionError:
-                if url == drift_check_url:
-                    continue  # Try fallback
-                else:
-                    raise
-                    
+
+        # Use non-blocking HTTP client within async context (aiohttp is already a dependency)
+        import aiohttp
+        from aiohttp import ClientError
+
+        timeout = aiohttp.ClientTimeout(total=15, connect=5, sock_read=10, sock_connect=5)
+        last_error: Exception | None = None
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            for url in urls:
+                try:
+                    async with session.post(url, json=payload, headers=headers) as resp:
+                        if resp.status == 200:
+                            try:
+                                result = await resp.json()
+                            except Exception:
+                                text = await resp.text()
+                                logger.warning(f"⚠️ Drift check at {url} returned non-JSON: {text[:200]}")
+                                result = {}
+                            logger.info(
+                                f"🔍 Triggered drift check at {url}: drift_detected={result.get('drift_detected', False)} "
+                                f"baseline_count={result.get('baseline_count')} recent_count={result.get('recent_count')} "
+                                f"[simulation_id={simulation_id}]"
+                            )
+                            break
+                        else:
+                            text = await resp.text()
+                            logger.warning(f"⚠️ Drift check at {url} failed: HTTP {resp.status} body={text[:200]}")
+                            last_error = Exception(f"HTTP {resp.status}")
+                except (ClientError, asyncio.TimeoutError) as e:
+                    logger.warning(f"⚠️ Could not reach {url}: {e}")
+                    last_error = e
+                    continue
+            else:
+                # Only runs if loop didn't break (all attempts failed)
+                raise last_error if last_error else Exception("Drift check attempts failed")
+
     except Exception as e:
         logger.error(f"❌ Failed to trigger drift check: {e} [simulation_id={simulation_id}]")
