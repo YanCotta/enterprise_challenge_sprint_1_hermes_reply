@@ -67,6 +67,7 @@ class DriftCheckAgent:
         self.api_base_url = os.getenv('API_BASE_URL', 'http://localhost:8000')
         self.redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
         self.slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+        self.api_key = os.getenv('API_KEY', '')
         
         # Drift detection configuration
         self.drift_threshold = float(os.getenv('DRIFT_THRESHOLD', '0.1'))
@@ -162,7 +163,8 @@ class DriftCheckAgent:
         
         headers = {
             'Content-Type': 'application/json',
-            'X-Request-ID': correlation_id
+            'X-Request-ID': correlation_id,
+            'X-API-Key': self.api_key,
         }
         
         try:
