@@ -231,10 +231,13 @@ services:
     environment:
       - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
       - REDIS_URL=redis://redis:6379/0
+      - API_BASE_URL=http://api:8000
       - PYTHONPATH=/app
       - DRIFT_CHECK_ENABLED=true
       - DRIFT_CHECK_SCHEDULE=0 */6 * * *  # Every 6 hours
       - DRIFT_THRESHOLD=0.05
+      - SENSORS_TO_MONITOR=demo-sensor-001
+      - RUN_STARTUP_CHECK=true
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
       - MLFLOW_TRACKING_URI=http://mlflow:5000
     env_file:
@@ -298,7 +301,7 @@ services:
       - ./logs:/app/logs
       - ./mlflow_data:/mlruns
       - .:/app  # Full access for make commands
-    command: ["python", "scripts/retrain_models_on_drift.py"]
+    command: ["/app/.venv/bin/python", "scripts/retrain_models_on_drift.py"]
     networks:
       - smart-maintenance-network
 
