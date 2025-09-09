@@ -11,7 +11,9 @@ Uma plataforma de Manutenção Industrial Preditiva e Prescritiva pronta para pr
 
 ---
 
+Demonstração resumida do estado do sistema: https://youtu.be/qZnY5U5Vp_s?si=xOOlv7TNTCUzpLxj
 
+---
 
 ## 📚 Índice da Documentação
 
