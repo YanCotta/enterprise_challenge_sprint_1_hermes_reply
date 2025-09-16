@@ -143,7 +143,7 @@ Exit criteria (Gate P3)
 
 - Public UI/API deployed; Golden Path completes over the internet.
 - JWT-protected endpoints functional; performance screenshot saved in repo.
-
+- Most gaps identified in the 5 system report markdowns that were generated at the start of the sprint are filled and have been dealt with.
 ---
 
 ### Phase 4 (Days 14–15): Delivery Package
