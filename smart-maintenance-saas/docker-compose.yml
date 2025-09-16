@@ -197,6 +197,12 @@ services:
     environment:
       - DOCKER_ENV=true
       - NOTEBOOK_FILE=02_anomaly_isolation_forest
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    env_file:
+      - .env
     user: "1000:1000"  # Match host user for consistent file ownership with API container
     volumes:
       - ./notebooks:/app/notebooks
