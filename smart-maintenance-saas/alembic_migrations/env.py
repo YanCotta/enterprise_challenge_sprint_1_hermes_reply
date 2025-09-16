@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import sys
 
@@ -12,6 +13,8 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
+
+logger = logging.getLogger(__name__)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -31,21 +34,25 @@ from core.database.orm_models import Base
 # Set the target metadata for autogenerate support
 target_metadata = Base.metadata
 
-# Get the database URL from your application settings
-# Always use PostgreSQL with asyncpg driver for all Alembic operations
-db_url_str = str(settings.database_url)  # Ensure string type
+# Load database URL from environment
+db_url = os.environ.get("DATABASE_URL")
 
-# Convert the URL to use asyncpg driver if it's not already configured
-if db_url_str.startswith("postgresql+psycopg2://"):
-    db_url = db_url_str.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
-elif db_url_str.startswith("postgresql://"):
-    db_url = db_url_str.replace("postgresql://", "postgresql+asyncpg://", 1)
-else:
-    db_url = db_url_str  # Assume it's already asyncpg or other
+# Fallback to local settings if not in production
+if not db_url and os.environ.get("ENV") != "production":
+    logger.warning("DATABASE_URL not set, falling back to local alembic.ini config.")
+    db_url = config.get_main_option("sqlalchemy.url")
+elif not db_url:
+    raise ValueError("DATABASE_URL environment variable not set for production-like environment.")
 
-# You can override the sqlalchemy.url from alembic.ini if needed,
-# or simply rely on this db_url. For simplicity, we'll use db_url directly.
-# config.set_main_option('sqlalchemy.url', db_url)
+# --- CRITICAL FIX FOR ASYNC DRIVER ---
+# Alembic is synchronous and doesn't understand the 'asyncpg' driver.
+# We must replace it with a standard 'postgresql' string for migrations.
+# The app (running uvicorn) will still use the original async URL from the .env.
+sync_db_url = db_url.replace("+asyncpg", "")
+# --- END CRITICAL FIX ---
+
+# Set the sqlalchemy.url for Alembic
+config.set_main_option("sqlalchemy.url", sync_db_url)
 
 
 def run_migrations_offline() -> None:
@@ -61,7 +68,7 @@ def run_migrations_offline() -> None:
 
     """
     context.configure(
-        url=db_url,  # Use the URL from settings
+        url=sync_db_url,  # Use the synchronous URL for offline migrations
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -83,27 +90,67 @@ def do_run_migrations(connection):
         context.run_migrations()
 
 
-async def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode using synchronous engine.
 
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
+    For cloud deployment, we use synchronous connections to avoid
+    async driver issues during migrations.
 
     """
-    # Create an async engine from the URL in settings
-    connectable = create_async_engine(
-        db_url,
-        poolclass=pool.NullPool,  # Recommended for Alembic async
-        future=True,  # Use SQLAlchemy 2.0 features
+    # Use synchronous engine for migrations
+    from sqlalchemy import create_engine
+    
+    connectable = create_engine(
+        sync_db_url,
+        poolclass=pool.NullPool,
     )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+    with connectable.connect() as connection:
+        do_run_migrations(connection)
 
-    await connectable.dispose()
+    connectable.dispose()
 
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    asyncio.run(run_migrations_online())
+    run_migrations_online()
+
+
+def do_run_migrations(connection):
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        # compare_type=True, # Uncomment if you want to compare types during autogenerate
+        # include_schemas=True, # If you have multiple schemas
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode using synchronous engine.
+
+    For cloud deployment, we use synchronous connections to avoid
+    async driver issues during migrations.
+
+    """
+    # Use synchronous engine for migrations
+    from sqlalchemy import create_engine
+    
+    connectable = create_engine(
+        sync_db_url,
+        poolclass=pool.NullPool,
+    )
+
+    with connectable.connect() as connection:
+        do_run_migrations(connection)
+
+    connectable.dispose()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

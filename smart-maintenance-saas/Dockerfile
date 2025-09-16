@@ -68,6 +68,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH="/app"
 
 # Install runtime dependencies only
+# Remove DNS fix that causes read-only filesystem issues in modern Docker
 RUN apt-get update && apt-get install -y \
     postgresql-client \
     curl \
