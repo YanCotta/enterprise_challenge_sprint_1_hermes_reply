@@ -107,7 +107,7 @@ Exit criteria (Gate P2)
 
 ---
 
-### Phase 3 (Days 9–13): Cloud Deploy of API/UI + Demo Polish
+### Phase 3 (Days 9–13): Cloud Deploy of API/UI + Demo Polish + System check
 
 Goal: a hosted, evaluator-friendly demo with pragmatic security and performance proof.
 
@@ -128,6 +128,9 @@ Goal: a hosted, evaluator-friendly demo with pragmatic security and performance 
 - Task 3.4: Performance proof
   - Run Locust against the public API URL and capture a screenshot ≥ 103 RPS.
   - Add image to `README.md` and link in the UI tab or docs.
+
+- Task 3.5 : System Check 
+  - Cross-Analyze the entire system's current state with the 5 markdown system check files that were created at the start of sprint 4. Check to see if anything is missing.
 
 Suggested commands
 
