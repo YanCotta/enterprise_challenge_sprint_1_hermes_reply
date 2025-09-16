@@ -8,5 +8,5 @@ RUN pip install --no-cache-dir mlflow "sqlalchemy<2.0" psycopg2-binary
 
 EXPOSE 5000
 
-# Backend store (SQLite) and artifact root volumes are mounted via docker-compose
-CMD ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000", "--backend-store-uri", "sqlite:////mlflow_db/mlflow.db", "--default-artifact-root", "/mlruns"]
+# Backend store and artifact root now use environment variables for cloud configuration
+CMD ["sh", "-c", "mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri ${MLFLOW_BACKEND_STORE_URI:-sqlite:////mlflow_db/mlflow.db} --default-artifact-root ${MLFLOW_ARTIFACT_ROOT:-/mlruns}"]
