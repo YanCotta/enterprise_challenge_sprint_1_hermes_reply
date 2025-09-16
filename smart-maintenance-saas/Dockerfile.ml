@@ -49,8 +49,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Set working directory
 WORKDIR /app
 
-# Install Jupyter-related packages
-RUN pip install --no-cache-dir ipykernel seaborn && \
+# Install Jupyter-related packages and AWS dependencies for MLflow
+RUN pip install --no-cache-dir ipykernel seaborn boto3 && \
     python -m ipykernel install --user --name=python3
 
 # Copy only application code (datasets are excluded by .dockerignore)
