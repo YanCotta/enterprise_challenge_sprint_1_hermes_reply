@@ -14,6 +14,7 @@ from pydantic import ValidationError
 
 from core.base_agent_abc import AgentCapability, BaseAgent
 from apps.ml.statistical_models import StatisticalAnomalyDetector
+from core.ml.model_loader import get_model_loader, load_model_for_sensor
 from core.events.event_bus import EventBus
 from core.events.event_models import AnomalyDetectedEvent, DataProcessedEvent
 from data.schemas import AnomalyAlert, SensorReading, AnomalyType # Added AnomalyType
@@ -40,7 +41,7 @@ class AnomalyDetectionAgent(BaseAgent):
 
     def __init__(self, agent_id: str, event_bus: EventBus, specific_settings: Optional[dict] = None):
         """
-        Initialize the AnomalyDetectionAgent.
+        Initialize the AnomalyDetectionAgent with serverless model loading.
         """
         if not agent_id or not agent_id.strip():
             # This is a programming error, ValueError is fine.
@@ -53,21 +54,36 @@ class AnomalyDetectionAgent(BaseAgent):
         self.logger = logging.getLogger(f"{__name__}.{self.agent_id}")
         settings = specific_settings or {}
         
-        # Attempt to initialize ML models and statistical detectors.
-        # This block includes error handling for model loading and configuration.
-        # If a critical model (e.g., IsolationForest) fails to initialize,
-        # it might raise an MLModelError. However, the agent is designed
-        # to potentially degrade gracefully if statistical models are still available (see process method).
+        # Initialize the serverless model loader
         try:
-            self.scaler = StandardScaler()
-            if_params = settings.get('isolation_forest_params', {})
-            default_if_params = {
-                'contamination': 'auto', 'random_state': 42, 'n_estimators': 100,
-                'max_samples': 'auto', 'max_features': 1.0
-            }
-            final_if_params = {**default_if_params, **if_params}
-            self.isolation_forest = IsolationForest(**final_if_params)
-            self.isolation_forest_fitted = False # Flag to indicate if the model has been fitted
+            # Get model loader configuration from settings
+            loader_config = settings.get('model_loader_config', {})
+            self.model_loader = get_model_loader(**loader_config)
+            self.use_serverless_models = settings.get('use_serverless_models', True)
+            
+            self.logger.info(f"Model loader initialized with serverless mode: {self.use_serverless_models}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize model loader: {e}")
+            raise ConfigurationError(f"Model loader initialization failed: {e}") from e
+        
+        # Fallback models for graceful degradation (only if serverless disabled)
+        try:
+            if not self.use_serverless_models:
+                self.scaler = StandardScaler()
+                if_params = settings.get('isolation_forest_params', {})
+                default_if_params = {
+                    'contamination': 'auto', 'random_state': 42, 'n_estimators': 100,
+                    'max_samples': 'auto', 'max_features': 1.0
+                }
+                final_if_params = {**default_if_params, **if_params}
+                self.isolation_forest = IsolationForest(**final_if_params)
+                self.isolation_forest_fitted = False # Flag to indicate if the model has been fitted
+            else:
+                # Serverless mode - no local models needed
+                self.scaler = None
+                self.isolation_forest = None
+                self.isolation_forest_fitted = False
             
             # Initialize statistical detector, which can also be a fallback
             stat_config = settings.get('statistical_detector_config', {})
@@ -100,7 +116,7 @@ class AnomalyDetectionAgent(BaseAgent):
         self._validate_historical_data() # Can raise ConfigurationError
         
         self.logger.info(
-            f"AnomalyDetectionAgent initialized with ID: {self.agent_id}",
+            f"AnomalyDetectionAgent initialized with ID: {self.agent_id}, serverless: {self.use_serverless_models}",
             extra={"correlation_id": "N/A"} # Correlation ID not available at init
         )
 
@@ -313,8 +329,177 @@ class AnomalyDetectionAgent(BaseAgent):
         return True
 
     async def _process_ml_models(self, features: np.ndarray, reading: SensorReading, correlation_id: Optional[str] = None) -> Tuple[int, float]:
-        """Process ML models. Raise MLModelError on failure."""
+        """
+        Process ML models using serverless model loading or fallback models.
+        
+        This method now supports two modes:
+        1. Serverless mode: Dynamically loads pre-trained models from MLflow/S3
+        2. Fallback mode: Uses local IsolationForest for graceful degradation
+        
+        Raise MLModelError on failure.
+        """
+        if self.use_serverless_models:
+            return await self._process_serverless_ml_models(features, reading, correlation_id)
+        else:
+            return await self._process_fallback_ml_models(features, reading, correlation_id)
+    
+    async def _process_serverless_ml_models(self, features: np.ndarray, reading: SensorReading, correlation_id: Optional[str] = None) -> Tuple[int, float]:
+        """
+        Process ML models using serverless model loading from MLflow/S3.
+        
+        Args:
+            features: Extracted features from sensor reading
+            reading: Original sensor reading
+            correlation_id: Correlation ID for logging
+            
+        Returns:
+            Tuple of (prediction, score) where prediction: -1=anomaly, 1=normal
+            
+        Raises:
+            MLModelError: If model loading or prediction fails
+        """
         try:
+            # Load the best model for this sensor type
+            self.logger.info(
+                f"Loading serverless model for sensor {reading.sensor_id} (type: {getattr(reading, 'sensor_type', 'unknown')})",
+                extra={"correlation_id": correlation_id}
+            )
+            
+            model, preprocessor = await self.model_loader.load_model_for_sensor(reading)
+            
+            # Prepare features for prediction
+            processed_features = features
+            if preprocessor is not None:
+                try:
+                    # Apply preprocessing if available
+                    processed_features = preprocessor.transform(features.reshape(1, -1))
+                    self.logger.debug(
+                        f"Applied preprocessing for {reading.sensor_id}: {features.shape} -> {processed_features.shape}",
+                        extra={"correlation_id": correlation_id}
+                    )
+                except Exception as e:
+                    self.logger.warning(
+                        f"Preprocessing failed for {reading.sensor_id}, using raw features: {e}",
+                        extra={"correlation_id": correlation_id}
+                    )
+                    processed_features = features.reshape(1, -1)
+            else:
+                processed_features = features.reshape(1, -1)
+            
+            # Make prediction using the loaded model
+            try:
+                # Try different prediction methods based on model type
+                prediction_result = await self._predict_with_model(model, processed_features, reading, correlation_id)
+                prediction, score = prediction_result
+                
+                self.logger.info(
+                    f"Serverless ML prediction for {reading.sensor_id}: pred={prediction}, score={score:.4f}",
+                    extra={"correlation_id": correlation_id}
+                )
+                
+                return int(prediction), float(score)
+                
+            except Exception as e:
+                raise MLModelError(
+                    f"Prediction failed for {reading.sensor_id} using serverless model: {str(e)}",
+                    original_exception=e
+                ) from e
+                
+        except MLModelError:
+            raise  # Re-raise MLModelError as-is
+        except Exception as e:
+            self.logger.error(
+                f"Serverless ML processing failed for {reading.sensor_id}: {e}",
+                exc_info=True,
+                extra={"correlation_id": correlation_id}
+            )
+            raise MLModelError(
+                f"Serverless ML processing failed for {reading.sensor_id}: {str(e)}",
+                original_exception=e
+            ) from e
+    
+    async def _predict_with_model(self, model: Any, features: np.ndarray, reading: SensorReading, correlation_id: Optional[str] = None) -> Tuple[int, float]:
+        """
+        Make prediction with a loaded model, handling different model types and interfaces.
+        
+        Args:
+            model: Loaded MLflow model
+            features: Processed features for prediction
+            reading: Original sensor reading
+            correlation_id: Correlation ID for logging
+            
+        Returns:
+            Tuple of (prediction, score) where prediction: -1=anomaly, 1=normal
+        """
+        try:
+            # Check if model has predict method (most common)
+            if hasattr(model, 'predict'):
+                prediction = model.predict(features)[0]
+                
+                # Try to get anomaly score if available
+                score = 0.0
+                if hasattr(model, 'decision_function'):
+                    score = model.decision_function(features)[0]
+                elif hasattr(model, 'score_samples'):
+                    score = model.score_samples(features)[0]
+                elif hasattr(model, 'predict_proba'):
+                    # For classification models, use probability as score
+                    proba = model.predict_proba(features)[0]
+                    if len(proba) == 2:  # Binary classification
+                        score = proba[1] - proba[0]  # Difference between anomaly and normal
+                    else:
+                        score = max(proba) - 0.5  # Confidence relative to 50%
+                
+                self.logger.debug(
+                    f"Model prediction for {reading.sensor_id}: raw_pred={prediction}, score={score}",
+                    extra={"correlation_id": correlation_id}
+                )
+                
+                # Normalize prediction to standard format (-1=anomaly, 1=normal)
+                if isinstance(prediction, (int, float)):
+                    # For IsolationForest-style outputs (-1, 1)
+                    normalized_prediction = -1 if prediction < 0 else 1
+                elif isinstance(prediction, bool):
+                    # For boolean outputs
+                    normalized_prediction = -1 if prediction else 1
+                elif isinstance(prediction, str):
+                    # For string outputs
+                    normalized_prediction = -1 if prediction.lower() in ['anomaly', 'abnormal', 'true', '1'] else 1
+                else:
+                    # Default fallback
+                    normalized_prediction = 1
+                
+                return normalized_prediction, score
+                
+            # Fallback for MLflow pyfunc models
+            elif hasattr(model, '_model_impl'):
+                # Try to access the underlying model
+                underlying_model = model._model_impl
+                if hasattr(underlying_model, 'predict'):
+                    return await self._predict_with_model(underlying_model, features, reading, correlation_id)
+            
+            # If no suitable prediction method found
+            raise MLModelError(f"Model does not have a suitable prediction method")
+            
+        except Exception as e:
+            self.logger.error(
+                f"Prediction error for {reading.sensor_id}: {e}",
+                exc_info=True,
+                extra={"correlation_id": correlation_id}
+            )
+            raise MLModelError(f"Model prediction failed: {str(e)}", original_exception=e) from e
+    
+    async def _process_fallback_ml_models(self, features: np.ndarray, reading: SensorReading, correlation_id: Optional[str] = None) -> Tuple[int, float]:
+        """
+        Process ML models using the original local IsolationForest approach.
+        This is the fallback method when serverless models are disabled or unavailable.
+        
+        Raise MLModelError on failure.
+        """
+        try:
+            if not self.isolation_forest or not self.scaler:
+                raise MLModelError("Fallback models not properly initialized")
+                
             scaled_features = self.scaler.fit_transform(features) # fit_transform might be an issue if only predicting one sample
             if not self.isolation_forest_fitted:
                 self.logger.info(
@@ -327,18 +512,18 @@ class AnomalyDetectionAgent(BaseAgent):
             if_prediction = self.isolation_forest.predict(scaled_features)[0]
             if_score = self.isolation_forest.decision_function(scaled_features)[0]
             self.logger.info(
-                f"Isolation Forest for {reading.sensor_id}: pred={if_prediction}, score={if_score:.4f}",
+                f"Fallback Isolation Forest for {reading.sensor_id}: pred={if_prediction}, score={if_score:.4f}",
                 extra={"correlation_id": correlation_id}
             )
             return int(if_prediction), float(if_score)
         except Exception as e:
             self.logger.error(
-                f"ML model processing failed for {reading.sensor_id}: {e}",
+                f"Fallback ML model processing failed for {reading.sensor_id}: {e}",
                 exc_info=True,
                 extra={"correlation_id": correlation_id}
             )
             raise MLModelError(
-                message=f"Isolation Forest prediction failed for {reading.sensor_id}: {str(e)}",
+                message=f"Fallback Isolation Forest prediction failed for {reading.sensor_id}: {str(e)}",
                 original_exception=e
             ) from e
 
@@ -597,3 +782,46 @@ class AnomalyDetectionAgent(BaseAgent):
             extra={"correlation_id": correlation_id}
         )
         return is_anomaly, final_confidence_score, final_anomaly_description
+
+    async def get_model_stats(self) -> Dict[str, Any]:
+        """
+        Get model loading and usage statistics.
+        
+        Returns:
+            Dictionary containing model loader statistics and agent metrics
+        """
+        stats = {
+            'agent_id': self.agent_id,
+            'serverless_mode': self.use_serverless_models,
+            'fallback_fitted': getattr(self, 'isolation_forest_fitted', False)
+        }
+        
+        if self.use_serverless_models and self.model_loader:
+            loader_stats = self.model_loader.get_stats()
+            stats.update({
+                'model_loader': loader_stats,
+                'cache_efficiency': f"{loader_stats.get('cache_hit_rate', 0):.1f}%"
+            })
+        
+        return stats
+    
+    async def clear_model_cache(self) -> None:
+        """Clear the model cache to force reloading of models."""
+        if self.use_serverless_models and self.model_loader:
+            self.model_loader.clear_cache()
+            self.logger.info("Model cache cleared")
+    
+    async def list_available_models(self, sensor_type: Optional[str] = None) -> List[str]:
+        """
+        List available models for the given sensor type.
+        
+        Args:
+            sensor_type: Optional sensor type filter
+            
+        Returns:
+            List of available model names
+        """
+        if self.use_serverless_models and self.model_loader:
+            return await self.model_loader.list_available_models(sensor_type)
+        else:
+            return ['isolation_forest_fallback']
