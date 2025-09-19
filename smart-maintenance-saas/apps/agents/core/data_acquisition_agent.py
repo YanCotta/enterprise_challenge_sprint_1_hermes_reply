@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import math
 import traceback
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -76,22 +77,48 @@ class DataAcquisitionAgent(BaseAgent):
         
         # Core components
         self.logger = logger if logger else logging.getLogger(f"{__name__}.{self.agent_id}")
-        settings = specific_settings or {}
+        
+        # Create proper settings object for test compatibility
+        from types import SimpleNamespace
+        settings_dict = specific_settings or {}
+        
+        # Enhanced configuration
+        self.batch_processing_enabled = settings_dict.get('batch_processing_enabled', False)
+        self.batch_size = settings_dict.get('batch_size', 10)
+        self.batch_timeout_seconds = settings_dict.get('batch_timeout_seconds', 5.0)
+        self.quality_threshold = settings_dict.get('quality_threshold', 0.7)
+        
+        # Create settings object with attributes\n        self.settings = SimpleNamespace(\n            batch_size=self.batch_size,\n            quality_threshold=self.quality_threshold,\n            batch_processing_enabled=self.batch_processing_enabled,\n            batch_timeout_seconds=self.batch_timeout_seconds\n        )\n        \n        # Add any additional settings from settings_dict that aren't already set\n        for key, value in settings_dict.items():\n            if not hasattr(self.settings, key):\n                setattr(self.settings, key, value)
         
         # Initialize validator and enricher with fallbacks
         self.validator = validator or self._create_default_validator()
         self.enricher = enricher or self._create_default_enricher()
+        self.rate_limit_per_second = settings_dict.get('rate_limit_per_second', 100)
+        self.enable_sensor_profiling = settings_dict.get('enable_sensor_profiling', True)
+        self.enable_circuit_breaker = settings_dict.get('enable_circuit_breaker', True)
         
-        # Enhanced configuration
-        self.batch_processing_enabled = settings.get('batch_processing_enabled', False)
-        self.batch_size = settings.get('batch_size', 10)
-        self.batch_timeout_seconds = settings.get('batch_timeout_seconds', 5.0)
-        self.quality_threshold = settings.get('quality_threshold', 0.7)
-        self.rate_limit_per_second = settings.get('rate_limit_per_second', 100)
-        self.enable_sensor_profiling = settings.get('enable_sensor_profiling', True)
-        self.enable_circuit_breaker = settings.get('enable_circuit_breaker', True)
+        # Enhanced metrics structure
+        from dataclasses import dataclass, field
         
-        # Performance tracking
+        @dataclass
+        class DataAcquisitionMetrics:
+            total_readings: int = 0
+            readings_processed: int = 0  # Renamed for test compatibility
+            processed_readings: int = 0  # Legacy alias
+            failed_readings: int = 0
+            validation_failures: int = 0
+            enrichment_failures: int = 0
+            quality_failures: int = 0
+            batch_processed: int = 0
+            batch_operations: int = 0  # Added for test compatibility
+            avg_processing_time: float = 0.0
+            sensor_count: int = 0
+            circuit_breaker_trips: int = 0
+            rate_limited_events: int = 0
+            
+        self.metrics = DataAcquisitionMetrics()
+        
+        # Performance tracking (legacy compatibility)
         self.performance_metrics = {
             'events_processed': 0,
             'events_failed': 0,
@@ -113,8 +140,8 @@ class DataAcquisitionAgent(BaseAgent):
         
         # Circuit breaker
         self.circuit_breaker_failures = 0
-        self.circuit_breaker_threshold = settings.get('circuit_breaker_threshold', 10)
-        self.circuit_breaker_timeout = settings.get('circuit_breaker_timeout_seconds', 60)
+        self.circuit_breaker_threshold = self.settings.get('circuit_breaker_threshold', 10)
+        self.circuit_breaker_timeout = self.settings.get('circuit_breaker_timeout_seconds', 60)
         self.circuit_breaker_last_failure = None
         self.circuit_breaker_open = False
         
@@ -291,8 +318,13 @@ class DataAcquisitionAgent(BaseAgent):
         
         # Update metrics
         processing_time = (datetime.utcnow() - start_time).total_seconds()
+        
+        # Update legacy performance_metrics
         self.performance_metrics['batch_processed'] += 1
         self.performance_metrics['processing_time_total'] += processing_time
+        
+        # Update new metrics structure
+        self.metrics.batch_processed += 1
         
         self.logger.info(
             f"Completed batch processing of {len(events)} events in {processing_time:.3f}s"
@@ -627,11 +659,22 @@ class DataAcquisitionAgent(BaseAgent):
     def _update_success_metrics(self, start_time: datetime) -> None:
         """Update performance metrics for successful processing."""
         processing_time = (datetime.utcnow() - start_time).total_seconds()
+        
+        # Update legacy performance_metrics
         self.performance_metrics['events_processed'] += 1
         self.performance_metrics['processing_time_total'] += processing_time
+        
+        # Update new metrics structure
+        self.metrics.processed_readings += 1
+        self.metrics.total_readings += 1
+        if self.metrics.avg_processing_time == 0:
+            self.metrics.avg_processing_time = processing_time
+        else:
+            self.metrics.avg_processing_time = (self.metrics.avg_processing_time + processing_time) / 2
 
     def _update_failure_metrics(self, failure_type: str) -> None:
         """Update performance metrics for failed processing."""
+        # Update legacy performance_metrics
         self.performance_metrics['events_failed'] += 1
         if failure_type == 'validation':
             self.performance_metrics['validation_failures'] += 1
@@ -639,6 +682,16 @@ class DataAcquisitionAgent(BaseAgent):
             self.performance_metrics['enrichment_failures'] += 1
         elif failure_type == 'quality':
             self.performance_metrics['quality_failures'] += 1
+            
+        # Update new metrics structure
+        self.metrics.total_readings += 1
+        self.metrics.failed_readings += 1
+        if failure_type == 'validation':
+            self.metrics.validation_failures += 1
+        elif failure_type == 'enrichment':
+            self.metrics.enrichment_failures += 1
+        elif failure_type == 'quality':
+            self.metrics.quality_failures += 1
 
     async def get_performance_metrics(self) -> Dict[str, Any]:
         """Get current performance metrics."""
@@ -697,6 +750,30 @@ class DataAcquisitionAgent(BaseAgent):
             'last_reset_time': datetime.utcnow()
         }
         self.logger.info("Performance metrics reset")
+
+    def _validate_sensor_reading(self, reading: SensorReading) -> bool:
+        """
+        Validate sensor reading for basic constraints.
+        
+        Args:
+            reading: The sensor reading to validate
+            
+        Returns:
+            bool: True if valid, raises exception if invalid
+            
+        Raises:
+            DataValidationException: If reading is invalid
+        """
+        if not reading.sensor_id or not reading.sensor_id.strip():
+            raise DataValidationException("Sensor reading has empty sensor_id")
+        
+        if not isinstance(reading.value, (int, float)) or not math.isfinite(reading.value):
+            raise DataValidationException(f"Sensor value '{reading.value}' is not a finite number for sensor {reading.sensor_id}")
+            
+        if reading.quality is not None and (reading.quality < 0 or reading.quality > 1):
+            raise DataValidationException(f"Sensor quality '{reading.quality}' must be between 0 and 1 for sensor {reading.sensor_id}")
+            
+        return True
 
     async def example_usage(self):
         """Example usage patterns for the enhanced agent."""
