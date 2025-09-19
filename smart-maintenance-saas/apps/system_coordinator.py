@@ -10,18 +10,18 @@ from core.events.event_bus import EventBus
 # Base Agent (though not directly instantiated, good for context if needed)
 from core.base_agent_abc import BaseAgent
 
-# Agent Imports
+# Enhanced Golden Path Agent Imports
 from apps.agents.core.data_acquisition_agent import DataAcquisitionAgent
-import os
 from apps.agents.core.anomaly_detection_agent import AnomalyDetectionAgent
 from apps.agents.core.validation_agent import ValidationAgent
-# from apps.agents.core.prediction_agent import PredictionAgent # Path was decision/prediction_agent.py
+from apps.agents.core.notification_agent import EnhancedNotificationAgent
+import os
+
+# Additional Decision Layer Agents
 from apps.agents.decision.prediction_agent import PredictionAgent
 from apps.agents.core.orchestrator_agent import OrchestratorAgent
 from apps.agents.decision.scheduling_agent import SchedulingAgent
 from apps.agents.interface.human_interface_agent import HumanInterfaceAgent
-# from apps.agents.interface.notification_agent import NotificationAgent # Path was decision/notification_agent.py
-from apps.agents.decision.notification_agent import NotificationAgent
 from apps.agents.decision.reporting_agent import ReportingAgent
 
 # Conditionally import LearningAgent only if ChromaDB is not disabled
@@ -85,25 +85,71 @@ class SystemCoordinator:
         data_enricher = DataEnricher()
         rule_engine = RuleEngine()
 
-        self.agents: List[BaseAgent] = [
+        # Enhanced Golden Path agent configurations
+        data_acquisition_settings = {
+            'batch_processing_enabled': True,
+            'batch_size': 10,
+            'batch_timeout_seconds': 5.0,
+            'quality_threshold': 0.8,
+            'enable_circuit_breaker': True,
+            'circuit_breaker_threshold': 5,
+            'rate_limit_per_second': 100,
+            'enable_sensor_profiling': True
+        }
+        
+        anomaly_detection_settings = {
+            'serverless_mode_enabled': True,
+            'model_cache_ttl_minutes': 60,
+            'max_concurrent_model_loads': 3,
+            'enable_fallback_models': True,
+            'performance_monitoring': True
+        }
+        
+        validation_settings = {
+            'credible_threshold': 0.7,
+            'false_positive_threshold': 0.4,
+            'recent_stability_window': 5,
+            'recent_stability_factor': 0.1,
+            'recurring_anomaly_threshold_pct': 0.25,
+            'historical_check_limit': 20
+        }
+        
+        notification_settings = {
+            'deduplication_window_minutes': 5,
+            'rate_limit_per_user_per_hour': 20,
+            'batch_size': 10,
+            'batch_timeout_seconds': 30,
+            'circuit_breaker_threshold': 5,
+            'circuit_breaker_timeout_minutes': 10,
+            'enable_batch_processing': True
+        }
+
+        self._agents_list: List[BaseAgent] = [
+            # Enhanced Golden Path Agents
             DataAcquisitionAgent(
-                agent_id="data_acquisition_agent_01",
+                agent_id="enhanced_data_acquisition_agent",
                 event_bus=self.event_bus,
                 validator=data_validator,
-                enricher=data_enricher
+                enricher=data_enricher,
+                specific_settings=data_acquisition_settings
             ),
             AnomalyDetectionAgent(
-                agent_id="anomaly_detection_agent_01",
+                agent_id="enhanced_anomaly_detection_agent",
                 event_bus=self.event_bus,
-                specific_settings={}
+                specific_settings=anomaly_detection_settings
             ),
             ValidationAgent(
-                agent_id="validation_agent_01",
+                agent_id="enhanced_validation_agent",
                 event_bus=self.event_bus,
                 crud_sensor_reading=CRUDSensorReading,
                 rule_engine=rule_engine,
                 db_session_factory=self.db_session_factory,
-                specific_settings={}
+                specific_settings=validation_settings
+            ),
+            EnhancedNotificationAgent(
+                agent_id="enhanced_notification_agent",
+                event_bus=self.event_bus,
+                specific_settings=notification_settings
             ),
             PredictionAgent(
                 agent_id="prediction_agent_01",
@@ -124,10 +170,7 @@ class SystemCoordinator:
                 agent_id="human_interface_agent_01",
                 event_bus=self.event_bus
             ),
-            NotificationAgent(
-                agent_id="notification_agent_01",
-                event_bus=self.event_bus
-            ),
+            # Additional specialized agents continue to use existing implementations
             ReportingAgent(
                 agent_id="reporting_agent_01",
                 event_bus=self.event_bus
@@ -142,7 +185,7 @@ class SystemCoordinator:
         
         # Conditionally add LearningAgent if ChromaDB is available
         if LEARNING_AGENT_AVAILABLE and LearningAgent is not None:
-            self.agents.append(
+            self._agents_list.append(
                 LearningAgent(
                     agent_id="learning_agent_01",
                     event_bus=self.event_bus
@@ -151,15 +194,46 @@ class SystemCoordinator:
         else:
             logger.warning("LearningAgent is disabled due to ChromaDB being unavailable or disabled")
             
-        logger.info(f"SystemCoordinator initialized with {len(self.agents)} agents and event bus.")
+        logger.info(f"SystemCoordinator initialized with {len(self._agents_list)} agents and event bus.")
 
     @property
     def reporting_agent(self) -> Optional[ReportingAgent]:
         """Get the ReportingAgent instance from the agents list."""
-        for agent in self.agents:
+        for agent in self._agents_list:
             if isinstance(agent, ReportingAgent):
                 return agent
         return None
+
+    @property
+    def agents(self) -> Dict[str, BaseAgent]:
+        """
+        Get agents as a dictionary mapping logical names to agent instances.
+        This property creates a mapping for easy access by test and integration code.
+        """
+        if not hasattr(self, '_agents_dict'):
+            self._agents_dict = {}
+            for agent in self._agents_list:
+                # Map agents by their logical names for test compatibility
+                if isinstance(agent, DataAcquisitionAgent):
+                    self._agents_dict['data_acquisition_agent'] = agent
+                elif isinstance(agent, AnomalyDetectionAgent):
+                    self._agents_dict['anomaly_detection_agent'] = agent
+                elif isinstance(agent, ValidationAgent):
+                    self._agents_dict['validation_agent'] = agent
+                elif isinstance(agent, EnhancedNotificationAgent):
+                    self._agents_dict['notification_agent'] = agent
+                # Add other agents by their instance type or agent_id
+                else:
+                    # Use agent_id for other agents
+                    self._agents_dict[agent.agent_id] = agent
+        return self._agents_dict
+
+    @agents.setter
+    def agents(self, value: List[BaseAgent]):
+        """Set the agents list and reset the dictionary cache."""
+        self._agents_list = value
+        if hasattr(self, '_agents_dict'):
+            delattr(self, '_agents_dict')
 
     async def startup_system(self):
         """
@@ -175,12 +249,12 @@ class SystemCoordinator:
         """
         logger.info("SystemCoordinator starting up all agents...")
         startup_tasks = []
-        for agent in self.agents:
+        for agent in self._agents_list:
             startup_tasks.append(agent.start())
 
         results = await asyncio.gather(*startup_tasks, return_exceptions=True)
 
-        for agent, result in zip(self.agents, results):
+        for agent, result in zip(self._agents_list, results):
             if isinstance(result, Exception):
                 logger.error(f"Error starting agent {agent.agent_id}: {result}", exc_info=result)
             else:
@@ -201,7 +275,7 @@ class SystemCoordinator:
         their shutdown process. Also handles the shutdown of the event bus itself.
         """
         logger.info("SystemCoordinator shutting down all agents...")
-        for agent in reversed(self.agents): # Stop in reverse order of start
+        for agent in reversed(self._agents_list): # Stop in reverse order of start
             try:
                 await agent.stop()
                 logger.info(f"Agent {agent.agent_id} stopped successfully.")
