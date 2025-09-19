@@ -52,14 +52,28 @@ class AnomalyDetectionAgent(BaseAgent):
         super().__init__(agent_id, event_bus)
         
         self.logger = logging.getLogger(f"{__name__}.{self.agent_id}")
-        settings = specific_settings or {}
+        
+        # Create proper settings object for test compatibility
+        from types import SimpleNamespace
+        settings_dict = specific_settings or {}
         
         # Initialize the serverless model loader
         try:
             # Get model loader configuration from settings
-            loader_config = settings.get('model_loader_config', {})
+            loader_config = settings_dict.get('model_loader_config', {})
             self.model_loader = get_model_loader(**loader_config)
-            self.use_serverless_models = settings.get('use_serverless_models', True)
+            self.use_serverless_models = settings_dict.get('use_serverless_models', True)
+            
+            # Create settings object with attributes for test compatibility
+            self.settings = SimpleNamespace(
+                use_serverless_models=self.use_serverless_models,
+                serverless_mode_enabled=settings_dict.get('serverless_mode_enabled', True)
+            )
+            
+            # Add any additional settings from settings_dict that aren't already set
+            for key, value in settings_dict.items():
+                if not hasattr(self.settings, key):
+                    setattr(self.settings, key, value)
             
             self.logger.info(f"Model loader initialized with serverless mode: {self.use_serverless_models}")
             
@@ -71,7 +85,7 @@ class AnomalyDetectionAgent(BaseAgent):
         try:
             if not self.use_serverless_models:
                 self.scaler = StandardScaler()
-                if_params = settings.get('isolation_forest_params', {})
+                if_params = self.settings.get('isolation_forest_params', {})
                 default_if_params = {
                     'contamination': 'auto', 'random_state': 42, 'n_estimators': 100,
                     'max_samples': 'auto', 'max_features': 1.0
@@ -86,11 +100,11 @@ class AnomalyDetectionAgent(BaseAgent):
                 self.isolation_forest_fitted = False
             
             # Initialize statistical detector, which can also be a fallback
-            stat_config = settings.get('statistical_detector_config', {})
+            stat_config = self.settings.get('statistical_detector_config', {})
             self.statistical_detector = StatisticalAnomalyDetector(config=stat_config)
             
             # Configuration for default standard deviation for unknown sensors
-            self.default_historical_std = settings.get('default_historical_std', 0.1)
+            self.default_historical_std = self.settings.get('default_historical_std', 0.1)
             if self.default_historical_std <= 0:
                 # This is a configuration error that prevents proper fallback for new sensors.
                 raise ConfigurationError("default_historical_std must be positive")
@@ -825,3 +839,73 @@ class AnomalyDetectionAgent(BaseAgent):
             return await self.model_loader.list_available_models(sensor_type)
         else:
             return ['isolation_forest_fallback']
+
+    async def detect_anomaly(self, sensor_reading: SensorReading) -> Optional[AnomalyAlert]:
+        """
+        Public method to detect anomalies in a sensor reading.
+        
+        This method provides a direct interface for anomaly detection testing
+        and can be used independently of the event-driven workflow.
+        
+        Args:
+            sensor_reading: The sensor reading to analyze
+            
+        Returns:
+            AnomalyAlert if an anomaly is detected, None otherwise
+        """
+        try:
+            correlation_id = f"direct_detection_{sensor_reading.sensor_id}_{int(datetime.utcnow().timestamp())}"
+            
+            # Create features for ML models 
+            features = np.array([[
+                sensor_reading.value,
+                sensor_reading.quality,
+                hash(sensor_reading.sensor_id) % 1000,  # Sensor hash feature
+                1.0 if sensor_reading.unit else 0.0,    # Has unit feature
+            ]])
+            
+            # Process with ML models to get anomaly prediction
+            is_anomaly, confidence = await self._process_ml_models(features, sensor_reading, correlation_id)
+            
+            if is_anomaly:
+                # Create anomaly alert
+                anomaly_alert = AnomalyAlert(
+                    sensor_id=sensor_reading.sensor_id,
+                    anomaly_type="isolation_forest_anomaly",  # Valid enum value
+                    severity=min(5, max(1, int(confidence * 5) + 1)),  # Convert confidence to severity 1-5
+                    confidence=confidence,
+                    description=f"Anomaly detected in {sensor_reading.sensor_type} sensor with confidence {confidence:.2f}",
+                    evidence={
+                        "sensor_value": sensor_reading.value,
+                        "sensor_unit": sensor_reading.unit,
+                        "quality_score": sensor_reading.quality,
+                        "detection_method": "serverless_ml" if self.use_serverless_models else "fallback_ml"
+                    },
+                    recommended_actions=[
+                        "Investigate sensor reading",
+                        "Check equipment status",
+                        "Verify sensor calibration"
+                    ]
+                )
+                
+                self.logger.info(
+                    f"Anomaly detected via direct detection: {sensor_reading.sensor_id} "
+                    f"confidence={confidence:.2f}",
+                    extra={"correlation_id": correlation_id}
+                )
+                
+                return anomaly_alert
+            else:
+                self.logger.debug(
+                    f"No anomaly detected via direct detection: {sensor_reading.sensor_id} "
+                    f"confidence={confidence:.2f}",
+                    extra={"correlation_id": correlation_id}
+                )
+                return None
+                
+        except Exception as e:
+            self.logger.error(
+                f"Error in direct anomaly detection for {sensor_reading.sensor_id}: {e}",
+                exc_info=True
+            )
+            return None
