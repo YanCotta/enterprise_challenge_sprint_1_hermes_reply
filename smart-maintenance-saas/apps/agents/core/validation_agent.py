@@ -115,16 +115,19 @@ class ValidationAgent(BaseAgent):
         self.crud_sensor_reading = crud_sensor_reading or self._create_fallback_crud()
         self.rule_engine = rule_engine or self._create_fallback_rule_engine()
         self.db_session_factory = db_session_factory
-        self.settings = specific_settings or {}
+        
+        # Create proper settings object for test compatibility
+        from types import SimpleNamespace
+        settings_dict = specific_settings or {}
 
         # Enhanced configuration
-        self.batch_processing_enabled = self.settings.get('batch_processing_enabled', False)
-        self.batch_size = self.settings.get('batch_size', 5)
-        self.batch_timeout_seconds = self.settings.get('batch_timeout_seconds', 3.0)
-        self.enable_caching = self.settings.get('enable_caching', True)
-        self.cache_ttl_seconds = self.settings.get('cache_ttl_seconds', 300)  # 5 minutes
-        self.enable_learning = self.settings.get('enable_learning', True)
-        self.enable_circuit_breaker = self.settings.get('enable_circuit_breaker', True)
+        self.batch_processing_enabled = settings_dict.get('batch_processing_enabled', False)
+        self.batch_size = settings_dict.get('batch_size', 5)
+        self.batch_timeout_seconds = settings_dict.get('batch_timeout_seconds', 3.0)
+        self.enable_caching = settings_dict.get('enable_caching', True)
+        self.cache_ttl_seconds = settings_dict.get('cache_ttl_seconds', 300)  # 5 minutes
+        self.enable_learning = settings_dict.get('enable_learning', True)
+        self.enable_circuit_breaker = settings_dict.get('enable_circuit_breaker', True)
         
         # Performance monitoring
         self.metrics = ValidationMetrics()
@@ -137,8 +140,8 @@ class ValidationAgent(BaseAgent):
         
         # Circuit breaker for database operations
         self.db_circuit_breaker_failures = 0
-        self.db_circuit_breaker_threshold = self.settings.get('db_circuit_breaker_threshold', 5)
-        self.db_circuit_breaker_timeout = self.settings.get('db_circuit_breaker_timeout_seconds', 60)
+        self.db_circuit_breaker_threshold = settings_dict.get('db_circuit_breaker_threshold', 5)
+        self.db_circuit_breaker_timeout = settings_dict.get('db_circuit_breaker_timeout_seconds', 60)
         self.db_circuit_breaker_last_failure = None
         self.db_circuit_breaker_open = False
         
@@ -147,8 +150,20 @@ class ValidationAgent(BaseAgent):
         self.batch_timer_task: Optional[asyncio.Task] = None
         
         # Validation thresholds (can be adapted over time)
-        self.credible_threshold = self.settings.get("credible_threshold", 0.7)
-        self.false_positive_threshold = self.settings.get("false_positive_threshold", 0.4)
+        self.credible_threshold = settings_dict.get("credible_threshold", 0.7)
+        self.false_positive_threshold = settings_dict.get("false_positive_threshold", 0.4)
+        
+        # Create settings object with attributes for test compatibility
+        self.settings = SimpleNamespace(
+            credible_threshold=self.credible_threshold,
+            batch_processing_enabled=self.batch_processing_enabled,
+            batch_size=self.batch_size
+        )
+        
+        # Add any additional settings from settings_dict that aren't already set
+        for key, value in settings_dict.items():
+            if not hasattr(self.settings, key):
+                setattr(self.settings, key, value)
         
         # Event types
         self.input_event_type = AnomalyDetectedEvent.__name__
