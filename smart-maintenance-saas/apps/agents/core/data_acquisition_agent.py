@@ -786,6 +786,54 @@ class DataAcquisitionAgent(BaseAgent):
         """Example usage patterns for the enhanced agent."""
         pass
 
+    async def process_sensor_reading(self, sensor_data: Dict[str, Any], correlation_id: Optional[UUID] = None) -> SensorReading:
+        """
+        Process a single sensor reading through the complete validation and enrichment pipeline.
+        
+        This method provides a direct interface for processing sensor data,
+        used by integration tests and direct API calls.
+        
+        Args:
+            sensor_data: Raw sensor data dictionary
+            correlation_id: Optional correlation ID for tracking
+            
+        Returns:
+            SensorReading: Fully processed and enriched sensor reading
+            
+        Raises:
+            DataValidationException: If validation fails
+            DataEnrichmentException: If enrichment fails
+        """
+        try:
+            # Update metrics
+            self.metrics.readings_processed += 1
+            
+            # Validate the data
+            validated_data = await self._validate_data(sensor_data, correlation_id)
+            
+            # Assess quality
+            quality_score = self._assess_data_quality(validated_data)
+            
+            # Update sensor profile
+            await self._update_sensor_profile(validated_data, quality_score)
+            
+            # Enrich the data
+            enriched_reading = await self._enrich_data(validated_data, correlation_id)
+            
+            self.logger.info(
+                f"Successfully processed sensor reading from {enriched_reading.sensor_id}",
+                extra={"correlation_id": str(correlation_id) if correlation_id else None}
+            )
+            
+            return enriched_reading
+            
+        except Exception as e:
+            self.logger.error(
+                f"Failed to process sensor reading: {str(e)}",
+                extra={"correlation_id": str(correlation_id) if correlation_id else None}
+            )
+            raise
+
 
 # Example (for illustration, not part of the core file usually):
 if __name__ == "__main__":
@@ -865,54 +913,6 @@ if __name__ == "__main__":
             await agent.stop()
         
         print("\n🎯 Enhanced DataAcquisitionAgent testing completed!")
-
-    async def process_sensor_reading(self, sensor_data: Dict[str, Any], correlation_id: Optional[UUID] = None) -> SensorReading:
-        """
-        Process a single sensor reading through the complete validation and enrichment pipeline.
-        
-        This method provides a direct interface for processing sensor data,
-        used by integration tests and direct API calls.
-        
-        Args:
-            sensor_data: Raw sensor data dictionary
-            correlation_id: Optional correlation ID for tracking
-            
-        Returns:
-            SensorReading: Fully processed and enriched sensor reading
-            
-        Raises:
-            DataValidationException: If validation fails
-            DataEnrichmentException: If enrichment fails
-        """
-        try:
-            # Update metrics
-            self.metrics.readings_processed += 1
-            
-            # Validate the data
-            validated_data = await self._validate_data(sensor_data, correlation_id)
-            
-            # Assess quality
-            quality_score = self._assess_data_quality(validated_data)
-            
-            # Update sensor profile
-            await self._update_sensor_profile(validated_data, quality_score)
-            
-            # Enrich the data
-            enriched_reading = await self._enrich_data(validated_data, correlation_id)
-            
-            self.logger.info(
-                f"Successfully processed sensor reading from {enriched_reading.sensor_id}",
-                extra={"correlation_id": str(correlation_id) if correlation_id else None}
-            )
-            
-            return enriched_reading
-            
-        except Exception as e:
-            self.logger.error(
-                f"Failed to process sensor reading: {str(e)}",
-                extra={"correlation_id": str(correlation_id) if correlation_id else None}
-            )
-            raise
 
     # Run the test
     asyncio.run(test_enhanced_agent())
