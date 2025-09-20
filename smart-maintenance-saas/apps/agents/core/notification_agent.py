@@ -212,11 +212,11 @@ class ConsoleNotificationProvider(NotificationProvider):
     def _format_notification(self, request: NotificationRequest) -> str:
         """Format notification with enhanced visual design."""
         priority_icons = {
-            "critical": "🚨",
-            "high": "⚠️",
-            "medium": "📋",
-            "low": "ℹ️",
-            "digest": "📊"
+            1: "🚨",  # CRITICAL
+            2: "⚠️",  # HIGH
+            3: "📋",  # MEDIUM
+            4: "ℹ️",  # LOW
+            5: "📊"   # DIGEST
         }
         
         category_icons = {
@@ -228,7 +228,7 @@ class ConsoleNotificationProvider(NotificationProvider):
             "performance_alert": "⚡"
         }
         
-        priority_icon = priority_icons.get(str(request.priority), "📢")
+        priority_icon = priority_icons.get(request.priority, "📢")
         category_icon = category_icons.get(request.metadata.get("category", ""), "📋")
         
         separator = "=" * 80
@@ -869,6 +869,17 @@ Component: {component}
         else:
             return "LOW"
 
+    def _priority_to_int(self, priority: NotificationPriority) -> int:
+        """Map NotificationPriority enum to integer value (1=highest, 5=lowest)."""
+        priority_mapping = {
+            NotificationPriority.CRITICAL: 1,
+            NotificationPriority.HIGH: 2,
+            NotificationPriority.MEDIUM: 3,
+            NotificationPriority.LOW: 4,
+            NotificationPriority.DIGEST: 5
+        }
+        return priority_mapping.get(priority, 3)  # Default to medium priority
+
     async def _create_notification_request(
         self,
         template_id: str,
@@ -898,7 +909,7 @@ Component: {component}
                 channel=preferred_channel,
                 subject=subject,
                 message=message,
-                priority=priority.value,
+                priority=self._priority_to_int(priority),
                 template_id=template_id,
                 template_data=template_data,
                 metadata={
