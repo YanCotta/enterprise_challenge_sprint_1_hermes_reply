@@ -63,8 +63,8 @@ class Phase2EndToEndSimulation:
         self.event_bus = self.system_coordinator.event_bus
         
         # Subscribe to events for monitoring
-        await self.event_bus.subscribe(DataProcessedEvent, self._on_data_processed)
-        await self.event_bus.subscribe(AnomalyDetectedEvent, self._on_anomaly_detected)
+        await self.event_bus.subscribe(DataProcessedEvent.__name__, self._on_data_processed)
+        await self.event_bus.subscribe(AnomalyDetectedEvent.__name__, self._on_anomaly_detected)
         
         # Start the system
         await self.system_coordinator.startup_system()
