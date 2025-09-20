@@ -341,10 +341,6 @@ class DataAcquisitionAgent(BaseAgent):
             f"Completed batch processing of {len(events)} events in {processing_time:.3f}s"
         )
 
-        self.logger.info(
-            f"Completed batch processing of {len(events)} events in {processing_time:.3f}s"
-        )
-
     async def _process_single_event(self, event: SensorDataReceivedEvent) -> None:
         """Process a single sensor data event with full validation and enrichment."""
         start_time = datetime.utcnow()
