@@ -248,6 +248,16 @@ class SystemCoordinator:
         their startup process.
         """
         logger.info("SystemCoordinator starting up all agents...")
+        
+        # First, register all agent capabilities
+        for agent in self._agents_list:
+            try:
+                await agent.register_capabilities()
+                logger.info(f"Registered capabilities for agent {agent.agent_id}")
+            except Exception as e:
+                logger.warning(f"Could not register capabilities for agent {agent.agent_id}: {e}")
+        
+        # Then start all agents concurrently
         startup_tasks = []
         for agent in self._agents_list:
             startup_tasks.append(agent.start())
@@ -259,6 +269,9 @@ class SystemCoordinator:
                 logger.error(f"Error starting agent {agent.agent_id}: {result}", exc_info=result)
             else:
                 logger.info(f"Agent {agent.agent_id} started successfully.")
+        
+        # Log event bus subscription status
+        logger.info(f"Event bus has {len(self.event_bus._subscribers)} event subscriptions")
         logger.info("All agents startup process initiated concurrently.")
 
     async def shutdown_system(self):
