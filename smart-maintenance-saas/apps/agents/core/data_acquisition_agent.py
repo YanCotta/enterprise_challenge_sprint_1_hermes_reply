@@ -82,20 +82,31 @@ class DataAcquisitionAgent(BaseAgent):
         from types import SimpleNamespace
         settings_dict = specific_settings or {}
         
-        # Enhanced configuration
-        self.batch_processing_enabled = settings_dict.get('batch_processing_enabled', False)
-        self.batch_size = settings_dict.get('batch_size', 10)
-        self.batch_timeout_seconds = settings_dict.get('batch_timeout_seconds', 5.0)
-        self.quality_threshold = settings_dict.get('quality_threshold', 0.7)
+        # Enhanced configuration - extract values and remove from dict to avoid duplicates
+        self.batch_processing_enabled = settings_dict.pop('batch_processing_enabled', False)
+        self.batch_size = settings_dict.pop('batch_size', 10)
+        self.batch_timeout_seconds = settings_dict.pop('batch_timeout_seconds', 5.0)
+        self.quality_threshold = settings_dict.pop('quality_threshold', 0.7)
+        self.rate_limit_per_second = settings_dict.pop('rate_limit_per_second', 100)
+        self.enable_sensor_profiling = settings_dict.pop('enable_sensor_profiling', True)
+        self.enable_circuit_breaker = settings_dict.pop('enable_circuit_breaker', True)
         
-        # Create settings object with attributes\n        self.settings = SimpleNamespace(\n            batch_size=self.batch_size,\n            quality_threshold=self.quality_threshold,\n            batch_processing_enabled=self.batch_processing_enabled,\n            batch_timeout_seconds=self.batch_timeout_seconds\n        )\n        \n        # Add any additional settings from settings_dict that aren't already set\n        for key, value in settings_dict.items():\n            if not hasattr(self.settings, key):\n                setattr(self.settings, key, value)
+        # Create settings object with attributes
+        self.settings = SimpleNamespace(
+            batch_size=self.batch_size,
+            quality_threshold=self.quality_threshold,
+            batch_processing_enabled=self.batch_processing_enabled,
+            batch_timeout_seconds=self.batch_timeout_seconds
+        )
+        
+        # Add any additional settings from settings_dict that aren't already set
+        for key, value in settings_dict.items():
+            if not hasattr(self.settings, key):
+                setattr(self.settings, key, value)
         
         # Initialize validator and enricher with fallbacks
         self.validator = validator or self._create_default_validator()
         self.enricher = enricher or self._create_default_enricher()
-        self.rate_limit_per_second = settings_dict.get('rate_limit_per_second', 100)
-        self.enable_sensor_profiling = settings_dict.get('enable_sensor_profiling', True)
-        self.enable_circuit_breaker = settings_dict.get('enable_circuit_breaker', True)
         
         # Enhanced metrics structure
         from dataclasses import dataclass, field
@@ -140,8 +151,8 @@ class DataAcquisitionAgent(BaseAgent):
         
         # Circuit breaker
         self.circuit_breaker_failures = 0
-        self.circuit_breaker_threshold = self.settings.get('circuit_breaker_threshold', 10)
-        self.circuit_breaker_timeout = self.settings.get('circuit_breaker_timeout_seconds', 60)
+        self.circuit_breaker_threshold = getattr(self.settings, 'circuit_breaker_threshold', 10)
+        self.circuit_breaker_timeout = getattr(self.settings, 'circuit_breaker_timeout_seconds', 60)
         self.circuit_breaker_last_failure = None
         self.circuit_breaker_open = False
         
@@ -858,6 +869,54 @@ if __name__ == "__main__":
             await agent.stop()
         
         print("\n🎯 Enhanced DataAcquisitionAgent testing completed!")
+
+    async def process_sensor_reading(self, sensor_data: Dict[str, Any], correlation_id: Optional[UUID] = None) -> SensorReading:
+        """
+        Process a single sensor reading through the complete validation and enrichment pipeline.
+        
+        This method provides a direct interface for processing sensor data,
+        used by integration tests and direct API calls.
+        
+        Args:
+            sensor_data: Raw sensor data dictionary
+            correlation_id: Optional correlation ID for tracking
+            
+        Returns:
+            SensorReading: Fully processed and enriched sensor reading
+            
+        Raises:
+            DataValidationException: If validation fails
+            DataEnrichmentException: If enrichment fails
+        """
+        try:
+            # Update metrics
+            self.metrics["readings_processed"] += 1
+            
+            # Validate the data
+            validated_data = await self._validate_data(sensor_data, correlation_id)
+            
+            # Assess quality
+            quality_score = self._assess_data_quality(validated_data)
+            
+            # Update sensor profile
+            await self._update_sensor_profile(validated_data, quality_score)
+            
+            # Enrich the data
+            enriched_reading = await self._enrich_data(validated_data, correlation_id)
+            
+            self.logger.info(
+                f"Successfully processed sensor reading from {enriched_reading.sensor_id}",
+                extra={"correlation_id": str(correlation_id) if correlation_id else None}
+            )
+            
+            return enriched_reading
+            
+        except Exception as e:
+            self.logger.error(
+                f"Failed to process sensor reading: {str(e)}",
+                extra={"correlation_id": str(correlation_id) if correlation_id else None}
+            )
+            raise
 
     # Run the test
     asyncio.run(test_enhanced_agent())
