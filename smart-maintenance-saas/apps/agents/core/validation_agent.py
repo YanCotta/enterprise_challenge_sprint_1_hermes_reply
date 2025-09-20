@@ -120,14 +120,14 @@ class ValidationAgent(BaseAgent):
         from types import SimpleNamespace
         settings_dict = specific_settings or {}
 
-        # Enhanced configuration
-        self.batch_processing_enabled = settings_dict.get('batch_processing_enabled', False)
-        self.batch_size = settings_dict.get('batch_size', 5)
-        self.batch_timeout_seconds = settings_dict.get('batch_timeout_seconds', 3.0)
-        self.enable_caching = settings_dict.get('enable_caching', True)
-        self.cache_ttl_seconds = settings_dict.get('cache_ttl_seconds', 300)  # 5 minutes
-        self.enable_learning = settings_dict.get('enable_learning', True)
-        self.enable_circuit_breaker = settings_dict.get('enable_circuit_breaker', True)
+        # Enhanced configuration - extract values and remove from dict to avoid duplicates
+        self.batch_processing_enabled = settings_dict.pop('batch_processing_enabled', False)
+        self.batch_size = settings_dict.pop('batch_size', 5)
+        self.batch_timeout_seconds = settings_dict.pop('batch_timeout_seconds', 3.0)
+        self.enable_caching = settings_dict.pop('enable_caching', True)
+        self.cache_ttl_seconds = settings_dict.pop('cache_ttl_seconds', 300)  # 5 minutes
+        self.enable_learning = settings_dict.pop('enable_learning', True)
+        self.enable_circuit_breaker = settings_dict.pop('enable_circuit_breaker', True)
         
         # Performance monitoring
         self.metrics = ValidationMetrics()
@@ -140,8 +140,8 @@ class ValidationAgent(BaseAgent):
         
         # Circuit breaker for database operations
         self.db_circuit_breaker_failures = 0
-        self.db_circuit_breaker_threshold = settings_dict.get('db_circuit_breaker_threshold', 5)
-        self.db_circuit_breaker_timeout = settings_dict.get('db_circuit_breaker_timeout_seconds', 60)
+        self.db_circuit_breaker_threshold = settings_dict.pop('db_circuit_breaker_threshold', 5)
+        self.db_circuit_breaker_timeout = settings_dict.pop('db_circuit_breaker_timeout_seconds', 60)
         self.db_circuit_breaker_last_failure = None
         self.db_circuit_breaker_open = False
         
@@ -150,8 +150,8 @@ class ValidationAgent(BaseAgent):
         self.batch_timer_task: Optional[asyncio.Task] = None
         
         # Validation thresholds (can be adapted over time)
-        self.credible_threshold = settings_dict.get("credible_threshold", 0.7)
-        self.false_positive_threshold = settings_dict.get("false_positive_threshold", 0.4)
+        self.credible_threshold = settings_dict.pop("credible_threshold", 0.7)
+        self.false_positive_threshold = settings_dict.pop("false_positive_threshold", 0.4)
         
         # Create settings object with attributes for test compatibility
         self.settings = SimpleNamespace(
@@ -204,7 +204,7 @@ class ValidationAgent(BaseAgent):
     @property
     def historical_check_limit(self) -> int:
         """Return the historical check limit from settings, used by tests."""
-        return self.settings.get("historical_check_limit", 20)
+        return getattr(self.settings, "historical_check_limit", 20)
 
     async def register_capabilities(self) -> None:
         """Register agent capabilities."""
@@ -497,7 +497,7 @@ class ValidationAgent(BaseAgent):
         historical_reasons = []
         
         # Enhanced stability analysis
-        window = self.settings.get("recent_stability_window", 5)
+        window = getattr(self.settings, "recent_stability_window", 5)
         if len(historical_readings) >= window:
             recent_values = [r.value for r in historical_readings[:window]]
             avg_recent_value = sum(recent_values) / len(recent_values)
@@ -505,8 +505,8 @@ class ValidationAgent(BaseAgent):
             std_dev_recent = variance ** 0.5
             
             # Stability assessment
-            stability_factor = self.settings.get("recent_stability_factor", 0.1)
-            min_std_dev = self.settings.get("recent_stability_min_std_dev", 0.05)
+            stability_factor = getattr(self.settings, "recent_stability_factor", 0.1)
+            min_std_dev = getattr(self.settings, "recent_stability_min_std_dev", 0.05)
             is_stable = std_dev_recent < (stability_factor * abs(avg_recent_value) + 1e-6) or std_dev_recent < min_std_dev
             
             current_value = reading.value
@@ -516,24 +516,24 @@ class ValidationAgent(BaseAgent):
                 
                 if is_stable:
                     if deviation > threshold:
-                        adjustment = self.settings.get("recent_stability_jump_adjustment", 0.15)
+                        adjustment = getattr(self.settings, "recent_stability_jump_adjustment", 0.15)
                         historical_confidence_adjustment += adjustment
                         historical_reasons.append(
                             f"Significant deviation from stable baseline (dev: {deviation:.2f}, threshold: {threshold:.2f})"
                         )
                     else:
-                        adjustment = self.settings.get("recent_stability_minor_deviation_adjustment", -0.05)
+                        adjustment = getattr(self.settings, "recent_stability_minor_deviation_adjustment", -0.05)
                         historical_confidence_adjustment += adjustment
                         historical_reasons.append(f"Minor deviation from stable baseline")
                 else:
-                    adjustment = self.settings.get("volatile_baseline_adjustment", 0.05)
+                    adjustment = getattr(self.settings, "volatile_baseline_adjustment", 0.05)
                     historical_confidence_adjustment += adjustment
                     historical_reasons.append(f"Anomaly during volatile period (std_dev: {std_dev_recent:.3f})")
         
         # Pattern frequency analysis
         if len(historical_readings) >= 3:
             similar_patterns = 0
-            anomaly_threshold = self.settings.get("pattern_anomaly_threshold", 0.2)
+            anomaly_threshold = getattr(self.settings, "pattern_anomaly_threshold", 0.2)
             
             for i in range(len(historical_readings) - 1):
                 current_val = historical_readings[i].value
@@ -547,7 +547,7 @@ class ValidationAgent(BaseAgent):
             
             pattern_frequency = similar_patterns / (len(historical_readings) - 1)
             if pattern_frequency > 0.3:  # More than 30% of patterns are anomalous
-                penalty = self.settings.get("recurring_anomaly_penalty", -0.08)
+                penalty = getattr(self.settings, "recurring_anomaly_penalty", -0.08)
                 historical_confidence_adjustment += penalty
                 historical_reasons.append(f"Recurring anomaly pattern detected ({pattern_frequency:.1%} frequency)")
         
@@ -556,7 +556,7 @@ class ValidationAgent(BaseAgent):
         if quality_scores:
             avg_quality = sum(quality_scores) / len(quality_scores)
             if avg_quality < 0.7:
-                quality_penalty = self.settings.get("low_quality_penalty", -0.03)
+                quality_penalty = getattr(self.settings, "low_quality_penalty", -0.03)
                 historical_confidence_adjustment += quality_penalty
                 historical_reasons.append(f"Low historical data quality (avg: {avg_quality:.2f})")
         
