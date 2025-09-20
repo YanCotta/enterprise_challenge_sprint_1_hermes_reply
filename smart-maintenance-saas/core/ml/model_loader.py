@@ -370,7 +370,7 @@ class MLflowModelLoader:
             Inferred sensor type string
         """
         sensor_id = sensor_reading.sensor_id.lower()
-        sensor_type = getattr(sensor_reading, 'sensor_type', '').lower() if hasattr(sensor_reading, 'sensor_type') else ''
+        sensor_type = str(getattr(sensor_reading, 'sensor_type', '')).lower() if hasattr(sensor_reading, 'sensor_type') else ''
         
         # Direct sensor type mapping
         if sensor_type:
