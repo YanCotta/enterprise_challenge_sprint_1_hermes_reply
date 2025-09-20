@@ -28,7 +28,7 @@ sys.path.append('/app')
 # Core imports
 from core.events.event_bus import EventBus
 from core.events.event_models import AnomalyDetectedEvent, AnomalyValidatedEvent
-from data.schemas import SensorReading, SensorReadingCreate, SensorType, AnomalyAlert, ValidationStatus
+from data.schemas import SensorReading, SensorReadingCreate, SensorType, AnomalyAlert, ValidationStatus, AnomalyType
 
 # Enhanced Golden Path agent imports
 from apps.agents.core.data_acquisition_agent import DataAcquisitionAgent
@@ -290,7 +290,7 @@ class GoldenPathIntegrationTest:
             # Test 1: Basic validation functionality
             test_alert = AnomalyAlert(
                 sensor_id="temp-sensor-validation-001",
-                anomaly_type="temperature_spike",
+                anomaly_type=AnomalyType.TEMPERATURE_SPIKE,
                 severity=4,
                 confidence=0.85,
                 description="Critical temperature anomaly detected in test equipment"
