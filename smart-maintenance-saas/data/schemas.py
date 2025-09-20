@@ -126,6 +126,7 @@ class AnomalyType(str, Enum):
     ISOLATION_FOREST = "isolation_forest_anomaly"
     STATISTICAL_Z_SCORE = "statistical_z_score_violation" # Example for specific stat violation
     STATISTICAL_THRESHOLD = "statistical_threshold_violation" # Example for specific stat violation
+    TEMPERATURE_SPIKE = "temperature_spike"  # Specific temperature anomaly type
     UNKNOWN = "unknown_anomaly_type"
     OTHER = "other_type"
 
