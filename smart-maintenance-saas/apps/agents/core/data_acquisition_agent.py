@@ -890,7 +890,7 @@ if __name__ == "__main__":
         """
         try:
             # Update metrics
-            self.metrics["readings_processed"] += 1
+            self.metrics.readings_processed += 1
             
             # Validate the data
             validated_data = await self._validate_data(sensor_data, correlation_id)
