@@ -11,7 +11,7 @@ services:
     environment:
       - PYTHONPATH=/app
       - DISABLE_CHROMADB=true  # Disable ChromaDB for now due to SQLite version
-      - MLFLOW_S3_ENDPOINT_URL=http://mlflow:5000  # Force MLflow client to proxy artifact access via HTTP
+      # MLFLOW_S3_ENDPOINT_URL removed - use standard AWS S3 endpoints for artifact access
     env_file:
       - .env
     depends_on:
