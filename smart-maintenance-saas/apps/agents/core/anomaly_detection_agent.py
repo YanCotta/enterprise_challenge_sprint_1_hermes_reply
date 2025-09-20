@@ -926,7 +926,8 @@ class AnomalyDetectionAgent(BaseAgent):
             ]])
             
             # Process with ML models to get anomaly prediction
-            is_anomaly, confidence = await self._process_ml_models(features, sensor_reading, correlation_id)
+            prediction, confidence = await self._process_ml_models(features, sensor_reading, correlation_id)
+            is_anomaly = (prediction == -1)
             
             if is_anomaly:
                 # Create anomaly alert
