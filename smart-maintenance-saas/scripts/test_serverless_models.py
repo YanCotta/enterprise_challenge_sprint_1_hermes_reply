@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from apps.agents.core.anomaly_detection_agent import AnomalyDetectionAgent
 from core.events.event_bus import EventBus
 from core.events.event_models import DataProcessedEvent
-from data.schemas import SensorReading
+from data.schemas import SensorReading, SensorReadingCreate, SensorType
 
 
 async def test_serverless_model_loading():
@@ -69,17 +69,17 @@ async def test_serverless_model_loading():
                 test_sensors = [
                     {
                         'sensor_id': 'bearing_sensor_001', 
-                        'sensor_type': 'bearing',
+                        'sensor_type': SensorType.BEARING,
                         'value': 0.08
                     },
                     {
                         'sensor_id': 'pump_sensor_001',
-                        'sensor_type': 'pump', 
+                        'sensor_type': SensorType.PUMP, 
                         'value': 150.5
                     },
                     {
                         'sensor_id': 'vibration_sensor_001',
-                        'sensor_type': 'vibration',
+                        'sensor_type': SensorType.VIBRATION,
                         'value': 0.12
                     },
                     {
@@ -92,13 +92,31 @@ async def test_serverless_model_loading():
                 for sensor_data in test_sensors:
                     logger.info(f"Testing sensor: {sensor_data['sensor_id']} (type: {sensor_data['sensor_type']})")
                     
-                    # Create sensor reading
-                    sensor_reading = SensorReading(
-                        sensor_id=sensor_data['sensor_id'],
-                        value=sensor_data['value'],
-                        timestamp=datetime.utcnow(),
-                        sensor_type=sensor_data['sensor_type']
-                    )
+                    # Create sensor reading - use SensorReadingCreate for cases where sensor_type might be None
+                    if sensor_data['sensor_type'] is None:
+                        # Use SensorReadingCreate when sensor_type is None (it's optional there)
+                        sensor_reading_create = SensorReadingCreate(
+                            sensor_id=sensor_data['sensor_id'],
+                            value=sensor_data['value'],
+                            timestamp=datetime.utcnow(),
+                            sensor_type=None,
+                            unit='units'  # Add required unit field
+                        )
+                        # Convert to SensorReading with a default sensor type for processing
+                        sensor_reading = SensorReading(
+                            **sensor_reading_create.model_dump(),
+                            sensor_type=SensorType.GENERAL,  # Use GENERAL as default for unknown types
+                            unit='units'
+                        )
+                    else:
+                        # Use SensorReading directly when sensor_type is known
+                        sensor_reading = SensorReading(
+                            sensor_id=sensor_data['sensor_id'],
+                            value=sensor_data['value'],
+                            timestamp=datetime.utcnow(),
+                            sensor_type=sensor_data['sensor_type'],
+                            unit='units'  # Add required unit field
+                        )
                     
                     # Create data processed event
                     event = DataProcessedEvent(
@@ -159,7 +177,8 @@ async def test_model_loader_directly():
             sensor_id='test_bearing_sensor',
             value=0.05,
             timestamp=datetime.utcnow(),
-            sensor_type='bearing'
+            sensor_type=SensorType.BEARING,
+            unit='g'  # Add required unit field
         )
         
         # Test model loading

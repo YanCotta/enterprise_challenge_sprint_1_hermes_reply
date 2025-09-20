@@ -208,6 +208,8 @@ class DataAcquisitionAgent(BaseAgent):
     
     def _create_minimal_enricher(self) -> DataEnricher:
         """Create a minimal enricher for fallback."""
+        from data.schemas import SensorType  # Import here to avoid circular imports
+        
         class MinimalEnricher:
             def enrich(self, data_to_enrich: SensorReadingCreate, **kwargs) -> SensorReading:
                 # Basic enrichment - convert to SensorReading and add minimal metadata
@@ -215,6 +217,15 @@ class DataAcquisitionAgent(BaseAgent):
                 enriched_data['metadata'] = enriched_data.get('metadata', {})
                 enriched_data['metadata']['enriched_by'] = 'minimal_enricher'
                 enriched_data['metadata']['enriched_at'] = datetime.utcnow().isoformat()
+                
+                # Ensure sensor_type is a valid enum value for SensorReading
+                # If None, default to GENERAL
+                if enriched_data.get("sensor_type") is None:
+                    enriched_data["sensor_type"] = SensorType.GENERAL
+
+                # Ensure unit is provided (required for SensorReading)
+                if not enriched_data.get("unit"):
+                    enriched_data["unit"] = "unknown"
                 
                 return SensorReading(**enriched_data)
         

@@ -14,6 +14,12 @@ class SensorType(str, Enum):
     TEMPERATURE = "temperature"
     VIBRATION = "vibration"
     PRESSURE = "pressure"
+    BEARING = "bearing"
+    PUMP = "pump"
+    MANUFACTURING = "manufacturing"
+    AUDIO = "audio"
+    FORECASTING = "forecasting"
+    GENERAL = "general"
     # Add more as needed
 
 
