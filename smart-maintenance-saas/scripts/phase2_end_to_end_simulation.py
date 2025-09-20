@@ -168,7 +168,7 @@ class Phase2EndToEndSimulation:
     async def _on_data_processed(self, event: DataProcessedEvent):
         """Handle data processed events."""
         self.simulation_results['events_processed'] += 1
-        logger.info(f"✅ Data processed for sensor {event.processed_reading_payload.get('sensor_id', 'unknown')}")
+        logger.info(f"✅ Data processed for sensor {event.processed_data.get('sensor_id', 'unknown')}")
         
     async def _on_anomaly_detected(self, event: AnomalyDetectedEvent):
         """Handle anomaly detected events."""
