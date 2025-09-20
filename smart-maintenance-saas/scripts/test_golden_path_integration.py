@@ -179,8 +179,17 @@ class GoldenPathIntegrationTest:
                 for i in range(3)
             ]
             
-            batch_results = await self.data_agent.process_batch_readings(batch_readings)
-            if len(batch_results) == 3:
+            # Publish batch SensorDataReceivedEvent events
+            for reading in batch_readings:
+                await self.event_bus.publish("SensorDataReceivedEvent", reading)
+            
+            # Wait for DataProcessedEvent for each reading
+            processed_events = []
+            for _ in batch_readings:
+                event = await self.event_bus.wait_for("DataProcessedEvent", timeout=5)
+                processed_events.append(event)
+            
+            if len(processed_events) == 3:
                 self.test_results['data_acquisition']['passed'] += 1
                 self.test_results['data_acquisition']['details'].append("✅ Batch processing functionality")
                 logger.info("✅ Batch processing functionality passed")
