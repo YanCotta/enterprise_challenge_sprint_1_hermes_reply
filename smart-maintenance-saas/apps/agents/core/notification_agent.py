@@ -602,36 +602,36 @@ Component: {component}
         self.capabilities.extend(capabilities)
         self.logger.info(f"Registered {len(capabilities)} enhanced capabilities for {self.agent_id}")
 
-    async def handle_anomaly_validated_event(self, event_type: str, event_data: AnomalyValidatedEvent) -> None:
+    async def handle_anomaly_validated_event(self, event: AnomalyValidatedEvent) -> None:
         """Handle AnomalyValidatedEvent with intelligent notification generation."""
-        correlation_id = getattr(event_data, 'correlation_id', str(uuid.uuid4()))
+        correlation_id = getattr(event, 'correlation_id', str(uuid.uuid4()))
         self.logger.info(
-            f"Processing AnomalyValidatedEvent for validation status: {event_data.validation_status}",
+            f"Processing AnomalyValidatedEvent for validation status: {event.validation_status}",
             extra={"correlation_id": correlation_id}
         )
 
         try:
             # Extract original anomaly data
-            original_alert = AnomalyAlert(**event_data.original_anomaly_alert_payload)
-            triggering_reading = SensorReading(**event_data.triggering_reading_payload)
+            original_alert = AnomalyAlert(**event.original_anomaly_alert_payload)
+            triggering_reading = SensorReading(**event.triggering_reading_payload)
 
             # Determine notification priority based on validation status and severity
             priority = self._determine_priority_for_anomaly(
-                validation_status=event_data.validation_status,
+                validation_status=event.validation_status,
                 original_severity=original_alert.severity,
-                final_confidence=event_data.final_confidence
+                final_confidence=event.final_confidence
             )
 
             # Select appropriate template
-            template_id = self._select_anomaly_template(event_data.validation_status, priority)
+            template_id = self._select_anomaly_template(event.validation_status, priority)
 
             # Prepare template data
             template_data = {
                 'sensor_id': original_alert.sensor_id,
                 'equipment_id': triggering_reading.metadata.get('equipment_id', 'Unknown'),
                 'anomaly_type': original_alert.anomaly_type,
-                'validation_status': event_data.validation_status,
-                'final_confidence': event_data.final_confidence,
+                'validation_status': event.validation_status,
+                'final_confidence': event.final_confidence,
                 'original_confidence': original_alert.confidence,
                 'original_severity': original_alert.severity,
                 'original_anomaly_type': original_alert.anomaly_type,
@@ -639,18 +639,18 @@ Component: {component}
                 'unit': triggering_reading.unit,
                 'baseline_value': original_alert.evidence.get('baseline', 'N/A'),
                 'deviation_magnitude': original_alert.evidence.get('deviation_magnitude', 'N/A'),
-                'validation_reasons': '\n'.join([f"• {reason}" for reason in event_data.validation_reasons]),
+                'validation_reasons': '\n'.join([f"• {reason}" for reason in event.validation_reasons]),
                 'detected_at': triggering_reading.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC'),
-                'validated_at': event_data.validated_at.strftime('%Y-%m-%d %H:%M:%S UTC'),
-                'agent_id': event_data.agent_id,
-                'event_id': str(event_data.event_id),
+                'validated_at': event.validated_at.strftime('%Y-%m-%d %H:%M:%S UTC'),
+                'agent_id': event.agent_id,
+                'event_id': str(event.event_id),
                 'correlation_id': correlation_id,
-                'next_steps': self._generate_next_steps(event_data.validation_status, original_alert.recommended_actions)
+                'next_steps': self._generate_next_steps(event.validation_status, original_alert.recommended_actions)
             }
 
             # Determine recipients based on validation status and severity
             recipients = self._determine_recipients_for_anomaly(
-                validation_status=event_data.validation_status,
+                validation_status=event.validation_status,
                 severity=original_alert.severity,
                 sensor_id=original_alert.sensor_id
             )
@@ -676,29 +676,29 @@ Component: {component}
             )
             raise AgentProcessingError(f"Failed to handle AnomalyValidatedEvent: {e}", original_exception=e) from e
 
-    async def handle_maintenance_scheduled_event(self, event_type: str, event_data: MaintenanceScheduledEvent) -> None:
+    async def handle_maintenance_scheduled_event(self, event: MaintenanceScheduledEvent) -> None:
         """Handle MaintenanceScheduledEvent with enhanced notification features."""
         correlation_id = str(uuid.uuid4())
         self.logger.info(
-            f"Processing MaintenanceScheduledEvent for equipment: {event_data.equipment_id}",
+            f"Processing MaintenanceScheduledEvent for equipment: {event.equipment_id}",
             extra={"correlation_id": correlation_id}
         )
 
         try:
             # Prepare template data
             template_data = {
-                'equipment_id': event_data.equipment_id,
-                'technician_name': f"Technician {event_data.assigned_technician_id}" if event_data.assigned_technician_id else "TBD",
-                'task_description': event_data.schedule_details.get('task_description', 'Scheduled maintenance'),
-                'priority': event_data.schedule_details.get('priority', 'Medium'),
-                'scheduled_start_time': event_data.scheduled_start_time.strftime('%Y-%m-%d %H:%M:%S') if event_data.scheduled_start_time else 'TBD',
-                'scheduled_end_time': event_data.scheduled_end_time.strftime('%Y-%m-%d %H:%M:%S') if event_data.scheduled_end_time else 'TBD',
-                'duration': self._calculate_duration(event_data.scheduled_start_time, event_data.scheduled_end_time),
-                'location': event_data.schedule_details.get('location', 'See equipment details'),
-                'required_tools': event_data.schedule_details.get('required_tools', 'Standard maintenance kit'),
-                'maintenance_checklist': event_data.schedule_details.get('checklist', 'Follow standard procedures'),
+                'equipment_id': event.equipment_id,
+                'technician_name': f"Technician {event.assigned_technician_id}" if event.assigned_technician_id else "TBD",
+                'task_description': event.schedule_details.get('task_description', 'Scheduled maintenance'),
+                'priority': event.schedule_details.get('priority', 'Medium'),
+                'scheduled_start_time': event.scheduled_start_time.strftime('%Y-%m-%d %H:%M:%S') if event.scheduled_start_time else 'TBD',
+                'scheduled_end_time': event.scheduled_end_time.strftime('%Y-%m-%d %H:%M:%S') if event.scheduled_end_time else 'TBD',
+                'duration': self._calculate_duration(event.scheduled_start_time, event.scheduled_end_time),
+                'location': event.schedule_details.get('location', 'See equipment details'),
+                'required_tools': event.schedule_details.get('required_tools', 'Standard maintenance kit'),
+                'maintenance_checklist': event.schedule_details.get('checklist', 'Follow standard procedures'),
                 'scheduled_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC'),
-                'task_id': str(event_data.event_id),
+                'task_id': str(event.event_id),
                 'correlation_id': correlation_id
             }
 
@@ -726,21 +726,21 @@ Component: {component}
             )
             raise AgentProcessingError(f"Failed to handle MaintenanceScheduledEvent: {e}", original_exception=e) from e
 
-    async def handle_maintenance_predicted_event(self, event_type: str, event_data: MaintenancePredictedEvent) -> None:
+    async def handle_maintenance_predicted_event(self, event: MaintenancePredictedEvent) -> None:
         """Handle MaintenancePredictedEvent with predictive analytics notifications."""
         correlation_id = str(uuid.uuid4())
         self.logger.info(
-            f"Processing MaintenancePredictedEvent for equipment: {event_data.equipment_id}",
+            f"Processing MaintenancePredictedEvent for equipment: {event.equipment_id}",
             extra={"correlation_id": correlation_id}
         )
 
         try:
             # Extract prediction data
-            prediction_details = event_data.prediction_details
+            prediction_details = event.prediction_details
             
             # Prepare template data
             template_data = {
-                'equipment_id': event_data.equipment_id,
+                'equipment_id': event.equipment_id,
                 'component': prediction_details.get('component', 'Primary system'),
                 'predicted_failure_time': prediction_details.get('predicted_failure_time', 'TBD'),
                 'time_to_failure': prediction_details.get('time_to_failure', 'TBD'),
@@ -751,9 +751,9 @@ Component: {component}
                 'trend_analysis': prediction_details.get('trend_analysis', 'Degradation pattern detected'),
                 'recommended_actions': '\n'.join([f"• {action}" for action in prediction_details.get('recommended_actions', ['Schedule inspection'])]),
                 'suggested_maintenance_window': prediction_details.get('maintenance_window', 'Next available slot'),
-                'predicted_at': event_data.predicted_at.strftime('%Y-%m-%d %H:%M:%S UTC'),
-                'agent_id': event_data.agent_id,
-                'event_id': str(event_data.event_id),
+                'predicted_at': event.predicted_at.strftime('%Y-%m-%d %H:%M:%S UTC'),
+                'agent_id': event.agent_id,
+                'event_id': str(event.event_id),
                 'correlation_id': correlation_id
             }
 

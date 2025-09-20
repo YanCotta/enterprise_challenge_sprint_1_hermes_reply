@@ -113,28 +113,11 @@ class SchedulingAgent(BaseAgent):
             extra={"correlation_id": "N/A"}
         )
     
-    async def handle_maintenance_predicted_event(self, event_type_or_event: Union[str, MaintenancePredictedEvent], event_data: Optional[MaintenancePredictedEvent] = None) -> None:
-        # Support both old pattern (event_type + event_data) and new pattern (event object only)
-        if isinstance(event_type_or_event, MaintenancePredictedEvent):
-            # New pattern: event object passed directly
-            event_obj = event_type_or_event
-        else:
-            # Old pattern: event_type string + event_data
-            event_obj = event_data
-        
-        if event_obj is None:
-            self.logger.error("No event data provided to handle_maintenance_predicted_event")
-            return
-        
-        # Handle both object and dict types
-        if isinstance(event_obj, dict):
-            equipment_id = event_obj.get('equipment_id')
-            correlation_id = event_obj.get('correlation_id', "N/A")
-            prediction_event = MaintenancePredictedEvent(**event_obj)
-        else:
-            equipment_id = event_obj.equipment_id
-            correlation_id = getattr(event_obj, 'correlation_id', "N/A")
-            prediction_event = event_obj
+    async def handle_maintenance_predicted_event(self, event: MaintenancePredictedEvent) -> None:
+        """Handle MaintenancePredictedEvent to schedule maintenance."""
+        equipment_id = event.equipment_id
+        correlation_id = getattr(event, 'correlation_id', "N/A")
+        prediction_event = event
 
         self.logger.info(
             f"Received MaintenancePredictedEvent for equipment {equipment_id}",

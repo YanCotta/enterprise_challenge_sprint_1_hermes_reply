@@ -98,8 +98,7 @@ class OrchestratorAgent(BaseAgent):
         else:
             logger.warning(f"Agent {self.agent_id}: Event bus not available. Cannot publish event '{event_data_obj.__class__.__name__}'.")
 
-    async def handle_anomaly_validated(self, event_type_or_event: Union[str, AnomalyValidatedEvent], event_data: Optional[AnomalyValidatedEvent] = None) -> None:
-        event = event_data if isinstance(event_type_or_event, str) else event_type_or_event
+    async def handle_anomaly_validated(self, event: AnomalyValidatedEvent) -> None:
         _handler_name = self.handle_anomaly_validated.__name__
 
         # Ensure event and critical fields are present
@@ -144,8 +143,7 @@ class OrchestratorAgent(BaseAgent):
         except Exception as e:
             logger.error(f"OrchestratorAgent {self.agent_id}: Generic error in {_handler_name} for event ID {_event_id_for_log}: {e}", exc_info=True)
 
-    async def handle_maintenance_predicted(self, event_type_or_event: Union[str, MaintenancePredictedEvent], event_data: Optional[MaintenancePredictedEvent] = None) -> None:
-        event = event_data if isinstance(event_type_or_event, str) else event_type_or_event
+    async def handle_maintenance_predicted(self, event: MaintenancePredictedEvent) -> None:
         _handler_name = self.handle_maintenance_predicted.__name__
 
         if not event or not all(hasattr(event, attr) for attr in ['event_id', 'equipment_id', 'time_to_failure_days', 'prediction_confidence', 'maintenance_type', 'predicted_failure_date']):
@@ -269,8 +267,7 @@ class OrchestratorAgent(BaseAgent):
         except Exception as e:
             logger.error(f"OrchestratorAgent {self.agent_id}: Generic error in {_handler_name} for event ID {_event_id_for_log}: {e}", exc_info=True)
 
-    async def handle_human_decision_response(self, event_type_or_event: Union[str, HumanDecisionResponseEvent], event_data: Optional[HumanDecisionResponseEvent] = None) -> None:
-        event = event_data if isinstance(event_type_or_event, str) else event_type_or_event
+    async def handle_human_decision_response(self, event: HumanDecisionResponseEvent) -> None:
         _handler_name = self.handle_human_decision_response.__name__
 
         if not event or not hasattr(event, 'payload') or not hasattr(event.payload, 'request_id'):

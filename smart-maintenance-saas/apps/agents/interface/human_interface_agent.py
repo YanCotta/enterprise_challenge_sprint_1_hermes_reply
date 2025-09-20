@@ -86,19 +86,13 @@ class HumanInterfaceAgent(BaseAgent):
         
         await super().stop()
 
-    async def handle_decision_request(self, event_type_or_event: Union[str, HumanDecisionRequiredEvent], event_data: HumanDecisionRequiredEvent = None) -> None:
+    async def handle_decision_request(self, event: HumanDecisionRequiredEvent) -> None:
         """
         Handle a human decision request event.
 
         Args:
-            event_type_or_event: Either event type string or the decision request event object
-            event_data: Event data when called with event type string
+            event: The decision request event object
         """
-        # Support both calling patterns from EventBus
-        if isinstance(event_type_or_event, str):
-            event = event_data
-        else:
-            event = event_type_or_event
             
         try:
             decision_request = event.payload
