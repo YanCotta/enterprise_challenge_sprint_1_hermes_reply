@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from uuid import UUID, uuid4
 
 from data.exceptions import DataEnrichmentException
-from data.schemas import SensorReading, SensorReadingCreate
+from data.schemas import SensorReading, SensorReadingCreate, SensorType
 
 
 class DataEnricher:
@@ -50,8 +50,16 @@ class DataEnricher:
             # Update the metadata in enriched_data
             enriched_data["metadata"] = metadata
 
+            # Ensure sensor_type is a valid enum value for SensorReading
+            # If None, default to GENERAL
+            if enriched_data.get("sensor_type") is None:
+                enriched_data["sensor_type"] = SensorType.GENERAL
+
+            # Ensure unit is provided (required for SensorReading)
+            if not enriched_data.get("unit"):
+                enriched_data["unit"] = "unknown"
+
             # Create enriched reading with all required fields
-            # Remove metadata from enriched_data to avoid duplication since SensorReading inherits it
             return SensorReading(
                 **enriched_data, ingestion_timestamp=datetime.now(timezone.utc)
             )
