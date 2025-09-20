@@ -41,8 +41,8 @@ from apps.agents.decision.maintenance_log_agent import MaintenanceLogAgent
 # Real Service Imports
 from data.validators.agent_data_validator import DataValidator
 from data.processors.agent_data_enricher import DataEnricher
-from core.database.crud.crud_sensor_reading import crud_sensor_reading as CRUDSensorReading
-from core.database.crud.crud_maintenance_log import crud_maintenance_log as CRUDMaintenanceLog
+from core.database.crud.crud_sensor_reading import crud_sensor_reading
+from core.database.crud.crud_maintenance_log import crud_maintenance_log
 from apps.rules.validation_rules import RuleEngine
 from core.database.session import AsyncSessionLocal
 
@@ -141,7 +141,7 @@ class SystemCoordinator:
             ValidationAgent(
                 agent_id="enhanced_validation_agent",
                 event_bus=self.event_bus,
-                crud_sensor_reading=CRUDSensorReading,
+                crud_sensor_reading=crud_sensor_reading,
                 rule_engine=rule_engine,
                 db_session_factory=self.db_session_factory,
                 specific_settings=validation_settings
@@ -154,7 +154,7 @@ class SystemCoordinator:
             PredictionAgent(
                 agent_id="prediction_agent_01",
                 event_bus=self.event_bus,
-                crud_sensor_reading=CRUDSensorReading,
+                crud_sensor_reading=crud_sensor_reading,
                 db_session_factory=self.db_session_factory,
                 specific_settings={}
             ),
@@ -178,7 +178,7 @@ class SystemCoordinator:
             MaintenanceLogAgent(
                 agent_id="maintenance_log_agent_01",
                 event_bus=self.event_bus,
-                crud_maintenance_log=CRUDMaintenanceLog,
+                crud_maintenance_log=crud_maintenance_log,
                 db_session_factory=self.db_session_factory
             )
         ]
