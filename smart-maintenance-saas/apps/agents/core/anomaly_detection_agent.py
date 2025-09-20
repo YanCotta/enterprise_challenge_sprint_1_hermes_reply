@@ -59,15 +59,17 @@ class AnomalyDetectionAgent(BaseAgent):
         
         # Initialize the serverless model loader
         try:
-            # Get model loader configuration from settings
-            loader_config = settings_dict.get('model_loader_config', {})
+            # Get model loader configuration from settings - extract and remove to avoid duplicates
+            loader_config = settings_dict.pop('model_loader_config', {})
             self.model_loader = get_model_loader(**loader_config)
-            self.use_serverless_models = settings_dict.get('use_serverless_models', True)
+            use_serverless = settings_dict.pop('use_serverless_models', True)
+            serverless_enabled = settings_dict.pop('serverless_mode_enabled', True)
+            self.use_serverless_models = use_serverless or serverless_enabled
             
             # Create settings object with attributes for test compatibility
             self.settings = SimpleNamespace(
                 use_serverless_models=self.use_serverless_models,
-                serverless_mode_enabled=settings_dict.get('serverless_mode_enabled', True)
+                serverless_mode_enabled=self.use_serverless_models
             )
             
             # Add any additional settings from settings_dict that aren't already set
@@ -85,7 +87,7 @@ class AnomalyDetectionAgent(BaseAgent):
         try:
             if not self.use_serverless_models:
                 self.scaler = StandardScaler()
-                if_params = self.settings.get('isolation_forest_params', {})
+                if_params = getattr(self.settings, 'isolation_forest_params', {})
                 default_if_params = {
                     'contamination': 'auto', 'random_state': 42, 'n_estimators': 100,
                     'max_samples': 'auto', 'max_features': 1.0
@@ -100,11 +102,11 @@ class AnomalyDetectionAgent(BaseAgent):
                 self.isolation_forest_fitted = False
             
             # Initialize statistical detector, which can also be a fallback
-            stat_config = self.settings.get('statistical_detector_config', {})
+            stat_config = getattr(self.settings, 'statistical_detector_config', {})
             self.statistical_detector = StatisticalAnomalyDetector(config=stat_config)
             
             # Configuration for default standard deviation for unknown sensors
-            self.default_historical_std = self.settings.get('default_historical_std', 0.1)
+            self.default_historical_std = getattr(self.settings, 'default_historical_std', 0.1)
             if self.default_historical_std <= 0:
                 # This is a configuration error that prevents proper fallback for new sensors.
                 raise ConfigurationError("default_historical_std must be positive")
@@ -448,17 +450,20 @@ class AnomalyDetectionAgent(BaseAgent):
         try:
             # Check if model has predict method (most common)
             if hasattr(model, 'predict'):
-                prediction = model.predict(features)[0]
+                # Feature adaptation for model compatibility
+                adapted_features = self._adapt_features_for_model(model, features, reading)
+                
+                prediction = model.predict(adapted_features)[0]
                 
                 # Try to get anomaly score if available
                 score = 0.0
                 if hasattr(model, 'decision_function'):
-                    score = model.decision_function(features)[0]
+                    score = model.decision_function(adapted_features)[0]
                 elif hasattr(model, 'score_samples'):
-                    score = model.score_samples(features)[0]
+                    score = model.score_samples(adapted_features)[0]
                 elif hasattr(model, 'predict_proba'):
                     # For classification models, use probability as score
-                    proba = model.predict_proba(features)[0]
+                    proba = model.predict_proba(adapted_features)[0]
                     if len(proba) == 2:  # Binary classification
                         score = proba[1] - proba[0]  # Difference between anomaly and normal
                     else:
@@ -502,6 +507,62 @@ class AnomalyDetectionAgent(BaseAgent):
                 extra={"correlation_id": correlation_id}
             )
             raise MLModelError(f"Model prediction failed: {str(e)}", original_exception=e) from e
+    
+    def _adapt_features_for_model(self, model, features: np.ndarray, reading: SensorReading) -> np.ndarray:
+        """
+        Adapt features to match the expected input shape of the model.
+        
+        Args:
+            model: The loaded ML model
+            features: Input features array
+            reading: Original sensor reading for context
+            
+        Returns:
+            np.ndarray: Adapted features matching model expectations
+        """
+        try:
+            # Get expected number of features from model if available
+            expected_features = None
+            
+            # Try to get expected feature count from different model types
+            if hasattr(model, 'n_features_in_'):
+                expected_features = model.n_features_in_
+            elif hasattr(model, '_sklearn_model') and hasattr(model._sklearn_model, 'n_features_in_'):
+                expected_features = model._sklearn_model.n_features_in_
+            elif hasattr(model, 'coef_') and hasattr(model.coef_, 'shape'):
+                expected_features = model.coef_.shape[-1]
+            
+            current_features = features.shape[-1] if len(features.shape) > 1 else len(features)
+            
+            if expected_features is None:
+                self.logger.warning(
+                    f"Could not determine expected feature count for model, using features as-is: {current_features} features"
+                )
+                return features.reshape(1, -1)
+            
+            if current_features == expected_features:
+                # Features already match
+                return features.reshape(1, -1)
+            elif current_features < expected_features:
+                # Pad with zeros or mean values
+                self.logger.info(
+                    f"Padding features from {current_features} to {expected_features} for model compatibility"
+                )
+                padded = np.zeros((1, expected_features))
+                padded[0, :current_features] = features.flatten()
+                return padded
+            else:
+                # Truncate to expected size
+                self.logger.info(
+                    f"Truncating features from {current_features} to {expected_features} for model compatibility"
+                )
+                return features.flatten()[:expected_features].reshape(1, -1)
+                
+        except Exception as e:
+            self.logger.warning(
+                f"Feature adaptation failed for {reading.sensor_id}: {e}, using original features"
+            )
+            return features.reshape(1, -1)
     
     async def _process_fallback_ml_models(self, features: np.ndarray, reading: SensorReading, correlation_id: Optional[str] = None) -> Tuple[int, float]:
         """
