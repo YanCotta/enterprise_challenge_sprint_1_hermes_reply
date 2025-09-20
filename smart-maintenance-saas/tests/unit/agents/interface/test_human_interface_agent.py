@@ -1,12 +1,14 @@
 """Unit tests for Human Interface Agent."""
 
-import asyncio
-import pytest
 from unittest.mock import AsyncMock, Mock, patch
-from datetime import datetime
+
+import pytest
 
 from apps.agents.interface.human_interface_agent import HumanInterfaceAgent
-from core.events.event_models import HumanDecisionRequiredEvent, HumanDecisionResponseEvent
+from core.events.event_models import (
+    HumanDecisionRequiredEvent,
+    HumanDecisionResponseEvent,
+)
 from data.schemas import DecisionRequest, DecisionResponse, DecisionType
 
 
@@ -25,8 +27,7 @@ class TestHumanInterfaceAgent:
     def agent(self, mock_event_bus):
         """Create a Human Interface Agent instance for testing."""
         return HumanInterfaceAgent(
-            agent_id="test_human_interface_agent",
-            event_bus=mock_event_bus
+            agent_id="test_human_interface_agent", event_bus=mock_event_bus
         )
 
     @pytest.fixture
@@ -39,25 +40,21 @@ class TestHumanInterfaceAgent:
             options=["approve", "reject", "schedule_later"],
             priority="high",
             requester_agent_id="anomaly_agent_001",
-            correlation_id="corr_123"
+            correlation_id="corr_123",
         )
 
     @pytest.fixture
     def sample_decision_event(self, sample_decision_request):
         """Create a sample decision event for testing."""
         return HumanDecisionRequiredEvent(
-            payload=sample_decision_request,
-            correlation_id="corr_123"
+            payload=sample_decision_request, correlation_id="corr_123"
         )
 
     @pytest.mark.asyncio
     async def test_agent_initialization(self, mock_event_bus):
         """Test that the agent initializes correctly."""
-        agent = HumanInterfaceAgent(
-            agent_id="test_agent",
-            event_bus=mock_event_bus
-        )
-        
+        agent = HumanInterfaceAgent(agent_id="test_agent", event_bus=mock_event_bus)
+
         assert agent.agent_id == "test_agent"
         assert agent.event_bus == mock_event_bus
         assert agent.simulated_operator_id == "sim_operator_001"
@@ -67,7 +64,7 @@ class TestHumanInterfaceAgent:
     async def test_agent_initialization_with_auto_id(self, mock_event_bus):
         """Test agent initialization with auto-generated ID."""
         agent = HumanInterfaceAgent(event_bus=mock_event_bus)
-        
+
         assert agent.agent_id.startswith("human_interface_agent_")
         assert len(agent.agent_id.split("_")) == 4  # human_interface_agent_{8_char_hex}
 
@@ -75,15 +72,15 @@ class TestHumanInterfaceAgent:
     async def test_register_capabilities(self, agent):
         """Test capability registration."""
         await agent.register_capabilities()
-        
+
         assert len(agent.capabilities) == 2
-        
+
         # Check first capability
         cap1 = agent.capabilities[0]
         assert cap1.name == "human_decision_simulation"
         assert "HumanDecisionRequiredEvent" in cap1.input_types
         assert "HumanDecisionResponseEvent" in cap1.output_types
-        
+
         # Check second capability
         cap2 = agent.capabilities[1]
         assert cap2.name == "maintenance_approval"
@@ -94,11 +91,10 @@ class TestHumanInterfaceAgent:
     async def test_start_agent(self, agent, mock_event_bus):
         """Test agent startup process."""
         await agent.start()
-        
+
         assert agent.status == "running"
         mock_event_bus.subscribe.assert_called_once_with(
-            "HumanDecisionRequiredEvent",
-            agent.handle_decision_request
+            "HumanDecisionRequiredEvent", agent.handle_decision_request
         )
 
     @pytest.mark.asyncio
@@ -108,38 +104,36 @@ class TestHumanInterfaceAgent:
         assert agent.status == "stopped"
 
     @pytest.mark.asyncio
-    @patch('asyncio.sleep', new_callable=AsyncMock)
+    @patch("asyncio.sleep", new_callable=AsyncMock)
     async def test_handle_decision_request(
-        self, 
-        mock_sleep, 
-        agent, 
-        mock_event_bus, 
-        sample_decision_event
+        self, mock_sleep, agent, mock_event_bus, sample_decision_event
     ):
         """Test handling of decision request events."""
         # Call the handler
         await agent.handle_decision_request(sample_decision_event)
-        
+
         # Verify sleep was called for thinking time
         mock_sleep.assert_called_once_with(agent.thinking_time)
-        
+
         # Verify event was published
         mock_event_bus.publish.assert_called_once()
-        
+
         # Check the published event
         call_args = mock_event_bus.publish.call_args
         assert call_args[0][0] == "HumanDecisionResponseEvent"
-        
+
         published_event = call_args[0][1]
         assert isinstance(published_event, HumanDecisionResponseEvent)
         assert published_event.correlation_id == "corr_123"
-        
+
         # Check the decision response
         response = published_event.payload
         assert isinstance(response, DecisionResponse)
         assert response.request_id == "test_request_001"
         assert response.operator_id == "sim_operator_001"
-        assert response.decision == "approve"  # Should approve high priority maintenance
+        assert (
+            response.decision == "approve"
+        )  # Should approve high priority maintenance
         assert "high priority" in response.justification.lower()
 
     @pytest.mark.asyncio
@@ -151,11 +145,11 @@ class TestHumanInterfaceAgent:
             context={"equipment": "critical_pump"},
             options=["approve", "reject"],
             priority="high",
-            requester_agent_id="test_agent"
+            requester_agent_id="test_agent",
         )
-        
+
         decision, justification = await agent._simulate_human_decision(request)
-        
+
         assert decision == "approve"
         assert "high priority" in justification.lower()
 
@@ -168,11 +162,11 @@ class TestHumanInterfaceAgent:
             context={"emergency": True, "equipment": "safety_system"},
             options=["approve", "reject"],
             priority="medium",
-            requester_agent_id="test_agent"
+            requester_agent_id="test_agent",
         )
-        
+
         decision, justification = await agent._simulate_human_decision(request)
-        
+
         assert decision == "approve"
         assert "emergency" in justification.lower()
 
@@ -185,11 +179,11 @@ class TestHumanInterfaceAgent:
             context={"amount": 5000},
             options=["approve", "reject"],
             priority="medium",
-            requester_agent_id="test_agent"
+            requester_agent_id="test_agent",
         )
-        
+
         decision, justification = await agent._simulate_human_decision(request)
-        
+
         assert decision == "approve"
         assert "5000" in justification
         assert "within limits" in justification.lower()
@@ -203,11 +197,11 @@ class TestHumanInterfaceAgent:
             context={"amount": 15000},
             options=["approve", "reject"],
             priority="medium",
-            requester_agent_id="test_agent"
+            requester_agent_id="test_agent",
         )
-        
+
         decision, justification = await agent._simulate_human_decision(request)
-        
+
         assert decision == "reject"
         assert "15000" in justification
         assert "exceeds" in justification.lower()
@@ -221,11 +215,11 @@ class TestHumanInterfaceAgent:
             context={"incident": "fire_alarm"},
             options=["approve", "reject"],
             priority="critical",
-            requester_agent_id="test_agent"
+            requester_agent_id="test_agent",
         )
-        
+
         decision, justification = await agent._simulate_human_decision(request)
-        
+
         assert decision == "approve"
         assert "emergency response approved" in justification.lower()
 
@@ -238,11 +232,11 @@ class TestHumanInterfaceAgent:
             context={"equipment": "test"},
             options=[],
             priority="medium",
-            requester_agent_id="test_agent"
+            requester_agent_id="test_agent",
         )
-        
+
         decision, justification = await agent._simulate_human_decision(request)
-        
+
         assert decision == "no_action"
         assert "no options available" in justification.lower()
 
@@ -252,26 +246,29 @@ class TestHumanInterfaceAgent:
         # Use a valid enum value that isn't explicitly handled in the simulation logic
         request = DecisionRequest(
             request_id="test_007",
-            decision_type=DecisionType.QUALITY_INSPECTION,  # Valid enum but not explicitly handled
+            # Valid enum but not explicitly handled
+            decision_type=DecisionType.QUALITY_INSPECTION,
             context={"test": "data"},
             options=["option1", "option2"],
             priority="medium",
-            requester_agent_id="test_agent"
+            requester_agent_id="test_agent",
         )
-        
+
         decision, justification = await agent._simulate_human_decision(request)
-        
+
         assert decision == "option1"  # Should default to first option
         assert "default decision" in justification.lower()
 
     @pytest.mark.asyncio
-    async def test_process_decision_request_directly(self, agent, sample_decision_request, mock_event_bus):
+    async def test_process_decision_request_directly(
+        self, agent, sample_decision_request, mock_event_bus
+    ):
         """Test processing a decision request directly through process method."""
         result = await agent.process(sample_decision_request)
-        
+
         assert result["status"] == "processed"
         assert result["request_id"] == "test_request_001"
-        
+
         # Should have published an event
         mock_event_bus.publish.assert_called_once()
 
@@ -279,27 +276,24 @@ class TestHumanInterfaceAgent:
     async def test_process_unknown_data_type(self, agent):
         """Test processing unknown data type."""
         result = await agent.process({"unknown": "data"})
-        
+
         assert result["status"] == "no_processing_required"
         assert "dict" in result["data_type"]
 
     @pytest.mark.asyncio
-    @patch('asyncio.sleep', new_callable=AsyncMock)
+    @patch("asyncio.sleep", new_callable=AsyncMock)
     async def test_handle_decision_request_error_handling(
-        self, 
-        mock_sleep, 
-        agent, 
-        mock_event_bus
+        self, mock_sleep, agent, mock_event_bus
     ):
         """Test error handling in decision request processing."""
         # Create an invalid event that will cause an error
         invalid_event = Mock()
         invalid_event.payload = None
         invalid_event.correlation_id = "test_corr"
-        
+
         # Should not raise an exception, but should log error
         await agent.handle_decision_request(invalid_event)
-        
+
         # Verify no event was published due to error
         mock_event_bus.publish.assert_not_called()
 
@@ -307,7 +301,7 @@ class TestHumanInterfaceAgent:
     async def test_agent_health_status(self, agent):
         """Test agent health status reporting."""
         health = await agent.get_health()
-        
+
         assert health["agent_id"] == agent.agent_id
         assert health["status"] == agent.status
         assert "timestamp" in health
