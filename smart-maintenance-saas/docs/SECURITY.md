@@ -9,11 +9,14 @@ This document outlines the proactive threat model for the Smart Maintenance SaaS
 ### Getting Started
 
 - **[Main README](../../README.md)** - Project overview, quick start, and repository structure
+- **[Final Development Roadmap](./FINAL_DEV_ROADMAP_TO_V1.md)** - ⭐ **DEFINITIVE V1.0 COMPLETION GUIDE**
 - **[Backend README](../README.md)** - Docker deployment and getting started guide
 - **[Development Orientation](../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
 
 ### Project History & Changelog
 
+- **[Sprint 4 Changelog](./sprint_4_changelog.md)** - ⭐ **PHASE 1-2 ACHIEVEMENTS**
+- **[Phase 2 Review](./SPRINT_4_END_OF_PHASE_2_REVIEW.md)** - Current system state validation
 - **[30-Day Sprint Changelog](../../30-day-sprint-changelog.md)** - Complete development history and daily progress
 - **[Final Sprint Summary](../../final_30_day_sprint.md)** - Executive summary of sprint achievements
 

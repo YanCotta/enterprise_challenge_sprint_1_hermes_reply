@@ -3,11 +3,12 @@
 *[**English**](README.md) | [Português](README_PORTUGUES.md)*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](.)
-[![Models](https://img.shields.io/badge/MLflow-15%2B%20Models-blue)](.)
+[![Status](https://img.shields.io/badge/Status-Phase%202%20Complete-brightgreen)](.)
+[![Models](https://img.shields.io/badge/MLflow-17%2B%20Models-blue)](.)
 [![Performance](https://img.shields.io/badge/P95%20Latency-2ms%20(@50u)-purple)](.)
+[![Cloud](https://img.shields.io/badge/Cloud-S3%20%2B%20TimescaleDB-orange)](.)
 
-A production‑ready Predictive & Prescriptive Industrial Maintenance platform combining IoT ingestion, TimescaleDB time-series optimization, multi‑modal ML (tabular, vibration, audio, forecasting), automated drift detection & retraining, and resilient event-driven architecture.
+A production‑ready Predictive & Prescriptive Industrial Maintenance platform with **revolutionary S3 serverless model loading**, cloud-native deployment (TimescaleDB, Redis, S3), enterprise-grade multi-agent system, and comprehensive event-driven architecture. **Phase 1-2 Complete** with 75% production readiness achieved.
 
 ---
 
@@ -18,7 +19,10 @@ A production‑ready Predictive & Prescriptive Industrial Maintenance platform c
 ### Core
 
 - Main: this README
+- **Final Development Roadmap**: [FINAL_DEV_ROADMAP_TO_V1.md](smart-maintenance-saas/docs/FINAL_DEV_ROADMAP_TO_V1.md) ⭐ **NEW**
 - Development Orientation: [DEVELOPMENT_ORIENTATION.md](smart-maintenance-saas/docs/DEVELOPMENT_ORIENTATION.md)
+- Sprint 4 Changelog: [sprint_4_changelog.md](smart-maintenance-saas/docs/sprint_4_changelog.md) ⭐ **UPDATED**
+- Phase 2 Review: [SPRINT_4_END_OF_PHASE_2_REVIEW.md](smart-maintenance-saas/docs/SPRINT_4_END_OF_PHASE_2_REVIEW.md) ⭐ **NEW**
 - 30-Day Sprint Changelog: [30-day-sprint-changelog.md](smart-maintenance-saas/docs/30-day-sprint-changelog.md)
 - Final Sprint Summary: [final_30_day_sprint.md](smart-maintenance-saas/docs/final_30_day_sprint.md)
 - Future Roadmap: [FUTURE_ROADMAP.md](smart-maintenance-saas/docs/FUTURE_ROADMAP.md)
@@ -74,18 +78,37 @@ A production‑ready Predictive & Prescriptive Industrial Maintenance platform c
 
 ## 🚀 Quick Start (5 Minutes)
 
-Prerequisites: Docker & Docker Compose installed.
+**Prerequisites:** Docker & Docker Compose installed + Cloud services provisioned.
+
+**⚠️ IMPORTANT:** Sprint 4 has transitioned the system to cloud-native deployment. You'll need to populate `.env` with your cloud credentials.
 
 ```bash
 git clone <repo>
-cd enterprise_challenge_sprint_1_hermes_reply
+cd enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas
+
+# Set up environment (CRITICAL STEP)
+cp .env_example.txt .env
+# MANUAL: Fill in your cloud credentials:
+# - DATABASE_URL (cloud TimescaleDB)
+# - REDIS_URL (cloud Redis)  
+# - MLFLOW_TRACKING_URI, MLFLOW_ARTIFACT_ROOT (S3)
+# - AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+# Deploy cloud-integrated system
 docker compose up -d --build
-# Core services:
+
+# Core services (cloud-connected):
 # API:        http://localhost:8000/docs
-# UI:         http://localhost:8501
-# MLflow:     http://localhost:5000
+# UI:         http://localhost:8501  
+# MLflow:     http://localhost:5000 (connected to cloud backend & S3)
 # Metrics:    http://localhost:8000/metrics
 ```
+
+**Cloud Infrastructure Required:**
+- ✅ **TimescaleDB Cloud** (Render/AWS/GCP)
+- ✅ **Redis Cloud** (Render/AWS/ElastiCache)  
+- ✅ **S3 Bucket** (AWS) for MLflow artifacts
+- ✅ **IAM User** with S3 permissions
 
 Datasets & models (optional, requires DVC):
 
