@@ -7,10 +7,13 @@
 ### Getting Started
 
 - **[Main README](../../README.md)** - Project overview, quick start, and repository structure
+- **[Final Development Roadmap](./FINAL_DEV_ROADMAP_TO_V1.md)** - ⭐ **DEFINITIVE V1.0 COMPLETION GUIDE**
 - **[Development Orientation](./DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
 
 ### Project History & Changelog
 
+- **[Sprint 4 Changelog](./sprint_4_changelog.md)** - ⭐ **PHASE 1-2 ACHIEVEMENTS**
+- **[Phase 2 Review](./SPRINT_4_END_OF_PHASE_2_REVIEW.md)** - Current system state validation
 - **[30-Day Sprint Changelog](./30-day-sprint-changelog.md)** - Complete development history and daily progress
 - **[Final Sprint Summary](./final_30_day_sprint.md)** - Executive summary of sprint achievements
 
@@ -73,29 +76,40 @@
 
 ## Overview
 
-The Smart Maintenance SaaS API provides a comprehensive RESTful interface for industrial predictive maintenance operations. The API is built with FastAPI and follows OpenAPI 3.0 standards, offering automatic documentation, validation, and enterprise-grade observability.
+The Smart Maintenance SaaS API provides a comprehensive RESTful interface for industrial predictive maintenance operations with **revolutionary S3 serverless model loading** and cloud-native architecture. The API is built with FastAPI and follows OpenAPI 3.0 standards, offering automatic documentation, validation, and enterprise-grade observability.
+
+**🚀 Sprint 4 Phase 1-2 Status**: Cloud-native deployment ready with TimescaleDB + Redis + S3 integration
 
 **Base URL**: `http://localhost:8000` (Docker deployment)  
 **API Version**: v1  
-**Production Status**: ✅ Ready  
-**Documentation**:
+**Production Status**: ✅ **75% Ready** (Phase 1-2 Complete)  
+**Cloud Services**: TimescaleDB, Redis, S3 (requires `.env` configuration)
 
+**Documentation**:
 - Interactive API Docs: `http://localhost:8000/docs`
 - ReDoc Documentation: `http://localhost:8000/redoc`
 - Prometheus Metrics: `http://localhost:8000/metrics`
+- Health Check: `http://localhost:8000/health`
 
 Root endpoint: `GET /` returns a welcome message with name and version.
 
-## Quick Start with Docker
+## Quick Start with Docker (Cloud-Native)
+
+⚠️ **IMPORTANT**: Sprint 4 requires cloud services. Populate `.env` with your cloud credentials.
 
 ```bash
-# Start the complete system
+# Set up cloud-native environment
+cd smart-maintenance-saas
+cp .env_example.txt .env
+# MANUAL: Fill in cloud credentials (DATABASE_URL, REDIS_URL, S3, etc.)
+
+# Start the cloud-connected system  
 docker compose up -d
 
-# Access points
-# API: http://localhost:8000
-# UI: http://localhost:8501
-# MLflow: http://localhost:5000
+# Access points (cloud-integrated)
+# API: http://localhost:8000 (connected to cloud TimescaleDB)
+# UI: http://localhost:8501 (cloud data visualization)
+# MLflow: http://localhost:5000 (cloud backend + S3 artifacts)
 # Docs: http://localhost:8000/docs
 # Metrics: http://localhost:8000/metrics
 ```
