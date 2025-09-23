@@ -40,13 +40,14 @@ services:
   # and system administration. Communicates with the API service for data access and operations.
   # Provides real-time dashboards and user-friendly interfaces for predictive maintenance insights.
   ui:
-    build: .
-    image: smart-maintenance-saas:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    image: smart-maintenance-ui:latest
     container_name: smart_maintenance_ui
     ports:
       - "8501:8501"  # Streamlit UI
     environment:
-      - DATABASE_URL=postgresql://smart_user:strong_password@db:5432/smart_maintenance_db
       - PYTHONPATH=/app
       - API_BASE_URL=http://api:8000  # Internal communication with API
     env_file:
@@ -54,18 +55,10 @@ services:
     depends_on:
       api:
         condition: service_healthy
-      db:
-        condition: service_healthy
     restart: unless-stopped
     volumes:
       - ./logs:/app/logs  # Mount logs directory
-    command: ["streamlit", "run", "ui/streamlit_app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+    # Command is already defined in Dockerfile.ui - no need to override
     networks:
       - smart-maintenance-network
 

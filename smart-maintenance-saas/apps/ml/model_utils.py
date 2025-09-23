@@ -90,42 +90,52 @@ def get_all_registered_models() -> List[Dict[str, Any]]:
 
 def get_models_by_sensor_type() -> Dict[str, List[str]]:
     """
-    Get models organized by sensor type based on MLflow tags.
+    Get models organized by sensor type based on MLflow tags and model name analysis.
     
-    This function looks for models with 'sensor_type' tags and organizes them
-    into a dictionary mapping sensor types to lists of compatible model names.
+    This function looks for models with 'sensor_type' tags and also infers types
+    from model names to ensure proper categorization. Models without clear sensor
+    affinity are categorized more carefully to prevent mismatches.
     
     Returns:
         Dictionary mapping sensor types to lists of model names.
-        Example: {'bearing': ['nasa_bearing_model'], 'pump': ['pump_sensor_model']}
+        Example: {'bearing': ['nasa_bearing_model'], 'temperature': ['temp_anomaly_detector']}
     """
     try:
         models = get_all_registered_models()
         sensor_type_mapping = {}
         
         for model in models:
+            model_name = model['name'].lower()
+            
             # Check both model-level tags and version-level tags for sensor_type
             sensor_type = None
             
-            # First check version-level tags (more specific)
+            # First check version-level tags (most specific)
             if 'sensor_type' in model.get('version_tags', {}):
                 sensor_type = model['version_tags']['sensor_type']
             # Fallback to model-level tags
             elif 'sensor_type' in model.get('tags', {}):
                 sensor_type = model['tags']['sensor_type']
+            # Infer from model name if no explicit tags
+            else:
+                sensor_type = _infer_sensor_type_from_name(model_name.lower())
+                logger.info(f"DEBUG: Model {model_name} -> inferred sensor_type: {sensor_type}")
             
             if sensor_type:
                 sensor_type = sensor_type.lower().strip()
                 if sensor_type not in sensor_type_mapping:
                     sensor_type_mapping[sensor_type] = []
                 sensor_type_mapping[sensor_type].append(model['name'])
-                logger.debug(f"Model {model['name']} tagged for sensor type: {sensor_type}")
+                logger.debug(f"Model {model['name']} categorized for sensor type: {sensor_type}")
             else:
-                # Add to 'general' category if no specific sensor type is tagged
-                if 'general' not in sensor_type_mapping:
-                    sensor_type_mapping['general'] = []
-                sensor_type_mapping['general'].append(model['name'])
-                logger.debug(f"Model {model['name']} added to general category (no sensor_type tag)")
+                # Only add to 'general' if it's truly a general-purpose anomaly detector
+                if _is_general_purpose_model(model_name.lower()):
+                    if 'general' not in sensor_type_mapping:
+                        sensor_type_mapping['general'] = []
+                    sensor_type_mapping['general'].append(model['name'])
+                    logger.debug(f"Model {model['name']} added to general category")
+                else:
+                    logger.warning(f"DEBUG: Model {model['name']} could not be categorized and is NOT general-purpose - skipping to prevent mismatches")
         
         logger.info(f"Organized models by sensor type: {sensor_type_mapping}")
         return sensor_type_mapping
@@ -135,44 +145,180 @@ def get_models_by_sensor_type() -> Dict[str, List[str]]:
         return {}
 
 
-def get_model_recommendations(sensor_type: str, include_general: bool = True) -> List[str]:
+def _infer_sensor_type_from_name(model_name: str) -> Optional[str]:
     """
-    Get recommended models for a specific sensor type.
+    Infer sensor type from model name using keyword matching.
     
     Args:
-        sensor_type: The type of sensor (e.g., 'bearing', 'pump', 'vibration')
-        include_general: Whether to include general-purpose models in recommendations
+        model_name: The lowercase model name to analyze
         
     Returns:
-        List of recommended model names
+        Inferred sensor type or None if unclear
+    """
+    # Vibration/bearing patterns
+    if any(keyword in model_name for keyword in ['bearing', 'vibration', 'nasa', 'xjtu']):
+        return 'vibration'
+    
+    # Audio patterns
+    if any(keyword in model_name for keyword in ['audio', 'mimii', 'sound']):
+        return 'audio'
+    
+    # Manufacturing/industrial patterns  
+    if any(keyword in model_name for keyword in ['ai4i', 'manufacturing', 'industrial']):
+        return 'manufacturing'
+    
+    # Pump patterns
+    if 'pump' in model_name:
+        return 'pump'
+    
+    # Forecasting patterns
+    if any(keyword in model_name for keyword in ['prophet', 'forecast', 'time_series', 'sensor-001']):
+        return 'forecasting'
+    
+    # Temperature patterns (for future models)
+    if any(keyword in model_name for keyword in ['temperature', 'temp', 'thermal']):
+        return 'temperature'
+    
+    # Pressure patterns (for future models)
+    if any(keyword in model_name for keyword in ['pressure', 'press']):
+        return 'pressure'
+    
+    return None
+
+
+def _is_general_purpose_model(model_name: str) -> bool:
+    """
+    Determine if a model is truly general-purpose for anomaly detection.
+    
+    Args:
+        model_name: The lowercase model name to analyze
+        
+    Returns:
+        True if the model appears to be general-purpose, False otherwise
+    """
+    # General anomaly detection patterns that work with single features
+    general_patterns = [
+        'anomaly_detector_refined',
+        'synthetic_validation',
+        'realistic_sensor_validation'
+    ]
+    
+    return any(pattern in model_name for pattern in general_patterns)
+
+
+def get_model_recommendations(sensor_type: str, include_general: bool = True) -> List[str]:
+    """
+    Get recommended models for a specific sensor type with intelligent filtering.
+    
+    Args:
+        sensor_type: The type of sensor (e.g., 'temperature', 'vibration', 'pressure')
+        include_general: Whether to include general-purpose models that can handle single features
+        
+    Returns:
+        List of recommended model names, prioritized by compatibility
     """
     try:
         sensor_type_mapping = get_models_by_sensor_type()
         recommendations = []
         
-        # Add specific models for the sensor type
+        # Normalize sensor type input
         sensor_type_lower = sensor_type.lower().strip()
+        
+        # Handle SensorType enum string representation
+        if sensor_type_lower.startswith('sensortype.'):
+            sensor_type_lower = sensor_type_lower.replace('sensortype.', '')
+        
+        # First priority: exact sensor type matches
         if sensor_type_lower in sensor_type_mapping:
             recommendations.extend(sensor_type_mapping[sensor_type_lower])
+            logger.info(f"Found {len(sensor_type_mapping[sensor_type_lower])} specific models for {sensor_type_lower}")
         
-        # Add general models if requested
+        # Second priority: compatible related types
+        compatible_types = _get_compatible_sensor_types(sensor_type_lower)
+        for compatible_type in compatible_types:
+            if compatible_type in sensor_type_mapping:
+                for model in sensor_type_mapping[compatible_type]:
+                    if model not in recommendations:
+                        recommendations.append(model)
+                        logger.debug(f"Added compatible model {model} from {compatible_type} category")
+        
+        # Third priority: general-purpose models (only if specifically requested and safe)
         if include_general and 'general' in sensor_type_mapping:
-            recommendations.extend(sensor_type_mapping['general'])
+            for model in sensor_type_mapping['general']:
+                if model not in recommendations:
+                    recommendations.append(model)
+                    logger.debug(f"Added general-purpose model {model}")
         
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_recommendations = []
-        for model in recommendations:
-            if model not in seen:
-                seen.add(model)
-                unique_recommendations.append(model)
+        # If no specific models found, provide safe fallback recommendations
+        if not recommendations:
+            recommendations = _get_fallback_recommendations(sensor_type_lower)
+            logger.warning(f"No specific models found for {sensor_type_lower}, using fallback recommendations")
         
-        logger.info(f"Recommendations for sensor type '{sensor_type}': {unique_recommendations}")
-        return unique_recommendations
+        logger.info(f"Final recommendations for sensor type '{sensor_type}': {recommendations}")
+        return recommendations
         
     except Exception as e:
         logger.error(f"Error getting model recommendations for sensor type '{sensor_type}': {e}")
-        return []
+        return _get_fallback_recommendations(sensor_type.lower())
+
+
+def _get_compatible_sensor_types(sensor_type: str) -> List[str]:
+    """
+    Get sensor types that have compatible models for the given sensor type.
+    
+    Args:
+        sensor_type: The primary sensor type
+        
+    Returns:
+        List of compatible sensor types
+    """
+    compatibility_map = {
+        'temperature': ['general'],  # Only general anomaly detectors work with single temp values
+        'pressure': ['general'],     # Only general anomaly detectors work with single pressure values  
+        'vibration': ['bearing'],    # Vibration analysis models often work for bearing data
+        'bearing': ['vibration'],    # Bearing models often work for vibration data
+        'audio': [],                 # Audio models require specific feature engineering
+        'manufacturing': [],         # Manufacturing models have specific feature requirements
+        'pump': ['general'],         # Pump-specific or general models
+        'forecasting': []            # Forecasting models are very specific
+    }
+    
+    return compatibility_map.get(sensor_type, [])
+
+
+def _get_fallback_recommendations(sensor_type: str) -> List[str]:
+    """
+    Provide safe fallback recommendations when no specific models are available.
+    
+    Args:
+        sensor_type: The sensor type needing recommendations
+        
+    Returns:
+        List of safe fallback model names
+    """
+    # For single-value sensor types, only recommend models that can handle single features
+    single_value_types = ['temperature', 'pressure', 'humidity', 'voltage']
+    
+    if sensor_type in single_value_types:
+        return [
+            'anomaly_detector_refined_v2',
+            'synthetic_validation_isolation_forest',
+            'realistic_sensor_validation_isolation_forest'
+        ]
+    
+    # For vibration/bearing, include vibration-specific models
+    if sensor_type in ['vibration', 'bearing']:
+        return [
+            'vibration_anomaly_isolationforest',
+            'xjtu_anomaly_isolation_forest',
+            'anomaly_detector_refined_v2'
+        ]
+    
+    # For other types, be conservative and only recommend general models
+    return [
+        'anomaly_detector_refined_v2',
+        'synthetic_validation_isolation_forest'
+    ]
 
 
 def get_model_details(model_name: str) -> Optional[Dict[str, Any]]:

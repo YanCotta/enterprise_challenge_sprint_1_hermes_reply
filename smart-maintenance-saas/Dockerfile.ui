@@ -1,0 +1,48 @@
+# Dockerfile.ui - Lightweight Streamlit UI container for cloud deployment
+# Optimized for fast startup and minimal footprint
+
+FROM python:3.11-slim
+
+# Install only essential system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables for Python optimization
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+# Set working directory
+WORKDIR /app
+
+# Install only UI-required Python packages (minimal set for cloud deployment)
+RUN pip install --no-cache-dir \
+    streamlit==1.45.1 \
+    requests==2.31.0 \
+    pandas==2.0.3 \
+    matplotlib==3.7.5 \
+    plotly==5.17.0 \
+    numpy==1.24.3
+
+# Copy only essential application files
+COPY ui/ ./ui/
+COPY apps/ml/model_utils.py ./apps/ml/model_utils.py
+
+# Create required directory structure  
+RUN mkdir -p apps/ml && touch apps/__init__.py apps/ml/__init__.py
+
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+
+# Expose Streamlit port
+EXPOSE 8501
+
+# Optimized Streamlit startup command for production
+CMD ["streamlit", "run", "ui/streamlit_app.py", \
+     "--server.port=8501", \
+     "--server.address=0.0.0.0", \
+     "--server.headless=true", \
+     "--server.fileWatcherType=none", \
+     "--browser.gatherUsageStats=false"]
