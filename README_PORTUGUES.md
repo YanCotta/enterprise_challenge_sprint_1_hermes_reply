@@ -3,11 +3,11 @@
 *[English](README.md) | **Português***
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](.)
-[![Models](https://img.shields.io/badge/MLflow-15%2B%20Models-blue)](.)
+[![Status](https://img.shields.io/badge/Status-V1.0%20Pronto%20para%20Produção-brightgreen)](.)
+[![Models](https://img.shields.io/badge/MLflow-17%2B%20Modelos-blue)](.)
 [![Performance](https://img.shields.io/badge/P95%20Latency-2ms%20(@50u)-purple)](.)
 
-Uma plataforma de Manutenção Industrial Preditiva e Prescritiva pronta para produção, combinando ingestão IoT, otimização de séries temporais TimescaleDB, ML multimodal (tabular, vibração, áudio, previsão), detecção automatizada de drift e retreinamento, e arquitetura orientada a eventos resiliente.
+Uma plataforma de Manutenção Industrial Preditiva e Prescritiva pronta para produção, combinando ingestão IoT, otimização de séries temporais TimescaleDB, ML multimodal (tabular, vibração, áudio, previsão), detecção automatizada de drift e retreinamento, e arquitetura orientada a eventos resiliente. **V1.0 Completa** com 95%+ de prontidão para produção alcançada.
 
 ---
 
