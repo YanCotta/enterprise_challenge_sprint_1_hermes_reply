@@ -19,6 +19,11 @@ import mlflow.sklearn
 from mlflow.tracking import MlflowClient
 from mlflow.exceptions import MlflowException
 
+# Configure S3 connection pooling for MLflow
+import urllib3
+from botocore.config import Config
+import boto3
+
 from apps.ml.model_utils import (
     get_model_recommendations, 
     get_model_details, 
@@ -112,12 +117,30 @@ class MLflowModelLoader:
         self.logger.info(f"MLflowModelLoader initialized with URI: {self.mlflow_uri}")
     
     def _initialize_mlflow(self) -> None:
-        """Initialize MLflow tracking configuration."""
+        """Initialize MLflow tracking configuration with optimized S3 connection pooling."""
         try:
+            # Configure S3 connection pooling to prevent connection pool exhaustion
+            s3_config = Config(
+                max_pool_connections=50,  # Increase connection pool size
+                retries={'max_attempts': 3, 'mode': 'adaptive'},
+                region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-2')
+            )
+            
+            # Set environment variables for boto3/S3 optimization
+            os.environ['AWS_MAX_ATTEMPTS'] = '3'
+            os.environ['AWS_RETRY_MODE'] = 'adaptive'
+            
+            # Configure urllib3 connection pooling
+            urllib3.util.connection.HAS_IPV6 = False  # Disable IPv6 if not needed
+            
+            # Initialize MLflow with S3 optimizations
             os.environ['MLFLOW_TRACKING_URI'] = self.mlflow_uri
+            os.environ['MLFLOW_S3_ENDPOINT_URL'] = os.getenv('MLFLOW_S3_ENDPOINT_URL', '')
+            
             mlflow.set_tracking_uri(self.mlflow_uri)
             self.client = MlflowClient(tracking_uri=self.mlflow_uri)
-            self.logger.info(f"MLflow client initialized successfully")
+            
+            self.logger.info(f"MLflow client initialized successfully with S3 connection pooling optimization")
         except Exception as e:
             raise ConfigurationError(f"Failed to initialize MLflow client: {e}") from e
     
