@@ -270,13 +270,13 @@ def main():
     # Demo status indicators
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("🤖 Active Agents", "10", delta="Phase 2 Complete")
+        st.metric("🤖 Active Agents", "12", delta="4 Categories")
     with col2:
         st.metric("🎯 S3 Models", "17", delta="Cloud Ready")
     with col3:
-        st.metric("📊 Event Subscriptions", "9", delta="Operational")
+        st.metric("📊 Production Services", "11", delta="Operational")
     with col4:
-        st.metric("🚀 Production Ready", "95%", delta="+20%")
+        st.metric("🚀 Production Ready", "90%", delta="Core Complete")
     
     st.markdown("---")
     
@@ -411,7 +411,7 @@ def main():
             st.metric("☁️ Cloud Integration", "Operational", delta="3 services connected")
             
         with metrics_col3:
-            st.metric("🚀 Golden Path", "Validated", delta="95%+ success rate")
+            st.metric("🚀 Golden Path", "Validated", delta="Core System Ready")
             st.metric("⚡ Performance", "< 3ms P95", delta="Production ready")
         
         if st.button("🔄 Refresh Live Metrics", use_container_width=True):
