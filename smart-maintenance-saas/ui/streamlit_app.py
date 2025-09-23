@@ -698,10 +698,16 @@ def main():
                         
                         # Make prediction API call (placeholder for now)
                         st.success(f"🚀 Prediction request prepared for model: {prediction_model}")
-                        with st.expander("📋 View Prediction Payload"):
-                            st.json(prediction_payload)
+                        
+                        # Store payload in session state to display outside form
+                        st.session_state['prediction_payload'] = prediction_payload
                         
                         st.info("ℹ️ **Note**: This demonstrates the payload that would be sent to a prediction endpoint. The actual prediction API is not yet implemented.")
+                
+                # Display payload outside the form to avoid nesting issues
+                if 'prediction_payload' in st.session_state:
+                    with st.expander("📋 View Prediction Payload"):
+                        st.json(st.session_state['prediction_payload'])
     
     else:
         st.warning("🔧 MLflow integration not available. Model selection features are limited.")
@@ -728,23 +734,46 @@ def main():
     st.header("Master Dataset Preview")
     
     if st.button("Load and Preview Sensor Data"):
-        data_path = 'data/sensor_data.csv'
-        if os.path.exists(data_path):
-            try:
-                df = pd.read_csv(data_path, parse_dates=['timestamp'])
-                st.success(f"Successfully loaded {len(df)} readings from {data_path}")
+        try:
+            # Fetch sensor data from cloud database via API
+            with st.spinner("Loading sensor data from cloud database..."):
+                response = requests.get(
+                    f"{API_BASE_URL}/api/v1/sensors/readings",
+                    headers=HEADERS,
+                    params={"limit": 1000}  # Limit to 1000 recent readings for preview
+                )
                 
-                st.subheader("Raw Data Sample")
-                st.dataframe(df.head())
+                if response.status_code == 200:
+                    data = response.json()
+                    if data and len(data) > 0:
+                        df = pd.DataFrame(data)
+                        # Convert timestamp string to datetime
+                        df['timestamp'] = pd.to_datetime(df['timestamp'])
+                        
+                        st.success(f"Successfully loaded {len(df)} readings from cloud database")
+                        
+                        st.subheader("Raw Data Sample")
+                        st.dataframe(df.head())
 
-                st.subheader("Time-Series Preview (first 1000 readings)")
-                preview_df = df.head(1000).set_index('timestamp')
-                st.line_chart(preview_df[['value']])
-                
-            except Exception as e:
-                st.error(f"Failed to load or parse the dataset: {e}")
-        else:
-            st.warning(f"Dataset not found at {data_path}. Please ensure Day 5 tasks (seeding/export) were completed.")
+                        st.subheader("Time-Series Preview")
+                        if 'value' in df.columns:
+                            preview_df = df.set_index('timestamp')
+                            st.line_chart(preview_df[['value']])
+                        else:
+                            st.info("Multiple sensor types detected. Showing value distribution by sensor type.")
+                            if 'sensor_id' in df.columns:
+                                for sensor_id in df['sensor_id'].unique()[:5]:  # Show first 5 sensors
+                                    sensor_data = df[df['sensor_id'] == sensor_id].set_index('timestamp')
+                                    if 'value' in sensor_data.columns:
+                                        st.line_chart(sensor_data[['value']], use_container_width=True)
+                    else:
+                        st.warning("No sensor data found in cloud database. Try ingesting some sensor data first.")
+                else:
+                    st.error(f"Failed to fetch sensor data from API. Status: {response.status_code}")
+                    
+        except Exception as e:
+            st.error(f"Failed to load sensor data from cloud database: {e}")
+            st.info("💡 This system uses cloud TimescaleDB. Ensure the API is running and connected to the database.")
 
     st.markdown("---")
     
