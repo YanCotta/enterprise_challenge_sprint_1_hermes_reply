@@ -11,7 +11,7 @@ Uma plataforma de Manutenção Industrial Preditiva e Prescritiva pronta para pr
 
 ---
 
-Demonstração resumida do estado do sistema: https://youtu.be/qZnY5U5Vp_s?si=xOOlv7TNTCUzpLxj
+Demonstração resumida do estado antigo do sistema (pre-cloud deployment and pipeline validation): https://youtu.be/qZnY5U5Vp_s?si=xOOlv7TNTCUzpLxj
 
 ---
 
