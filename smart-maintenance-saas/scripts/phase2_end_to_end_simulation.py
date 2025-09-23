@@ -44,6 +44,9 @@ class Phase2EndToEndSimulation:
     def __init__(self):
         self.system_coordinator = None
         self.event_bus = None
+        self.correlation_id = str(uuid4())
+        self.expected_events = 3  # Number of sensor events we'll publish
+        self.processing_complete = asyncio.Event()  # Signal when all processing is done
         self.simulation_results = {
             'events_published': 0,
             'events_processed': 0,
@@ -85,8 +88,13 @@ class Phase2EndToEndSimulation:
         # Test Case 3: Critical sensor reading
         await self._test_critical_sensor_reading()
         
-        # Wait for processing
-        await asyncio.sleep(3)
+        # Wait for all events to be processed (with timeout)
+        logger.info(f"⏳ Waiting for {self.expected_events} events to be fully processed...")
+        try:
+            await asyncio.wait_for(self.processing_complete.wait(), timeout=120.0)
+            logger.info("✅ All events processed successfully!")
+        except asyncio.TimeoutError:
+            logger.warning("⚠️ Timeout waiting for event processing - displaying partial results")
         
         # Display results
         self._display_simulation_results()
@@ -169,6 +177,10 @@ class Phase2EndToEndSimulation:
         """Handle data processed events."""
         self.simulation_results['events_processed'] += 1
         logger.info(f"✅ Data processed for sensor {event.processed_data.get('sensor_id', 'unknown')}")
+        
+        # Check if all events have been processed
+        if self.simulation_results['events_processed'] >= self.expected_events:
+            self.processing_complete.set()
         
     async def _on_anomaly_detected(self, event: AnomalyDetectedEvent):
         """Handle anomaly detected events."""
