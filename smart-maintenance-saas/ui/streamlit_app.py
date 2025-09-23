@@ -42,74 +42,128 @@ except ImportError:
     MLFLOW_AVAILABLE = False
     # Warning will be shown later after page config
 
-# Configuration
+# Configuration with cloud deployment support
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
-API_KEY = os.getenv("API_KEY", "dev_api_key_123")
+API_KEY = os.getenv("API_KEY", "your_default_api_key")  # Removed dev-specific default
+CLOUD_MODE = os.getenv("CLOUD_MODE", "false").lower() == "true"
+DEPLOYMENT_ENV = os.getenv("DEPLOYMENT_ENV", "local")  # local, staging, production
+
+# Cloud-aware timeout settings
+DEFAULT_TIMEOUT = 30 if CLOUD_MODE else 10
+LONG_TIMEOUT = 120 if CLOUD_MODE else 60
+RETRY_ATTEMPTS = 3 if CLOUD_MODE else 1
+
 HEADERS = {
     "X-API-Key": API_KEY,
     "Content-Type": "application/json"
 }
 
 def make_api_request(method: str, endpoint: str, data: Dict[Any, Any] = None) -> Dict[Any, Any]:
-    """Make an API request to the backend."""
+    """Make an API request with cloud-aware error handling and retry logic."""
+    import time
     url = f"{API_BASE_URL}{endpoint}"
     
-    try:
-        if method.upper() == "POST":
-            response = requests.post(url, headers=HEADERS, json=data, timeout=10)
-        elif method.upper() == "GET":
-            response = requests.get(url, headers=HEADERS, timeout=10)
-        else:
-            raise ValueError(f"Unsupported method: {method}")
-        
-        if response.status_code in [200, 201]:
-            return {"success": True, "data": response.json()}
-        else:
-            return {
-                "success": False, 
-                "error": f"HTTP {response.status_code}: {response.text}"
-            }
-    except requests.exceptions.ConnectionError:
-        return {
-            "success": False, 
-            "error": f"Connection failed. Make sure the backend server is running on {API_BASE_URL}"
-        }
-    except requests.exceptions.Timeout:
-        return {"success": False, "error": "Request timed out"}
-    except Exception as e:
-        return {"success": False, "error": f"Unexpected error: {str(e)}"}
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            if method.upper() == "POST":
+                response = requests.post(url, headers=HEADERS, json=data, timeout=DEFAULT_TIMEOUT)
+            elif method.upper() == "GET":
+                response = requests.get(url, headers=HEADERS, timeout=DEFAULT_TIMEOUT)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+            
+            if response.status_code in [200, 201]:
+                return {"success": True, "data": response.json()}
+            else:
+                return {
+                    "success": False, 
+                    "error": f"HTTP {response.status_code}: {response.text}",
+                    "cloud_mode": CLOUD_MODE
+                }
+                
+        except requests.exceptions.ConnectionError as e:
+            if attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+                
+            if CLOUD_MODE:
+                error_msg = f"Cloud API connection failed. Check if the backend service is deployed and accessible at {API_BASE_URL}"
+            else:
+                error_msg = f"Connection failed. Make sure the backend server is running on {API_BASE_URL}"
+            
+            return {"success": False, "error": error_msg, "cloud_mode": CLOUD_MODE}
+            
+        except requests.exceptions.Timeout:
+            if attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(2 ** attempt)
+                continue
+                
+            timeout_msg = f"Request timed out after {DEFAULT_TIMEOUT}s."
+            if CLOUD_MODE:
+                timeout_msg += " Cloud latency may be higher than expected."
+            else:
+                timeout_msg += " Local server may be overloaded."
+                
+            return {"success": False, "error": timeout_msg, "cloud_mode": CLOUD_MODE}
+            
+        except Exception as e:
+            return {"success": False, "error": f"Unexpected error: {str(e)}", "cloud_mode": CLOUD_MODE}
+    
+    return {"success": False, "error": "All retry attempts failed", "cloud_mode": CLOUD_MODE}
 
-def make_long_api_request(method: str, endpoint: str, data: Dict[Any, Any] = None, timeout: int = 60) -> Dict[Any, Any]:
+def make_long_api_request(method: str, endpoint: str, data: Dict[Any, Any] = None, timeout: int = None) -> Dict[Any, Any]:
     """Make an API request with extended timeout for long-running operations like report generation."""
+    import time
+    if timeout is None:
+        timeout = LONG_TIMEOUT
+        
     url = f"{API_BASE_URL}{endpoint}"
     
-    try:
-        if method.upper() == "POST":
-            response = requests.post(url, headers=HEADERS, json=data, timeout=timeout)
-        elif method.upper() == "GET":
-            response = requests.get(url, headers=HEADERS, timeout=timeout)
-        else:
-            raise ValueError(f"Unsupported method: {method}")
-        
-        if response.status_code in [200, 201]:
-            return {"success": True, "data": response.json()}
-        else:
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            if method.upper() == "POST":
+                response = requests.post(url, headers=HEADERS, json=data, timeout=timeout)
+            elif method.upper() == "GET":
+                response = requests.get(url, headers=HEADERS, timeout=timeout)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+            
+            if response.status_code in [200, 201]:
+                return {"success": True, "data": response.json()}
+            else:
+                return {
+                    "success": False, 
+                    "error": f"HTTP {response.status_code}: {response.text}",
+                    "cloud_mode": CLOUD_MODE
+                }
+                
+        except requests.exceptions.ConnectionError as e:
+            if attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(2 ** attempt)
+                continue
+                
+            if CLOUD_MODE:
+                error_msg = f"Cloud API connection failed. Check if the backend service is deployed and accessible at {API_BASE_URL}"
+            else:
+                error_msg = f"Connection failed. Make sure the backend server is running on {API_BASE_URL}"
+            
+            return {"success": False, "error": error_msg, "cloud_mode": CLOUD_MODE}
+            
+        except requests.exceptions.Timeout:
+            if attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(2 ** attempt)
+                continue
+                
             return {
                 "success": False, 
-                "error": f"HTTP {response.status_code}: {response.text}"
+                "error": f"Request timed out after {timeout} seconds. {'Cloud processing may take longer than expected.' if CLOUD_MODE else 'The operation is taking longer than expected.'}",
+                "cloud_mode": CLOUD_MODE
             }
-    except requests.exceptions.Timeout:
-        return {
-            "success": False, 
-            "error": f"Request timed out after {timeout} seconds. The operation is taking longer than expected."
-        }
-    except requests.exceptions.ConnectionError:
-        return {
-            "success": False, 
-            "error": f"Connection failed. Make sure the backend server is running on {API_BASE_URL}"
-        }
-    except Exception as e:
-        return {"success": False, "error": f"Request error: {str(e)}"}
+            
+        except Exception as e:
+            return {"success": False, "error": f"Unexpected error: {str(e)}", "cloud_mode": CLOUD_MODE}
+    
+    return {"success": False, "error": "All retry attempts failed", "cloud_mode": CLOUD_MODE}
 
 def get_system_metrics():
     """Fetch system metrics from the /metrics endpoint."""
@@ -216,25 +270,47 @@ def main():
     # Demo status indicators
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("🤖 Active Agents", "10", delta="Phase 2 Complete")
+        st.metric("🤖 Active Agents", "12", delta="4 Categories")
     with col2:
         st.metric("🎯 S3 Models", "17", delta="Cloud Ready")
     with col3:
-        st.metric("📊 Event Subscriptions", "9", delta="Operational")
+        st.metric("📊 Production Services", "11", delta="Operational")
     with col4:
-        st.metric("🚀 Production Ready", "95%", delta="+20%")
+        st.metric("🚀 Production Ready", "90%", delta="Core Complete")
     
     st.markdown("---")
     
-    # Check backend connectivity
+    # Check backend connectivity with cloud awareness
     with st.sidebar:
         st.header("🔗 System Status")
+        
+        # Add cloud deployment status
+        st.markdown("### 🌐 Deployment Info")
+        if CLOUD_MODE:
+            st.success("☁️ **Cloud Mode**")
+            st.info(f"Environment: {DEPLOYMENT_ENV.upper()}")
+            st.info(f"API Endpoint: {API_BASE_URL}")
+            st.info(f"Timeout: {DEFAULT_TIMEOUT}s (Cloud Optimized)")
+        else:
+            st.info("🖥️ **Local Mode**")
+            st.info(f"Backend: {API_BASE_URL}")
+            st.info(f"Timeout: {DEFAULT_TIMEOUT}s")
+        
+        st.markdown("---")
+        
+        # Enhanced health check with cloud awareness
         health_check = make_api_request("GET", "/health")
         if health_check["success"]:
             st.success("✅ Backend Connected")
+            if CLOUD_MODE:
+                st.success("☁️ Cloud services operational")
             st.json(health_check["data"])
         else:
             st.error("❌ Backend Disconnected")
+            if CLOUD_MODE:
+                st.error("☁️ Check cloud service status")
+                if "cloud_mode" in health_check:
+                    st.info("💡 Verify cloud API endpoint is accessible")
             st.error(health_check["error"])
     
     # === GOLDEN PATH DEMO SECTION ===
@@ -335,7 +411,7 @@ def main():
             st.metric("☁️ Cloud Integration", "Operational", delta="3 services connected")
             
         with metrics_col3:
-            st.metric("🚀 Golden Path", "Validated", delta="95%+ success rate")
+            st.metric("🚀 Golden Path", "Validated", delta="Core System Ready")
             st.metric("⚡ Performance", "< 3ms P95", delta="Production ready")
         
         if st.button("🔄 Refresh Live Metrics", use_container_width=True):
