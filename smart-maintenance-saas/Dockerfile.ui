@@ -8,29 +8,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables for Python optimization
+# Set environment variables for Python and MLflow optimization
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    MLFLOW_TRACKING_URI=http://mlflow:5000 \
+    AWS_DEFAULT_REGION=us-east-2
 
 # Set working directory
 WORKDIR /app
 
-# Install only UI-required Python packages (minimal set for cloud deployment)
+# Install UI-required Python packages with MLflow support for model utilities
 RUN pip install --no-cache-dir \
     streamlit==1.45.1 \
     requests==2.31.0 \
     pandas==2.0.3 \
     matplotlib==3.7.5 \
     plotly==5.17.0 \
-    numpy==1.24.3
+    numpy==1.24.3 \
+    mlflow==2.17.0 \
+    boto3==1.26.0 \
+    scikit-learn==1.4.0
 
-# Copy only essential application files
+# Copy essential application files and dependencies
 COPY ui/ ./ui/
 COPY apps/ml/model_utils.py ./apps/ml/model_utils.py
+COPY core/ml/model_loader.py ./core/ml/model_loader.py
+COPY data/exceptions.py ./data/exceptions.py
+COPY data/schemas.py ./data/schemas.py
 
 # Create required directory structure  
-RUN mkdir -p apps/ml && touch apps/__init__.py apps/ml/__init__.py
+RUN mkdir -p apps/ml core/ml data && \
+    touch apps/__init__.py apps/ml/__init__.py core/__init__.py core/ml/__init__.py data/__init__.py
 
 # Health check for container orchestration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
