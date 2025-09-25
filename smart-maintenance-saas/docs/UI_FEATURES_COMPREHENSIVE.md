@@ -1,52 +1,390 @@
-# Smart Maintenance SaaS - Comprehensive UI Features Documentation
+# Smart Maintenance SaaS - Comprehensive UI Features Documentation (V1.0 HARDENING UPDATE)
 
 ## Overview
 
-The Smart Maintenance SaaS platform features a sophisticated Streamlit-based web interface that provides comprehensive predictive maintenance capabilities through an intuitive, production-ready dashboard. This document details all current features, their implementation, purpose, and future roadmap.
+The Smart Maintenance SaaS platform features a sophisticated Streamlit-based web interface (1393 lines) providing predictive maintenance capabilities. **Following comprehensive UI functionality analysis, this document has been updated to reflect actual feature status, identified gaps, and remediation requirements for V1.0 production readiness.**
+
+**Current UI Status:** Mixed implementation with production-ready backend integration but requiring focused hardening sprint to address placeholders, broken features, and performance issues.
 
 ---
 
-## Current Feature Set
+## 🎯 EXECUTIVE FEATURE STATUS SUMMARY
+
+### **✅ OPERATIONAL FEATURES (Backend Integration Working)**
+1. **System Dashboard** - Prometheus metrics integration functional
+2. **Data Ingestion** - API connectivity and basic validation operational
+3. **Model Integration** - MLflow registry connection established
+4. **Authentication** - API key validation working
+5. **Cloud Configuration** - Environment-aware timeout and retry logic
+
+### **⚠️ PARTIALLY FUNCTIONAL FEATURES (Performance Issues)**
+1. **Model Recommendations** - Works but 30-40s latency (caching needed)
+2. **SHAP Analysis** - Integration present but 404 version errors
+3. **Health Monitoring** - Basic functionality with static/misleading elements
+4. **Simulation Controls** - Basic structure with UI crashes in expanders
+
+### **❌ BROKEN/PLACEHOLDER FEATURES (Require Implementation)**
+1. **Dataset Preview** - 500 error from missing/broken endpoint
+2. **Golden Path Demo** - Placeholder stub with no real orchestration
+3. **Decision Audit Trail** - No logging or persistence implemented
+4. **Report Generation** - Synthetic responses without download capability
+5. **Live Metrics** - Static data mislabeled as "live"
+
+---
+
+## 📊 DETAILED FEATURE ANALYSIS & STATUS
 
 ### 1. 🏠 **System Dashboard**
 
-#### **What It Does**
-Real-time system monitoring and health visualization displaying key performance metrics and system status.
+#### **Current Implementation Status: ✅ 80% FUNCTIONAL**
 
-#### **How It Works**
-- **Prometheus Integration**: Parses metrics from `/metrics` endpoint using custom text processing
-- **Real-time Data**: Fetches live system metrics including memory usage, CPU time, request counts, and error rates
-- **Visual Display**: 4-column metric layout with formatted values (bytes to MB conversion)
-- **Health Visualization**: Interactive Plotly charts showing sample system health trends
+#### **What Currently Works:**
+- **Prometheus Integration**: Parses metrics from `/metrics` endpoint successfully
+- **Basic Metrics Display**: Memory usage, CPU time, request counts functional
+- **Visual Layout**: 4-column metric layout with formatted values operational
+- **API Connectivity**: Backend communication established and reliable
 
-#### **Why It's Important**
-- **Operational Visibility**: Provides immediate insight into system performance and resource utilization
-- **Proactive Monitoring**: Enables early detection of performance issues or resource constraints
-- **Professional UX**: Gives operators confidence in system reliability and transparency
-
-#### **Implementation Details**
+#### **Implementation Details (Functional):**
 ```python
 def get_system_metrics():
     """Parse Prometheus metrics with text format processing"""
-    # Fetches from http://api:8000/metrics
-    # Parses: process_resident_memory_bytes, process_cpu_seconds_total, http_requests_total
-    # Graceful fallback with example metrics when endpoint unavailable
+    # ✅ WORKING: Fetches from http://api:8000/metrics
+    # ✅ WORKING: Parses process_resident_memory_bytes, process_cpu_seconds_total
+    # ✅ WORKING: Graceful fallback with example metrics
+    # ⚠️ ISSUE: Some metrics show static/misleading "live" data
 ```
 
-#### **Current Capabilities**
-- ✅ Memory usage monitoring (MB display)
-- ✅ CPU time tracking (total seconds)
-- ✅ HTTP request success counting
-- ✅ Error rate monitoring (4xx + 5xx responses)
-- ✅ Interactive time-series visualizations
-- ✅ Raw metrics debugging interface
+#### **Identified Issues:**
+- **Issue #12:** System Health Visualization shows static January 2024 data
+- **Impact:** Users receive misleading historical information
+- **Fix Required:** Connect to real Prometheus timeseries or correct labeling
+- **Effort:** 0.5 day (Phase B3)
+
+#### **Current Capabilities:**
+- ✅ Memory usage monitoring (MB display) - WORKING
+- ✅ CPU time tracking (total seconds) - WORKING  
+- ✅ HTTP request success counting - WORKING
+- ✅ Error rate monitoring (4xx + 5xx responses) - WORKING
+- ⚠️ Interactive time-series visualizations - STATIC DATA ISSUE
+- ✅ Raw metrics debugging interface - WORKING
 
 ---
 
 ### 2. 📊 **Data Ingestion & Management**
 
-#### **What It Does**
-Comprehensive sensor data ingestion with validation, batch processing, and real-time feedback.
+#### **Current Implementation Status: ⚠️ 70% FUNCTIONAL**
+
+#### **What Currently Works:**
+- **API Integration**: Direct POST requests to `/api/v1/data/ingest` functional
+- **Form Validation**: Sensor type selection and basic input validation
+- **Success Response Handling**: Immediate notifications operational
+- **CSV Upload Processing**: File upload interface present
+
+#### **Implementation Details (Mixed Status):**
+```python
+def ingest_sensor_data(sensor_data):
+    """Process sensor data ingestion with validation"""
+    # ✅ WORKING: Validates sensor_id, type, value, unit, timestamp
+    # ✅ WORKING: Posts to API with correlation tracking
+    # ✅ WORKING: Handles HTTP responses
+    # ❌ ISSUE: No post-ingestion verification of DB write
+```
+
+#### **Identified Issues:**
+- **Issue #3:** Manual Sensor Ingestion returns success without DB write confirmation
+- **Issue #10:** Quick Action "Send Test Data" lacks contextual verification
+- **Impact:** Users uncertain if data actually persisted in system
+- **Fix Required:** Post-ingestion verification showing stored record details
+- **Effort:** 0.25 day (Phase A4)
+
+#### **Current Capabilities:**
+- ✅ Manual single sensor entry - WORKING
+- ✅ CSV batch upload processing - WORKING
+- ✅ Sensor type validation (5 types supported) - WORKING
+- ✅ Real-time API response display - WORKING
+- ✅ Error handling and user feedback - WORKING
+- ❌ Post-ingestion verification - MISSING (Critical Gap)
+
+---
+
+### 3. 🔮 **ML Predictions with SHAP Analysis**
+
+#### **Current Implementation Status: ⚠️ 60% FUNCTIONAL**
+
+#### **What Currently Works:**
+- **Model Registry Integration**: MLflow connection established
+- **Model Selection Interface**: Dropdown populated from registry
+- **Feature Engineering**: Basic preprocessing pipeline functional
+- **API Communication**: Prediction endpoint connectivity working
+
+#### **Implementation Details (Performance & Version Issues):**
+```python
+# Backend SHAP computation (RECENT FIX APPLIED)
+async def compute_shap_explanation(model, features_df, feature_names):
+    """Production-ready SHAP computation with fallback handling"""
+    # ✅ FIXED: Returns {"feature_name": shap_value} format (Pydantic compatible)
+    # ❌ ISSUE: Version resolution fails with "auto" literal values
+    
+# Frontend model operations (PERFORMANCE ISSUE)
+def get_model_recommendations():
+    """Get ML model recommendations"""
+    # ❌ ISSUE: 30-40s latency from uncached MLflow queries
+    # ❌ ISSUE: Full registry enumeration on each call
+```
+
+#### **Identified Issues:**
+- **Issue #14:** ML Prediction w/ SHAP returns 404 model/version mismatch
+- **Issue #6:** Model Recommendations work but 30s latency
+- **Issue #7:** Manual Model Selection has 40s latency with missing metadata
+- **Impact:** Key ML features appear broken due to errors and poor performance
+- **Fix Required:** Version resolution logic + caching implementation
+- **Effort:** 0.5 day version fix (A3) + 0.5 day caching (B1)
+
+#### **Current Capabilities:**
+- ✅ 17+ ML models available for prediction - WORKING
+- ✅ Automatic model-sensor type recommendations - WORKING (SLOW)
+- ❌ SHAP feature importance visualization - VERSION MISMATCH ERRORS
+- ✅ Interactive prediction interface - WORKING (SLOW)
+- ⚠️ Real-time model inference - PERFORMANCE ISSUES
+- ⚠️ Explainable AI compliance - BROKEN DUE TO 404 ERRORS
+
+---
+
+### 4. 📈 **Dataset Preview & Observability**
+
+#### **Current Implementation Status: ❌ 0% FUNCTIONAL**
+
+#### **What Should Work:**
+- **Master Dataset Preview**: Display recent sensor readings in tabular format
+- **Data Exploration**: Interactive filtering and search capabilities
+- **Quality Metrics**: Data quality indicators and statistics
+- **Export Functions**: CSV download of filtered datasets
+
+#### **Implementation Details (BROKEN):**
+```python
+def display_dataset_preview():
+    """Display sensor readings dataset"""
+    # ❌ CRITICAL: /api/v1/sensors/readings returns 500 error
+    # ❌ BROKEN: Core data observability completely non-functional
+    # ❌ IMPACT: Users cannot view system data at all
+```
+
+#### **Identified Issues:**
+- **Issue #9:** Master Dataset Preview returns 500 error (CRITICAL)
+- **Impact:** Core data observability completely broken
+- **Root Cause:** API sensor readings endpoint failing or incorrectly implemented
+- **Fix Required:** Backend endpoint implementation with proper DB queries
+- **Effort:** 0.5 day (Phase A1 - CRITICAL PRIORITY)
+
+#### **Current Capabilities:**
+- ❌ Dataset loading and display - COMPLETELY BROKEN
+- ❌ Interactive data exploration - NON-FUNCTIONAL
+- ❌ Data quality visualization - UNAVAILABLE
+- ❌ Export capabilities - NOT ACCESSIBLE
+
+---
+
+### 5. 🎮 **Demo & Simulation Features**
+
+#### **Current Implementation Status: ❌ 30% FUNCTIONAL**
+
+#### **What Currently Works:**
+- **UI Structure**: Basic simulation interface present
+- **Form Inputs**: Sensor ID and parameter input functional
+- **API Connectivity**: Basic endpoint communication working
+
+#### **Implementation Details (Mixed Placeholders & Crashes):**
+```python
+# Golden Path Demo (PLACEHOLDER)
+def golden_path_demo():
+    """Run complete MLOps demonstration"""
+    # ❌ ISSUE: Only calls /health endpoint
+    # ❌ ISSUE: Returns instant success without real orchestration
+    # ❌ ISSUE: No actual pipeline triggers or event coordination
+
+# Simulation Features (UI CRASHES)
+def simulate_drift_event():
+    """Generate drift simulation"""
+    # ❌ CRITICAL: Streamlit expander inside status context causes crashes
+    # ❌ IMPACT: Core simulation features completely unusable
+```
+
+#### **Identified Issues:**
+- **Issue #1:** Golden Path Demo is instant success stub with no real pipeline
+- **Issue #15:** Simulate Drift Event has nested expander crashes
+- **Issue #16:** Simulate Anomaly Event has same expander crashes  
+- **Issue #17:** Demo Control Panel sequence is stubbed with no validation
+- **Impact:** Primary demo experience misleading, core features crash
+- **Fix Required:** Real orchestration implementation + UI structural fixes
+- **Effort:** 1 day orchestration (A7) + 0.25 day UI fixes (A2)
+
+#### **Current Capabilities:**
+- ❌ Golden Path Demo - PLACEHOLDER STUB ONLY
+- ❌ Drift simulation - UI CRASHES
+- ❌ Anomaly simulation - UI CRASHES  
+- ⚠️ Normal data generation - BASIC FUNCTIONALITY ONLY
+- ❌ Multi-step orchestration - NOT IMPLEMENTED
+
+---
+
+### 6. 📋 **Decision & Audit Management**
+
+#### **Current Implementation Status: ❌ 20% FUNCTIONAL**
+
+#### **What Currently Works:**
+- **Decision Submission Form**: Basic input interface functional
+- **API Communication**: POST requests to decision endpoint working
+- **Response Handling**: Event ID return processing operational
+
+#### **Implementation Details (NO PERSISTENCE):**
+```python
+def submit_human_decision():
+    """Submit maintenance decision"""
+    # ✅ WORKING: Form submission and API call
+    # ✅ WORKING: Returns event_id response
+    # ❌ CRITICAL: No decision log endpoint or UI table
+    # ❌ CRITICAL: No audit trail or decision history retrieval
+```
+
+#### **Identified Issues:**
+- **Issue #5:** Human Decision Submission returns event_id only with no view/log link
+- **Impact:** No audit trail for critical maintenance decisions
+- **Root Cause:** No `/api/v1/decisions` GET endpoint or UI logging functionality
+- **Fix Required:** Decision log persistence + viewer interface implementation
+- **Effort:** 0.75 day (Phase A5 - HIGH PRIORITY)
+
+#### **Current Capabilities:**
+- ✅ Decision form submission - WORKING
+- ✅ Event ID generation - WORKING
+- ❌ Decision history viewing - NOT IMPLEMENTED
+- ❌ Audit trail interface - MISSING
+- ❌ Decision outcome tracking - NO FUNCTIONALITY
+
+---
+
+### 7. 📊 **Reporting & Analytics**
+
+#### **Current Implementation Status: ❌ 10% FUNCTIONAL**
+
+#### **What Currently Works:**
+- **Report Request Interface**: Basic form and API call functional
+- **JSON Response Display**: Basic response visualization working
+
+#### **Implementation Details (PLACEHOLDER RESPONSES):**
+```python
+def generate_system_report():
+    """Generate comprehensive system report"""
+    # ✅ WORKING: API call to report endpoint
+    # ❌ ISSUE: Returns synthetic minimal JSON only
+    # ❌ ISSUE: No file download capability
+    # ❌ ISSUE: No real metrics or meaningful content
+```
+
+#### **Identified Issues:**
+- **Issue #4:** System Report Generation returns synthetic JSON with no download
+- **Impact:** Critical reporting functionality non-operational for production use
+- **Root Cause:** Endpoint returns mocked payload without persistence or file generation
+- **Fix Required:** Real report generation with downloadable artifacts
+- **Effort:** 1 day (Phase A6 - HIGH PRIORITY)
+
+#### **Current Capabilities:**
+- ✅ Report request submission - WORKING
+- ❌ Meaningful report content - SYNTHETIC ONLY
+- ❌ Download functionality - NOT IMPLEMENTED
+- ❌ Multiple report formats - NO OPTIONS
+- ❌ Scheduled reporting - NOT AVAILABLE
+
+---
+
+## 🚨 V1.0 UI HARDENING REQUIREMENTS
+
+### **Phase A: Critical Fixes (Days 1-2) - 4.25 days total**
+
+#### **A1: Dataset Preview Restoration** *(CRITICAL - 0.5 day)*
+```python
+# Required Backend Implementation:
+GET /api/v1/sensors/readings?limit=100&sensor_id=optional
+# Must return: sensor readings with ORDER BY timestamp DESC
+# UI Enhancement: Automatic refresh after ingestion
+```
+
+#### **A2: UI Structural Stability** *(CRITICAL - 0.25 day)*
+```python
+# Fix: Remove nested expanders from simulation sections
+# Restructure: Use status blocks with separate result displays
+# Ensure: All simulation features operate without crashes
+```
+
+#### **A3: SHAP Prediction Functionality** *(HIGH - 0.5 day)*
+```python
+# Backend: Add GET /api/v1/ml/models/{model_name}/latest
+# UI: Implement version resolution with graceful fallbacks
+# Result: SHAP analysis generates explanations successfully
+```
+
+#### **A4-A7: Core Feature Implementation**
+- **A4:** Ingestion verification with record display (0.25 day)
+- **A5:** Decision audit trail with persistence (0.75 day)
+- **A6:** Real report generation with downloads (1 day)
+- **A7:** Golden Path orchestration with progress tracking (1 day)
+
+### **Phase B: Performance & UX (Day 3) - 1.75 days total**
+
+#### **B1: MLflow Performance Optimization** *(MEDIUM - 0.5 day)*
+```python
+# Implementation: Session-based caching with TTL
+@st.cache_data(ttl=300)  # 5-minute cache
+def get_cached_model_recommendations():
+    # Target: Reduce 30-40s waits to <5s response times
+```
+
+#### **B2-B5: UX Enhancement Suite**
+- **B2:** Model metadata parallel fetching (0.25 day)
+- **B3:** Live metrics real-time implementation (0.5 day)  
+- **B4:** Enhanced error guidance with actionable messages (0.25 day)
+- **B5:** Environment differentiation with deployment indicators (0.25 day)
+
+### **Phase C: Professional Polish (Day 4) - 1 day total**
+
+#### **C1: Placeholder Management**
+```python
+# Create: "🧪 Under Development (Preview Features)" section
+# Move: Simple Prediction Stub, Static Health Charts
+# Label: All non-functional features with appropriate disclaimers
+```
+
+#### **C2: Acceptance Validation & C3: Documentation Alignment**
+- Comprehensive testing against V1.0 criteria
+- Performance validation (<10s response requirements)
+- Documentation updates reflecting improved functionality
+
+---
+
+## ✅ V1.0 FEATURE COMPLETION TARGETS
+
+### **Functional Excellence Standards**
+| Feature Area | Current Status | Target Status | Key Improvements |
+|--------------|---------------|---------------|------------------|
+| **Data Preview** | 0% (500 errors) | 95% (Sub-3s loading) | Core observability restored |
+| **ML Predictions** | 60% (Version errors) | 95% (Full SHAP analysis) | Version resolution + caching |
+| **Simulations** | 30% (UI crashes) | 95% (Stable operation) | Structural fixes + orchestration |
+| **Decision Logging** | 20% (No persistence) | 95% (Full audit trail) | Backend + UI implementation |
+| **Report Generation** | 10% (Placeholders) | 95% (Real downloads) | Content + download capability |
+| **System Dashboard** | 80% (Static elements) | 95% (Professional accuracy) | Live data + correct labeling |
+
+### **Performance Excellence Standards**
+- **Model Operations:** 30-40s → <10s (Caching implementation)
+- **Data Loading:** Variable/500s → <3s (Endpoint optimization)
+- **User Feedback:** Misleading → Professional (Terminology correction)
+- **Error Handling:** Basic → Actionable (Enhanced guidance)
+
+### **User Experience Excellence**
+- **Professional Appearance:** Remove all placeholder content and crashes
+- **Feature Reliability:** 100% advertised features operational
+- **Performance Perception:** No operations appear broken due to latency
+- **Error Recovery:** Users can resolve issues with provided guidance
+
+**The UI hardening plan will transform the interface from 65% to 95% production readiness, delivering professional user experience matching the production-grade backend capabilities.**
 
 #### **How It Works**
 - **Flexible Input Methods**: Manual sensor data entry with type selection (temperature, vibration, pressure, humidity, voltage)
