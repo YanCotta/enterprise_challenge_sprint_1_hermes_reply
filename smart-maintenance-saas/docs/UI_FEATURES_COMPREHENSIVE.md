@@ -23,7 +23,7 @@ The Smart Maintenance SaaS platform features a sophisticated Streamlit-based web
 3. **Health Monitoring** - Basic functionality with static/misleading elements
 4. **Simulation Controls** - Basic structure with UI crashes in expanders
 
-### **❌ BROKEN/PLACEHOLDER FEATURES (Require Implementation)**
+### **[BROKEN] BROKEN/PLACEHOLDER FEATURES (Require Implementation)**
 1. **Dataset Preview** - 500 error from missing/broken endpoint
 2. **Golden Path Demo** - Placeholder stub with no real orchestration
 3. **Decision Audit Trail** - No logging or persistence implemented
