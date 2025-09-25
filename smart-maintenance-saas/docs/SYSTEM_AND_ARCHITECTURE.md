@@ -1,34 +1,42 @@
-# Smart Maintenance SaaS - System and Architecture
+# Smart Maintenance SaaS – System & Architecture (V1.0)
 
-**Date:** September 25, 2025 (V1.0 Production Ready)  
-**Status:** Production-Ready Architecture with Cloud-Native Infrastructure  
-**Authority:** Aligned with UNIFIED_SYSTEM_DOCUMENTATION.md  
-**System Status:** 80% Production Ready (Backend 95% | UI 65%)
+**Last Updated:** September 25, 2025  
+**Authoritative Source of Truth:** See `UNIFIED_SYSTEM_DOCUMENTATION.md` for full state, gap register, and remediation tracking.  
+**Scope of THIS Document:** High‑signal architectural overview for engineers and auditors. Deep narratives, agent-by-agent behavior traces, and historical evolution have been intentionally de‑duplicated and centralized elsewhere.  
+**Current Production Readiness:** Backend ~95%, UI hardening in progress (final gating items listed in unified doc).  
+**Document Philosophy:** Minimize duplication. Link to canonical artifacts instead of restating them.
 
 ## 1. Introduction
 
 This document provides a comprehensive overview of the system architecture for the Smart Maintenance SaaS platform. The platform is a **cloud-native, event-driven system** with **revolutionary S3 serverless model loading** that delivers scalable, resilient predictive maintenance solutions for industrial applications.
 
-### 1.1. Architecture Overview
+### 1.1. Architecture Overview (Concise)
 
-The Smart Maintenance SaaS platform is built on a cloud-native, event-driven architecture that provides:
+Core properties:
 
-- **🚀 Revolutionary S3 Serverless Model Loading:** Dynamic model selection from MLflow/S3 with intelligent caching
-- **☁️ Cloud-Native Infrastructure:** TimescaleDB + Redis + S3 fully integrated and operational
-- **🤖 Enterprise-Grade Multi-Agent System:** 12 agents across 4 categories with sophisticated event coordination  
-- **⚡ Production-Ready Performance:** 103.8 RPS peak throughput with sub-3ms response times
-- **🧠 Comprehensive ML Pipeline:** 17+ production models across classification, anomaly detection, and forecasting
-- **🔄 Advanced Event-Driven Architecture:** Custom high-performance event bus with retry logic and dead letter queues
-- **🗄️ Cloud Database Integration:** Optimized TimescaleDB with continuous aggregates and cloud deployment
+- **Event‑Driven Core:** Custom in‑memory event bus (retry + DLQ) enabling asynchronous agent orchestration.
+- **Multi‑Agent Execution Model:** Specialized agents (ingestion, anomaly detection, validation, prediction, scheduling, reporting, learning, drift, retrain, notification, maintenance log) communicating via events.
+- **Temporal & Analytical Storage:** PostgreSQL + TimescaleDB (hypertables, compression, continuous aggregates) for sensor & derived features.
+- **Model Lifecycle:** MLflow registry (17+ models) + lightweight model cache for near zero‑latency inference.
+- **Resilience Patterns:** Correlation IDs, idempotency cache, retry with exponential backoff, health & metrics endpoints.
+- **Performance Provenance:** Validated 103.8 RPS peak (Day 17) and ≥30% query acceleration via TimescaleDB optimizations (Day 18). See `PERFORMANCE_BASELINE.md`.
+- **Cloud Mode Toggle:** Environment-driven latency/caching policies; same container images usable locally & in cloud.
 
-### 1.2. Current Architecture Status
+Out‑of‑scope in this file (see unified doc): detailed dataset performance tables, full agent message taxonomies, gap remediation phases, ML model per‑version metrics.
 
-**Backend Architecture:** Production-ready and fully operational (95% complete)  
-**Cloud Infrastructure:** Fully deployed with managed services  
-**Multi-Agent System:** 12 agents operational across core, decision, interface, and learning categories  
-**API Layer:** FastAPI with authentication, rate limiting, and comprehensive endpoints  
+### 1.2. Status Snapshot
 
-*For current system status and development roadmap, see [UNIFIED_SYSTEM_DOCUMENTATION.md](./UNIFIED_SYSTEM_DOCUMENTATION.md)*
+| Layer | Status | Notes |
+|-------|--------|-------|
+| API / Gateway | Stable | FastAPI + metrics + auth + rate limiting |
+| Event Bus | Stable | In‑memory; future Kafka migration earmarked (post‑V1) |
+| Agents | Operational | All defined agents load; some UI surfacing still WIP |
+| ML Registry | Stable | 17+ registered models; drift + retrain loop wired |
+| Database Layer | Optimized | Continuous aggregates + composite indexes validated |
+| Caching | Basic | Redis present; advanced inference/result caching backlog |
+| UI | Partially Hardened | Reliability improvements underway (cloud parity confirmed) |
+
+For remediation backlog & gating items: `UNIFIED_SYSTEM_DOCUMENTATION.md`.
 
 ---
 
@@ -244,7 +252,7 @@ graph TD
     class HOURLY_VIEW,SENSOR_INDEX,TIME_INDEX performance
 ```
 
-### 2.5. Production Performance Metrics Flow
+### 2.5. Production Performance Metrics Flow (Summary Only)
 
 ```mermaid
 flowchart TB
@@ -305,13 +313,10 @@ flowchart TB
 
 ---
 
-## 3. Production System Architecture
+## 3. Core Technology Stack
 
-The architecture is implemented as a containerized, event-driven system optimized for high-performance industrial IoT data processing.
+### API Layer
 
-### 3.1. Core Technology Stack
-
-#### API Layer
 - **FastAPI 0.104.1** with Starlette-compatible dependencies
 - **Prometheus metrics integration** via `prometheus-fastapi-instrumentator`
 - **API rate limiting** (10 requests/minute for ML endpoints)
@@ -320,35 +325,33 @@ The architecture is implemented as a containerized, event-driven system optimize
 - **Structured JSON logging** with correlation ID propagation
 - **Health endpoints** (`/health`, `/health/db`, `/metrics`)
 
-#### Data Layer
+### Data Layer
+
 - **PostgreSQL with TimescaleDB 2.11+** optimized for time-series data
 - **Redis 7.0+** for caching and session management
 - **MLflow Model Registry** with SQLite backend and artifact storage
 - **Continuous aggregates** for real-time analytics performance
 - **Automatic data compression** and retention policies
 
-#### Event Processing
+### Event Processing
+
 - **Custom Event Bus** with exponential backoff retry logic
 - **Dead Letter Queue (DLQ)** for failed event handling
 - **Asynchronous processing** with correlation ID propagation
 - **Event persistence** with comprehensive audit trails
 
-### 3.2. Performance Characteristics
+### 3.2. Performance (Pointer)
 
-#### Load Testing Results (Day 17)
-- **Peak Throughput:** 103.8 RPS with 50 concurrent users
-- **Response Times:** P50: 1ms, P95: 2ms, P99: 3ms
-- **Resource Efficiency:** <6% CPU usage across all containers
-- **Memory Usage:** <1GB total across entire stack
-- **Stability:** 100% uptime during 3-minute sustained load tests
+To avoid duplication, authoritative performance datasets live in: `PERFORMANCE_BASELINE.md`, `DAY_17_LOAD_TEST_REPORT.md`, `DAY_18_PERFORMANCE_RESULTS.md`.
 
-#### Database Performance
-- **TimescaleDB Optimization:** 37.3% performance improvement via indexing
-- **Continuous Aggregates:** Real-time hourly summaries for ML queries
-- **Query Optimization:** Composite indexes for sensor-time range queries
-- **Compression:** Automatic compression for data older than 7 days
+Snapshot:
 
-### 3.3. Multi-Agent System
+- Peak RPS: 103.8 (validated)
+- Latency: P95 2ms / P99 3ms
+- DB Query Speedups: 30–37% via continuous aggregates & indexes
+- Headroom: <6% CPU under validated load
+
+### 3.3. Multi-Agent System (Summary)
 
 The platform implements a sophisticated multi-agent architecture for specialized task handling:
 
@@ -407,7 +410,7 @@ graph LR
     class EB eventbus
 ```
 
-### 3.4. Machine Learning Pipeline
+### 3.4. Machine Learning Pipeline (Condensed)
 
 #### Model Registry Status
 
@@ -487,13 +490,14 @@ graph TD
 ```
 
 **Key Features:**
+
 - **Real-time Performance Tracking:** Continuous monitoring of model accuracy and prediction quality
 - **Statistical Drift Detection:** Automated detection of data distribution changes
 - **Event-driven Retraining:** Automatic model updates triggered by drift alerts
 - **Model Performance Comparison:** Intelligent routing based on real-time performance metrics
 - **Notification System:** Integration with system event bus for drift alerts
 
-### 3.5. Event-Driven MLOps Automation
+### 3.5. Event-Driven MLOps Automation (Overview)
 
 Day 23 added a fully automated MLOps loop powered by the Redis-backed event bus, a Drift Check Agent, and a Retrain Agent.
 
@@ -553,7 +557,7 @@ Operational notes:
 
 ---
 
-## 4. Security and Operational Excellence
+## 4. Security & Operational Excellence
 
 ### 4.1. Security Implementation
 
@@ -587,13 +591,14 @@ Operational notes:
 - **Event Audit Trails:** Complete event processing history
 - **Error Tracking:** Comprehensive error logging with stack traces
 
-### 4.3. Deployment Architecture
+### 4.3. Deployment & Environments
 
 #### Microservice Migration Strategy
 
 The system implements a comprehensive microservice scaffolding strategy for modular deployment:
 
 **Service Decomposition Pattern:**
+
 - **API Gateway:** Central routing and authentication service
 - **ML Service:** Dedicated model inference and training service
 - **Data Service:** Sensor data ingestion and processing
@@ -601,6 +606,7 @@ The system implements a comprehensive microservice scaffolding strategy for modu
 - **Notification Service:** Event-driven notification management
 
 **Implementation Benefits:**
+
 - **Independent Scaling:** Each service can scale based on specific load patterns
 - **Technology Diversity:** Services can use optimal technology stacks
 - **Fault Isolation:** Service failures don't cascade across the system
@@ -627,14 +633,14 @@ services:
 
 ---
 
-## 5. Performance Benchmarks and Scaling
+## 5. Scaling & Optimization
 
 ### 5.1. Current Performance Baseline
 
 #### Response Time Performance
 
 - **P50 Response Time:** 1ms (50th percentile)
-- **P95 Response Time:** 2ms (95th percentile) 
+- **P95 Response Time:** 2ms (95th percentile)
 - **P99 Response Time:** 3ms (99th percentile)
 - **Maximum Response Time:** 124ms (well below 200ms SLO)
 
@@ -645,7 +651,7 @@ services:
 - **Event Processing:** >100 events/second capability validated
 - **Database Throughput:** Optimized for high-frequency time-series ingestion
 
-### 5.2. Scalability Analysis
+### 5.2. Scalability Analysis (Excerpt)
 
 #### Horizontal Scaling Potential
 
@@ -655,14 +661,16 @@ services:
 - **Event Bus Capacity:** Custom implementation designed for high throughput
 
 #### Performance Optimization Opportunities
+
 - **Connection Pooling:** Database connection optimization
 - **Caching Strategies:** Redis-based model and result caching
 - **Async Processing:** Event-driven asynchronous workload distribution
 - **Load Balancing:** Multi-replica deployment with load distribution
 
-### 4.4. CI/CD Pipeline Hardening
+### 5.3. CI/CD Pipeline Hardening
 
 #### Automated Testing Infrastructure
+
 - **Unit Testing:** Comprehensive test coverage with pytest framework
 - **Integration Testing:** End-to-end API testing with FastAPI TestClient
 - **Load Testing:** Locust-based performance validation (103.8 RPS peak)
@@ -670,12 +678,14 @@ services:
 - **Chaos Engineering:** Resilience testing with failure injection and recovery validation
 
 #### Pipeline Security
+
 - **Dependency Scanning:** Automated vulnerability detection in CI/CD
 - **Code Quality Gates:** Automated quality checks with linting and formatting
 - **Environment Validation:** Script-based environment verification
 - **Deployment Validation:** Automated health checks post-deployment
 
 **CI Environment Features:**
+
 - **Docker-based Testing:** Consistent testing environment across all stages
 - **Parallel Test Execution:** Optimized test runtime with parallel processing
 - **Automated Model Validation:** ML model performance regression testing
@@ -683,7 +693,7 @@ services:
 
 ---
 
-## 6. Data Flow and Integration
+## 6. Data Flow & Integration
 
 ### 6.1. Data Pipeline Architecture
 
@@ -747,13 +757,15 @@ flowchart LR
 The system has been validated against diverse industrial datasets:
 
 #### Dataset Portfolio
+
 - **AI4I 2020 UCI Dataset:** Industrial machine failure classification
-- **NASA IMS Bearing Dataset:** Vibration signal anomaly detection  
+- **NASA IMS Bearing Dataset:** Vibration signal anomaly detection
 - **XJTU-SY Bearing Dataset:** Advanced run-to-failure analysis
 - **MIMII Sound Dataset:** Audio-based anomaly detection
 - **Kaggle Pump Sensor Data:** Maintenance prediction classification
 
 #### Processing Capabilities
+
 - **Tabular Data:** High-performance classification with 99%+ accuracy
 - **Vibration Signals:** FFT analysis with statistical feature engineering
 - **Audio Processing:** MFCC feature extraction for machine sound analysis
@@ -761,21 +773,24 @@ The system has been validated against diverse industrial datasets:
 
 ---
 
-## 7. System Evolution and Architecture Decisions
+## 7. Architecture Decisions & Evolution
 
 ### 7.1. Architectural Trade-offs Made
 
 #### Event Bus Implementation
+
 **Decision:** Custom in-memory event bus instead of Apache Kafka
 **Rationale:** Reduced operational complexity while maintaining event-driven benefits
 **Result:** High-performance, low-latency event processing with retry logic
 
 #### MLflow Integration
+
 **Decision:** File-based artifact storage with SQLite registry
 **Rationale:** Simplified deployment without requiring external object storage
 **Result:** Complete model lifecycle management with container-native storage
 
 #### Database Choice
+
 **Decision:** PostgreSQL with TimescaleDB extension
 **Rationale:** Combines relational capabilities with time-series optimization
 **Result:** 37.3% performance improvement through continuous aggregates
@@ -783,12 +798,14 @@ The system has been validated against diverse industrial datasets:
 ### 7.2. Future Architecture Considerations
 
 #### Scaling Enhancements
+
 - **Redis Cluster:** Multi-node caching for horizontal scaling
-- **Database Sharding:** Multi-tenant data partitioning strategies  
+- **Database Sharding:** Multi-tenant data partitioning strategies
 - **Event Bus Evolution:** Migration to Apache Kafka for massive scale
 - **Microservice Decomposition:** Agent-based service extraction
 
 #### Advanced Features
+
 - **Real-time Streaming:** Apache Kafka or Redis Streams integration
 - **Advanced Analytics:** Apache Spark for large-scale data processing
 - **Edge Computing:** Agent deployment on edge devices
@@ -796,7 +813,7 @@ The system has been validated against diverse industrial datasets:
 
 ---
 
-## 8. Conclusion
+## 8. Conclusion (Lean)
 
 The Smart Maintenance SaaS platform represents a production-ready, event-driven architecture optimized for industrial IoT applications. With proven performance characteristics exceeding SLO requirements by orders of magnitude and comprehensive ML capabilities validated against real-world datasets, the system demonstrates enterprise-grade reliability and scalability.
 
@@ -804,7 +821,7 @@ The platform's success in achieving 103.8 RPS throughput with sub-3ms response t
 
 Key architectural strengths include the custom event bus design for low-latency processing, TimescaleDB optimization for time-series performance, comprehensive MLflow integration for model lifecycle management, and containerized deployment for operational simplicity.
 
-### 🔄 2.2. Agent Interaction Flow Diagram
+### Appendix A: Agent Interaction Flow Diagram
 
 ```mermaid
 sequenceDiagram
@@ -843,7 +860,7 @@ sequenceDiagram
     MLA->>MLA: Record History
 ```
 
-### 🌊 2.3. Data Pipeline Architecture
+### Appendix B: Data Pipeline Architecture
 
 ```mermaid
 flowchart LR
@@ -915,7 +932,7 @@ flowchart LR
     class DASHBOARD,ALERTS,REPORTS,API_OUT output
 ```
 
-### ⚡ 2.4. Event-Driven Architecture Flow
+### Appendix C: Event-Driven Architecture Flow
 
 ```mermaid
 graph TD
@@ -991,7 +1008,7 @@ graph TD
     class DASHBOARD_SUB,ALERT_SUB,REPORT_SUB,API_SUB consumer
 ```
 
-### 🏗️ 2.5. Deployment Architecture
+### Appendix D: Deployment Architecture (Future-Oriented Illustration)
 
 ```mermaid
 graph TB
@@ -1088,7 +1105,7 @@ graph TB
     class DOCKER,K8S,STORAGE infra
 ```
 
-### 🧠 2.6. Machine Learning Pipeline
+### Appendix E: Machine Learning Pipeline
 
 ```mermaid
 flowchart TB
@@ -1174,11 +1191,11 @@ flowchart TB
 
 ---
 
-## 3. System Architecture
+## (Removed Redundant Legacy Section)
 
-The architecture is designed around a multi-agent system where specialized agents perform specific tasks. These agents communicate asynchronously through an **Event Bus**, creating a decoupled and highly scalable system.
+The previous duplicate "System Architecture" narrative has been superseded by Sections 1–3 above; retention here would create drift risk. See unified doc for deep agent taxonomy.
 
-### 3.1. Core Components
+<!-- Legacy granular component descriptions removed to prevent duplication. Core components summarized earlier. -->
 
 #### a. API Gateway (FastAPI)
 
@@ -1204,7 +1221,7 @@ A **PostgreSQL** database with the **TimescaleDB** extension is used for data pe
 
 **MLflow** provides complete model lifecycle management with artifact storage, experiment tracking, and model versioning. Models are cached for high-performance inference in production.
 
-### 3.2. Agent Descriptions
+<!-- Detailed agent description table consolidated in unified doc (single source). -->
 
 | Agent                       | Role and Responsibilities                                                                                                                                                                                                  |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1220,7 +1237,7 @@ A **PostgreSQL** database with the **TimescaleDB** extension is used for data pe
 | **LearningAgent** | Implements a Retrieval-Augmented Generation (RAG) system using ChromaDB and SentenceTransformers. It learns from system feedback and maintenance logs to provide context-aware insights and improve system accuracy over time. |
 | **MaintenanceLogAgent** | Subscribes to maintenance completion events and records the details in the database, closing the maintenance workflow loop and providing a historical record of all maintenance activities.                                    |
 
-### 3.3. System Architecture Diagram
+<!-- High-level diagram earlier; avoiding repetition. -->
 
 ```mermaid
 graph TD
@@ -1300,7 +1317,7 @@ graph TD
     class DB,VDB,MLF database
 ```
 
-### 3.4. Data Flow
+<!-- Data flow covered in Section 6 + Appendix. -->
 
 1. **Ingestion:** Sensor data is sent to the API Gateway and ingested by the DataAcquisitionAgent.
 2. **Processing:** The data is validated, enriched, and stored in TimescaleDB. A DataProcessedEvent is published.
@@ -1315,9 +1332,9 @@ graph TD
 
 ---
 
-## 4. Architectural Decisions & Future Enhancements
+## 9. Architectural Decisions & Future Enhancements (Focused)
 
-### 4.1. Project Evolution: Plan vs. Implementation
+### 9.1. Plan vs Implementation Highlights
 
 This checklist provides a transparent breakdown of the features and technologies outlined in the initial "Hermes Backend Plan" versus what was ultimately implemented in the codebase during the 14-day sprint. The "My Opinion" column offers my rationale for the architectural trade-offs that I made.
 
@@ -1334,7 +1351,9 @@ This checklist provides a transparent breakdown of the features and technologies
 
 
 
-### 4.2. Machine Learning Implementation Deep Dive
+### 9.2. Machine Learning Notes (Pointer)
+
+Deep dive moved to ML domain docs and unified document; this section retained only for orientation.
 
 Our machine learning implementation is comprehensive and production-ready, fully aligned with the project's goals.
 
@@ -1353,7 +1372,7 @@ Our machine learning implementation is comprehensive and production-ready, fully
 
 **Real-World Dataset Validation:** The system has been thoroughly validated against five industrial datasets (AI4I, NASA, XJTU, MIMII, Kaggle) with documented performance metrics and automated drift monitoring.
 
-### 4.3. Rationale for Current Agentic Framework
+### 9.3. Rationale for Multi-Agent Framework (Summary)
 
 **Why We Chose a Multi-Agent Architecture:**
 
@@ -1369,3 +1388,12 @@ Our machine learning implementation is comprehensive and production-ready, fully
 - **Rapid Development:** Enables quick prototyping and iteration.
 
 ---
+
+### Change Log (This Document)
+
+| Date | Change | Author |
+|------|--------|--------|
+| 2025-09-25 | Refactored for V1.0: deduplicated content, added status snapshot, minimized performance + agent repetition, added appendices. | AI Assistant |
+
+---
+Document Classification: Stable Reference (update only when architecture materially changes). Performance numbers should not be edited here—update source performance docs instead.
