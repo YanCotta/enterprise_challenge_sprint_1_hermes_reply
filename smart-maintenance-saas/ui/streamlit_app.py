@@ -166,43 +166,45 @@ def make_long_api_request(method: str, endpoint: str, data: Dict[Any, Any] = Non
     return {"success": False, "error": "All retry attempts failed", "cloud_mode": CLOUD_MODE}
 
 def get_system_metrics():
-    """Fetch system metrics from the /metrics endpoint."""
-    try:
-        # Use plain text request (not JSON) since /metrics returns Prometheus format
-        response = requests.get(f"{API_BASE_URL}/metrics", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            # Parse Prometheus metrics (simplified)
-            metrics_text = response.text
-            metrics = {}
-            
-            # Extract some key metrics
-            lines = metrics_text.split('\n')
-            for line in lines:
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue
-                    
-                try:
-                    if 'process_resident_memory_bytes' in line and 'process_resident_memory_bytes ' in line:
-                        metrics['memory_bytes'] = float(line.split()[-1])
-                    elif 'process_cpu_seconds_total' in line and 'process_cpu_seconds_total ' in line:
-                        metrics['cpu_seconds'] = float(line.split()[-1])
-                    elif 'http_requests_total{' in line and 'status="2xx"' in line:
-                        metrics['successful_requests'] = metrics.get('successful_requests', 0) + float(line.split()[-1])
-                    elif 'http_requests_total{' in line and 'status="4xx"' in line:
-                        metrics['client_errors'] = metrics.get('client_errors', 0) + float(line.split()[-1])
-                    elif 'http_requests_total{' in line and 'status="5xx"' in line:
-                        metrics['server_errors'] = metrics.get('server_errors', 0) + float(line.split()[-1])
-                except (ValueError, IndexError):
-                    # Skip lines that can't be parsed
-                    continue
-            
-            return metrics if metrics else None
-        else:
+    """Fetch system metrics from the /metrics endpoint with cloud-aware retry/timeout."""
+    import time
+    metrics_url = f"{API_BASE_URL}/metrics"
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            response = requests.get(metrics_url, headers=HEADERS, timeout=DEFAULT_TIMEOUT)
+            if response.status_code == 200:
+                metrics_text = response.text
+                metrics = {}
+                lines = metrics_text.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    try:
+                        if 'process_resident_memory_bytes' in line and 'process_resident_memory_bytes ' in line:
+                            metrics['memory_bytes'] = float(line.split()[-1])
+                        elif 'process_cpu_seconds_total' in line and 'process_cpu_seconds_total ' in line:
+                            metrics['cpu_seconds'] = float(line.split()[-1])
+                        elif 'http_requests_total{' in line and 'status="2xx"' in line:
+                            metrics['successful_requests'] = metrics.get('successful_requests', 0) + float(line.split()[-1])
+                        elif 'http_requests_total{' in line and 'status="4xx"' in line:
+                            metrics['client_errors'] = metrics.get('client_errors', 0) + float(line.split()[-1])
+                        elif 'http_requests_total{' in line and 'status="5xx"' in line:
+                            metrics['server_errors'] = metrics.get('server_errors', 0) + float(line.split()[-1])
+                    except (ValueError, IndexError):
+                        continue
+                return metrics if metrics else None
+            # Non-200: don't retry unless transient (keep simple) -> return None
             return None
-    except Exception as e:
-        print(f"Debug - metrics fetch error: {e}")  # For debugging
-        return None
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            if attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(2 ** attempt)
+                continue
+            return None
+        except Exception as e:
+            print(f"Debug - metrics fetch error: {e}")
+            return None
+    return None
 
 def display_shap_visualization(shap_values, feature_importance):
     """Display SHAP visualizations using matplotlib and plotly."""
@@ -811,42 +813,33 @@ def main():
     
     if st.button("Load and Preview Sensor Data"):
         try:
-            # Fetch sensor data from cloud database via API
             with st.spinner("Loading sensor data from cloud database..."):
-                response = requests.get(
-                    f"{API_BASE_URL}/api/v1/sensors/readings",
-                    headers=HEADERS,
-                    params={"limit": 1000}  # Limit to 1000 recent readings for preview
-                )
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    if data and len(data) > 0:
-                        df = pd.DataFrame(data)
-                        # Convert timestamp string to datetime
-                        df['timestamp'] = pd.to_datetime(df['timestamp'])
-                        
-                        st.success(f"Successfully loaded {len(df)} readings from cloud database")
-                        
-                        st.subheader("Raw Data Sample")
-                        st.dataframe(df.head())
-
-                        st.subheader("Time-Series Preview")
-                        if 'value' in df.columns:
-                            preview_df = df.set_index('timestamp')
-                            st.line_chart(preview_df[['value']])
-                        else:
-                            st.info("Multiple sensor types detected. Showing value distribution by sensor type.")
-                            if 'sensor_id' in df.columns:
-                                for sensor_id in df['sensor_id'].unique()[:5]:  # Show first 5 sensors
-                                    sensor_data = df[df['sensor_id'] == sensor_id].set_index('timestamp')
-                                    if 'value' in sensor_data.columns:
-                                        st.line_chart(sensor_data[['value']], use_container_width=True)
+                # Use existing request wrapper with query string to leverage retries/timeouts
+                result = make_api_request("GET", "/api/v1/sensors/readings?limit=1000")
+            if result["success"]:
+                data = result["data"]
+                if data and len(data) > 0:
+                    df = pd.DataFrame(data)
+                    df['timestamp'] = pd.to_datetime(df['timestamp'])
+                    st.success(f"Successfully loaded {len(df)} readings from cloud database")
+                    st.subheader("Raw Data Sample")
+                    st.dataframe(df.head())
+                    st.subheader("Time-Series Preview")
+                    if 'value' in df.columns:
+                        preview_df = df.set_index('timestamp')
+                        st.line_chart(preview_df[['value']])
                     else:
-                        st.warning("No sensor data found in cloud database. Try ingesting some sensor data first.")
+                        st.info("Multiple sensor types detected. Showing value distribution by sensor type.")
+                        if 'sensor_id' in df.columns:
+                            for sensor_id in df['sensor_id'].unique()[:5]:
+                                sensor_data = df[df['sensor_id'] == sensor_id].set_index('timestamp')
+                                if 'value' in sensor_data.columns:
+                                    st.line_chart(sensor_data[['value']], use_container_width=True)
                 else:
-                    st.error(f"Failed to fetch sensor data from API. Status: {response.status_code}")
-                    
+                    st.warning("No sensor data found in cloud database. Try ingesting some sensor data first.")
+            else:
+                st.error("Failed to fetch sensor data from API.")
+                st.error(result.get("error", "Unknown error"))
         except Exception as e:
             st.error(f"Failed to load sensor data from cloud database: {e}")
             st.info("💡 This system uses cloud TimescaleDB. Ensure the API is running and connected to the database.")
@@ -1054,9 +1047,8 @@ def main():
             sensor_id = st.text_input("Sensor ID", value="ml_test_sensor")
         
         predict_button = st.form_submit_button("🔮 Get Prediction with SHAP Analysis")
-        
+
         if predict_button:
-            # Prepare prediction payload
             prediction_payload = {
                 "model_name": model_name,
                 "model_version": model_version,
@@ -1069,37 +1061,26 @@ def main():
                 },
                 "sensor_id": sensor_id
             }
-            
-            # Make prediction API call
-            result = make_api_request("POST", "/api/v1/ml/predict", prediction_payload)
-            
+            with st.spinner("🔮 Running prediction and SHAP analysis..."):
+                result = make_api_request("POST", "/api/v1/ml/predict", prediction_payload)
             if result["success"]:
                 prediction_data = result["data"]
-                
                 st.success("✅ Prediction completed successfully!")
-                
-                # Display prediction results
                 col1, col2 = st.columns(2)
-                
                 with col1:
                     st.subheader("🎯 Prediction Results")
                     st.write(f"**Prediction:** {prediction_data.get('prediction', 'N/A')}")
                     if 'confidence' in prediction_data and prediction_data['confidence']:
                         st.write(f"**Confidence:** {prediction_data['confidence']:.3f}")
                     st.write(f"**Request ID:** `{prediction_data.get('request_id', 'N/A')}`")
-                
                 with col2:
                     st.subheader("📋 Model Information")
                     model_info = prediction_data.get('model_info', {})
                     st.json(model_info)
-                
-                # Display SHAP analysis if available
                 if 'shap_values' in prediction_data and prediction_data['shap_values']:
                     st.subheader("🧠 Explainable AI Analysis (SHAP)")
-                    
                     shap_values = prediction_data['shap_values']
                     feature_importance = prediction_data.get('feature_importance', {})
-                    
                     if feature_importance:
                         display_shap_visualization(shap_values, feature_importance)
                     else:
@@ -1107,16 +1088,11 @@ def main():
                         st.json(shap_values)
                 else:
                     st.info("💡 SHAP explainability analysis not available for this model/prediction")
-                
-                # Raw response data
                 with st.expander("📋 Raw Response Data"):
                     st.json(prediction_data)
-            
             else:
                 st.error("❌ Prediction failed!")
                 st.error(result["error"])
-                
-                # Show helpful information about the error
                 if "feature" in result["error"].lower() or "expecting" in result["error"].lower():
                     st.info("💡 **Tip**: This model may require different features or feature engineering. Try using a different model or check the model's expected input format.")
 
