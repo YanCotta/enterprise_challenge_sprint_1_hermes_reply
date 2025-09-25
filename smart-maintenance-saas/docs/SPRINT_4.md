@@ -4,11 +4,8 @@ Purpose: finalize Smart Maintenance SaaS from 55% to production-ready in 2.5 wee
 
 Sources for alignment
 
-- docs/COMPONENT_ANALYSIS.md
+- docs/UNIFIED_SYSTEM_DOCUMENTATION.md (replaces component analysis, system issues, and comprehensive analysis)
 - docs/PRODUCTION_READINESS_CHECKLIST.md
-- docs/SYSTEM_ISSUES_INVENTORY.md
-- docs/SYSTEM_STATE_EXECUTIVE_SUMMARY.md
-- docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md
 
 ## Execution Plan for Victory (2.5 Weeks, Cloud-First)
 
