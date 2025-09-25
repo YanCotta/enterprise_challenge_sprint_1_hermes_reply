@@ -150,8 +150,8 @@
 ## 📈 ISSUE RESOLUTION ROADMAP
 
 ### **Phase A: Critical Stabilization (Days 1-2)**
-| Priority | Issue | Effort | Impact |
-|----------|-------|--------|---------|
+| Priority | Issue                        | Effort   | Impact                     |
+|----------|-----------------------------|----------|----------------------------|
 | A1 | Dataset Preview 500 Error | 0.5 day | Restore core observability |
 | A2 | Simulation Expander Crashes | 0.25 day | Eliminate UI crashes |
 | A3 | SHAP Version Mismatch | 0.5 day | Fix ML explainability |
