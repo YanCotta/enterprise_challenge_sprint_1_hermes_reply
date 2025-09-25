@@ -19,7 +19,7 @@
 
 - **[System and Architecture](../SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
 - **[System Screenshots](../SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
-- **[Comprehensive System Analysis](../COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
+- **[Unified System Documentation](../UNIFIED_SYSTEM_DOCUMENTATION.md)** - Comprehensive system state and analysis
 - **[Microservice Migration Strategy](../MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
 
 ### Database Design
@@ -35,8 +35,6 @@
 ### API Documentation
 
 - **[API Reference](../api.md)** - Complete REST API documentation and examples
-- **[Configuration Management](../../core/config/README.md)** - Centralized configuration system
-- **[Logging Configuration](../../core/logging_config.md)** - Structured JSON logging setup
 
 ## Performance & Testing
 
