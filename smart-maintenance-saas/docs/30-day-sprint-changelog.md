@@ -1,6 +1,6 @@
-# 30-Day Sprint Changelog
+# 30-Day Sprint Changelog (SPRINT 3)
 
-This document records all changes made during the final 30-day sprint toward delivery.
+This document records all changes made during the 30-day sprint 3 toward delivery.
 
 
 ## 2025-08-11 (Day 4)
