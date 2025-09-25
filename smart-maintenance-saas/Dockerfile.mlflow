@@ -3,6 +3,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install curl for healthcheck (docker-compose uses curl to probe /health)
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends curl \
+	&& rm -rf /var/lib/apt/lists/*
+
 # Install dependencies (pin SQLAlchemy <2.0 for compatibility if needed)
 RUN pip install --no-cache-dir mlflow "sqlalchemy<2.0" psycopg2-binary boto3
 
