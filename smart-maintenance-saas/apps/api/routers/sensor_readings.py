@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Security, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from apps.api.dependencies import api_key_auth, get_db
-from data.models import SensorReading
+from core.database.orm_models import SensorReadingORM
 from data.schemas import SensorReading
 
 router = APIRouter()
@@ -31,11 +31,11 @@ async def get_sensor_readings(
     """
     try:
         # Build query
-        query = select(SensorReading).order_by(desc(SensorReading.timestamp))
+        query = select(SensorReadingORM).order_by(desc(SensorReadingORM.timestamp))
         
         # Add sensor filter if specified
         if sensor_id:
-            query = query.where(SensorReading.sensor_id == sensor_id)
+            query = query.where(SensorReadingORM.sensor_id == sensor_id)
         
         # Add pagination
         query = query.offset(offset).limit(limit)
@@ -66,11 +66,11 @@ async def get_sensors_list(
         from sqlalchemy import func
         
         query = select(
-            SensorReading.sensor_id,
-            func.count(SensorReading.sensor_id).label('reading_count'),
-            func.max(SensorReading.timestamp).label('last_reading'),
-            func.min(SensorReading.timestamp).label('first_reading')
-        ).group_by(SensorReading.sensor_id)
+            SensorReadingORM.sensor_id,
+            func.count(SensorReadingORM.sensor_id).label('reading_count'),
+            func.max(SensorReadingORM.timestamp).label('last_reading'),
+            func.min(SensorReadingORM.timestamp).label('first_reading')
+        ).group_by(SensorReadingORM.sensor_id)
         
         result = await db.execute(query)
         sensors = result.all()
