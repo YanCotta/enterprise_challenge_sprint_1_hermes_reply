@@ -26,7 +26,7 @@ Primary Outcome: A trustworthy “Analyst / Ops Dashboard” reflecting only wha
 | Domain | Capability | Endpoint(s) / Component | Current State | Notes / Evidence |
 |--------|-----------|-------------------------|---------------|------------------|
 | Data Ingestion | Single sensor reading ingest w/ idempotency | `POST /api/v1/data/ingest` (`data_ingestion.py`) | Stable | Redis-backed idempotency (graceful degrade) emits `SensorDataReceivedEvent` |
-| Data Retrieval | List sensor readings (paged) | `GET /api/v1/sensors/readings` | Stable (recently fixed) | Returns normalized schema `SensorReadingPublic`; supports `sensor_id`, `limit`, `offset` |
+| Data Retrieval | List sensor readings (paged) | `GET /api/v1/sensors/readings` | Stable (enhanced) | Returns normalized schema `SensorReadingPublic`; supports `sensor_id`, `limit`, `offset`, `start_ts`, `end_ts` (Day 2 enhancement) |
 | Data Retrieval | List sensors + stats | `GET /api/v1/sensors/sensors` | Stable | Provides counts + first/last timestamps |
 | Simulation | Generate drift / anomaly / normal synthetic data (async ingestion) | `POST /api/v1/simulate/drift-event`, `/anomaly-event`, `/normal-data` | Stable (API) | BackgroundTasks schedule ingestion; UI previously unstable due to nested expanders |
 | ML Prediction | Model prediction (auto version, feature adaptation, optional SHAP) | `POST /api/v1/ml/predict` | Stable (core prediction) | Feature adaptation & confidence extraction present; SHAP optional now (flag) |
@@ -36,7 +36,7 @@ Primary Outcome: A trustworthy “Analyst / Ops Dashboard” reflecting only wha
 | ML Health | ML service health | `GET /api/v1/ml/health` | Stable | Validates registry accessibility (loads known model version) |
 | Event System | Event publication bus | `EventBus`, coordinator | Stable (internal) | Used by ingestion + future decision/report events |
 | Reporting | Report generation (threaded) | `POST /api/v1/reports/generate` (assuming prefix) | Prototype | Returns structured JSON; lacks artifact persistence / download |
-| Human Decisions | Submit decision (event-based) | (Likely `/api/v1/decisions/...` — not located) | Partial / Missing retrieval | Form posts event; no history endpoint implemented |
+| Human Decisions | Submit + list decisions (audit) | `POST /api/v1/decisions/submit`, `GET /api/v1/decisions` | Retrieval backend complete (UI viewer pending) | Day 2: decision history endpoint implemented; UI table scheduled next |
 | Explainability | SHAP explainability | `compute_shap_explanation` path in `ml_endpoints.py` | Degraded | Works for tree models; KernelExplainer may be slow; now optional |
 | Metrics | Prometheus scrape passthrough | `GET /metrics` (FastAPI app) | Stable (raw) | Parsing done client-side; no streaming timeseries yet |
 | Model Loader | MLflow registry integration + feature schema extraction | `apps/ml/model_loader.py` | Stable | Caching dict; loads feature_names.txt if present |
@@ -64,11 +64,12 @@ Primary Outcome: A trustworthy “Analyst / Ops Dashboard” reflecting only wha
 
 ### 2.3 Prototype / Incomplete
 - Report generation (no artifact or file export)
-- Human decision logging (submission only, no retrieval/audit trail)
+- Decision log UI (backend retrieval implemented Day 2; viewer not yet built)
 - Orchestrated golden-path demo (placeholder only)
 
 ### 2.4 Missing (Documented Intent, No Implementation Yet)
-- Decision audit/history endpoint (GET)
+-
+- Decision audit/history UI timeline (enhanced view; basic list done)
 - Downloadable reports (PDF/CSV/HTML)
 - Real-time metrics streaming or push updates
 - Background SHAP with caching or pre-computed explanations
@@ -89,7 +90,7 @@ Primary Outcome: A trustworthy “Analyst / Ops Dashboard” reflecting only wha
 | Section | Purpose | Components |
 |---------|---------|------------|
 | Overview Dashboard | System health snapshot + key KPIs | Metrics summary, recent ingestion stats, drift/anomaly quick indicators |
-| Data Explorer | View & filter recent sensor readings | Paginated table, sensor filter, export CSV |
+| Data Explorer | View & filter recent sensor readings | Paginated table, sensor filter, export CSV, date filters |
 | Ingestion | Manual entry + CSV upload + immediate verification | Single reading form, upload widget, post-ingest confirmation block |
 | ML Prediction | Deterministic prediction + optional explainability | Model selector (version auto-resolve), feature form, prediction result, optional SHAP tab |
 | Drift & Anomaly | On-demand analysis tools | Drift check form, anomaly detection batch form, results panels |
@@ -105,7 +106,7 @@ Label: "🧪 Under Development"
 | Experimental Panel | Status Note |
 |--------------------|-------------|
 | Golden Path Orchestration | Placeholder – awaiting event-driven pipeline assembly |
-| Decision Audit Trail | Pending backend history endpoint |
+| Decision Audit Trail | Backend endpoint implemented (Day 2) – UI viewer pending |
 | Report Artifact Downloads | Pending file generation & storage |
 | Live Metrics Streaming | Requires push or periodic incremental diff fetch |
 | Model Recommendations (Cached) | Awaiting caching layer & UI virtualization |
@@ -240,11 +241,11 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 
 | Task ID | Title | Description / Actions | Done When |
 |---------|-------|-----------------------|-----------|
-| A1 | Dataset Explorer Restoration | Implement paginated call to `/api/v1/sensors/readings`; add sensor filter, CSV export. | 100 rows load <2s; filtering works; no 500s. |
-| A2 | UI Structural Stability | Extract simulation & prediction out of monolith; remove nested expander/status anti-patterns. | No Streamlit runtime errors; layout < 1 scroll segment per page. |
-| A3 | Prediction Version Auto-Resolution | Use `/models/{m}/latest` fallback to `/versions`; embed latency capture; explain toggle. | Predict succeeds with empty version input; latency printed <1.5s w/o SHAP. |
-| A4 | Ingestion Closed Loop | After POST, GET verify last row; show diff if mismatch. | Success panel shows persisted reading fields. |
-| A5 | Decision Log Prototype | Create read endpoint + table view (even if skeletal). | Table renders with at least one injected decision row. |
+| A1 | Dataset Explorer Restoration | Implement paginated call to `/api/v1/sensors/readings`; add sensor filter, CSV export. | ✅ (Day 1) 100 rows load <2s; filtering works; no 500s. |
+| A2 | UI Structural Stability + Date Filters | Extract simulation & prediction out of monolith; remove nested anti-patterns; add backend date filtering. | ✅ (Day 2) Monolith deconstructed; date filters working server-side. |
+| A3 | Prediction Version Auto-Resolution | Use `/models/{m}/latest` fallback to `/versions`; embed latency capture; explain toggle. | 🔄 Pending (next) Predict succeeds with empty version input; latency printed <1.5s w/o SHAP. |
+| A4 | Ingestion Closed Loop | After POST, GET verify last row; show diff if mismatch. | ✅ (Day 1) Success panel shows persisted reading fields + latency + history. |
+| A5 | Decision Log Prototype | Create read endpoint + table view (even if skeletal). | 🟡 Backend done (Day 2); UI table pending. |
 | A6 | Reporting Isolation | Move prototype to Advanced group; mark limitations clearly. | Primary nav has no broken report entry. |
 | A7 | Golden Path Minimal Orchestration | Basic POST triggers synthetic ingest + anomaly + status poll via Redis key. | Status screen shows progressing states until COMPLETE. |
 | B1 | MLflow Metadata Caching | Wrap expensive calls with `st.cache_data(ttl=300)` or in-process dict. | Model version list retrieval <3s subsequent calls. |
@@ -310,7 +311,7 @@ Total ~5.0d (core) + 1 buffer day (risk / polish).
 | API – ML Models | `apps/api/routers/ml_endpoints.py` | Prediction, versions, drift, anomaly, health |
 | API – Simulation | `apps/api/routers/simulate.py` | Synthetic drift/anomaly/normal generation |
 | API – Reporting | `apps/api/routers/reporting.py` | Prototype report generation |
-| API – (Planned) Decisions | `apps/api/routers/decisions.py` (to create) | Decision history & retrieval |
+| API – Decisions | `apps/api/routers/decisions.py` | Decision history & retrieval (backend complete) |
 | API – (Planned) Demo | `apps/api/routers/demo.py` (to create) | Golden path orchestration endpoints |
 | ML Loader | `apps/ml/model_loader.py` | MLflow registry loader + feature schema discovery |
 | Event Bus | `core/events/event_bus.py` | Event publish/subscribe core |
