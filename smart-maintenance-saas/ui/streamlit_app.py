@@ -462,6 +462,13 @@ def main():
                 if result["success"]:
                     st.success("✅ Data ingested successfully!")
                     st.json(result["data"])
+                    # Post-ingestion verification (A4): fetch latest reading for this sensor
+                    verify = make_api_request("GET", f"/api/v1/sensors/readings?limit=1&sensor_id={sensor_id}")
+                    if verify["success"] and verify.get("data"):
+                        with st.expander("✅ Verification: Last Recorded Value"):
+                            st.json(verify["data"][0])
+                    else:
+                        st.info("Verification unavailable (no reading returned).")
                 else:
                     st.error("❌ Data ingestion failed!")
                     st.error(result["error"])
@@ -1045,13 +1052,34 @@ def main():
             torque = st.number_input("Torque (Nm)", value=42.8)
             tool_wear = st.number_input("Tool Wear (min)", value=108)
             sensor_id = st.text_input("Sensor ID", value="ml_test_sensor")
+        explain = st.checkbox("Compute SHAP Explainability", value=True, help="Disable to speed up prediction if explanation is slow")
         
         predict_button = st.form_submit_button("🔮 Get Prediction with SHAP Analysis")
 
         if predict_button:
+            resolved_version = model_version
+            # Auto or placeholder resolution using new helper endpoint
+            if model_version.lower() in ["auto", "latest"]:
+                latest_resp = make_api_request("GET", f"/api/v1/ml/models/{model_name}/latest")
+                if latest_resp["success"] and latest_resp.get("data", {}).get("resolved_version"):
+                    resolved_version = latest_resp["data"]["resolved_version"]
+                else:
+                    # Fallback: list versions and pick highest numeric
+                    versions_resp = make_api_request("GET", f"/api/v1/ml/models/{model_name}/versions")
+                    if versions_resp["success"]:
+                        versions = versions_resp["data"].get("versions", [])
+                        if versions:
+                            resolved_version = versions[0]["version"]  # already sorted newest first
+                        else:
+                            st.error("No versions available for this model in registry.")
+                            st.stop()
+                    else:
+                        st.error("Failed to resolve model version (helper endpoints unavailable). Try specifying an explicit version.")
+                        st.stop()
+
             prediction_payload = {
                 "model_name": model_name,
-                "model_version": model_version,
+                "model_version": resolved_version,
                 "features": {
                     "Air_temperature_K": air_temp,
                     "Process_temperature_K": process_temp,
@@ -1059,13 +1087,16 @@ def main():
                     "Torque_Nm": torque,
                     "Tool_wear_min": tool_wear
                 },
-                "sensor_id": sensor_id
+                "sensor_id": sensor_id,
+                "explain": explain
             }
-            with st.spinner("🔮 Running prediction and SHAP analysis..."):
+            with st.spinner(f"🔮 Running prediction (model v{resolved_version}) and SHAP analysis..."):
                 result = make_api_request("POST", "/api/v1/ml/predict", prediction_payload)
             if result["success"]:
                 prediction_data = result["data"]
                 st.success("✅ Prediction completed successfully!")
+                if not explain:
+                    st.info("ℹ️ Explainability was skipped (checkbox disabled). Enable to compute SHAP values.")
                 col1, col2 = st.columns(2)
                 with col1:
                     st.subheader("🎯 Prediction Results")
@@ -1092,9 +1123,21 @@ def main():
                     st.json(prediction_data)
             else:
                 st.error("❌ Prediction failed!")
-                st.error(result["error"])
-                if "feature" in result["error"].lower() or "expecting" in result["error"].lower():
-                    st.info("💡 **Tip**: This model may require different features or feature engineering. Try using a different model or check the model's expected input format.")
+                error_msg = result.get("error", "Unknown error")
+                st.error(error_msg)
+                if "not found" in error_msg.lower():
+                    # Try listing versions to guide user
+                    versions_resp = make_api_request("GET", f"/api/v1/ml/models/{model_name}/versions")
+                    if versions_resp["success"]:
+                        versions = [v["version"] for v in versions_resp["data"].get("versions", [])]
+                        if versions:
+                            st.info(f"📦 Available versions for {model_name}: {', '.join(versions)}")
+                        else:
+                            st.info("No versions reported by registry for this model.")
+                    else:
+                        st.info("Could not retrieve model versions for guidance.")
+                if "feature" in error_msg.lower() or "expecting" in error_msg.lower():
+                    st.info("💡 **Tip**: This model may require specific features or ordering. Try another model or verify feature names.")
 
     # === LIVE DEMO SIMULATOR SECTION (Day 2 Enhancement) ===
     st.markdown("---")
@@ -1132,35 +1175,34 @@ def main():
                     "base_value": 25.0,
                     "noise_level": 1.0
                 }
-                
+                drift_response_data = None
+                drift_error = None
                 with st.status("Generating drift simulation...", expanded=True) as status:
                     st.write("Creating synthetic drift data...")
                     result = make_api_request("POST", "/api/v1/simulate/drift-event", payload)
-                    
                     if result["success"]:
-                        response_data = result["data"]
+                        drift_response_data = result["data"]
                         status.update(label="✅ Drift simulation started!", state="complete", expanded=False)
-                        
-                        col_a, col_b = st.columns(2)
-                        with col_a:
-                            st.metric("Events Generated", response_data.get('events_generated', 0))
-                        with col_b:
-                            st.metric("Simulation ID", response_data.get('simulation_id', 'N/A')[:8] + "...")
-                        
-                        st.success(response_data.get('message', 'Drift simulation completed'))
-                        
-                        # Show what happens next
-                        st.info("🔄 **What happens next:**\n"
-                               "1. Synthetic data is being ingested into the system\n"
-                               "2. Drift detection will automatically run in ~30 seconds\n"
-                               "3. If drift is detected, email notifications will be sent\n"
-                               "4. System may trigger automatic model retraining")
-                        
-                        with st.expander("📋 Simulation Details"):
-                            st.json(response_data)
                     else:
+                        drift_error = result["error"]
                         status.update(label="❌ Drift simulation failed", state="error", expanded=True)
-                        st.error(f"Simulation failed: {result['error']}")
+                # Outside status block
+                if drift_response_data:
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.metric("Events Generated", drift_response_data.get('events_generated', 0))
+                    with col_b:
+                        st.metric("Simulation ID", drift_response_data.get('simulation_id', 'N/A')[:8] + "...")
+                    st.success(drift_response_data.get('message', 'Drift simulation completed'))
+                    st.info("🔄 **What happens next:**\n"
+                            "1. Synthetic data is being ingested into the system\n"
+                            "2. Drift detection will automatically run in ~30 seconds\n"
+                            "3. If drift is detected, email notifications will be sent\n"
+                            "4. System may trigger automatic model retraining")
+                    with st.expander("📋 Simulation Details"):
+                        st.json(drift_response_data)
+                elif drift_error:
+                    st.error(f"Simulation failed: {drift_error}")
     
     with col2:
         st.subheader("🚨 Generate Anomaly Event")
@@ -1174,44 +1216,36 @@ def main():
             simulate_anomaly = st.form_submit_button("⚡ Simulate Anomaly Event", use_container_width=True)
             
             if simulate_anomaly:
+                anomaly_response_data = None
+                anomaly_error = None
                 with st.status("Generating anomaly simulation...", expanded=True) as status:
                     st.write("Creating synthetic anomaly data...")
-                    
-                    # Make API request for anomaly simulation
-                    params = {
-                        "sensor_id": anomaly_sensor_id,
-                        "anomaly_magnitude": anomaly_magnitude,
-                        "num_anomalies": num_anomalies
-                    }
-                    
-                    # Convert to query string for GET request with parameters
-                    result = make_api_request("POST", 
-                        f"/api/v1/simulate/anomaly-event?sensor_id={anomaly_sensor_id}&anomaly_magnitude={anomaly_magnitude}&num_anomalies={num_anomalies}")
-                    
+                    result = make_api_request(
+                        "POST",
+                        f"/api/v1/simulate/anomaly-event?sensor_id={anomaly_sensor_id}&anomaly_magnitude={anomaly_magnitude}&num_anomalies={num_anomalies}"
+                    )
                     if result["success"]:
-                        response_data = result["data"]
+                        anomaly_response_data = result["data"]
                         status.update(label="✅ Anomaly simulation started!", state="complete", expanded=False)
-                        
-                        col_a, col_b = st.columns(2)
-                        with col_a:
-                            st.metric("Events Generated", response_data.get('events_generated', 0))
-                        with col_b:
-                            st.metric("Anomalies Created", num_anomalies)
-                        
-                        st.success(response_data.get('message', 'Anomaly simulation completed'))
-                        
-                        # Show what happens next
-                        st.info("🔄 **What happens next:**\n"
-                               "1. Synthetic anomaly data is being ingested\n"
-                               "2. Anomaly detection algorithms will process the data\n"
-                               "3. Anomalous readings will be flagged\n"
-                               "4. Alerts may be generated for maintenance teams")
-                        
-                        with st.expander("📋 Simulation Details"):
-                            st.json(response_data)
                     else:
+                        anomaly_error = result["error"]
                         status.update(label="❌ Anomaly simulation failed", state="error", expanded=True)
-                        st.error(f"Simulation failed: {result['error']}")
+                if anomaly_response_data:
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.metric("Events Generated", anomaly_response_data.get('events_generated', 0))
+                    with col_b:
+                        st.metric("Anomalies Created", num_anomalies)
+                    st.success(anomaly_response_data.get('message', 'Anomaly simulation completed'))
+                    st.info("🔄 **What happens next:**\n"
+                            "1. Synthetic anomaly data is being ingested\n"
+                            "2. Anomaly detection algorithms will process the data\n"
+                            "3. Anomalous readings will be flagged\n"
+                            "4. Alerts may be generated for maintenance teams")
+                    with st.expander("📋 Simulation Details"):
+                        st.json(anomaly_response_data)
+                elif anomaly_error:
+                    st.error(f"Simulation failed: {anomaly_error}")
     
     with col3:
         st.subheader("📈 Generate Normal Data")
@@ -1225,43 +1259,36 @@ def main():
             simulate_normal = st.form_submit_button("📊 Generate Normal Data", use_container_width=True)
             
             if simulate_normal:
+                normal_response_data = None
+                normal_error = None
                 with st.status("Generating normal data...", expanded=True) as status:
                     st.write("Creating synthetic normal sensor data...")
-                    
-                    # Make API request for normal data simulation
-                    params = {
-                        "sensor_id": normal_sensor_id,
-                        "num_samples": num_samples,
-                        "duration_minutes": duration_minutes
-                    }
-                    
-                    result = make_api_request("POST", 
-                        f"/api/v1/simulate/normal-data?sensor_id={normal_sensor_id}&num_samples={num_samples}&duration_minutes={duration_minutes}")
-                    
+                    result = make_api_request(
+                        "POST",
+                        f"/api/v1/simulate/normal-data?sensor_id={normal_sensor_id}&num_samples={num_samples}&duration_minutes={duration_minutes}"
+                    )
                     if result["success"]:
-                        response_data = result["data"]
+                        normal_response_data = result["data"]
                         status.update(label="✅ Normal data generation started!", state="complete", expanded=False)
-                        
-                        col_a, col_b = st.columns(2)
-                        with col_a:
-                            st.metric("Events Generated", response_data.get('events_generated', 0))
-                        with col_b:
-                            st.metric("Duration", f"{duration_minutes} min")
-                        
-                        st.success(response_data.get('message', 'Normal data generation completed'))
-                        
-                        # Show what happens next
-                        st.info("🔄 **What happens next:**\n"
-                               "1. Realistic sensor data is being ingested\n"
-                               "2. Data will establish baseline patterns\n"
-                               "3. Future drift/anomaly detection will use this as reference\n"
-                               "4. System learns normal operating parameters")
-                        
-                        with st.expander("📋 Simulation Details"):
-                            st.json(response_data)
                     else:
+                        normal_error = result["error"]
                         status.update(label="❌ Normal data generation failed", state="error", expanded=True)
-                        st.error(f"Simulation failed: {result['error']}")
+                if normal_response_data:
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.metric("Events Generated", normal_response_data.get('events_generated', 0))
+                    with col_b:
+                        st.metric("Duration", f"{duration_minutes} min")
+                    st.success(normal_response_data.get('message', 'Normal data generation completed'))
+                    st.info("🔄 **What happens next:**\n"
+                            "1. Realistic sensor data is being ingested\n"
+                            "2. Data will establish baseline patterns\n"
+                            "3. Future drift/anomaly detection will use this as reference\n"
+                            "4. System learns normal operating parameters")
+                    with st.expander("📋 Simulation Details"):
+                        st.json(normal_response_data)
+                elif normal_error:
+                    st.error(f"Simulation failed: {normal_error}")
     
     # Demo Control Panel
     st.markdown("---")
