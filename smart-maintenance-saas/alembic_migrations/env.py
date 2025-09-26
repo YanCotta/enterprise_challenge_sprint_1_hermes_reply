@@ -69,9 +69,15 @@ def _build_sync_db_url(raw_url: str) -> str:
 
         new_query = urlencode(query_dict)
         rebuilt = urlunparse(parsed._replace(query=new_query))
+        # Fallback safety: if somehow ssl= still present, naive replace.
+        if "ssl=require" in rebuilt and "sslmode=require" not in rebuilt:
+            rebuilt = rebuilt.replace("ssl=require", "sslmode=require")
         return rebuilt
     except Exception:  # pragma: no cover - defensive
         logger.exception("Failed to normalize database URL for Alembic; falling back to raw URL")
+        # Last chance fallback replace on raw URL
+        if "ssl=require" in sync_url and "sslmode=require" not in sync_url:
+            return sync_url.replace("ssl=require", "sslmode=require")
         return sync_url
 
 
