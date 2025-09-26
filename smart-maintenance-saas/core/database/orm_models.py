@@ -168,3 +168,19 @@ class MaintenanceLogORM(Base):
 #    location = Column(String(255))
 #    installed_at = Column(DateTime(timezone=True))
 #    # ... other relevant sensor metadata
+
+
+class HumanDecisionORM(Base):
+    """ORM model for storing human decisions separately from maintenance logs."""
+    __tablename__ = "human_decisions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    request_id = Column(String(255), nullable=False, index=True)
+    operator_id = Column(String(255), nullable=False, index=True)
+    decision = Column(String(100), nullable=False)
+    justification = Column(Text, nullable=True)
+    additional_notes = Column(Text, nullable=True)
+    confidence = Column(Float, nullable=True)
+    correlation_id = Column(String(255), nullable=True, index=True)
+    timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
