@@ -55,6 +55,14 @@ async def get_sensor_readings(
     sensor_id: Optional[str] = Query(
         default=None, description="Optional filter to only include a specific sensor ID"
     ),
+    start_ts: Optional[datetime] = Query(
+        default=None,
+        description="Return readings with timestamp >= this UTC datetime (ISO 8601)"
+    ),
+    end_ts: Optional[datetime] = Query(
+        default=None,
+        description="Return readings with timestamp <= this UTC datetime (ISO 8601)"
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -75,6 +83,10 @@ async def get_sensor_readings(
 
         if sensor_id:
             query = query.where(SensorReadingORM.sensor_id == sensor_id)
+        if start_ts:
+            query = query.where(SensorReadingORM.timestamp >= start_ts)
+        if end_ts:
+            query = query.where(SensorReadingORM.timestamp <= end_ts)
 
         query = query.offset(offset).limit(limit)
         result = await db.execute(query)
@@ -101,6 +113,8 @@ async def get_sensor_readings(
                 "sensor_filter": sensor_id,
                 "limit": limit,
                 "offset": offset,
+                "start_ts": start_ts.isoformat() if start_ts else None,
+                "end_ts": end_ts.isoformat() if end_ts else None,
             }
         )
         return transformed
