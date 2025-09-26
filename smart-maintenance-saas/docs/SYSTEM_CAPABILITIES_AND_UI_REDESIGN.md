@@ -373,23 +373,44 @@ async def get_golden_path_status(correlation_id: str):
 **UI Integration**:
 ```python
 # In UI - replace current placeholder with real orchestration
+import streamlit as st
+import time
+
+if "golden_path_running" not in st.session_state:
+    st.session_state["golden_path_running"] = False
+if "golden_path_correlation_id" not in st.session_state:
+    st.session_state["golden_path_correlation_id"] = None
+if "golden_path_last_step" not in st.session_state:
+    st.session_state["golden_path_last_step"] = 0
+
 if st.button("▶️ Run Golden Path Demo", type="primary"):
+    # Start demo
+    result = make_api_request("POST", "/api/v1/demo/golden-path", {"sensor_count": 3})
+    if result["success"]:
+        st.session_state["golden_path_running"] = True
+        st.session_state["golden_path_correlation_id"] = result["data"]["correlation_id"]
+        st.session_state["golden_path_last_step"] = 0
+        st.experimental_rerun()
+
+if st.session_state.get("golden_path_running", False):
     with st.status("🚀 Executing Golden Path Demo...", expanded=True) as demo_status:
-        # Start demo
-        result = make_api_request("POST", "/api/v1/demo/golden-path", {"sensor_count": 3})
-        if result["success"]:
-            correlation_id = result["data"]["correlation_id"]
-            
-            # Poll status updates
-            for step in range(4):
+        correlation_id = st.session_state["golden_path_correlation_id"]
+        status_result = make_api_request("GET", f"/api/v1/demo/golden-path/status/{correlation_id}")
+        if status_result["success"]:
+            status_data = status_result["data"]
+            steps = status_data["steps"]
+            completed_steps = sum(1 for s in steps if s["status"] == "complete")
+            current_step = completed_steps if completed_steps < len(steps) else len(steps) - 1
+            st.write(f"Step {completed_steps}/4: {steps[current_step]['name']}")
+            if completed_steps < 4:
+                # Wait and rerun to poll again
                 time.sleep(2)
-                status_result = make_api_request("GET", f"/api/v1/demo/golden-path/status/{correlation_id}")
-                if status_result["success"]:
-                    status_data = status_result["data"]
-                    completed_steps = sum(1 for s in status_data["steps"] if s["status"] == "complete")
-                    st.write(f"Step {completed_steps}/4: {status_data['steps'][step]['name']}")
-            
-            demo_status.update(label="✅ Golden Path Demo Complete!", state="complete")
+                st.experimental_rerun()
+            else:
+                demo_status.update(label="✅ Golden Path Demo Complete!", state="complete")
+                st.session_state["golden_path_running"] = False
+                st.session_state["golden_path_correlation_id"] = None
+                st.session_state["golden_path_last_step"] = 0
 ```
 
 ### 15.2 **Decision Audit UI Interface** (Backend Complete, UI Missing)
