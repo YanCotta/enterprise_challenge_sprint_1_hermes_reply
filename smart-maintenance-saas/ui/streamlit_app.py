@@ -315,111 +315,7 @@ def main():
                     st.info("💡 Verify cloud API endpoint is accessible")
             st.error(health_check["error"])
     
-    # === GOLDEN PATH DEMO SECTION ===
-    st.header("🏆 Golden Path Demo - Live System Showcase")
-    
-    demo_tab1, demo_tab2, demo_tab3 = st.tabs(["🚀 Quick Demo", "🎯 System Overview", "📊 Live Metrics"])
-    
-    with demo_tab1:
-        st.markdown("### 🚀 One-Click Golden Path Demonstration")
-        st.markdown("Experience the complete AI-powered maintenance workflow in action:")
-        
-        demo_col1, demo_col2 = st.columns(2)
-        
-        with demo_col1:
-            st.markdown("**🔄 Complete Workflow Demo**")
-            if st.button("▶️ Run Golden Path Demo", type="primary", use_container_width=True):
-                with st.status("🚀 Executing Golden Path Demo...", expanded=True) as demo_status:
-                    st.write("🤖 Initializing 10-agent system...")
-                    st.write("📊 Publishing sensor data events...")
-                    st.write("🔍 Running anomaly detection with S3 models...")
-                    st.write("✅ Validating results with multi-layer analysis...")
-                    st.write("📧 Sending notifications...")
-                    
-                    # Run the actual integration test
-                    result = make_api_request("GET", "/health")  # Simplified for demo
-                    
-                    if result["success"]:
-                        demo_status.update(label="✅ Golden Path Demo Complete!", state="complete")
-                        st.success("🎯 **Demo Results:** All agents operational, S3 models loaded, end-to-end flow validated!")
-                        st.balloons()
-                    else:
-                        demo_status.update(label="⚠️ Demo encountered issues", state="error")
-                        st.error("Please check system connectivity")
-        
-        with demo_col2:
-            st.markdown("**🎯 Key Features Demonstrated**")
-            st.markdown("""
-            - ✅ **10-Agent Multi-Agent System**
-            - ✅ **S3 Serverless Model Loading**  
-            - ✅ **Event-Driven Architecture**
-            - ✅ **Real-time Anomaly Detection**
-            - ✅ **Intelligent Validation Pipeline**
-            - ✅ **Multi-channel Notifications**
-            - ✅ **Cloud-Native Infrastructure**
-            - ✅ **Production-Ready Performance**
-            """)
-    
-    with demo_tab2:
-        st.markdown("### 🎯 System Architecture Overview")
-        
-        arch_col1, arch_col2 = st.columns(2)
-        
-        with arch_col1:
-            st.markdown("**🏗️ Infrastructure Stack**")
-            st.info("""
-            **Cloud Services:**
-            - 🗄️ TimescaleDB (Render Cloud)
-            - 🚀 Redis (Render Cloud)  
-            - 📦 S3 Artifact Storage (AWS)
-            - 🤖 MLflow Model Registry
-            
-            **Deployment:**
-            - 🐳 Docker Containerized
-            - ☁️ Cloud-Native Architecture
-            - 📈 Auto-Scaling Ready
-            - 🔒 Enterprise Security
-            """)
-        
-        with arch_col2:
-            st.markdown("**🤖 Agent System**")
-            st.success("""
-            **Core Agents (4):**
-            - 📊 Enhanced Data Acquisition
-            - 🔍 Anomaly Detection (S3 ML)
-            - ✅ Multi-layer Validation  
-            - 📧 Enhanced Notifications
-            
-            **Decision Agents (6):**
-            - 🔮 Prediction Agent
-            - 🎯 Orchestrator Agent
-            - 📅 Scheduling Agent
-            - 👤 Human Interface Agent
-            - 📈 Reporting Agent
-            - 📝 Maintenance Log Agent
-            """)
-    
-    with demo_tab3:
-        st.markdown("### 📊 Live System Metrics")
-        
-        metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
-        
-        with metrics_col1:
-            st.metric("🤖 Multi-Agent System", "Operational", delta="10 agents active")
-            st.metric("📊 Event Subscriptions", "9 active", delta="All operational")
-            
-        with metrics_col2:
-            st.metric("🎯 S3 Model Loading", "100%", delta="17 models available")
-            st.metric("☁️ Cloud Integration", "Operational", delta="3 services connected")
-            
-        with metrics_col3:
-            st.metric("🚀 Golden Path", "Validated", delta="Core System Ready")
-            st.metric("⚡ Performance", "< 3ms P95", delta="Production ready")
-        
-        if st.button("🔄 Refresh Live Metrics", use_container_width=True):
-            st.rerun()
-    
-    st.markdown("---")
+    # (Golden Path Demo moved to render_under_development_features)
 
     # Create three columns for the main sections
     col1, col2, col3 = st.columns(3)
@@ -441,6 +337,7 @@ def main():
             submit_data = st.form_submit_button("📤 Submit Data", use_container_width=True)
             
             if submit_data:
+                start_time = datetime.now(timezone.utc)
                 # Prepare the data payload with correct schema
                 payload = {
                     "sensor_id": sensor_id,  # Required
@@ -462,110 +359,35 @@ def main():
                 if result["success"]:
                     st.success("✅ Data ingested successfully!")
                     st.json(result["data"])
-                    # Post-ingestion verification (A4): fetch latest reading for this sensor
-                    verify = make_api_request("GET", f"/api/v1/sensors/readings?limit=1&sensor_id={sensor_id}")
+                    # Post-ingestion verification (A4 enhanced)
+                    verify = make_api_request("GET", f"/api/v1/sensors/readings?limit=5&sensor_id={sensor_id}")
+                    end_time = datetime.now(timezone.utc)
+                    latency_ms = (end_time - start_time).total_seconds() * 1000.0
                     if verify["success"] and verify.get("data"):
-                        with st.expander("✅ Verification: Last Recorded Value"):
-                            st.json(verify["data"][0])
+                        readings = verify["data"]
+                        latest = readings[0]
+                        with st.expander("✅ Verification: Persistence Details"):
+                            vcol1, vcol2, vcol3 = st.columns(3)
+                            with vcol1:
+                                st.metric("Latency (ms)", f"{latency_ms:.1f}")
+                            with vcol2:
+                                st.metric("Returned Rows", len(readings))
+                            with vcol3:
+                                if latest.get("ingestion_timestamp"):
+                                    st.metric("Ingested", latest["ingestion_timestamp"][11:19])
+                            st.markdown("**Latest Reading:**")
+                            st.json(latest)
+                            if len(readings) > 1:
+                                st.markdown("**Recent History (up to 5):**")
+                                hist_df = pd.DataFrame(readings)
+                                st.dataframe(hist_df[[c for c in hist_df.columns if c in ["timestamp","sensor_id","value","sensor_type","unit"]]])
                     else:
                         st.info("Verification unavailable (no reading returned).")
                 else:
                     st.error("❌ Data ingestion failed!")
                     st.error(result["error"])
     
-    # === SECTION 2: Report Generation ===
-    with col2:
-        st.subheader("📈 Generate System Report")
-        
-        with st.form("report_generation_form"):
-            report_type = st.selectbox(
-                "Report Type",
-                ["performance_summary", "anomaly_summary", "maintenance_summary", "system_health"],
-                help="Type of report to generate"
-            )
-            
-            report_format = st.selectbox(
-                "Report Format",
-                ["json", "text"],
-                help="Output format for the report"
-            )
-            
-            include_charts = st.checkbox(
-                "Include Charts",
-                value=True,
-                help="Generate visual charts with the report"
-            )
-            
-            # Date range selection
-            col_date1, col_date2 = st.columns(2)
-            with col_date1:
-                start_date = st.date_input("Start Date", value=datetime.now(timezone.utc).date() - timedelta(days=30))
-            with col_date2:
-                end_date = st.date_input("End Date", value=datetime.now(timezone.utc).date())
-            
-            generate_report = st.form_submit_button("📊 Generate Report", use_container_width=True)
-            
-            if generate_report:
-                # Prepare the report request payload
-                start_datetime = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
-                end_datetime = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.utc)
-                
-                payload = {
-                    "report_type": report_type,
-                    "format": report_format,
-                    "parameters": {"include_details": True},
-                    "time_range_start": start_datetime.isoformat(),
-                    "time_range_end": end_datetime.isoformat(),
-                    "include_charts": include_charts
-                }
-                
-                # Make the API request with extended timeout for report generation
-                with st.spinner("🔄 Generating report... This may take up to 60 seconds."):
-                    result = make_long_api_request("POST", "/api/v1/reports/generate", payload, timeout=60)
-                
-                if result["success"]:
-                    st.success("✅ Report generated successfully!")
-                    
-                    report_data = result["data"]
-                    
-                    # Display report metadata in a nice layout
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        st.write(f"**Report ID:** `{report_data.get('report_id', 'N/A')}`")
-                        st.write(f"**Type:** {report_data.get('report_type', 'N/A')}")
-                    with col_b:
-                        st.write(f"**Format:** {report_data.get('format', 'N/A')}")
-                        if report_data.get('generated_at'):
-                            st.write(f"**Generated:** {report_data['generated_at'][:19]}")
-                    
-                    # Display report content
-                    st.subheader("📊 Report Content")
-                    if report_data.get("format") == "json":
-                        try:
-                            content = json.loads(report_data.get("content", "{}"))
-                            st.json(content)
-                        except json.JSONDecodeError:
-                            st.code(report_data.get("content", "No content available"), language="json")
-                    else:
-                        st.text_area("Content:", value=report_data.get("content", "No content available"), height=150, disabled=True)
-                    
-                    # Display charts if available
-                    if "charts_encoded" in report_data and report_data["charts_encoded"]:
-                        st.subheader("📈 Charts")
-                        charts = report_data["charts_encoded"]
-                        for chart_name, chart_data in charts.items():
-                            try:
-                                chart_bytes = base64.b64decode(chart_data)
-                                st.image(chart_bytes, caption=chart_name.replace("_", " ").title())
-                            except Exception as e:
-                                st.warning(f"Could not display chart {chart_name}: {str(e)}")
-                    
-                    # Show metadata
-                    with st.expander("📋 Report Metadata"):
-                        st.json(report_data.get("metadata", {}))
-                else:
-                    st.error("❌ Report generation failed!")
-                    st.error(result["error"])
+    # (Report generation moved to render_under_development_features)
     
     # === SECTION 3: Human Decision Simulation ===
     with col3:
@@ -815,41 +637,118 @@ def main():
     
     st.markdown("---")
     
-    # Master Dataset Preview Section
-    st.header("Master Dataset Preview")
+    # === DATA EXPLORER (A2) ===
+    st.header("📂 Data Explorer")
+    st.caption("Paginated, filterable view over sensor readings")
     
-    if st.button("Load and Preview Sensor Data"):
-        try:
-            with st.spinner("Loading sensor data from cloud database..."):
-                # Use existing request wrapper with query string to leverage retries/timeouts
-                result = make_api_request("GET", "/api/v1/sensors/readings?limit=1000")
-            if result["success"]:
-                data = result["data"]
-                if data and len(data) > 0:
-                    df = pd.DataFrame(data)
-                    df['timestamp'] = pd.to_datetime(df['timestamp'])
-                    st.success(f"Successfully loaded {len(df)} readings from cloud database")
-                    st.subheader("Raw Data Sample")
-                    st.dataframe(df.head())
-                    st.subheader("Time-Series Preview")
-                    if 'value' in df.columns:
-                        preview_df = df.set_index('timestamp')
-                        st.line_chart(preview_df[['value']])
-                    else:
-                        st.info("Multiple sensor types detected. Showing value distribution by sensor type.")
-                        if 'sensor_id' in df.columns:
-                            for sensor_id in df['sensor_id'].unique()[:5]:
-                                sensor_data = df[df['sensor_id'] == sensor_id].set_index('timestamp')
-                                if 'value' in sensor_data.columns:
-                                    st.line_chart(sensor_data[['value']], use_container_width=True)
-                else:
-                    st.warning("No sensor data found in cloud database. Try ingesting some sensor data first.")
+    # Session state for pagination
+    if 'data_explorer_offset' not in st.session_state:
+        st.session_state['data_explorer_offset'] = 0
+    if 'data_explorer_last_count' not in st.session_state:
+        st.session_state['data_explorer_last_count'] = 0
+    
+    # Controls (pagination + filters + date range)
+    ctrl1, ctrl2, ctrl3, ctrl4, ctrl5, ctrl6 = st.columns([1.2,1.6,1.4,1.4,1.6,1.4])
+    with ctrl1:
+        page_size = st.selectbox("Page Size", [25,50,100,250], index=0)
+    with ctrl2:
+        # Fetch sensors list lazily
+        if st.button("↻ Refresh Sensors") or 'data_explorer_sensors' not in st.session_state:
+            sensors_resp = make_api_request("GET", "/api/v1/sensors/sensors")
+            if sensors_resp["success"]:
+                st.session_state['data_explorer_sensors'] = [s['sensor_id'] for s in sensors_resp['data']]
             else:
-                st.error("Failed to fetch sensor data from API.")
-                st.error(result.get("error", "Unknown error"))
-        except Exception as e:
-            st.error(f"Failed to load sensor data from cloud database: {e}")
-            st.info("💡 This system uses cloud TimescaleDB. Ensure the API is running and connected to the database.")
+                st.session_state['data_explorer_sensors'] = []
+        sensor_filter = st.selectbox("Sensor Filter", ["(all)"] + st.session_state.get('data_explorer_sensors', []))
+    with ctrl3:
+        sort_option = st.selectbox("Sort", ["timestamp_desc","timestamp_asc","value_desc","value_asc"], index=0)
+    with ctrl4:
+        if st.button("🔄 Reset"):
+            st.session_state['data_explorer_offset'] = 0
+            st.session_state['data_explorer_start_date'] = None
+            st.session_state['data_explorer_end_date'] = None
+    with ctrl5:
+        start_date = st.date_input("Start Date", value=None, key="data_explorer_start_date")
+    with ctrl6:
+        end_date = st.date_input("End Date", value=None, key="data_explorer_end_date")
+    
+    # Fetch current page
+    params = {"limit": page_size, "offset": st.session_state['data_explorer_offset']}
+    if sensor_filter != "(all)":
+        params["sensor_id"] = sensor_filter
+    # Attach date filters if both provided (API accepts independent, but UI enforces start <= end)
+    if start_date:
+        params["start_ts"] = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc).isoformat()
+    if end_date:
+        params["end_ts"] = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.utc).isoformat()
+    query = f"/api/v1/sensors/readings?" + "&".join([f"{k}={v}" for k,v in params.items()])
+    with st.spinner("Loading data page..."):
+        page_resp = make_api_request("GET", query)
+    if page_resp["success"]:
+        rows = page_resp["data"]
+        st.session_state['data_explorer_last_count'] = len(rows)
+        if rows:
+            df = pd.DataFrame(rows)
+            # Sorting client-side
+            if 'timestamp' in df.columns:
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
+            if sort_option == "timestamp_desc" and 'timestamp' in df:
+                df = df.sort_values('timestamp', ascending=False)
+            elif sort_option == "timestamp_asc" and 'timestamp' in df:
+                df = df.sort_values('timestamp', ascending=True)
+            elif sort_option == "value_desc" and 'value' in df:
+                df = df.sort_values('value', ascending=False)
+            elif sort_option == "value_asc" and 'value' in df:
+                df = df.sort_values('value', ascending=True)
+            st.dataframe(df[[c for c in df.columns if c not in ['sensor_metadata']]], use_container_width=True, height=400)
+            # Export
+            csv_bytes = df.to_csv(index=False).encode('utf-8')
+            st.download_button("⬇️ Download CSV (page)", data=csv_bytes, file_name="sensor_readings_page.csv", mime="text/csv")
+            # Pagination controls
+            pcol1, pcol2, pcol3 = st.columns(3)
+            with pcol1:
+                if st.button("⬅️ Previous") and st.session_state['data_explorer_offset'] - page_size >= 0:
+                    st.session_state['data_explorer_offset'] -= page_size
+                    st.experimental_rerun()
+            with pcol2:
+                st.write(f"Offset: {st.session_state['data_explorer_offset']}")
+            with pcol3:
+                if st.button("Next ➡️") and len(rows) == page_size:
+                    st.session_state['data_explorer_offset'] += page_size
+                    st.experimental_rerun()
+            with st.expander("📊 Quick Value Trend (page only)"):
+                if 'timestamp' in df.columns and 'value' in df.columns:
+                    chart_df = df.set_index('timestamp').sort_index()
+                    st.line_chart(chart_df[['value']])
+        else:
+            if start_date or end_date or sensor_filter != "(all)":
+                st.warning("No data found for the selected criteria.")
+            else:
+                st.info("No readings found for current filter/page.")
+    else:
+        st.error("Failed to load data page")
+        st.error(page_resp["error"])
+    st.markdown("---")
+    
+    # Legacy one-shot preview (kept temporarily under expander for parity)
+    with st.expander("Legacy: Master Dataset Preview (will be removed)"):
+        if st.button("Load Full Preview (1000)"):
+            try:
+                with st.spinner("Loading sensor data (up to 1000)..."):
+                    result = make_api_request("GET", "/api/v1/sensors/readings?limit=1000")
+                if result["success"]:
+                    data = result["data"]
+                    if data:
+                        df_full = pd.DataFrame(data)
+                        if 'timestamp' in df_full.columns:
+                            df_full['timestamp'] = pd.to_datetime(df_full['timestamp'])
+                        st.dataframe(df_full.head(50))
+                    else:
+                        st.warning("No sensor data found.")
+                else:
+                    st.error(result.get("error","Unknown error"))
+            except Exception as e:
+                st.error(f"Failed to load full preview: {e}")
 
     st.markdown("---")
     
@@ -1012,385 +911,432 @@ def main():
             else:
                 st.error(f"Error: {response.text}")
         except Exception as e:
-            st.error(f"Failed to fetch metrics: {e}")    # === ML PREDICTION WITH SHAP SECTION (Day 1 Enhancement) ===
-    st.header("🤖 ML Prediction with Explainability")
-    
-    st.subheader("🎯 Make Prediction with SHAP Analysis")
-    
-    # Model version mapping for correct MLflow versions
-    MODEL_VERSION_MAP = {
-        "anomaly_detector_refined_v2": "auto",  # Let API resolve automatically
-        "ai4i_classifier_randomforest_baseline": "auto", 
-        "vibration_anomaly_isolationforest": "auto",
-        "synthetic_validation_isolation_forest": "auto"
-    }
-    
-    with st.form("ml_prediction_with_shap_form"):
-        st.write("**Model Configuration:**")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            model_name = st.selectbox(
-                "Model Name",
-                ["ai4i_classifier_randomforest_baseline", "anomaly_detector_refined_v2", "vibration_anomaly_isolationforest"],
-                help="Select a model for prediction"
+            st.error(f"Failed to fetch metrics: {e}")
+
+    # Under Development Features Toggle
+    st.markdown("---")
+    show_under_dev = st.sidebar.checkbox("🧪 Show Under Development", value=False, help="Display experimental and in-progress features")
+    if show_under_dev:
+        render_under_development_features()
+
+def render_under_development_features():
+    """Render experimental / in-progress UI components isolated from stable core."""
+    st.header("🧪 Under Development Features")
+
+    # === GOLDEN PATH DEMO SECTION ===
+    with st.expander("🏆 Golden Path Demo - Live System Showcase", expanded=False):
+        demo_tab1, demo_tab2, demo_tab3 = st.tabs(["🚀 Quick Demo", "🎯 System Overview", "📊 Live Metrics"])
+        with demo_tab1:
+            st.markdown("### 🚀 One-Click Golden Path Demonstration")
+            st.markdown("Experience the complete AI-powered maintenance workflow in action:")
+            demo_col1, demo_col2 = st.columns(2)
+            with demo_col1:
+                st.markdown("**🔄 Complete Workflow Demo**")
+                if st.button("▶️ Run Golden Path Demo", type="primary", use_container_width=True):
+                    with st.status("🚀 Executing Golden Path Demo...", expanded=True) as demo_status:
+                        st.write("🤖 Initializing 10-agent system...")
+                        st.write("📊 Publishing sensor data events...")
+                        st.write("🔍 Running anomaly detection with S3 models...")
+                        st.write("✅ Validating results with multi-layer analysis...")
+                        st.write("📧 Sending notifications...")
+                        result = make_api_request("GET", "/health")
+                        if result["success"]:
+                            demo_status.update(label="✅ Golden Path Demo Complete!", state="complete")
+                            st.success("🎯 **Demo Results:** All agents operational, S3 models loaded, end-to-end flow validated!")
+                            st.balloons()
+                        else:
+                            demo_status.update(label="⚠️ Demo encountered issues", state="error")
+                            st.error("Please check system connectivity")
+            with demo_col2:
+                st.markdown("**🎯 Key Features Demonstrated**")
+                st.markdown("""
+                - ✅ **10-Agent Multi-Agent System**
+                - ✅ **S3 Serverless Model Loading**  
+                - ✅ **Event-Driven Architecture**
+                - ✅ **Real-time Anomaly Detection**
+                - ✅ **Intelligent Validation Pipeline**
+                - ✅ **Multi-channel Notifications**
+                - ✅ **Cloud-Native Infrastructure**
+                - ✅ **Production-Ready Performance**
+                """)
+        with demo_tab2:
+            st.markdown("### 🎯 System Architecture Overview")
+            arch_col1, arch_col2 = st.columns(2)
+            with arch_col1:
+                st.markdown("**🏗️ Infrastructure Stack**")
+                st.info("""
+                **Cloud Services:**
+                - 🗄️ TimescaleDB (Render Cloud)
+                - 🚀 Redis (Render Cloud)  
+                - 📦 S3 Artifact Storage (AWS)
+                - 🤖 MLflow Model Registry
+                
+                **Deployment:**
+                - 🐳 Docker Containerized
+                - ☁️ Cloud-Native Architecture
+                - 📈 Auto-Scaling Ready
+                - 🔒 Enterprise Security
+                """)
+            with arch_col2:
+                st.markdown("**🤖 Agent System**")
+                st.success("""
+                **Core Agents (4):**
+                - 📊 Enhanced Data Acquisition
+                - 🔍 Anomaly Detection (S3 ML)
+                - ✅ Multi-layer Validation  
+                - 📧 Enhanced Notifications
+                
+                **Decision Agents (6):**
+                - 🔮 Prediction Agent
+                - 🎯 Orchestrator Agent
+                - 📅 Scheduling Agent
+                - 👤 Human Interface Agent
+                - 📈 Reporting Agent
+                - 📝 Maintenance Log Agent
+                """)
+        with demo_tab3:
+            st.markdown("### 📊 Live System Metrics")
+            metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+            with metrics_col1:
+                st.metric("🤖 Multi-Agent System", "Operational", delta="10 agents active")
+                st.metric("📊 Event Subscriptions", "9 active", delta="All operational")
+            with metrics_col2:
+                st.metric("🎯 S3 Model Loading", "100%", delta="17 models available")
+                st.metric("☁️ Cloud Integration", "Operational", delta="3 services connected")
+            with metrics_col3:
+                st.metric("🚀 Golden Path", "Validated", delta="Core System Ready")
+                st.metric("⚡ Performance", "< 3ms P95", delta="Production ready")
+            if st.button("🔄 Refresh Live Metrics", use_container_width=True):
+                st.rerun()
+
+    # === REPORT GENERATION SECTION ===
+    with st.expander("📈 Generate System Report", expanded=False):
+        with st.form("report_generation_form"):
+            report_type = st.selectbox(
+                "Report Type",
+                ["performance_summary", "anomaly_summary", "maintenance_summary", "system_health"],
+                help="Type of report to generate"
             )
-        with col2:
-            # Auto-set version based on model, but allow manual override
-            default_version = MODEL_VERSION_MAP.get(model_name, "1")
-            model_version = st.text_input("Model Version", value=default_version, help="Model version to use")
-        
-        st.write("**Feature Input:**")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            air_temp = st.number_input("Air Temperature (K)", value=298.1)
-            process_temp = st.number_input("Process Temperature (K)", value=308.6)
-            rotation_speed = st.number_input("Rotational Speed (RPM)", value=1551)
-        
-        with col2:
-            torque = st.number_input("Torque (Nm)", value=42.8)
-            tool_wear = st.number_input("Tool Wear (min)", value=108)
-            sensor_id = st.text_input("Sensor ID", value="ml_test_sensor")
-        explain = st.checkbox("Compute SHAP Explainability", value=True, help="Disable to speed up prediction if explanation is slow")
-        
-        predict_button = st.form_submit_button("🔮 Get Prediction with SHAP Analysis")
-
-        if predict_button:
-            resolved_version = model_version
-            # Auto or placeholder resolution using new helper endpoint
-            if model_version.lower() in ["auto", "latest"]:
-                latest_resp = make_api_request("GET", f"/api/v1/ml/models/{model_name}/latest")
-                if latest_resp["success"] and latest_resp.get("data", {}).get("resolved_version"):
-                    resolved_version = latest_resp["data"]["resolved_version"]
-                else:
-                    # Fallback: list versions and pick highest numeric
-                    versions_resp = make_api_request("GET", f"/api/v1/ml/models/{model_name}/versions")
-                    if versions_resp["success"]:
-                        versions = versions_resp["data"].get("versions", [])
-                        if versions:
-                            resolved_version = versions[0]["version"]  # already sorted newest first
-                        else:
-                            st.error("No versions available for this model in registry.")
-                            st.stop()
-                    else:
-                        st.error("Failed to resolve model version (helper endpoints unavailable). Try specifying an explicit version.")
-                        st.stop()
-
-            prediction_payload = {
-                "model_name": model_name,
-                "model_version": resolved_version,
-                "features": {
-                    "Air_temperature_K": air_temp,
-                    "Process_temperature_K": process_temp,
-                    "Rotational_speed_rpm": rotation_speed,
-                    "Torque_Nm": torque,
-                    "Tool_wear_min": tool_wear
-                },
-                "sensor_id": sensor_id,
-                "explain": explain
-            }
-            with st.spinner(f"🔮 Running prediction (model v{resolved_version}) and SHAP analysis..."):
-                result = make_api_request("POST", "/api/v1/ml/predict", prediction_payload)
-            if result["success"]:
-                prediction_data = result["data"]
-                st.success("✅ Prediction completed successfully!")
-                if not explain:
-                    st.info("ℹ️ Explainability was skipped (checkbox disabled). Enable to compute SHAP values.")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.subheader("🎯 Prediction Results")
-                    st.write(f"**Prediction:** {prediction_data.get('prediction', 'N/A')}")
-                    if 'confidence' in prediction_data and prediction_data['confidence']:
-                        st.write(f"**Confidence:** {prediction_data['confidence']:.3f}")
-                    st.write(f"**Request ID:** `{prediction_data.get('request_id', 'N/A')}`")
-                with col2:
-                    st.subheader("📋 Model Information")
-                    model_info = prediction_data.get('model_info', {})
-                    st.json(model_info)
-                if 'shap_values' in prediction_data and prediction_data['shap_values']:
-                    st.subheader("🧠 Explainable AI Analysis (SHAP)")
-                    shap_values = prediction_data['shap_values']
-                    feature_importance = prediction_data.get('feature_importance', {})
-                    if feature_importance:
-                        display_shap_visualization(shap_values, feature_importance)
-                    else:
-                        st.info("SHAP values computed but feature importance data not available")
-                        st.json(shap_values)
-                else:
-                    st.info("💡 SHAP explainability analysis not available for this model/prediction")
-                with st.expander("📋 Raw Response Data"):
-                    st.json(prediction_data)
-            else:
-                st.error("❌ Prediction failed!")
-                error_msg = result.get("error", "Unknown error")
-                st.error(error_msg)
-                if "not found" in error_msg.lower():
-                    # Try listing versions to guide user
-                    versions_resp = make_api_request("GET", f"/api/v1/ml/models/{model_name}/versions")
-                    if versions_resp["success"]:
-                        versions = [v["version"] for v in versions_resp["data"].get("versions", [])]
-                        if versions:
-                            st.info(f"📦 Available versions for {model_name}: {', '.join(versions)}")
-                        else:
-                            st.info("No versions reported by registry for this model.")
-                    else:
-                        st.info("Could not retrieve model versions for guidance.")
-                if "feature" in error_msg.lower() or "expecting" in error_msg.lower():
-                    st.info("💡 **Tip**: This model may require specific features or ordering. Try another model or verify feature names.")
-
-    # === LIVE DEMO SIMULATOR SECTION (Day 2 Enhancement) ===
-    st.markdown("---")
-    st.header("🚀 Live System Demo Simulator")
-    st.markdown("**Demonstrate the complete MLOps loop in real-time!**")
-    
-    st.markdown("""
-    This simulator generates synthetic sensor data with various patterns (normal, drift, anomalies) 
-    and injects it into the system to demonstrate:
-    - Real-time data ingestion
-    - Automated drift detection
-    - Anomaly detection
-    - Email/Slack notifications
-    - Model retraining triggers
-    """)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.subheader("📊 Generate Drift Event")
-        st.markdown("Create synthetic data that exhibits statistical drift to trigger drift detection algorithms.")
-        
-        with st.form("drift_simulation_form"):
-            drift_sensor_id = st.text_input("Sensor ID", value="demo-sensor-001")
-            drift_magnitude = st.slider("Drift Magnitude (σ)", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
-            drift_samples = st.number_input("Number of Samples", min_value=10, max_value=200, value=50)
-            
-            simulate_drift = st.form_submit_button("🌊 Simulate Drift Event", use_container_width=True)
-            
-            if simulate_drift:
+            report_format = st.selectbox(
+                "Report Format",
+                ["json", "text"],
+                help="Output format for the report"
+            )
+            include_charts = st.checkbox(
+                "Include Charts",
+                value=True,
+                help="Generate visual charts with the report"
+            )
+            col_date1, col_date2 = st.columns(2)
+            with col_date1:
+                start_date = st.date_input("Start Date", value=datetime.now(timezone.utc).date() - timedelta(days=30))
+            with col_date2:
+                end_date = st.date_input("End Date", value=datetime.now(timezone.utc).date())
+            generate_report = st.form_submit_button("📊 Generate Report", use_container_width=True)
+            if generate_report:
+                start_datetime = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+                end_datetime = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.utc)
                 payload = {
-                    "sensor_id": drift_sensor_id,
-                    "drift_magnitude": drift_magnitude,
-                    "num_samples": drift_samples,
-                    "base_value": 25.0,
-                    "noise_level": 1.0
+                    "report_type": report_type,
+                    "format": report_format,
+                    "parameters": {"include_details": True},
+                    "time_range_start": start_datetime.isoformat(),
+                    "time_range_end": end_datetime.isoformat(),
+                    "include_charts": include_charts
                 }
-                drift_response_data = None
-                drift_error = None
-                with st.status("Generating drift simulation...", expanded=True) as status:
-                    st.write("Creating synthetic drift data...")
-                    result = make_api_request("POST", "/api/v1/simulate/drift-event", payload)
-                    if result["success"]:
-                        drift_response_data = result["data"]
-                        status.update(label="✅ Drift simulation started!", state="complete", expanded=False)
-                    else:
-                        drift_error = result["error"]
-                        status.update(label="❌ Drift simulation failed", state="error", expanded=True)
-                # Outside status block
-                if drift_response_data:
+                with st.spinner("🔄 Generating report... This may take up to 60 seconds."):
+                    result = make_long_api_request("POST", "/api/v1/reports/generate", payload, timeout=60)
+                if result["success"]:
+                    st.success("✅ Report generated successfully!")
+                    report_data = result["data"]
                     col_a, col_b = st.columns(2)
                     with col_a:
-                        st.metric("Events Generated", drift_response_data.get('events_generated', 0))
+                        st.write(f"**Report ID:** `{report_data.get('report_id', 'N/A')}`")
+                        st.write(f"**Type:** {report_data.get('report_type', 'N/A')}")
                     with col_b:
-                        st.metric("Simulation ID", drift_response_data.get('simulation_id', 'N/A')[:8] + "...")
-                    st.success(drift_response_data.get('message', 'Drift simulation completed'))
-                    st.info("🔄 **What happens next:**\n"
-                            "1. Synthetic data is being ingested into the system\n"
-                            "2. Drift detection will automatically run in ~30 seconds\n"
-                            "3. If drift is detected, email notifications will be sent\n"
-                            "4. System may trigger automatic model retraining")
-                    with st.expander("📋 Simulation Details"):
-                        st.json(drift_response_data)
-                elif drift_error:
-                    st.error(f"Simulation failed: {drift_error}")
-    
-    with col2:
-        st.subheader("🚨 Generate Anomaly Event")
-        st.markdown("Create synthetic data with clear anomalies to trigger anomaly detection systems.")
-        
-        with st.form("anomaly_simulation_form"):
-            anomaly_sensor_id = st.text_input("Sensor ID", value="demo-sensor-002")
-            anomaly_magnitude = st.slider("Anomaly Magnitude", min_value=1.0, max_value=10.0, value=5.0, step=0.5)
-            num_anomalies = st.number_input("Number of Anomalies", min_value=1, max_value=50, value=10)
-            
-            simulate_anomaly = st.form_submit_button("⚡ Simulate Anomaly Event", use_container_width=True)
-            
-            if simulate_anomaly:
-                anomaly_response_data = None
-                anomaly_error = None
-                with st.status("Generating anomaly simulation...", expanded=True) as status:
-                    st.write("Creating synthetic anomaly data...")
-                    result = make_api_request(
-                        "POST",
-                        f"/api/v1/simulate/anomaly-event?sensor_id={anomaly_sensor_id}&anomaly_magnitude={anomaly_magnitude}&num_anomalies={num_anomalies}"
-                    )
-                    if result["success"]:
-                        anomaly_response_data = result["data"]
-                        status.update(label="✅ Anomaly simulation started!", state="complete", expanded=False)
+                        st.write(f"**Format:** {report_data.get('format', 'N/A')}")
+                        if report_data.get('generated_at'):
+                            st.write(f"**Generated:** {report_data['generated_at'][:19]}")
+                    st.subheader("📊 Report Content")
+                    if report_data.get("format") == "json":
+                        try:
+                            content = json.loads(report_data.get("content", "{}"))
+                            st.json(content)
+                        except json.JSONDecodeError:
+                            st.code(report_data.get("content", "No content available"), language="json")
                     else:
-                        anomaly_error = result["error"]
-                        status.update(label="❌ Anomaly simulation failed", state="error", expanded=True)
-                if anomaly_response_data:
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        st.metric("Events Generated", anomaly_response_data.get('events_generated', 0))
-                    with col_b:
-                        st.metric("Anomalies Created", num_anomalies)
-                    st.success(anomaly_response_data.get('message', 'Anomaly simulation completed'))
-                    st.info("🔄 **What happens next:**\n"
-                            "1. Synthetic anomaly data is being ingested\n"
-                            "2. Anomaly detection algorithms will process the data\n"
-                            "3. Anomalous readings will be flagged\n"
-                            "4. Alerts may be generated for maintenance teams")
-                    with st.expander("📋 Simulation Details"):
-                        st.json(anomaly_response_data)
-                elif anomaly_error:
-                    st.error(f"Simulation failed: {anomaly_error}")
-    
-    with col3:
-        st.subheader("📈 Generate Normal Data")
-        st.markdown("Create realistic baseline sensor data to establish normal system behavior patterns.")
-        
-        with st.form("normal_data_simulation_form"):
-            normal_sensor_id = st.text_input("Sensor ID", value="demo-sensor-003")
-            num_samples = st.number_input("Number of Samples", min_value=10, max_value=500, value=100)
-            duration_minutes = st.number_input("Duration (minutes)", min_value=10, max_value=1440, value=60)
-            
-            simulate_normal = st.form_submit_button("📊 Generate Normal Data", use_container_width=True)
-            
-            if simulate_normal:
-                normal_response_data = None
-                normal_error = None
-                with st.status("Generating normal data...", expanded=True) as status:
-                    st.write("Creating synthetic normal sensor data...")
-                    result = make_api_request(
-                        "POST",
-                        f"/api/v1/simulate/normal-data?sensor_id={normal_sensor_id}&num_samples={num_samples}&duration_minutes={duration_minutes}"
-                    )
-                    if result["success"]:
-                        normal_response_data = result["data"]
-                        status.update(label="✅ Normal data generation started!", state="complete", expanded=False)
-                    else:
-                        normal_error = result["error"]
-                        status.update(label="❌ Normal data generation failed", state="error", expanded=True)
-                if normal_response_data:
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        st.metric("Events Generated", normal_response_data.get('events_generated', 0))
-                    with col_b:
-                        st.metric("Duration", f"{duration_minutes} min")
-                    st.success(normal_response_data.get('message', 'Normal data generation completed'))
-                    st.info("🔄 **What happens next:**\n"
-                            "1. Realistic sensor data is being ingested\n"
-                            "2. Data will establish baseline patterns\n"
-                            "3. Future drift/anomaly detection will use this as reference\n"
-                            "4. System learns normal operating parameters")
-                    with st.expander("📋 Simulation Details"):
-                        st.json(normal_response_data)
-                elif normal_error:
-                    st.error(f"Simulation failed: {normal_error}")
-    
-    # Demo Control Panel
-    st.markdown("---")
-    st.subheader("🎮 Demo Control Panel")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("**🔄 Complete MLOps Demo Sequence**")
-        if st.button("🚀 Run Full Demo Sequence", use_container_width=True):
-            with st.status("Running complete MLOps demonstration...", expanded=True) as status:
-                st.write("Step 1: Generating normal baseline data...")
-                
-                # Step 1: Generate normal data
-                result1 = make_api_request("POST", "/api/v1/simulate/normal-data?sensor_id=demo-full-001&num_samples=50&duration_minutes=30")
-                if result1["success"]:
-                    st.write("✅ Baseline data generated")
+                        st.text_area("Content:", value=report_data.get("content", "No content available"), height=150, disabled=True)
+                    if "charts_encoded" in report_data and report_data["charts_encoded"]:
+                        st.subheader("📈 Charts")
+                        charts = report_data["charts_encoded"]
+                        for chart_name, chart_data in charts.items():
+                            try:
+                                chart_bytes = base64.b64decode(chart_data)
+                                st.image(chart_bytes, caption=chart_name.replace("_", " ").title())
+                            except Exception as e:
+                                st.warning(f"Could not display chart {chart_name}: {str(e)}")
+                    with st.expander("📋 Report Metadata"):
+                        st.json(report_data.get("metadata", {}))
                 else:
-                    st.write("❌ Baseline data failed")
-                
-                st.write("Step 2: Generating drift event...")
-                
-                # Step 2: Generate drift
-                drift_payload = {
-                    "sensor_id": "demo-full-001",
-                    "drift_magnitude": 3.0,
-                    "num_samples": 30,
-                    "base_value": 25.0,
-                    "noise_level": 1.0
+                    st.error("❌ Report generation failed!")
+                    st.error(result["error"])
+
+    # === ML PREDICTION WITH SHAP SECTION ===
+    with st.expander("🤖 ML Prediction with Explainability", expanded=False):
+        st.subheader("🎯 Make Prediction with SHAP Analysis")
+        MODEL_VERSION_MAP = {
+            "anomaly_detector_refined_v2": "auto",
+            "ai4i_classifier_randomforest_baseline": "auto", 
+            "vibration_anomaly_isolationforest": "auto",
+            "synthetic_validation_isolation_forest": "auto"
+        }
+        with st.form("ml_prediction_with_shap_form"):
+            st.write("**Model Configuration:**")
+            col1, col2 = st.columns(2)
+            with col1:
+                model_name = st.selectbox(
+                    "Model Name",
+                    ["ai4i_classifier_randomforest_baseline", "anomaly_detector_refined_v2", "vibration_anomaly_isolationforest"],
+                    help="Select a model for prediction"
+                )
+            with col2:
+                default_version = MODEL_VERSION_MAP.get(model_name, "1")
+                model_version = st.text_input("Model Version", value=default_version, help="Model version to use")
+            st.write("**Feature Input:**")
+            col1, col2 = st.columns(2)
+            with col1:
+                air_temp = st.number_input("Air Temperature (K)", value=298.1)
+                process_temp = st.number_input("Process Temperature (K)", value=308.6)
+                rotation_speed = st.number_input("Rotational Speed (RPM)", value=1551)
+            with col2:
+                torque = st.number_input("Torque (Nm)", value=42.8)
+                tool_wear = st.number_input("Tool Wear (min)", value=108)
+                sensor_id = st.text_input("Sensor ID", value="ml_test_sensor")
+            explain = st.checkbox("Compute SHAP Explainability", value=True, help="Disable to speed up prediction if explanation is slow")
+            predict_button = st.form_submit_button("🔮 Get Prediction with SHAP Analysis")
+            if predict_button:
+                resolved_version = model_version
+                if model_version.lower() in ["auto", "latest"]:
+                    latest_resp = make_api_request("GET", f"/api/v1/ml/models/{model_name}/latest")
+                    if latest_resp["success"] and latest_resp.get("data", {}).get("resolved_version"):
+                        resolved_version = latest_resp["data"]["resolved_version"]
+                    else:
+                        versions_resp = make_api_request("GET", f"/api/v1/ml/models/{model_name}/versions")
+                        if versions_resp["success"]:
+                            versions = versions_resp["data"].get("versions", [])
+                            if versions:
+                                resolved_version = versions[0]["version"]
+                            else:
+                                st.error("No versions available for this model in registry.")
+                                st.stop()
+                        else:
+                            st.error("Failed to resolve model version (helper endpoints unavailable). Try specifying an explicit version.")
+                            st.stop()
+                prediction_payload = {
+                    "model_name": model_name,
+                    "model_version": resolved_version,
+                    "features": {
+                        "Air_temperature_K": air_temp,
+                        "Process_temperature_K": process_temp,
+                        "Rotational_speed_rpm": rotation_speed,
+                        "Torque_Nm": torque,
+                        "Tool_wear_min": tool_wear
+                    },
+                    "sensor_id": sensor_id,
+                    "explain": explain
                 }
-                result2 = make_api_request("POST", "/api/v1/simulate/drift-event", drift_payload)
-                if result2["success"]:
-                    st.write("✅ Drift event simulated")
+                with st.spinner(f"🔮 Running prediction (model v{resolved_version}) and SHAP analysis..."):
+                    result = make_api_request("POST", "/api/v1/ml/predict", prediction_payload)
+                if result["success"]:
+                    prediction_data = result["data"]
+                    st.success("✅ Prediction completed successfully!")
+                    if not explain:
+                        st.info("ℹ️ Explainability was skipped (checkbox disabled). Enable to compute SHAP values.")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.subheader("🎯 Prediction Results")
+                        st.write(f"**Prediction:** {prediction_data.get('prediction', 'N/A')}")
+                        if 'confidence' in prediction_data and prediction_data['confidence']:
+                            st.write(f"**Confidence:** {prediction_data['confidence']:.3f}")
+                        st.write(f"**Request ID:** `{prediction_data.get('request_id', 'N/A')}`")
+                    with col2:
+                        st.subheader("📋 Model Information")
+                        model_info = prediction_data.get('model_info', {})
+                        st.json(model_info)
+                    if 'shap_values' in prediction_data and prediction_data['shap_values']:
+                        st.subheader("🧠 Explainable AI Analysis (SHAP)")
+                        shap_values = prediction_data['shap_values']
+                        feature_importance = prediction_data.get('feature_importance', {})
+                        if feature_importance:
+                            display_shap_visualization(shap_values, feature_importance)
+                        else:
+                            st.info("SHAP values computed but feature importance data not available")
+                            st.json(shap_values)
+                    else:
+                        st.info("💡 SHAP explainability analysis not available for this model/prediction")
+                    with st.expander("📋 Raw Response Data"):
+                        st.json(prediction_data)
                 else:
-                    st.write("❌ Drift simulation failed")
-                
-                st.write("Step 3: Generating anomalies...")
-                
-                # Step 3: Generate anomalies
-                result3 = make_api_request("POST", "/api/v1/simulate/anomaly-event?sensor_id=demo-full-001&anomaly_magnitude=4.0&num_anomalies=5")
-                if result3["success"]:
-                    st.write("✅ Anomalies generated")
-                else:
-                    st.write("❌ Anomaly simulation failed")
-                
-                status.update(label="✅ Complete demo sequence initiated!", state="complete", expanded=False)
-                
-                st.success("🎯 **Demo sequence started!** Check the system logs and monitoring tools to see the MLOps pipeline in action.")
-                st.info("📧 **Note**: If email notifications are configured, you should receive alerts for the drift detection.")
-    
-    with col2:
-        st.markdown("**📊 Monitor Simulation Results**")
-        if st.button("📈 Check Recent Simulations", use_container_width=True):
-            st.info("🔄 **Monitoring features coming soon!**\n\n"
-                   "Future enhancements will include:\n"
-                   "- Real-time simulation status tracking\n"
-                   "- Drift detection results dashboard\n"
-                   "- Anomaly detection outcomes\n"
-                   "- Email notification logs\n"
-                   "- Model retraining status")
-        
-        if st.button("🔍 View System Logs", use_container_width=True):
-            st.info("📋 **Log viewing features coming soon!**\n\n"
-                   "Future log viewing will show:\n"
-                   "- Real-time ingestion logs\n"
-                   "- Drift detection processing\n"
-                   "- Anomaly detection results\n"
-                   "- Notification delivery status\n"
-                   "- Model performance metrics")
-    
-    # Simulation Settings
-    with st.expander("⚙️ Advanced Simulation Settings"):
-        st.markdown("**Global Simulation Configuration**")
-        
+                    st.error("❌ Prediction failed!")
+                    error_msg = result.get("error", "Unknown error")
+                    st.error(error_msg)
+                    if "not found" in error_msg.lower():
+                        versions_resp = make_api_request("GET", f"/api/v1/ml/models/{model_name}/versions")
+                        if versions_resp["success"]:
+                            versions = [v["version"] for v in versions_resp["data"].get("versions", [])]
+                            if versions:
+                                st.info(f"📦 Available versions for {model_name}: {', '.join(versions)}")
+                            else:
+                                st.info("No versions reported by registry for this model.")
+                        else:
+                            st.info("Could not retrieve model versions for guidance.")
+                    if "feature" in error_msg.lower() or "expecting" in error_msg.lower():
+                        st.info("💡 **Tip**: This model may require specific features or ordering. Try another model or verify feature names.")
+
+    # === LIVE SYSTEM DEMO SIMULATOR & CONTROL PANEL ===
+    with st.expander("🚀 Live System Demo Simulator", expanded=False):
+        st.markdown("**Demonstrate the complete MLOps loop in real-time!**")
+        st.markdown("""
+        This simulator generates synthetic sensor data with various patterns (normal, drift, anomalies) 
+        and injects it into the system to demonstrate:
+        - Real-time data ingestion
+        - Automated drift detection
+        - Anomaly detection
+        - Email/Slack notifications
+        - Model retraining triggers
+        """)
+        col1, col2, col3 = st.columns(3)
+        # Drift
+        with col1:
+            st.subheader("📊 Generate Drift Event")
+            with st.form("drift_simulation_form"):
+                drift_sensor_id = st.text_input("Sensor ID", value="demo-sensor-001")
+                drift_magnitude = st.slider("Drift Magnitude (σ)", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
+                drift_samples = st.number_input("Number of Samples", min_value=10, max_value=200, value=50)
+                simulate_drift = st.form_submit_button("🌊 Simulate Drift Event", use_container_width=True)
+                if simulate_drift:
+                    payload = {
+                        "sensor_id": drift_sensor_id,
+                        "drift_magnitude": drift_magnitude,
+                        "num_samples": drift_samples,
+                        "base_value": 25.0,
+                        "noise_level": 1.0
+                    }
+                    drift_response_data = None
+                    with st.status("Generating drift simulation...", expanded=True) as status:
+                        st.write("Creating synthetic drift data...")
+                        result = make_api_request("POST", "/api/v1/simulate/drift-event", payload)
+                        if result["success"]:
+                            drift_response_data = result["data"]
+                            status.update(label="✅ Drift simulation started!", state="complete", expanded=False)
+                        else:
+                            status.update(label="❌ Drift simulation failed", state="error", expanded=True)
+                    if drift_response_data:
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.metric("Events Generated", drift_response_data.get('events_generated', 0))
+                        with col_b:
+                            st.metric("Simulation ID", drift_response_data.get('simulation_id', 'N/A')[:8] + "...")
+                        st.success(drift_response_data.get('message', 'Drift simulation completed'))
+                        with st.expander("📋 Simulation Details"):
+                            st.json(drift_response_data)
+        # Anomaly
+        with col2:
+            st.subheader("🚨 Generate Anomaly Event")
+            with st.form("anomaly_simulation_form"):
+                anomaly_sensor_id = st.text_input("Sensor ID", value="demo-sensor-002")
+                anomaly_magnitude = st.slider("Anomaly Magnitude", min_value=1.0, max_value=10.0, value=5.0, step=0.5)
+                num_anomalies = st.number_input("Number of Anomalies", min_value=1, max_value=50, value=10)
+                simulate_anomaly = st.form_submit_button("⚡ Simulate Anomaly Event", use_container_width=True)
+                if simulate_anomaly:
+                    anomaly_response_data = None
+                    with st.status("Generating anomaly simulation...", expanded=True) as status:
+                        st.write("Creating synthetic anomaly data...")
+                        result = make_api_request(
+                            "POST",
+                            f"/api/v1/simulate/anomaly-event?sensor_id={anomaly_sensor_id}&anomaly_magnitude={anomaly_magnitude}&num_anomalies={num_anomalies}"
+                        )
+                        if result["success"]:
+                            anomaly_response_data = result["data"]
+                            status.update(label="✅ Anomaly simulation started!", state="complete", expanded=False)
+                        else:
+                            status.update(label="❌ Anomaly simulation failed", state="error", expanded=True)
+                    if anomaly_response_data:
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.metric("Events Generated", anomaly_response_data.get('events_generated', 0))
+                        with col_b:
+                            st.metric("Anomalies Created", num_anomalies)
+                        st.success(anomaly_response_data.get('message', 'Anomaly simulation completed'))
+                        with st.expander("📋 Simulation Details"):
+                            st.json(anomaly_response_data)
+        # Normal data
+        with col3:
+            st.subheader("📈 Generate Normal Data")
+            with st.form("normal_data_simulation_form"):
+                normal_sensor_id = st.text_input("Sensor ID", value="demo-sensor-003")
+                num_samples = st.number_input("Number of Samples", min_value=10, max_value=500, value=100)
+                duration_minutes = st.number_input("Duration (minutes)", min_value=10, max_value=1440, value=60)
+                simulate_normal = st.form_submit_button("📊 Generate Normal Data", use_container_width=True)
+                if simulate_normal:
+                    normal_response_data = None
+                    with st.status("Generating normal data...", expanded=True) as status:
+                        st.write("Creating synthetic normal sensor data...")
+                        result = make_api_request(
+                            "POST",
+                            f"/api/v1/simulate/normal-data?sensor_id={normal_sensor_id}&num_samples={num_samples}&duration_minutes={duration_minutes}"
+                        )
+                        if result["success"]:
+                            normal_response_data = result["data"]
+                            status.update(label="✅ Normal data generation started!", state="complete", expanded=False)
+                        else:
+                            status.update(label="❌ Normal data generation failed", state="error", expanded=True)
+                    if normal_response_data:
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.metric("Events Generated", normal_response_data.get('events_generated', 0))
+                        with col_b:
+                            st.metric("Duration", f"{duration_minutes} min")
+                        st.success(normal_response_data.get('message', 'Normal data generation completed'))
+                        with st.expander("📋 Simulation Details"):
+                            st.json(normal_response_data)
+        st.markdown("---")
+        st.subheader("🎮 Demo Control Panel")
         col1, col2 = st.columns(2)
         with col1:
-            st.text_input("API Base URL", value=API_BASE_URL, disabled=True)
-            st.text_input("Correlation ID Prefix", value="streamlit-sim")
-        
+            st.markdown("**🔄 Complete MLOps Demo Sequence**")
+            if st.button("🚀 Run Full Demo Sequence", use_container_width=True):
+                with st.status("Running complete MLOps demonstration...", expanded=True) as status:
+                    st.write("Step 1: Generating normal baseline data...")
+                    make_api_request("POST", "/api/v1/simulate/normal-data?sensor_id=demo-full-001&num_samples=50&duration_minutes=30")
+                    st.write("Step 2: Generating drift event...")
+                    drift_payload = {"sensor_id": "demo-full-001", "drift_magnitude": 3.0, "num_samples": 30, "base_value": 25.0, "noise_level": 1.0}
+                    make_api_request("POST", "/api/v1/simulate/drift-event", drift_payload)
+                    st.write("Step 3: Generating anomalies...")
+                    make_api_request("POST", "/api/v1/simulate/anomaly-event?sensor_id=demo-full-001&anomaly_magnitude=4.0&num_anomalies=5")
+                    status.update(label="✅ Complete demo sequence initiated!", state="complete", expanded=False)
+                    st.success("🎯 **Demo sequence started!** Check the system logs and monitoring tools to see the MLOps pipeline in action.")
         with col2:
-            st.selectbox("Simulation Environment", ["development", "staging", "demo"], index=2)
-            st.checkbox("Enable Verbose Logging", value=False)
-        
-        st.markdown("**Email Notification Settings**")
-        st.info("Configure `DRIFT_ALERT_EMAIL` and `RETRAIN_SUCCESS_EMAIL` environment variables to receive email notifications during simulations.")
-        
-        st.markdown("**Simulation Data Characteristics**")
-        st.write("- **Normal Data**: Follows realistic daily temperature cycles with small random variations")
-        st.write("- **Drift Data**: Gradually shifts values by the specified magnitude in standard deviations")
-        st.write("- **Anomaly Data**: Creates outliers that are 3-5x the specified magnitude from baseline")
-        st.write("- **Timing**: All data is timestamped in reverse chronological order to appear as recent readings")
-
-    # Footer
-    st.markdown("---")
-    st.markdown(
-        "<div style='text-align: center'>"
-        "<small>Smart Maintenance SaaS - Hermes Control Panel | "
-        f"Connected to: {API_BASE_URL} | "
-        f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</small>"
-        "</div>", 
-        unsafe_allow_html=True
-    )
+            st.markdown("**📊 Monitor Simulation Results**")
+            if st.button("📈 Check Recent Simulations", use_container_width=True):
+                st.info("🔄 Monitoring features coming soon (simulation status, drift/anomaly dashboards, notification logs, retraining status)")
+            if st.button("🔍 View System Logs", use_container_width=True):
+                st.info("📋 Log viewing features coming soon (ingestion logs, detection processing, notification status, model metrics)")
+        with st.expander("⚙️ Advanced Simulation Settings"):
+            st.markdown("**Global Simulation Configuration**")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.text_input("API Base URL", value=API_BASE_URL, disabled=True)
+                st.text_input("Correlation ID Prefix", value="streamlit-sim")
+            with col2:
+                st.selectbox("Simulation Environment", ["development", "staging", "demo"], index=2)
+                st.checkbox("Enable Verbose Logging", value=False)
+            st.markdown("**Email Notification Settings**")
+            st.info("Configure DRIFT_ALERT_EMAIL and RETRAIN_SUCCESS_EMAIL env vars for email notifications during simulations.")
+            st.markdown("**Simulation Data Characteristics**")
+            st.write("- Normal Data: Daily cycles with small noise")
+            st.write("- Drift Data: Gradual mean shift by selected σ")
+            st.write("- Anomaly Data: Sudden large deviations")
 
 if __name__ == "__main__":
     main()
