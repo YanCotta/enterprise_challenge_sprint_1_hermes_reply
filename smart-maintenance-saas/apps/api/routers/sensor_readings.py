@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Security, Query
@@ -77,6 +78,7 @@ async def get_sensor_readings(
     Returns:
         List of sensor readings with timestamp, sensor_id, value, etc.
     """
+    start_time = time.perf_counter()
     try:
         # Base query ordered by newest first
         query = select(SensorReadingORM).order_by(desc(SensorReadingORM.timestamp))
@@ -107,21 +109,28 @@ async def get_sensor_readings(
                 ingestion_timestamp=getattr(r, "created_at", None),
             ))
 
-        logger.info(
-            "sensor_readings.fetch", extra={
+        duration_ms = (time.perf_counter() - start_time) * 1000.0
+        log_level = logging.WARNING if duration_ms > 1500 else logging.INFO
+        logger.log(
+            log_level,
+            "sensor_readings.fetch",
+            extra={
                 "count": len(transformed),
                 "sensor_filter": sensor_id,
                 "limit": limit,
                 "offset": offset,
                 "start_ts": start_ts.isoformat() if start_ts else None,
                 "end_ts": end_ts.isoformat() if end_ts else None,
-            }
+                "duration_ms": round(duration_ms, 2),
+                "slow": duration_ms > 1500,
+            },
         )
         return transformed
     except HTTPException:
         raise
     except Exception as e:  # noqa: BLE001
-        logger.exception("Error retrieving sensor readings")
+        duration_ms = (time.perf_counter() - start_time) * 1000.0
+        logger.exception("Error retrieving sensor readings (duration_ms=%s)", round(duration_ms,2))
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve sensor readings: {str(e)}"
         ) from e
@@ -136,6 +145,7 @@ async def get_sensors_list(
     Returns:
         List of unique sensor IDs with basic stats
     """
+    start_time = time.perf_counter()
     try:
         # Get unique sensor IDs with counts
         from sqlalchemy import func
@@ -159,9 +169,16 @@ async def get_sensors_list(
                 "first_reading": sensor.first_reading
             })
         
-        logger.info(f"Retrieved {len(sensor_list)} sensors")
+        duration_ms = (time.perf_counter() - start_time) * 1000.0
+        log_level = logging.WARNING if duration_ms > 2000 else logging.INFO
+        logger.log(log_level, "sensors.list.fetch", extra={
+            "sensor_count": len(sensor_list),
+            "duration_ms": round(duration_ms, 2),
+            "slow": duration_ms > 2000,
+        })
         return sensor_list
         
     except Exception as e:
-        logger.error(f"Error retrieving sensors list: {e}")
+        duration_ms = (time.perf_counter() - start_time) * 1000.0
+        logger.error(f"Error retrieving sensors list after {round(duration_ms,2)} ms: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve sensors list: {str(e)}")
