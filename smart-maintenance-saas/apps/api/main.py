@@ -5,7 +5,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from apps.api.routers import data_ingestion, reporting, human_decision, sensor_readings
+from apps.api.routers import data_ingestion, reporting, human_decision, sensor_readings, decisions
 from apps.api.middleware.request_id import RequestIDMiddleware
 from sqlalchemy import select, text  # Import text for raw SQL
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -258,6 +258,11 @@ app.include_router(
     human_decision.router,
     prefix="/api/v1/decisions",
     tags=["Human Decisions"]
+)
+
+# Decision Log (audit) endpoint - read-only historical maintenance/decision records
+app.include_router(
+    decisions.router,
 )
 
 # Include ML endpoints router for Day 12

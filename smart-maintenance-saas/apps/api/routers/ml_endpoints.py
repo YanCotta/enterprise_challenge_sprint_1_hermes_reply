@@ -60,6 +60,7 @@ class PredictionRequest(BaseModel):
     model_version: str = Field(default="auto", description="Version of the model (default: auto-resolve)")
     features: Dict[str, Any] = Field(..., description="Feature values for prediction")
     sensor_id: Optional[str] = Field(None, description="Optional sensor ID for tracking")
+    explain: bool = Field(True, description="Whether to compute SHAP explainability (can add latency)")
     
     class Config:
         json_schema_extra = {
@@ -384,6 +385,78 @@ def analyze_sensor_readings_for_anomalies(
 # API ENDPOINTS
 # ==============================================================================
 
+@router.get("/models/{model_name}/versions", tags=["ML Models"], dependencies=[Security(api_key_auth, scopes=["ml:predict"])])
+async def list_model_versions(model_name: str):
+    """List available versions for a given model in the MLflow registry.
+
+    Returns versions sorted descending (newest first). If the model name does not exist
+    a 404 is raised.
+    """
+    try:
+        import mlflow
+        client = mlflow.tracking.MlflowClient()
+        # Get *all* registered models then filter; or use search_model_versions
+        all_versions = client.search_model_versions(f"name='{model_name}'")
+        if not all_versions:
+            raise HTTPException(status_code=404, detail=f"Model '{model_name}' not found")
+        versions = []
+        for mv in all_versions:
+            versions.append({
+                "version": mv.version,
+                "current_stage": getattr(mv, 'current_stage', None),
+                "status": getattr(mv, 'status', None),
+                "creation_timestamp": getattr(mv, 'creation_timestamp', None)
+            })
+        # Sort newest first by numeric version
+        versions.sort(key=lambda v: int(v["version"]), reverse=True)
+        return {"model_name": model_name, "versions": versions}
+    except HTTPException:
+        raise
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Failed listing versions for {model_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list versions: {e}") from e
+
+
+@router.get("/models/{model_name}/latest", tags=["ML Models"], dependencies=[Security(api_key_auth, scopes=["ml:predict"])])
+async def get_latest_model_version(model_name: str):
+    """Resolve the latest available version for a model.
+
+    Strategy:
+    1. Try MLflow client.get_latest_versions (stages None, Production, Staging in priority order)
+    2. Fallback: list all versions and pick max numeric.
+    """
+    try:
+        import mlflow
+        client = mlflow.tracking.MlflowClient()
+        # Attempt to get latest in preferred stage ordering
+        stage_order = ["Production", "Staging", None, "None"]
+        chosen = None
+        for stage in stage_order:
+            try:
+                latest = client.get_latest_versions(model_name, stages=[stage] if stage else ["None"])  # MLflow expects ["None"] for unassigned
+                if latest:
+                    chosen = latest[0]
+                    break
+            except Exception:
+                continue
+        if not chosen:
+            # Fallback: enumerate all versions
+            all_versions = client.search_model_versions(f"name='{model_name}'")
+            if not all_versions:
+                raise HTTPException(status_code=404, detail=f"Model '{model_name}' not found")
+            chosen = sorted(all_versions, key=lambda mv: int(mv.version), reverse=True)[0]
+        return {
+            "model_name": model_name,
+            "resolved_version": chosen.version,
+            "current_stage": getattr(chosen, 'current_stage', None),
+            "status": getattr(chosen, 'status', None)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Failed resolving latest version for {model_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to resolve latest version: {e}") from e
+
 @router.post("/predict", response_model=PredictionResponse, tags=["ML Prediction"], dependencies=[Security(api_key_auth, scopes=["ml:predict"])])
 async def predict(
     request: PredictionRequest,
@@ -529,9 +602,21 @@ async def predict(
             except Exception as e:
                 logger.warning(f"Could not extract confidence: {e}")
         
-        # Compute SHAP explainability (if available)
-        # Use the final prediction_input that worked
-        shap_explanation = compute_shap_explanation(model, prediction_input, feature_names)
+        # Compute SHAP explainability (optional)
+        shap_explanation = None
+        if request.explain:
+            import time
+            start_time = time.time()
+            try:
+                shap_explanation = compute_shap_explanation(model, prediction_input, feature_names)
+                shap_duration = time.time() - start_time
+                logger.info(f"SHAP computation completed in {shap_duration:.3f}s for model {request.model_name}")
+                if shap_duration > 5.0:
+                    logger.warning(f"SHAP computation exceeded 5s (took {shap_duration:.2f}s)")
+            except Exception as shap_err:
+                logger.warning(f"SHAP computation failed: {shap_err}")
+        else:
+            logger.info("Explainability skipped per request (explain=false)")
         
         # Prepare response
         response = PredictionResponse(
