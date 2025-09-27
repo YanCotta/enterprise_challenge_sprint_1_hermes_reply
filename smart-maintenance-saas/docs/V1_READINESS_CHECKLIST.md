@@ -1,9 +1,9 @@
 # V1.0 Readiness Checklist
 
 ## Executive Summary
-Current system stability: **92% Ready for V1.0 Release**
+Current system readiness: **94.5% (Minimal V1.0 Scope Locked)**
 
-Core runtime errors have been eliminated, backend capabilities are fully operational, and documentation has been synchronized with actual system state. Remaining gaps are isolated to non-critical enhancements.
+We have formally narrowed V1.0 to a Minimum Working UI covering ingestion, data exploration, prediction (auto version resolve), basic model metadata, drift & anomaly checks, decision audit log, simulation console, metrics snapshot (non-streaming), reporting (JSON only), and the Golden Path demo with timeout protection. All amplification / “plus” features (streaming metrics, artifact downloads, background SHAP, bulk operations, multi-sensor correlation, advanced notifications, feature lineage, governance) are **deferred to V1.5+**. Remaining pre-tag work is limited to light polish and optional quality enablers (basic smoke tests, minor UI clarity refinements).
 
 ## Functional Readiness Assessment
 
@@ -27,15 +27,20 @@ Core runtime errors have been eliminated, backend capabilities are fully operati
 - [x] **Rerun Stability**: Centralized safe_rerun helper across all pages
 - [x] **Import Robustness**: Fallback patterns for latency recording
 
-### ⚠️ PROTOTYPE - Functional but Limited
-- [x] **Reporting**: Multi-format report generation (JSON only, no artifact downloads)
-- [x] **Metrics Overview**: Snapshot-based metrics (no real-time streaming)
+### ⚠️ PROTOTYPE - Functional but Limited (Intentional in V1.0)
+- [x] **Reporting**: JSON-only (artifact persistence deferred)
+- [x] **Metrics Overview**: Snapshot + manual/periodic refresh (streaming deferred)
 
-### ❌ MISSING - Deferred for Future Releases
-- [ ] **Report Artifacts**: File generation, persistence, download endpoints
-- [ ] **Real-time Metrics**: WebSocket/SSE streaming for live dashboards
-- [ ] **Background SHAP**: Async processing to eliminate 30s+ UI latencies
-- [ ] **Bulk Operations**: CSV import, batch prediction endpoints
+### 🚫 DEFERRED (Explicitly Out-of-Scope for V1.0 – Target V1.5+)
+- [ ] **Report Artifacts** (downloadable files – PDF/CSV)
+- [ ] **Real-time Metrics Streaming (WebSocket/SSE)**
+- [ ] **Background SHAP Processing Pipeline**
+- [ ] **Bulk Operations (CSV ingest + batch prediction)**
+- [ ] **Multi-Sensor Correlation / Composite Analytics**
+- [ ] **Model Recommendations Optimization & Virtualization**
+- [ ] **Advanced Notifications UI**
+- [ ] **Feature Store Visualization / Lineage**
+- [ ] **Governance & Retention Policies**
 
 ## Operational Readiness Assessment
 
@@ -75,12 +80,12 @@ Core runtime errors have been eliminated, backend capabilities are fully operati
 - [x] State differentiation verification (model metadata)
 - [x] Timeout protection validation (golden path demo)
 
-### 📝 RECOMMENDED - Enhanced Coverage (Optional)
-- [ ] Ingestion round-trip automated tests
-- [ ] Prediction auto-resolve validation
-- [ ] Decision log filtering and export tests
-- [ ] Simulation endpoint correlation tracking
-- [ ] Golden path orchestration lifecycle tests
+### 📝 RECOMMENDED - V1.0 Quality Enablers (Optional Pre-Tag)
+- [ ] Smoke test: ingestion round-trip
+- [ ] Smoke test: prediction auto-resolve
+- [ ] Smoke test: decision log filter + CSV export
+- [ ] Simulation endpoint (drift) latency & response shape test
+- [ ] Golden Path lifecycle (start → terminal/timeout) test
 
 ## Documentation Accuracy Assessment
 
@@ -97,7 +102,7 @@ Core runtime errors have been eliminated, backend capabilities are fully operati
 - [x] Capability classifications match actual system behavior
 - [x] Error analysis root causes documented with solutions
 
-## V1.0 RELEASE DECISION MATRIX
+## V1.0 RELEASE DECISION MATRIX (Minimal Scope)
 
 | Criteria | Weight | Score | Weighted |
 |----------|--------|-------|----------|
@@ -108,7 +113,7 @@ Core runtime errors have been eliminated, backend capabilities are fully operati
 | **Test Coverage** | 5% | 70% | 3.5 |
 | **TOTAL** | 100% | | **94.5%** |
 
-## RECOMMENDATION: ✅ **PROCEED WITH V1.0 RELEASE**
+## RECOMMENDATION: ✅ **PROCEED WITH V1.0 TAG (After Optional Smoke Tests)**
 
 The system meets enterprise-grade standards for:
 - ✅ Functional completeness (core workflows operational)
@@ -117,13 +122,15 @@ The system meets enterprise-grade standards for:
 - ✅ Security controls (authentication, authorization, audit)
 - ✅ Operational readiness (monitoring, logging, health checks)
 
-Minor gaps (streaming metrics, report downloads) are isolated to optional enhancements that do not impact core value delivery.
+Minor gaps are deliberate deferrals—not risk items—and tracked in the re-scoped backlog (`PRIORITIZED_BACKLOG.md`).
 
-## Post-V1.0 Enhancement Pipeline
+## Post-V1.0 Path
 
-Defer these items to V1.1+ based on user feedback and operational metrics:
-1. Real-time streaming metrics dashboard
-2. Report artifact generation and download
-3. Background SHAP processing pipeline
-4. Bulk data import/export capabilities
-5. Advanced correlation analytics
+### V1.0 → V1.1 (Hardening & Quality)
+1. Add smoke / integration test harness (core workflows)
+2. Add metrics percentiles + error rate derivation (non-streaming)
+3. Design artifact persistence contract (reports) – schema + storage layout
+4. Golden Path: expose per-step latency + retention TTL doc update
+
+### V1.5 (Amplification Wave)
+See deferred list above; formal planning begins after user feedback cycle post-V1.0 adoption.
