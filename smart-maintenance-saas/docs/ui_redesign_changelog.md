@@ -295,3 +295,37 @@ Verification:
 Future Work:
 - Integrate automatically inside `make_api_request` (opt-in toggle) if pervasive adoption desired.
 
+#### B3 – Metrics Clarification (2025-09-27)
+Implemented `ui/pages/6_Metrics_Overview.py`:
+- Added explicit snapshot labelling & last updated timestamp.
+- Manual refresh button + optional 30s auto-refresh toggle.
+- Basic derived counters (total metric lines, HTTP request counter presence).
+- Raw metrics expander (safely truncated).
+Verification:
+- Manual refresh updates ISO timestamp.
+- Auto refresh re-renders within ~30s cycle when toggle enabled.
+Future Enhancements:
+- Parse & chart key latency / error rate series.
+- Integrate latency telemetry (B4) once captured centrally.
+
+#### B4 – Latency Telemetry (2025-09-27)
+Central latency capture & display implemented:
+- Added in-memory rolling latency registry in `ui/lib/api_client.py` (max 200 samples).
+- Automatic recording for every API request (success & error) with endpoint + status.
+- Surfaced samples in: ingestion shell (sidebar page), prediction page (expander), and metrics overview page (average + table).
+- Prediction page now shows API call latency separate from overall form timing.
+Verification:
+- Observed registry growth after multiple predictions & ingestion submissions.
+- Average latency matches manual stopwatch within acceptable drift (<5 ms locally).
+Future Work:
+- Persist to backend or Prometheus pushgateway if long-term historical analysis required.
+
+#### B5 – Environment Indicator (2025-09-27)
+Added environment badge to sidebar (`ui/streamlit_app.py`):
+- Maps DEPLOYMENT_ENV to emoji-coded label (LOCAL, CONTAINER, CLOUD, STAGING, PROD).
+- Displays prominently above health status.
+Verification:
+- Changing DEPLOYMENT_ENV locally reflects updated badge (manual env var export test).
+Future Enhancements:
+- Add warning banner if environment != PROD and feature flag requires production context.
+
