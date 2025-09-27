@@ -815,7 +815,7 @@ Explicit state differentiation for Model Metadata Explorer troubleshooting:
 | UI Planned Modules | `ui/pages/*.py` | New modular pages (overview, prediction, etc.) |
 | Shared UI Lib (planned) | `ui/lib/api_client.py` | Central request + retries + error mapping |
 | Shared UI Components | `ui/lib/components.py` | Tables, badges, KPI cards |
-| Docs – Unified | `docs/UNIFIED_SYSTEM_DOCUMENTATION.md` | System-wide canonical reference |
+| Docs – System Capabilities | `docs/SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md` | This document - authoritative capability matrix |
 | Docs – Models | `docs/MODELS_SUMMARY.md` | Registry performance & versions |
 | Docs – Security | `docs/SECURITY.md` | Security model & scopes |
 | Docs – Performance | `docs/PERFORMANCE_BASELINE.md` | Baseline & SLO targets |

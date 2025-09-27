@@ -1,9 +1,10 @@
 # Smart Maintenance SaaS – System & Architecture (V1.0)
 
-**Last Updated:** September 25, 2025  
-**Authoritative Source of Truth:** See `UNIFIED_SYSTEM_DOCUMENTATION.md` for full state, gap register, and remediation tracking.  
-**Scope of THIS Document:** High‑signal architectural overview for engineers and auditors. Deep narratives, agent-by-agent behavior traces, and historical evolution have been intentionally de‑duplicated and centralized elsewhere.  
-**Current Production Readiness:** Backend ~95%, UI hardening in progress (final gating items listed in unified doc).  
+**Last Synchronized:** 2025-12-19  
+**Status:** Stable (Minimal V1.0 Scope) | Readiness: 94.5% | Deferred Features Tracked  
+**Authoritative Source of Truth:** See [V1_READINESS_CHECKLIST.md](./V1_READINESS_CHECKLIST.md), [EXECUTIVE_SUMMARY.md](./EXECUTIVE_SUMMARY.md), and [SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md](./SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md) for full V1.0 scope, readiness status, and deferred features.  
+**Scope of THIS Document:** High‑signal architectural overview for engineers and auditors. Deep narratives, agent-by-agent behavior traces, and historical evolution are documented in the authoritative capability matrix.  
+**Current Production Readiness:** 94.5% (V1.0 Minimal Scope Locked)  
 **Document Philosophy:** Minimize duplication. Link to canonical artifacts instead of restating them.
 
 ## 1. Introduction
@@ -36,7 +37,7 @@ Out‑of‑scope in this file (see unified doc): detailed dataset performance ta
 | Caching | Basic | Redis present; advanced inference/result caching backlog |
 | UI | Partially Hardened | Reliability improvements underway (cloud parity confirmed) |
 
-For remediation backlog & gating items: `UNIFIED_SYSTEM_DOCUMENTATION.md`.
+For detailed feature implementations, capability status, and deferred features: [SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md](./SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md).
 
 ---
 
