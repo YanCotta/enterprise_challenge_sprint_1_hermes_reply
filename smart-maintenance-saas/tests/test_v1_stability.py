@@ -108,7 +108,7 @@ def test_model_metadata_state_differentiation(mock_error, mock_info, mock_api_re
         
         # Should identify this as an API error, not empty state
         result = mock_api_request.return_value
-        assert result['success'] == False
+        assert not result['success']
         assert 'error' in result
 
 if __name__ == "__main__":
