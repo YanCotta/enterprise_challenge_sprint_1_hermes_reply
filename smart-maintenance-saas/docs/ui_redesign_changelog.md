@@ -329,3 +329,23 @@ Verification:
 Future Enhancements:
 - Add warning banner if environment != PROD and feature flag requires production context.
 
+#### Simulation UI Layout Refactor & New Console (2025-09-27)
+
+Implemented `ui/pages/7_Simulation_Console.py` replacing fragile nested expander pattern with a stable tabbed interface:
+
+- Tabs: Drift / Anomaly / Normal, each with scoped form + submit action.
+- Central `_launch_simulation` helper captures API latency and records a structured run entry (id, type, correlation, simulation_id, events_generated).
+- Recent runs section (up to 25) with payload + raw response expanders; avoids nested expander-in-status crashes.
+- Latency samples integrated via `record_latency_sample` for future aggregated metrics.
+
+Improvements Over Previous State:
+
+- Eliminates UI crashes caused by expanders inside status contexts.
+- Provides consistent visual hierarchy and faster operator feedback.
+- Encourages repeat simulations without page clutter (old runs collapse neatly).
+
+Follow-Ups:
+
+- Add drift detection result linkage (once backend exposes outcome endpoint).
+- Consider badge coloring for success/error states across run history.
+
