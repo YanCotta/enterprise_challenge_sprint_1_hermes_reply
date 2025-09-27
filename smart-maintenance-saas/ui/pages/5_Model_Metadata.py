@@ -1,10 +1,17 @@
 import streamlit as st
+import os
 import pandas as pd
 from datetime import datetime
 
 from lib.api_client import make_api_request
+from lib.rerun import safe_rerun
 
 st.set_page_config(page_title="Model Metadata", page_icon="🧬")
+
+
+def _deprecated_local_rerun():  # retained temporarily in case of stray imports
+    from lib.rerun import safe_rerun as _sr
+    _sr()
 
 
 @st.cache_data(ttl=300)
@@ -34,11 +41,14 @@ def render_model_metadata():
     st.header("🧬 Model Metadata Explorer")
     st.caption("Browse registered MLflow models, versions, tags, and stages (cached 5m).")
 
+    # Feature flag / env guard for disabled MLflow
+    if os.getenv("DISABLE_MLFLOW_MODEL_LOADING", "false").lower() in ("1", "true", "yes"): 
+        st.info("MLflow model loading disabled by environment flag DISABLE_MLFLOW_MODEL_LOADING. Enable it to view registry metadata.")
     col1, col2 = st.columns([2,1])
     with col2:
         if st.button("🔄 Refresh Cache", help="Clears local cache and refetches"):
             _cached_registered_models.clear()
-            st.experimental_rerun()
+            safe_rerun()
 
     models = _cached_registered_models()
     if not models:
