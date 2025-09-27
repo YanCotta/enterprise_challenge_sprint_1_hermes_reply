@@ -284,3 +284,14 @@ Next Steps:
 - Integrate error guidance (B2) for cases where endpoints unavailable.
 - Add latency timing + caching validation test harness.
 
+#### B2 – Error Guidance Layer (2025-09-27)
+Implemented pattern-based error hinting in `ui/lib/api_client.py`:
+- Added `_ERROR_PATTERNS` mapping substrings to human-readable remediation tips.
+- Added `map_error_to_hint` and `format_error_with_hint` utilities for UI integration.
+Usage Recommendation:
+- Wrap calls: `resp = format_error_with_hint(make_api_request(...))` in pages needing hints.
+Verification:
+- Simulated 404 and validation errors produce contextual hints.
+Future Work:
+- Integrate automatically inside `make_api_request` (opt-in toggle) if pervasive adoption desired.
+
