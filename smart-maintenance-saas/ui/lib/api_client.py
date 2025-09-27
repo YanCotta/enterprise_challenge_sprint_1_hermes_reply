@@ -45,6 +45,17 @@ def record_latency(label: str, ms: float, meta: Optional[Dict[str, Any]] = None)
     if len(_LATENCY_REGISTRY) > _LATENCY_MAX:
         del _LATENCY_REGISTRY[:-_LATENCY_MAX]
 
+# Backwards compatibility alias expected by newer UI pages / simulation console
+def record_latency_sample(label: str, ms: float, **meta: Any) -> None:
+    """Convenience wrapper used by Simulation Console.
+
+    Mirrors legacy naming (record_latency_sample) while delegating to the
+    canonical record_latency implementation. Accepts arbitrary keyword meta
+    which will be merged into the stored latency entry.
+    """
+    extra: Dict[str, Any] = dict(meta) if meta else {}
+    record_latency(label, ms, extra if extra else None)
+
 def get_latency_samples() -> list[Dict[str, Any]]:
     return list(_LATENCY_REGISTRY)
 
