@@ -2,7 +2,7 @@ import json
 import uuid
 import logging
 import random
-from datetime import datetime
+from datetime import datetime, date
 from typing import Dict, Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Query
@@ -81,6 +81,13 @@ def _initial_status(correlation_id: str, include_decision: bool) -> Dict[str, An
     }
 
 
+def _json_default(obj):
+    """JSON serializer for objects not serializable by default json code."""
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    return str(obj)
+
+
 async def _persist_status(correlation_id: str):
     redis_client = await get_redis_client()
     payload = ACTIVE_DEMOS.get(correlation_id)
@@ -90,7 +97,8 @@ async def _persist_status(correlation_id: str):
     if len(payload["events"]) > 200:
         payload["events"] = payload["events"][-200:]
     async with redis_client.get_redis() as r:
-        await r.setex(f"demo:{correlation_id}", DEMO_TTL_SECONDS, json.dumps(payload))
+        # Use custom default to safely serialize any lingering datetime objects
+        await r.setex(f"demo:{correlation_id}", DEMO_TTL_SECONDS, json.dumps(payload, default=_json_default))
 
 
 def _find_step(status: Dict[str, Any], step_name: str):
@@ -146,14 +154,39 @@ async def _handle_demo_event(correlation_id: str, event_obj: Any):
 
     # Append simplified event record
     preview = event_obj.dict() if hasattr(event_obj, 'dict') else {}
-    # Reduce payload size for storage
+    # Normalize datetime fields in preview & reduce large dicts
     for k, v in list(preview.items()):
-        if isinstance(v, dict) and len(json.dumps(v)) > 400:
-            preview[k] = {"_truncated": True}
+        if isinstance(v, (datetime, date)):
+            preview[k] = v.isoformat()
+        elif isinstance(v, dict):
+            # Convert nested datetime values
+            changed = False
+            for nk, nv in list(v.items()):
+                if isinstance(nv, (datetime, date)):
+                    v[nk] = nv.isoformat()
+                    changed = True
+            try:
+                size_candidate = json.dumps(v, default=_json_default)
+            except TypeError:
+                # Fallback convert everything to str
+                v = {kk: (vv.isoformat() if isinstance(vv, (datetime, date)) else str(vv)) for kk, vv in v.items()}
+                size_candidate = json.dumps(v)
+            if len(size_candidate) > 400:
+                preview[k] = {"_truncated": True}
+    raw_ts = getattr(event_obj, 'timestamp', datetime.utcnow())
+    if isinstance(raw_ts, (datetime, date)):
+        ts_iso = raw_ts.isoformat()
+    else:
+        # Attempt parse if string, otherwise fallback current time
+        try:
+            parsed = datetime.fromisoformat(str(raw_ts))
+            ts_iso = parsed.isoformat()
+        except Exception:
+            ts_iso = datetime.utcnow().isoformat()
     status["events"].append({
         "event_type": evt_type,
         "event_id": str(getattr(event_obj, 'event_id', '')),
-        "timestamp": getattr(event_obj, 'timestamp', datetime.utcnow()).isoformat(),
+        "timestamp": ts_iso,
         "correlation_id": getattr(event_obj, 'correlation_id', correlation_id),
         "payload": preview,
     })
