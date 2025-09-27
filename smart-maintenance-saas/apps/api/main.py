@@ -274,10 +274,14 @@ app.include_router(
 )
 
 # Include simulation router for Day 2 live demo
-from apps.api.routers import simulate
+from apps.api.routers import simulate, demo
 app.include_router(
     simulate.router,
     tags=["Live Demo Simulation"]
+)
+
+app.include_router(
+    demo.router,
 )
 
 # Root endpoint (optional)
