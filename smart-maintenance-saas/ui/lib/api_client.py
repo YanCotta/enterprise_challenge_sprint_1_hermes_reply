@@ -5,7 +5,7 @@ error normalization, and future caching hooks.
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import os
 import requests
@@ -155,7 +155,36 @@ def annotate_latency(start_time: float, end_time: float) -> float:
 def health_ping() -> Dict[str, Any]:
     return make_api_request("GET", "/health")
 
-# Future extension points (stubs):
-# - cache_model_versions(model_name)
-# - cache_sensor_list()
-# - map_error_to_hint(error_message)
+# ---------------- Error Guidance Layer (B2) -----------------
+
+_ERROR_PATTERNS: Tuple[Tuple[str, str], ...] = (
+    ("model not found", "The specified model name or version isn't registered. Verify spelling or load the model in MLflow."),
+    ("not found", "The resource does not exist. It may have expired or the ID is incorrect."),
+    ("validation error", "Input payload failed validation. Check required fields and types."),
+    ("timeout", "The request exceeded the time limit. Try reducing payload size or retry later."),
+    ("connection error", "UI cannot reach API service. Confirm container/network health."),
+    ("permission", "Your API key may lack required scope. Confirm credentials."),
+    ("unsupported media type", "The server rejected the content type. Ensure JSON body and headers are correct."),
+    ("rate limit", "Too many requests in a short time. Slow down or check rate limit configuration."),
+    ("database", "A database error occurred. Check backend logs for detail (migration/state issue)."),
+    ("ssl", "SSL parameter mismatch or certificate issue. Inspect DATABASE_URL normalization & network config."),
+)
+
+def map_error_to_hint(message: Optional[str]) -> Optional[str]:
+    if not message or not isinstance(message, str):
+        return None
+    lower = message.lower()
+    for needle, hint in _ERROR_PATTERNS:
+        if needle in lower:
+            return hint
+    return None
+
+def format_error_with_hint(result: Dict[str, Any]) -> Dict[str, Any]:
+    """Augment result dict with 'hint' if an error pattern matches."""
+    if result.get("success"):
+        return result
+    hint = map_error_to_hint(result.get("error"))
+    if hint:
+        result["hint"] = hint
+    return result
+
