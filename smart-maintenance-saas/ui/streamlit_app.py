@@ -10,16 +10,27 @@ import uuid
 import time
 import streamlit as st
 
-from lib.api_client import make_api_request
+from lib.api_client import make_api_request, get_latency_samples
 
 st.set_page_config(page_title="Smart Maintenance SaaS", page_icon="🔧", layout="wide")
 
 
+def _env_badge(env: str) -> str:
+    color_map = {
+        "LOCAL": "🟢",
+        "CONTAINER": "🟦",
+        "CLOUD": "☁️",
+        "STAGING": "🟡",
+        "PROD": "🔴",
+    }
+    return f"{color_map.get(env, '🔘')} {env}"
+
 def render_sidebar() -> None:
     with st.sidebar:
         st.header("🔗 Status")
-        env = os.getenv("DEPLOYMENT_ENV", "local").upper()
-        st.caption(f"Environment: {env}")
+        raw_env = os.getenv("DEPLOYMENT_ENV", "local")
+        env = raw_env.upper()
+        st.markdown(f"**Environment:** {_env_badge(env)}")
         health = make_api_request("GET", "/health")
         if health.get("success"):
             st.success("Backend OK")
@@ -72,6 +83,13 @@ def render_overview() -> None:
         else:
             st.error("Ingestion failed")
             st.caption(resp.get("error", "Unknown error"))
+    with st.expander("Recent Latency Samples (last 10)", expanded=False):
+        samples = get_latency_samples()[-10:]
+        if not samples:
+            st.write("No samples yet.")
+        else:
+            for s in reversed(samples):
+                st.write(f"{s['label']} – {s['ms']:.0f} ms (status={s.get('status')})")
     st.caption("✅ Shell active. Additional capabilities moving to dedicated pages.")
 
 
