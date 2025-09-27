@@ -63,7 +63,7 @@ def render_model_metadata():
             if health_result.get("success"):
                 st.info("📋 No models found in the MLflow registry. Add models to see them here.")
             else:
-                st.error(f"❌ Unable to connect to MLflow registry: {health_result.get('error', 'Unknown error')}")
+                st.error(f"❌ Unable to connect to MLflow registry: {(health_result and health_result.get('error', 'Unknown error')) or 'Unknown error'}")
             return
     except Exception as e:
         st.error(f"❌ Error fetching model metadata: {str(e)}")
