@@ -3,7 +3,13 @@ from datetime import datetime
 import uuid
 import streamlit as st
 
-from lib.api_client import make_api_request, record_latency_sample
+from lib.api_client import make_api_request
+try:  # backward/forward compatibility
+    from lib.api_client import record_latency_sample  # type: ignore
+except Exception:  # noqa: BLE001
+    def record_latency_sample(label: str, ms: float, **meta):  # type: ignore
+        """Fallback no-op if latency recording not available."""
+        return
 
 st.set_page_config(page_title="Simulation Console", page_icon="🎮")
 
