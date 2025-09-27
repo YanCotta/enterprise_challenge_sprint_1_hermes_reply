@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import logging
+from datetime import datetime, timedelta
 
 from lib.api_client import make_api_request
 from lib.rerun import safe_rerun
@@ -27,6 +28,11 @@ def render_golden_path_page():
         st.session_state.demo_running = False
     if "correlation_id" not in st.session_state:
         st.session_state.correlation_id = None
+    if "demo_start_time" not in st.session_state:
+        st.session_state.demo_start_time = None
+
+    # Demo timeout configuration (90 seconds max runtime)
+    MAX_DEMO_RUNTIME_SECONDS = 90
 
     col_launch, col_opts = st.columns([2, 3])
     with col_opts:
@@ -40,6 +46,7 @@ def render_golden_path_page():
                 if start_result.get("success"):
                     st.session_state.correlation_id = start_result["data"]["correlation_id"]
                     st.session_state.demo_running = True
+                    st.session_state.demo_start_time = datetime.now()
                     safe_rerun()
                 else:
                     st.error("Failed to start the demo.")
@@ -106,10 +113,26 @@ def render_golden_path_page():
                 st.error("Errors detected:")
                 st.json(data["errors"])
 
-        # Auto refresh while running
-        if data.get("status") not in ("complete", "failed"):
-            time.sleep(2)
-            safe_rerun()
+        # Auto refresh while running with timeout protection
+        current_status = data.get("status")
+        if current_status not in ("complete", "failed"):
+            # Check for stale timeout
+            if st.session_state.demo_start_time:
+                elapsed = datetime.now() - st.session_state.demo_start_time
+                if elapsed.total_seconds() > MAX_DEMO_RUNTIME_SECONDS:
+                    st.warning(f"⏰ Demo timed out after {MAX_DEMO_RUNTIME_SECONDS}s. Status may be stale/incomplete.")
+                    st.session_state.demo_running = False
+                    st.session_state.correlation_id = st.session_state.correlation_id  # keep for viewing
+                else:
+                    # Continue polling
+                    remaining = MAX_DEMO_RUNTIME_SECONDS - int(elapsed.total_seconds())
+                    st.caption(f"Auto-refreshing... (timeout in {remaining}s)")
+                    time.sleep(2)
+                    safe_rerun()
+            else:
+                # Fallback: no start time recorded, continue with limited retries
+                time.sleep(2)
+                safe_rerun()
         else:
             st.session_state.demo_running = False
             st.session_state.correlation_id = st.session_state.correlation_id  # keep for viewing
