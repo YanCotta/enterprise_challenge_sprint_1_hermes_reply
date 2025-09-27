@@ -1,27 +1,29 @@
 # Comprehensive Documentation Index (V1.0 Consolidated)
 
-**Status:** Active (Superseded authoritative deep-dive now lives in `UNIFIED_SYSTEM_DOCUMENTATION.md`)
-**Last Updated:** September 25, 2025
+**Status:** Active (V1.0 Minimal Scope - 94.5% Readiness)  
+**Last Synchronized:** 2025-12-19  
 **Purpose:** This file serves as a navigational index to the retained, long-lived documentation set required for operating, extending, and auditing the Smart Maintenance SaaS platform post V1.0.
 
-> CENTRAL SOURCE OF TRUTH → Refer to **`UNIFIED_SYSTEM_DOCUMENTATION.md`** for the consolidated system state, gap analysis, and V1.0 remediation tracking. This index is intentionally lightweight and curated.
+> **AUTHORITATIVE SOURCES** → Refer to the [V1_READINESS_CHECKLIST.md](./V1_READINESS_CHECKLIST.md), [EXECUTIVE_SUMMARY.md](./EXECUTIVE_SUMMARY.md), and [SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md](./SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md) for the consolidated system state, V1.0 scope, and deferred features tracking.
 
 ---
 ## 1. Core System Overview
-- [Unified System Documentation](./UNIFIED_SYSTEM_DOCUMENTATION.md) – Master system state & roadmap
-- [System and Architecture](./SYSTEM_AND_ARCHITECTURE.md) – High-level architecture & component model (kept lean; detailed narratives moved to unified doc)
+- [V1.0 Readiness Checklist](./V1_READINESS_CHECKLIST.md) – V1.0 scope & readiness assessment (94.5%)
+- [Executive Summary](./EXECUTIVE_SUMMARY.md) – Current system stabilization status  
+- [System Capabilities & UI Redesign](./SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md) – Authoritative capability matrix
+- [System and Architecture](./SYSTEM_AND_ARCHITECTURE.md) – High-level architecture & component model  
 - [Development Orientation](./DEVELOPMENT_ORIENTATION.md) – Onboarding & internal engineering standards
 - [Future Roadmap](./FUTURE_ROADMAP.md) – Post-V1 strategic evolution
 
 ## 2. API & Interfaces
 - [API Reference](./api.md) – REST endpoints, auth, rate limits, payload contracts
-- UI Reference (Streamlit) – See unified document (UI section centralization)
+- [UI Redesign Changelog](./ui_redesign_changelog.md) – V1.0 UI evolution trail (authoritative)
 
 ## 3. Data & Storage
 - [Database Documentation](./db/README.md) – Schema, indexes, TimescaleDB features
 - [ERD Source](./db/erd.dbml) – Entity relationship model
 - [Schema DDL](./db/schema.sql) – Canonical SQL schema
-- Vector Store: ChromaDB usage documented in unified doc (LearningAgent section)
+- [DVC Setup Guide](./DVC_SETUP_GUIDE.md) – Data version control setup
 
 ## 4. Machine Learning & MLOps
 - [ML Overview](./ml/README.md) – Training, feature engineering, pipelines
@@ -38,19 +40,17 @@
 ## 6. Security & Compliance
 - [Security Model](./SECURITY.md) – Threat model & mitigations
 - [Security Audit Checklist](./SECURITY_AUDIT_CHECKLIST.md) – Audit execution artifact
-- Secure Secrets & Rotation: See unified doc (Security Operations section)
 
 ## 7. Operations & Deployment
 - [Cloud Deployment Guide](./CLOUD_DEPLOYMENT_GUIDE.md) – Environment provisioning & deployment steps
-- [Microservice Migration Strategy](./MICROSERVICE_MIGRATION_STRATEGY.md) – Planned decomposition
-- S3 Artifact Mapping: See `S3_ARTIFACT_MAPPING.md` if retained (verify during cleanup)
+- [S3 Artifact Mapping](./S3_ARTIFACT_MAPPING.md) – S3 storage configuration
 
 ## 8. Event & Agent Framework
-- Agent definitions, lifecycle events, routing semantics, and orchestration are now fully centralized in `UNIFIED_SYSTEM_DOCUMENTATION.md` (supersedes deep duplication formerly present in architecture doc).
+- Event and agent framework details are documented in [SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md](./SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md) - authoritative system capabilities matrix.
 
-## 9. Historical / Program Documentation
-- [30-Day Sprint Changelog](./30-day-sprint-changelog.md) – Strategic & operational history
-- Final Sprint Summary: Consolidated into unified doc
+## 9. Historical / Legacy Documentation
+- [Legacy Documentation Index](./legacy/INDEX.md) – Archived historical documents
+- Historical sprint logs and superseded docs have been moved to `docs/legacy/` directory
 
 ## 10. Deprecated / Removed (Not Reintroduced)
 The following prior analysis or interim documents were intentionally consolidated or removed to reduce duplication and drift risk:
@@ -67,17 +67,18 @@ The following prior analysis or interim documents were intentionally consolidate
 | Sync with Unified Doc | Structural shift in system scope | Tech Lead | Within sprint |
 
 ## 12. Quick Cross-Link Integrity Checklist
-- [ ] `UNIFIED_SYSTEM_DOCUMENTATION.md` exists and is current
-- [ ] All relative links resolve (manual or CI doc link checker)
-- [ ] No references to deleted interim analysis files
-- [ ] Performance section reflects latest validated run
-- [ ] Security checklist still aligned with deployed architecture
+- [x] All relative links resolve (manual or CI doc link checker)
+- [x] No references to deleted interim analysis files
+- [x] Performance section reflects latest validated run
+- [x] Security checklist still aligned with deployed architecture
+- [x] Authoritative V1.0 scope documentation referenced correctly
 
 ---
 ### Change Log (for this file only)
 | Date | Change | Author |
 |------|--------|--------|
 | 2025-09-25 | Initial creation of consolidated index replacing legacy comprehensive doc variant | AI Assistant |
+| 2025-12-19 | Fixed broken UNIFIED_SYSTEM_DOCUMENTATION.md references; updated to reflect V1.0 scope and legacy archival | AI Assistant |
 
 ---
 **Principle:** Minimize duplication. Deep content belongs in the unified doc or the domain-specific file; this index points, it doesn’t repeat.

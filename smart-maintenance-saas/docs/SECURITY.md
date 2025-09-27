@@ -26,7 +26,7 @@ This document outlines the proactive threat model for the Smart Maintenance SaaS
 
 - **[System and Architecture](./SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
 - **[System Screenshots](./SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
-- **[Unified System Documentation](./UNIFIED_SYSTEM_DOCUMENTATION.md)** - Comprehensive system state and analysis
+- **[System Capabilities Unified System Documentation UI Redesign](./SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md)** - Comprehensive system state and analysis
 - **[Microservice Migration Strategy](./MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
 
 ### Database Design
