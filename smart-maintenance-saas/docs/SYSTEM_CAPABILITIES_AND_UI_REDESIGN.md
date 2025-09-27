@@ -205,7 +205,7 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 | Reporting (Advanced) | `/api/v1/reports/generate` | Generate structured reports with charts → display/download | ⚠️ **Synthetic** | Implement real artifact storage/download |
 | Decision Audit (Advanced) | `/api/v1/decisions`, `/api/v1/decisions/submit` | List/filter maintenance logs → display timeline | ❌ **UI Missing** | Create decision viewer interface |
 | Model Metadata (Advanced) | `/api/v1/ml/models/{m}/versions`, `/api/v1/ml/health` | List model versions, stages, health → cached display | ⚠️ **Slow** | Add 5min TTL caching |
-| **Golden Path Demo** | **MISSING ENDPOINT** | **Should orchestrate full pipeline** | ❌ **Placeholder** | **Create `/api/v1/demo/golden-path` endpoint** |
+| **Golden Path Demo** | `/api/v1/demo/golden-path` (POST), `/api/v1/demo/golden-path/status/{id}` (GET) | Live event-driven multi-agent pipeline (ingestion→processing→anomaly→validation→prediction→(decision optional)) with real EventBus observation & metrics | ✅ **Live Orchestration** | UI page `3_Golden_Path_Demo` (steps, events, metrics) |
 | **System Health** | `/health`, `/health/db`, `/health/redis` | Comprehensive health monitoring | ✅ **Working** | Add component-wise status display |
 
 ---
