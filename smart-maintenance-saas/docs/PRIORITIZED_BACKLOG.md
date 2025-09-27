@@ -1,19 +1,90 @@
-# Prioritized V1.0+ Enhancement Backlog
+# Prioritized Product Backlog (Re-scoped for Minimal V1.0)
 
-## Executive Priority Matrix
+## Scope Decision (2025-09-27)
 
-**Evaluation Criteria:**
-- **Business Impact**: User value and operational efficiency
-- **Technical Risk**: Implementation complexity and stability risk
-- **Effort**: Development time and testing requirements
-- **Dependencies**: Blocking factors and integration requirements
+V1.0 will ship as a **Minimum Working UI** delivering only core operational value:
 
-## Priority 1: Critical (Address Immediately if Resources Available)
+1. Data ingestion & sensor readings explorer
+2. ML prediction (auto version resolve + latency feedback)
+3. Model metadata basic explorer (cached)
+4. Drift & anomaly on-demand analysis
+5. Golden Path demo (instrumented; timeout protected)
+6. Decision audit log (filters + CSV export)
+7. Reporting (JSON only – no artifact persistence yet)
+8. Metrics snapshot + latency registry (no streaming)
+9. Simulation console (drift / anomaly / normal seeding)
+
+All “plus” features (streaming metrics, artifact downloads, background SHAP, bulk ingestion, correlation analytics, governance, advanced notifications, feature lineage, model recommendations optimization) are **explicitly deferred to V1.5+**.
+
+## V1.0 Must-Haves (Implemented – Only Light Polish Allowed)
+
+| Area | Status | Remaining Polish | Notes |
+|------|--------|------------------|-------|
+| Ingestion + Explorer | ✅ | Optional CSV export | Core stable |
+| Prediction | ✅ | UI surface error hints (already backend) | SHAP async deferred |
+| Model Metadata | ✅ | Visual badge for disabled vs empty | Recommendations deferred |
+| Drift / Anomaly | ✅ | Historical aggregation later | — |
+| Simulation Console | ✅ | Optional latency table summary | Functionally complete |
+| Golden Path Demo | ✅ | Add retention TTL doc note | Streaming later |
+| Decision Log | ✅ | Maintenance logs tab future | Human decisions working |
+| Reporting (JSON) | ✅ Prototype | Artifact storage deferred | Minimal UI retained |
+| Metrics Snapshot | ✅ | Percentiles / error rate later | Streaming deferred |
+| Rerun Stability Layer | ✅ | None | Central helper in place |
+
+## V1.0 Quality Enablers (If Time Allows Before Tag)
+
+| Item | Benefit | Effort | Priority |
+|------|---------|--------|----------|
+| Smoke tests: ingestion/prediction/decision/simulation/demo | Regression safety | S | HIGH |
+| Model metadata empty vs disabled styling | Operator clarity | XS | HIGH |
+| Latency p50/p95 computation | Better insight | S | MEDIUM |
+| Golden Path completed run TTL note | Ops clarity | XS | MEDIUM |
+
+## Deferred to V1.5 (Plus Feature Wave)
+
+| Feature | Reason for Deferral | Original Priority | Target |
+|---------|---------------------|-------------------|--------|
+| Real-time metrics streaming | Non-blocking; complexity | P1 | V1.5 |
+| Report artifact generation & download | Complexity; JSON adequate early | P1 | V1.5 |
+| Background SHAP processing | Performance enhancer | P2 | V1.5 |
+| Bulk ingestion & batch prediction | Scale efficiency | P2 | V1.5 |
+| Multi-sensor correlation analytics | Advanced analytics | P3 | V1.5+ |
+| Model recommendations caching/virtualization | Optimization | P3 | V1.5+ |
+| Advanced notifications UI | Non-core | P4 | V1.5+ |
+| Feature store visualization & lineage | Advanced MLOps | P4 | V1.5+ |
+| Governance & retention policies | Low early volume | P4 | V1.5+ |
+
+## Post-V1.0 (V1.1 Hardening Focus)
+
+| Track | Actions |
+|-------|---------|
+| Testing | Add integration tests + CI gate |
+| Observability | Add percentiles & error rate extraction |
+| Reporting | Design artifact storage contract (directory layout, naming, retention) |
+| Golden Path | Step-level metrics; structured completion summary persisted |
+
+## Success Criteria for V1.0 Tag
+
+1. All Must-Have areas load without runtime errors
+2. Prediction latency (no SHAP) p95 <1.5s local/container baseline
+3. Ingestion verify round-trip typical <1s
+4. Golden Path either completes or times out with user message ≤90s
+5. Decision log submission + retrieval + CSV export function
+6. Model metadata clearly distinguishes: disabled / empty / error / populated
+7. Smoke test suite (even minimal) executes successfully locally
+
+## Archived Original Backlog (Historical Reference)
+
+(Unmodified content below retained for traceability.)
+
+---
 
 ### 1. Real-time Metrics Streaming Dashboard
+ 
 **Problem**: Current metrics display is snapshot-based with manual refresh, limiting operational visibility.
 
-**Proposed Solution**: 
+**Proposed Solution**:
+
 - Implement WebSocket/SSE endpoint for live metric updates
 - Add auto-refresh toggle with 5s/15s/30s intervals
 - Provide delta highlighting for changed values
@@ -33,6 +104,7 @@ async def stream_metrics(websocket: WebSocket):
 ```
 
 ### 2. Report Artifact Generation and Download
+
 **Problem**: Reports generate JSON output but lack persistent storage and downloadable artifacts.
 
 **Proposed Solution**:
@@ -55,6 +127,7 @@ async def download_report(report_id: str):
 ## Priority 2: High (Plan for V1.1 Release)
 
 ### 3. Enhanced Test Coverage for Core Workflows  
+
 **Problem**: Limited automated test coverage for critical user paths.
 
 **Proposed Solution**:
@@ -68,6 +141,7 @@ async def download_report(report_id: str):
 **Dependencies**: Test environment with mock MLflow registry
 
 ### 4. Background SHAP Processing Pipeline
+
 **Problem**: SHAP explanations can take 30+ seconds, blocking UI interaction.
 
 **Proposed Solution**:
@@ -81,6 +155,7 @@ async def download_report(report_id: str):
 **Dependencies**: Job queue infrastructure, result caching strategy
 
 ### 5. Bulk Data Operations Enhancement
+
 **Problem**: Only single-record ingestion supported; no bulk import/export capabilities.
 
 **Proposed Solution**:
@@ -96,6 +171,7 @@ async def download_report(report_id: str):
 ## Priority 3: Medium (V1.2+ Enhancement Candidates)
 
 ### 6. Advanced Multi-Sensor Correlation Analytics
+
 **Problem**: Current analysis focuses on single sensors; complex equipment needs multi-sensor insights.
 
 **Proposed Solution**:
@@ -109,6 +185,7 @@ async def download_report(report_id: str):
 **Dependencies**: Enhanced data model, visualization libraries
 
 ### 7. Model Recommendations Caching and Virtualization
+
 **Problem**: Model recommendation queries have latency issues; UI enumeration not optimized.
 
 **Proposed Solution**:
@@ -124,6 +201,7 @@ async def download_report(report_id: str):
 ## Priority 4: Low (Nice-to-Have Features)
 
 ### 8. Advanced Notification System UI
+
 **Problem**: Alert agents exist in backend but no UI for viewing/configuring notifications.
 
 **Proposed Solution**:
@@ -137,6 +215,7 @@ async def download_report(report_id: str):
 **Dependencies**: Notification channel integrations
 
 ### 9. Feature Store Visualization and Lineage
+
 **Problem**: No visibility into model feature lineage, drift correlation displays.
 
 **Proposed Solution**:
