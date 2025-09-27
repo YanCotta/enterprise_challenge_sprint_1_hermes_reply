@@ -11,6 +11,8 @@ from typing import Dict, List, Optional, Tuple, Any
 from mlflow.tracking import MlflowClient
 from mlflow.exceptions import MlflowException
 
+from core.config.settings import settings
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,9 @@ def get_all_registered_models() -> List[Dict[str, Any]]:
     Returns:
         List of dictionaries containing model information including name, version, tags, etc.
     """
+    if getattr(settings, 'DISABLE_MLFLOW_MODEL_LOADING', False):
+        logger.debug("MLflow model loading disabled by settings; returning empty model list.")
+        return []
     try:
         client = _get_mlflow_client()
         models = client.search_registered_models()
@@ -100,6 +105,9 @@ def get_models_by_sensor_type() -> Dict[str, List[str]]:
         Dictionary mapping sensor types to lists of model names.
         Example: {'bearing': ['nasa_bearing_model'], 'temperature': ['temp_anomaly_detector']}
     """
+    if getattr(settings, 'DISABLE_MLFLOW_MODEL_LOADING', False):
+        logger.debug("MLflow model loading disabled; returning empty sensor type mapping.")
+        return {}
     try:
         models = get_all_registered_models()
         sensor_type_mapping = {}
@@ -217,6 +225,9 @@ def get_model_recommendations(sensor_type: str, include_general: bool = True) ->
     Returns:
         List of recommended model names, prioritized by compatibility
     """
+    if getattr(settings, 'DISABLE_MLFLOW_MODEL_LOADING', False):
+        logger.debug(f"MLflow model loading disabled; returning no recommendations for sensor_type={sensor_type}.")
+        return []
     try:
         sensor_type_mapping = get_models_by_sensor_type()
         recommendations = []
