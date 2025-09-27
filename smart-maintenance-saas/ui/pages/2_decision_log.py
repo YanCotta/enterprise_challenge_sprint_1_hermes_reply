@@ -4,6 +4,7 @@ from datetime import datetime, timezone, date
 import uuid
 
 from lib.api_client import make_api_request
+from lib.rerun import safe_rerun
 
 
 def _fetch_human_decisions(limit: int, offset: int, operator_id: str | None, request_id: str | None, correlation_id: str | None, start_dt: date | None, end_dt: date | None):
@@ -89,11 +90,11 @@ def render_decision_log_page():
             page_size = st.selectbox("Page Size", [25, 50, 100], index=1)
         with ctrl_col2:
             if st.button("🔄 Refresh"):
-                st.experimental_rerun()
+                safe_rerun()
         with ctrl_col3:
             if st.button("⏱ Reset Offset"):
                 st.session_state.decision_log_offset = 0
-                st.experimental_rerun()
+                safe_rerun()
         with ctrl_col4:
             st.caption("Use filters then Refresh. Date filters optional.")
 
@@ -120,11 +121,11 @@ def render_decision_log_page():
                 with exp_cols[0]:
                     if st.button("⬅️ Previous", disabled=(st.session_state.decision_log_offset == 0)):
                         st.session_state.decision_log_offset -= page_size
-                        st.experimental_rerun()
+                        safe_rerun()
                 with exp_cols[1]:
                     if st.button("Next ➡️", disabled=(len(rows) < page_size)):
                         st.session_state.decision_log_offset += page_size
-                        st.experimental_rerun()
+                        safe_rerun()
                 with exp_cols[2]:
                     csv_name = f"human_decisions_page_{st.session_state.decision_log_offset // page_size + 1}.csv"
                     st.download_button(
