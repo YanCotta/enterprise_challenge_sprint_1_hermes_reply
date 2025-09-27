@@ -1,73 +1,61 @@
 from fastapi import APIRouter, Request, HTTPException, Depends, Security
-from apps.api.dependencies import api_key_auth # Updated to use api_key_auth
+from apps.api.dependencies import api_key_auth, get_db  # include get_db for DB session
 from data.schemas import DecisionResponse
 from core.events.event_models import HumanDecisionResponseEvent
 from core.events.event_bus import EventBus
+from sqlalchemy.ext.asyncio import AsyncSession
+import logging
+
+# Import CRUD helper
+from core.database.crud.crud_human_decision import create_human_decision
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-@router.post("/submit", status_code=201, dependencies=[Security(api_key_auth, scopes=["tasks:update"])])
+@router.post(
+    "/submit",
+    status_code=201,
+    dependencies=[Security(api_key_auth, scopes=["tasks:update"])],
+    response_model=DecisionResponse,
+    summary="Submit a human decision",
+)
 async def submit_decision(
     decision_response: DecisionResponse,
     request: Request,
+    db: AsyncSession = Depends(get_db),
 ):
     """
-    Submits a human operator's decision response to the system.
-
-    This endpoint is typically called after a human operator has reviewed a
-    `HumanDecisionRequiredEvent` (e.g., via a UI) and made a decision.
-    The decision is then published as a `HumanDecisionResponseEvent` onto the event bus
-    for other agents (like the OrchestratorAgent) to process.
-
-    This endpoint is secured by an API key.
-
-    Args:
-        decision_response (DecisionResponse): The human operator's decision. This should
-                                              conform to the `DecisionResponse` schema,
-                                              including fields like `request_id` (linking to
-                                              the original decision request), `decision`,
-                                              `justification`, `operator_id`, and optionally
-                                              `correlation_id`.
-        request (Request): The FastAPI request object, used to access the system coordinator
-                           and event bus.
-
-    Returns:
-        dict: A confirmation message including the status, event ID of the published
-              `HumanDecisionResponseEvent`, and the original `request_id` of the decision.
-              Example:
-              ```json
-              {
-                  "status": "success",
-                  "event_id": "some-uuid",
-                  "request_id": "decision-request-abc"
-              }
-              ```
-
-    Raises:
-        HTTPException:
-            - 500: If the system coordinator or event bus is not available.
-            - 500: If there's an error publishing the event to the event bus.
+    Submits (persists + publishes) a human operator's decision response.
+    1. Persist decision to human_decisions table
+    2. Publish HumanDecisionResponseEvent on the event bus
     """
     coordinator = request.app.state.coordinator
     if not coordinator:
         raise HTTPException(status_code=500, detail="System coordinator not available")
-    
-    event_bus = coordinator.event_bus
+
+    event_bus: EventBus = coordinator.event_bus
     if not event_bus:
         raise HTTPException(status_code=500, detail="Event bus not available")
 
-    event = HumanDecisionResponseEvent(
-        payload=decision_response, # The HumanDecisionResponseEvent expects the DecisionResponse schema as payload
-        correlation_id=decision_response.correlation_id # Pass correlation_id if available in DecisionResponse
-    )
-
     try:
+        # Persist
+        await create_human_decision(db=db, decision_data=decision_response)
+        logger.info(
+            "human_decision.persisted",
+            extra={"request_id": decision_response.request_id, "operator_id": decision_response.operator_id},
+        )
+
+        # Publish
+        event = HumanDecisionResponseEvent(
+            payload=decision_response,
+            correlation_id=decision_response.correlation_id,
+        )
         await event_bus.publish(event)
-        return {
-            "status": "success",
-            "event_id": str(event.event_id),
-            "request_id": decision_response.request_id
-        }
-    except Exception as e:
-        # Log the exception details here if logging is set up
-        raise HTTPException(status_code=500, detail=f"Failed to publish human decision event: {str(e)}")
+        logger.info(
+            "human_decision.published",
+            extra={"event_id": str(event.event_id), "request_id": decision_response.request_id},
+        )
+        return decision_response
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Failed to submit human decision")
+        raise HTTPException(status_code=500, detail="Failed to process and persist the decision.") from e
