@@ -171,7 +171,7 @@ Core scaffolding for a maintainable, extensible UI is now in place along with th
 ---
 _End of Day Snapshot – Ready to resume with migration resolution & persistence wiring next session._
 
-## 18. End-of-Day Addendum (Post-Migration Actions – Late Session)
+## 18. End-of-Day Addendum (Post-Migration Actions – Late Session & Subsequent Updates)
 
 ### 18.1 Migration Chain Repair & Minimal Table Introduction
 - Discovered missing historical Alembic revision (`71994744cf8e`) referenced but absent → blocked new revision generation.
@@ -188,24 +188,32 @@ _End of Day Snapshot – Ready to resume with migration resolution & persistence
 - Inline verification attempt via `psycopg2` failed (driver not installed in production image by design—app uses asyncpg at runtime); accepted Alembic success log as authoritative for now.
 - Next session: optionally add a lightweight FastAPI diagnostic endpoint or temporary script using async SQLAlchemy to confirm live columns.
 
-### 18.3 Updated Status Summary
+### 18.3 Updated Status Summary (Revised & Expanded)
+
 | Area | Status | Notes |
 |------|--------|-------|
 | Placeholder migration added | Done | Restored revision continuity. |
 | Minimal human_decisions migration | Applied | No collateral schema changes. |
 | Table indices | Applied | correlation_id / operator_id / request_id. |
-| Persistence endpoint | Pending | To insert row + publish event (idempotency via request_id). |
-| Read (GET) endpoint | Pending | Pagination + filtering next session. |
-| UI integration refresh | Pending | Decision Log to query new endpoint. |
+| Persistence endpoint | Done | Human decision persisted then event published. |
+| Read (GET) endpoint | Done | `/api/v1/decisions` returns ordered human decisions. |
+| UI integration refresh | Done | Decision Log UI displays persisted decisions with pagination. |
+| MLflow model loading circuit breaker | Added | `DISABLE_MLFLOW_MODEL_LOADING` flag prevents startup blocking. |
+| Golden Path Demo endpoint | Enhanced | Now observes real EventBus events; step progression driven by actual published events. |
+| Golden Path Demo UI | Enhanced | `3_Golden_Path_Demo.py` shows live steps, event stream, metrics & latency. |
+| Golden Path Metrics | Added | Ingest→Prediction latency, total events, rolling event buffer (last 200). |
+| Golden Path Decision Stage (optional) | Added | Flag to include human decision stage (injects HumanDecisionRequiredEvent). |
 | Tests | Pending | Add model + API round-trip tests. |
 
 ### 18.4 Risks Newly Tracked
+
 | Risk | New? | Mitigation Plan |
 |------|------|-----------------|
 | Silent absence of psycopg2 verification | Yes | Add optional diagnostic endpoint or short async query script. |
 | Future autogenerate drift noise | Yes | Consider creating a “schema baseline” migration after stabilizing decisions to reduce noise. |
 
 ### 18.5 Immediate Next Session Priorities (Refined)
+
 1. Implement persistence logic in submit endpoint (transaction + event publish; consider try/finally ordering).
 2. Implement GET `/api/v1/decisions/human` with: limit, offset (or page), optional filters (operator_id, request_id, correlation_id, date range).
 3. Update `pages/2_decision_log.py` to consume new endpoint (tabbed UI or single sourced view) + optimistic refresh after submission.
@@ -213,6 +221,7 @@ _End of Day Snapshot – Ready to resume with migration resolution & persistence
 5. (Optional) Add uniqueness constraint draft (request_id, operator_id) in a follow-up migration if duplicates become a concern.
 
 ### 18.6 Open Technical Questions (Carried Forward)
+
 - Should we retroactively create a baseline squashed migration once drift is conclusively resolved?
 - Do we need soft-delete or status enumeration for human decisions before audit exports?
 
