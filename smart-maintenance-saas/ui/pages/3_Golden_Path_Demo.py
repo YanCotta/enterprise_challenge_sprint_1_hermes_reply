@@ -3,6 +3,7 @@ import time
 import logging
 
 from lib.api_client import make_api_request
+from lib.rerun import safe_rerun
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ def render_golden_path_page():
                 if start_result.get("success"):
                     st.session_state.correlation_id = start_result["data"]["correlation_id"]
                     st.session_state.demo_running = True
-                    st.experimental_rerun()
+                    safe_rerun()
                 else:
                     st.error("Failed to start the demo.")
                     st.error(start_result.get("error", "Unknown error."))
@@ -108,7 +109,7 @@ def render_golden_path_page():
         # Auto refresh while running
         if data.get("status") not in ("complete", "failed"):
             time.sleep(2)
-            st.experimental_rerun()
+            safe_rerun()
         else:
             st.session_state.demo_running = False
             st.session_state.correlation_id = st.session_state.correlation_id  # keep for viewing
