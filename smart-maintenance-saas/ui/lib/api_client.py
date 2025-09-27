@@ -33,6 +33,21 @@ def _resolve_config():
 
 API_BASE_URL, API_KEY = _resolve_config()
 
+# Latency registry (in-memory, rolling)
+_LATENCY_REGISTRY: list[Dict[str, Any]] = []
+_LATENCY_MAX = 200
+
+def record_latency(label: str, ms: float, meta: Optional[Dict[str, Any]] = None) -> None:
+    entry = {"label": label, "ms": ms, "t": time.time()}
+    if meta:
+        entry.update(meta)
+    _LATENCY_REGISTRY.append(entry)
+    if len(_LATENCY_REGISTRY) > _LATENCY_MAX:
+        del _LATENCY_REGISTRY[:-_LATENCY_MAX]
+
+def get_latency_samples() -> list[Dict[str, Any]]:
+    return list(_LATENCY_REGISTRY)
+
 DEFAULT_TIMEOUT = 20
 DEFAULT_RETRIES = 3
 
@@ -87,6 +102,7 @@ def make_api_request(
     attempt = 0
     while attempt < retries:
         try:
+            req_start = time.perf_counter()
             response = requests.request(
                 method=method.upper(),
                 url=url,
@@ -95,12 +111,14 @@ def make_api_request(
                 json=json_data,
                 timeout=timeout,
             )
+            elapsed_ms = (time.perf_counter() - req_start) * 1000
             if 200 <= response.status_code < 300:
                 try:
                     data = response.json()
                 except ValueError:
                     data = {"raw": response.text}
-                return {"success": True, "data": data, "status_code": response.status_code}
+                record_latency(endpoint, elapsed_ms, {"status": response.status_code})
+                return {"success": True, "data": data, "status_code": response.status_code, "latency_ms": elapsed_ms}
 
             err_msg = f"HTTP {response.status_code} {response.reason}".strip()
             try:
@@ -109,6 +127,7 @@ def make_api_request(
                     err_msg = _format_error(err_msg, str(detail))
             except ValueError:
                 pass
+            record_latency(endpoint, elapsed_ms, {"status": response.status_code, "error": True})
             return {"success": False, "error": err_msg, "status_code": response.status_code}
 
         except requests.exceptions.Timeout:
