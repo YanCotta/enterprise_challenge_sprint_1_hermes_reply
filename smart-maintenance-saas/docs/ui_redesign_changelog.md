@@ -227,3 +227,60 @@ _End of Day Snapshot – Ready to resume with migration resolution & persistence
 
 ---
 _End-of-Day Addendum Recorded – Ready to resume implementation tomorrow._
+
+### Task Completion Log (Rolling)
+
+#### A3 – Prediction Version Auto-Resolve (2025-09-27)
+Implemented new prediction page `ui/pages/4_Prediction.py`:
+- Allows blank version field; auto-resolves via `/models/{model}/latest` then falls back to versions list selecting highest numeric.
+- Captures client-side latency (ms) excluding SHAP processing using monotonic timer.
+- Displays resolved version, prediction, confidence, and raw response expander.
+- Optional SHAP section shown only when requested & present.
+Verification:
+- Blank version resolves correctly when endpoint responds.
+- Latency metric surfaces and remains <1.5s without explainability (local env expectation).
+- Failure path (unresolvable model) surfaces user-friendly message.
+Next Dependencies:
+- Integrate error guidance layer (B2) for richer failure hints.
+- Centralize latency logging with ingestion (B4) once ingestion closed loop implemented.
+
+#### A4 – Ingestion Closed Loop Latency (2025-09-27)
+Implemented enhanced latency instrumentation in `ui/streamlit_app.py` ingestion form:
+
+- Added precise timing using `time.perf_counter()` for POST, verification GET, and end-to-end.
+- Success message now surfaces: POST ms, Verify ms, E2E ms for operator feedback & performance baselining.
+- Added fallback warning if verification returns empty (eventual consistency note).
+Verification:
+- Manual submission produced realistic sub-500 ms POST locally; verify call latency displayed separately.
+- Empty verification path message confirmed when sensor read not yet indexed.
+Next Steps:
+- Feed these latency metrics eventually into a lightweight local log or metrics panel (B4).
+
+#### A5 – Decision Audit UI Completion (2025-09-27)
+Enhancements applied to `ui/pages/2_decision_log.py`:
+- Added filter controls: operator_id, request_id, correlation_id, start/end date.
+- Added page size selector & refresh/reset controls.
+- Added CSV export for the current page.
+- Introduced tabs separating Human Decisions and future Maintenance Logs.
+- Improved pagination buttons and correlation_id visibility.
+Verification:
+- Filter combinations return expected subsets (manual spot checks).
+- Pagination & offset reset operate correctly.
+- Exported CSV opens with correct UTF-8 header row.
+Future Work:
+- Integrate maintenance logs when backend endpoint finalized.
+- Add tests covering filters & pagination (see Human decisions API tests task).
+
+#### Model Metadata Explorer UI (2025-09-27)
+Added `ui/pages/5_Model_Metadata.py` providing:
+- Cached (5m) listing of registered models.
+- Per-model version inspection with manual load trigger to avoid over-fetching.
+- Tag visualization (model vs version tags) in expandable section.
+- Human-readable timestamp normalization.
+Verification:
+- Cache refresh button clears and reloads models.
+- Version load only triggers on explicit button (prevents wasteful queries).
+Next Steps:
+- Integrate error guidance (B2) for cases where endpoints unavailable.
+- Add latency timing + caching validation test harness.
+
