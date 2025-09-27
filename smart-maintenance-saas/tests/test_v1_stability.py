@@ -98,7 +98,7 @@ def test_model_metadata_state_differentiation(mock_error, mock_info, mock_api_re
         if not models:
             health_result = make_api_request("GET", "/api/v1/ml/health")
             expected_empty_state = health_result.get('success', False)
-            assert expected_empty_state == True
+            assert expected_empty_state
     
     # Test 3: API connection failure
     with patch.dict(os.environ, {'DISABLE_MLFLOW_MODEL_LOADING': 'false'}):
