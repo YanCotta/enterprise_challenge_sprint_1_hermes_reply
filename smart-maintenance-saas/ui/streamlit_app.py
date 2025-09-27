@@ -7,6 +7,7 @@ will live in `ui/pages/`.
 from datetime import datetime, timezone
 import os
 import uuid
+import time
 import streamlit as st
 
 from lib.api_client import make_api_request
@@ -45,6 +46,7 @@ def render_overview() -> None:
             unit = st.text_input("Unit", value="°C")
         submit = st.form_submit_button("📤 Submit", use_container_width=True)
     if submit:
+        wall_start = time.perf_counter()
         start = datetime.now(timezone.utc)
         payload = {
             "sensor_id": sensor_id,
@@ -55,15 +57,18 @@ def render_overview() -> None:
             "correlation_id": str(uuid.uuid4()),
         }
         resp = make_api_request("POST", "/api/v1/data/ingest", json_data=payload)
+        post_latency_ms = (time.perf_counter() - wall_start) * 1000
         if resp.get("success"):
+            verify_start = time.perf_counter()
             verify = make_api_request("GET", "/api/v1/sensors/readings", params={"limit":1, "sensor_id": sensor_id})
-            ms = (datetime.now(timezone.utc) - start).total_seconds() * 1000
-            st.success(f"Accepted (verify {ms:.0f} ms)")
+            verify_latency_ms = (time.perf_counter() - verify_start) * 1000
+            end_to_end_ms = (time.perf_counter() - wall_start) * 1000
+            st.success(f"Accepted • POST {post_latency_ms:.0f} ms • Verify {verify_latency_ms:.0f} ms • E2E {end_to_end_ms:.0f} ms")
             if verify.get("success") and verify.get("data"):
                 with st.expander("Latest Persisted Reading", expanded=True):
                     st.json(verify["data"][0])
             else:
-                st.warning("Verification returned no row yet.")
+                st.warning("Verification returned no row yet (eventual consistency).")
         else:
             st.error("Ingestion failed")
             st.caption(resp.get("error", "Unknown error"))
