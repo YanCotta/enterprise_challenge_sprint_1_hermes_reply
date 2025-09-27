@@ -65,6 +65,8 @@ class Settings(BaseSettings):
 
     # ML
     model_registry_path: str = "./models"
+    # Toggle to disable MLflow model registry/network calls (fast startup / offline mode)
+    DISABLE_MLFLOW_MODEL_LOADING: bool = Field(default=False, description="Disable MLflow model registry calls to avoid blocking on network/DNS")
 
     # Notification Services
     whatsapp_api_key: str = "your_whatsapp_api_key"
