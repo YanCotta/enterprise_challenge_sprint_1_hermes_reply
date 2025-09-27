@@ -10,6 +10,7 @@ import logging
 from typing import Dict, List, Optional, Tuple, Any
 from mlflow.tracking import MlflowClient
 from mlflow.exceptions import MlflowException
+import streamlit as st  # Added for caching MLflow metadata lookups
 
 from core.config.settings import settings
 
@@ -32,6 +33,7 @@ def _get_mlflow_client():
     return MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
 
 
+@st.cache_data(ttl=300)
 def get_all_registered_models() -> List[Dict[str, Any]]:
     """
     Fetch all registered models from MLflow registry.
@@ -356,6 +358,7 @@ def get_model_details(model_name: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+@st.cache_data(ttl=300)
 def suggest_sensor_types() -> List[str]:
     """
     Get a list of available sensor types based on registered models.
