@@ -42,17 +42,31 @@ def render_model_metadata():
     st.caption("Browse registered MLflow models, versions, tags, and stages (cached 5m).")
 
     # Feature flag / env guard for disabled MLflow
-    if os.getenv("DISABLE_MLFLOW_MODEL_LOADING", "false").lower() in ("1", "true", "yes"): 
-        st.info("MLflow model loading disabled by environment flag DISABLE_MLFLOW_MODEL_LOADING. Enable it to view registry metadata.")
+    mlflow_disabled = os.getenv("DISABLE_MLFLOW_MODEL_LOADING", "false").lower() in ("1", "true", "yes")
+    if mlflow_disabled: 
+        st.info("🔧 MLflow model loading disabled by environment flag `DISABLE_MLFLOW_MODEL_LOADING`. Enable it to view registry metadata.")
+        return
+    
     col1, col2 = st.columns([2,1])
     with col2:
         if st.button("🔄 Refresh Cache", help="Clears local cache and refetches"):
             _cached_registered_models.clear()
             safe_rerun()
 
-    models = _cached_registered_models()
-    if not models:
-        st.info("No models found or endpoint unavailable.")
+    # Try to fetch models with explicit error handling
+    try:
+        models = _cached_registered_models()
+        if not models:
+            # Distinguish between empty registry vs API failure
+            # Make a direct health check call to determine cause
+            health_result = make_api_request("GET", "/api/v1/ml/health")
+            if health_result.get("success"):
+                st.info("📋 No models found in the MLflow registry. Add models to see them here.")
+            else:
+                st.error(f"❌ Unable to connect to MLflow registry: {health_result.get('error', 'Unknown error')}")
+            return
+    except Exception as e:
+        st.error(f"❌ Error fetching model metadata: {str(e)}")
         return
 
     df = pd.DataFrame(models)
