@@ -2,7 +2,7 @@ import time
 from datetime import datetime, timezone
 import streamlit as st
 
-from lib.api_client import make_api_request
+from lib.api_client import make_api_request, get_latency_samples
 
 st.set_page_config(page_title="Prediction", page_icon="🤖")
 
@@ -78,7 +78,7 @@ def render_prediction_page():
         latency_ms = (time.perf_counter() - t0) * 1000
         if resp.get("success"):
             data = resp["data"]
-            st.success(f"Prediction completed in {latency_ms:.0f} ms")
+            st.success(f"Prediction completed in {latency_ms:.0f} ms (API call {resp.get('latency_ms', latency_ms):.0f} ms)")
             colA, colB = st.columns([1,2])
             with colA:
                 st.metric("Prediction", data.get("prediction"))
@@ -90,6 +90,10 @@ def render_prediction_page():
             if explain and "explainability" in data:
                 with st.expander("Explainability (SHAP)"):
                     st.json(data["explainability"])
+            with st.expander("Recent Latencies", expanded=False):
+                samples = get_latency_samples()[-8:]
+                for s in reversed(samples):
+                    st.write(f"{s['label']} – {s['ms']:.0f} ms (status={s.get('status')})")
         else:
             st.error("Prediction failed")
             st.caption(resp.get("error", "Unknown error"))
