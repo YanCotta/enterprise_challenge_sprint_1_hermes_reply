@@ -84,7 +84,7 @@ def test_model_metadata_state_differentiation(mock_error, mock_info, mock_api_re
         with patch('streamlit.info') as mock_info:
             # This would be called in the actual render function
             mlflow_disabled = os.getenv("DISABLE_MLFLOW_MODEL_LOADING", "false").lower() in ("1", "true", "yes")
-            assert mlflow_disabled == True
+            assert mlflow_disabled
     
     # Test 2: Empty registry (no models but connection works)
     with patch.dict(os.environ, {'DISABLE_MLFLOW_MODEL_LOADING': 'false'}):
