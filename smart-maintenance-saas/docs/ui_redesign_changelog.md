@@ -349,3 +349,49 @@ Follow-Ups:
 - Add drift detection result linkage (once backend exposes outcome endpoint).
 - Consider badge coloring for success/error states across run history.
 
+---
+
+## 19. Runtime Rerun/API Drift & Simulation Import Fixes (2025-09-27 Post-Fix)
+
+### 19.1 Issue Summary
+
+After deploying earlier UI changes, multiple pages crashed due to deprecated `st.experimental_rerun` usage (Streamlit version now only exposes `st.rerun`). Additionally, the Simulation Console raised an `ImportError` for `record_latency_sample` in environments where the updated API client code hadn't yet been loaded or where naming drift occurred.
+
+### 19.2 Root Causes
+
+- Decentralized per-page rerun shims reintroducing deprecated API references.
+- Container caching / image layering leading to mixed code versions during rapid iteration.
+- Missing defensive import for latency recording utility in Simulation Console.
+
+### 19.3 Remediations Implemented
+
+| Area | Change | Files |
+|------|--------|-------|
+| Central Rerun Abstraction | Added `safe_rerun()` with graceful fallback | `ui/lib/rerun.py` |
+| Page Refactors | Replaced local `_safe_rerun` & direct `st.experimental_rerun` calls | `1_data_explorer.py`, `2_decision_log.py`, `3_Golden_Path_Demo.py`, `5_Model_Metadata.py`, `6_Metrics_Overview.py` |
+| Simulation Import Robustness | Added try/except fallback defining no-op `record_latency_sample` | `7_Simulation_Console.py` |
+| Latency Recorder API | Added wrapper `record_latency_sample()` delegating to existing registry | `ui/lib/api_client.py` |
+| Documentation | Added structured error analysis doc | `docs/UI_ERROR_ANALYSIS_2025-09-27.md` |
+
+### 19.4 Verification Criteria
+
+- Grep confirms zero remaining `st.experimental_rerun` references under `ui/pages/`.
+- Simulation Console loads without ImportError; latency entries recorded on simulation POST.
+- Golden Path auto-refresh cycles using `safe_rerun()` without raising AttributeError.
+- Model Metadata Refresh button functions (when MLflow not disabled) or surfaces explicit disabled message.
+
+### 19.5 Residual / Follow-Up Items
+
+| Item | Rationale | Planned Action |
+|------|-----------|---------------|
+| Model metadata empty vs disabled messaging | Improve operator clarity | Add distinct badge + explanation text (next iteration) |
+| Golden Path stale status timeout | Prevent infinite polling loops on backend failure | Add max duration & terminal error state |
+| Metrics derived latency percentiles | Enhance observability | Compute p50/p95 from registry subset |
+| Reporting artifact persistence | Move prototype beyond synthetic stage | Implement storage + download endpoint |
+
+### 19.6 Impact
+
+Stability of navigation restored; removal of deprecated API usage reduces future maintenance overhead and isolates Streamlit version divergence to a single helper. Observability unaffected; simulation latency now always recorded (or safely ignored) regardless of environment race conditions.
+
+---
+
