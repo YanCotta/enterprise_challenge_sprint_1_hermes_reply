@@ -11,14 +11,7 @@ import pandas as pd
 from datetime import datetime, timezone, time as dtime
 
 from lib.api_client import make_api_request
-
-
-def _safe_rerun():
-    """Compatibility shim for Streamlit rerun across versions."""
-    if hasattr(st, "rerun"):
-        st.rerun()
-    elif hasattr(st, "experimental_rerun"):
-        st.experimental_rerun()  # type: ignore[attr-defined]
+from lib.rerun import safe_rerun
 
 
 def render_data_explorer():
@@ -54,7 +47,7 @@ def render_data_explorer():
     with refresh_col:
         if st.button("↻ Refresh"):
             st.session_state.data_explorer_offset = 0
-            _safe_rerun()
+            safe_rerun()
 
     # --- DATA FETCHING ---
     params = {"limit": page_size, "offset": st.session_state.data_explorer_offset}
@@ -82,13 +75,13 @@ def render_data_explorer():
             with pcol1:
                 if st.button("⬅️ Previous", disabled=(st.session_state.data_explorer_offset == 0)):
                     st.session_state.data_explorer_offset -= page_size
-                    _safe_rerun()
+                    safe_rerun()
             with pcol2:
                 st.write(f"Page {st.session_state.data_explorer_offset // page_size + 1}")
             with pcol3:
                 if st.button("Next ➡️", disabled=(len(rows) < page_size)):
                     st.session_state.data_explorer_offset += page_size
-                    _safe_rerun()
+                    safe_rerun()
         else:
             st.info("No more data found for the current selection.")
     else:
