@@ -4,6 +4,7 @@ import streamlit as st
 import requests
 
 from lib.api_client import make_api_request, get_latency_samples
+from lib.rerun import safe_rerun
 
 st.set_page_config(page_title="Metrics Overview", page_icon="📊")
 
@@ -71,7 +72,7 @@ def render_metrics_overview():
         st.table([{"endpoint": s['label'], "ms": f"{s['ms']:.0f}", "status": s.get('status')} for s in reversed(last)])
 
     if auto:
-        st.experimental_rerun()
+        safe_rerun()
 
 
 render_metrics_overview()
