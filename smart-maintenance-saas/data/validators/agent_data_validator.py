@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from pydantic import ValidationError
 
@@ -25,7 +25,7 @@ class DataValidator:
         )
 
     def validate(
-        self, raw_data: Dict[str, Any], correlation_id: Optional[uuid.UUID] = None
+        self, raw_data: Union[Dict[str, Any], SensorReadingCreate], correlation_id: Optional[uuid.UUID] = None
     ) -> SensorReadingCreate:
         """
         Validates raw sensor data against the SensorReadingCreate schema.
@@ -41,14 +41,20 @@ class DataValidator:
             ValidationError: If the data fails Pydantic validation
             DataValidationException: If the data fails business rule validation
         """
-        # Create a copy to avoid modifying the input
-        data_for_model = raw_data.copy()
+        if isinstance(raw_data, SensorReadingCreate):
+            validated_data: Optional[SensorReadingCreate] = raw_data
+            data_for_model = raw_data.model_dump()
+        else:
+            validated_data = None
+            data_for_model = raw_data.copy()
 
         # correlation_id is tracked separately, not part of the schema validation
         logger.debug(f"Validating data with correlation_id: {correlation_id}")
 
         try:
-            validated_data = SensorReadingCreate(**data_for_model)
+            if not isinstance(raw_data, SensorReadingCreate):
+                validated_data = SensorReadingCreate(**data_for_model)
+            assert validated_data is not None
 
             if validated_data.value is not None and validated_data.value < 0:
                 raise DataValidationException(
