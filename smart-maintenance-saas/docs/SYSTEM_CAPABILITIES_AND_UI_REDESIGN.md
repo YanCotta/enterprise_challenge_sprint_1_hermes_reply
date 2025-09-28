@@ -1,11 +1,11 @@
 # Smart Maintenance SaaS
 
-## V1.0 System Capabilities & Final UI Execution Blueprint
+## V1.0 System Capabilities & Exposure Blueprint (Scope Freeze)
 
-**Status:** Authoritative V1.0 Execution Plan (SYNCHRONIZED)  
-**Date:** 2025-09-27  
+**Status:** Scope Frozen – Truth-Aligned Minimal UI  
+**Date:** 2025-09-28  
 **Author:** Automated Engineering Assistant  
-**Purpose:** Provide a single, actionable blueprint that (a) inventories real backend capabilities, (b) classifies feature maturity, (c) defines the re-architected Streamlit UI, and (d) lays out a realistic 4–5 day refactor sprint to ship a stable, credible V1.0. Experimental or partial features are quarantined to preserve user trust.
+**Purpose:** Provide a single, authoritative snapshot separating (a) backend capability readiness from (b) UI exposure, and (c) the limited V1.0 action set. All breadth / amplification features are explicitly deferred to V1.5+ and removed from active commitments.
 
 ---
 
@@ -21,64 +21,44 @@ The backend (FastAPI + TimescaleDB + MLflow + Redis + EventBus) is production-al
 Primary Outcome: A trustworthy “Analyst / Ops Dashboard” reflecting only what works today while transparently staging forthcoming capabilities.
 
 ---
-## 1. Capability Inventory (Backend Truth Source) - **ENHANCED ANALYSIS**
+## 1. Capability Inventory (Backend vs UI Exposure)
 
-| Domain | Capability | Endpoint(s) / Component | Current State | Notes / Evidence | **UI Integration Status** |
-|--------|-----------|-------------------------|---------------|------------------|-------------------------|
-| **Data Ingestion** | Single sensor reading ingest w/ idempotency | `POST /api/v1/data/ingest` | **Stable** | Redis-backed idempotency, generates correlation_id, emits `SensorDataReceivedEvent` | ✅ **Working** - Form-based UI exists |
-| **Data Retrieval** | List sensor readings (paginated, filtered) | `GET /api/v1/sensors/readings` | **Stable** | Enhanced schema `SensorReadingPublic`; supports `sensor_id`, `limit`, `offset`, `start_ts`, `end_ts`, quality filtering | ✅ **Working** - Paginated explorer restored + CSV export pending |
-| **Data Retrieval** | List sensors with statistics | `GET /api/v1/sensors/sensors` | **Stable** | Returns sensor count, first/last readings, aggregated stats | ✅ **Working** - Available for sensor dropdowns |
-| **Simulation** | Multi-type synthetic data generation | `POST /api/v1/simulate/{drift-event,anomaly-event,normal-data}` | **Stable** | BackgroundTasks for async ingestion, correlation_id tracking, latency recording with fallback pattern | ✅ **Working** - Stable UI with timeout protection |
-| **ML Prediction** | Model prediction with auto-resolution | `POST /api/v1/ml/predict` | **Stable** | Auto version resolution (blank version fallback), feature adaptation, confidence extraction, optional SHAP, client-side latency capture | ✅ **Working** - Version auto-resolve & latency telemetry |
-| **ML Model Management** | Version listing and resolution | `GET /api/v1/ml/models/{model}/versions`, `/latest` | **Stable** | Complete MLflow registry integration with S3 artifacts | ✅ **Optimized** - 5m UI cache reduces repeated latency |
-| **ML Anomaly Detection** | Batch anomaly evaluation | `POST /api/v1/ml/detect_anomaly` | **Stable** | Uses isolation forest models, structured AnomalyAlert responses | ✅ **Working** - Basic UI integration |
-| **ML Drift Analysis** | KS-test distributional drift | `POST /api/v1/ml/check_drift` | **Stable** | Window-based analysis, p-value thresholds, statistical validation | ✅ **Working** - Form-based interface |
-| **ML Health** | Registry connectivity validation | `GET /api/v1/ml/health` | **Stable** | Validates MLflow access, model loading capability | ✅ **Working** - Health check integration |
-| **Event System** | Event-driven architecture | `EventBus`, `SystemCoordinator` | **Production-Ready** | 12 agents, 11 subscriptions, enterprise retry/DLQ patterns | ℹ️ **Backend Only** - No direct UI exposure |
-| **Reporting** | Multi-format report generation | `POST /api/v1/reports/generate` | **Prototype** | ThreadPoolExecutor for async, supports JSON/text, chart generation | ⚠️ **Synthetic** - No real artifact downloads |
-| **Decision Management** | Human decision audit trail | `POST /api/v1/decisions/submit`, `GET /api/v1/decisions` | **Backend Complete** | Full CRUD with MaintenanceLogORM, filtering, pagination | ✅ **Working** - UI log with filters & CSV export |
-| **Multi-Agent System** | 12-agent orchestrated system | `SystemCoordinator`, various agents | **Production-Ready** | Core(5), Decision(5), Interface(1), Learning(1) agents operational | ✅ **Showcased** - Golden Path demo with 90s timeout protection |
-| **Cloud Infrastructure** | S3 serverless model loading | S3 + MLflow integration | **Production-Ready** | 17+ models, intelligent categorization, fallback mechanisms | ✅ **Working** - Model recommendations functional |
-| **Security** | API key scoped access control | `api_key_auth` dependency | **Production-Ready** | Scoped permissions, rate limiting, audit logging | ✅ **Working** - All endpoints secured |
-| **Monitoring** | Prometheus metrics collection | `GET /metrics` | **Stable** | Memory, CPU, request counts, error rates, health metrics | ✅ **Snapshot** - Timestamped metrics overview page |
-| **Database** | TimescaleDB time-series storage | `SensorReadingORM`, session management | **Production-Ready** | 20,000+ records, 37.3% performance improvement, connection pooling | ✅ **Working** - All CRUD operations functional |
-| **Caching/Redis** | Distributed caching and coordination | `RedisClient`, idempotency layer | **Production-Ready** | Cloud Redis, graceful degradation, health monitoring | ✅ **Working** - Idempotency and coordination active |
+| Domain | Capability | Backend State | UI Exposure | V1.0 Action | Deferred (Y/N) | Notes |
+|--------|-----------|---------------|-------------|-------------|----------------|-------|
+| Data Ingestion | Single sensor ingest (idempotent) | ✅ Stable | ✅ Exposed | Stability only | N | Redis idempotency working |
+| Sensor Read Retrieval | Paginated & filtered reads | ✅ Stable | ✅ Exposed | Stability only | N | CSV export optional later |
+| Sensors Metadata | Sensor list + stats | ✅ Stable | ✅ Exposed (dropdown use) | None | N | Used for filters |
+| Simulation | Drift/Anomaly/Normal synthetic | ✅ Stable | ✅ Exposed | None | N | Timeout protection active |
+| Prediction | Auto version resolve | ✅ Stable | ✅ Exposed | Completed – error hints surfaced | N | Latency captured |
+| Model Metadata | Registry & versions | ✅ Stable | ✅ Exposed | Completed – state badge live | N | 5m cache |
+| Drift Analysis | KS-test | ✅ Stable | ✅ Exposed | None | N | On-demand form |
+| Anomaly Detection | Batch anomalies | ✅ Stable | ✅ Exposed | None | N | On-demand form |
+| Golden Path Orchestration | Multi-agent pipeline | ✅ Stable | ✅ Exposed | Completed – terminal messaging polished | N | 90s timeout guard |
+| Decision Audit | Human decisions (create/list) | ✅ Stable (partial CRUD) | ✅ Exposed | Completed – scope copy added | N | No edit/delete required V1.0 |
+| Reporting | JSON prototype | ✅ Prototype | ⚠️ Minimal | Completed – prototype labeled | Y | No artifacts yet |
+| Metrics | Prometheus snapshot | ✅ Stable | ✅ Exposed | Completed – Snapshot Only label | N | Refresh toggle present |
+| Event System | EventBus & agents | ✅ Production | ℹ️ Backend Only | None | Y | Shown indirectly via Golden Path |
+| Streaming Metrics | Real-time push | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Planned V1.5 |
+| Report Artifacts | Persist & download | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Needs storage contract |
+| Background SHAP | Async explainability | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Queue pending |
+| Bulk Operations | CSV ingest & batch predict | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Non-MVP scale feature |
+| Correlation Analytics | Multi-sensor | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Advanced analytics |
+| Recommendations Optimization | Cached + virtualized | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Optimization wave |
+| Notifications UI | Alert history/config | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Backend agents only |
+| Feature Lineage | Feature store viz | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Governance wave |
+| Governance / Retention | Policy UI | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Low early volume |
 
 ---
-## 2. Capability Classification
+## 2. Capability Exposure Summary
 
-### 2.1 Stable (Production-Ready Baseline)
-- Data ingestion (single event)
-- Sensor readings retrieval + sensor list
-- Simulation API endpoints (drift/anomaly/normal)
-- Prediction (model load, version resolution, feature adaptation)
-- Drift and anomaly detection endpoints
-- ML health check
+| Classification | Definition | Items |
+|----------------|-----------|-------|
+| Exposed & Stable | Backend stable + UI page implemented | Ingestion, Explorer, Prediction, Drift, Anomaly, Simulation, Decision Audit (create/list), Model Metadata, Golden Path, Metrics Snapshot |
+| Prototype (Limited) | Partial backend or constrained UI | Reporting JSON-only |
+| Backend Only | Backend implemented, no UI needed for V1.0 | Event System internals |
+| Deferred (V1.5+) | Will not ship in V1.0 | Streaming metrics, artifacts, background SHAP, bulk ops, correlation analytics, recommendations optimization, notifications UI, lineage, governance |
 
-- Raw metrics retrieval
-- Model version metadata endpoints
-
-### 2.2 Degraded / Performance-Risky
-- SHAP explainability (latency risk on non-tree models)
-- Model recommendation logic (UI-side enumeration—heavy; not yet optimized)
-- Live streaming metrics (still snapshot-based)
-
-### 2.3 Prototype / Incomplete
-- Report generation (no artifact or file export)
-- Model recommendations virtualization
-- Advanced drift/anomaly history tracking
-
-### 2.4 Missing Capabilities (Updated Post-Sync)
-- **Report Artifact Storage & Downloads**: File generation, persistence, download endpoints
-- **Real-time Metrics Streaming**: WebSocket or Server-Sent Events for live dashboard updates
-- **Background SHAP Processing**: Async job queue with result caching to eliminate 30s+ latencies
-- **Model Recommendations Caching & UI**: Cached enumeration + virtualization
-- **Bulk Data Operations**: CSV import/export (upload path), batch prediction endpoints
-- **Advanced Analytics**: Multi-sensor correlation, composite anomaly scoring
-- **Notification System UI**: View alert history, configure channels (agents exist, no UI)
-
-- **Feature Store Visualization**: Model feature lineage, drift correlation displays
-- **Artifact Governance & Retention**: Lifecycle policies for generated reports & models
+No other categories are in play for this release.
 
 ---
 ## 3. UI Redesign Objectives
@@ -133,20 +113,21 @@ Label: "🧪 Under Development"
 
 ### 5.1 Overview Dashboard
 
-
 **Inputs:** None (auto-load + manual refresh button)  
 **Data Sources:** `/metrics`, `/api/v1/sensors/readings?limit=5`, aggregated counts  
 **Widgets:**
+
 - KPI bar (Ingested last 24h, Distinct sensors, Drift checks run, Anomalies detected)
 - Metrics summary (memory, cpu secs, success vs error counts)
 - Recent readings table (5 latest) with sensor badge
+
 **Refresh Strategy:** 10–15s polling (configurable)
 
 ### 5.2 Data Explorer
 
-
 **Core Contract:** Reliable retrieval & exploration; must load in < 2s for 100 rows  
 **Features (MVP):**
+
 - Server-side pagination controls (limit/offset)
 - Sensor ID dropdown (populated from `/sensors` endpoint)
 - Sort client-side (initial sort by timestamp DESC)
@@ -155,26 +136,27 @@ Label: "🧪 Under Development"
 
 ### 5.3 Ingestion Page
 
-
 **Flow:**
+
 1. Manual form (sensor_id, sensor_type, value, unit, timestamp optional default now)
 2. POST ingestion; display success event_id
 3. Auto-fire verification: GET `/api/v1/sensors/readings?limit=1&sensor_id=X` and show the persisted row
 4. CSV Upload Section: parse file → iterate rows → show progress + successes/failures summary
+
 **Resilience:** Correlation ID visible; support Idempotency-Key optional header field input (advanced expander)
 
 ### 5.4 ML Prediction
 
-
 **Modes:** Standard Prediction | Prediction + Explainability  
 **Controls:** Model name (select), version (auto resolved + editable), feature inputs, explain checkbox  
 **Panels:**
+
 - Results (prediction, confidence, version resolved, latency metric)
 - Explainability (collapsible) only rendered when SHAP returned
+
 **Performance Guard:** If SHAP > 5s previously, persist recommendation to run without explainability (local session state)
 
 ### 5.5 Drift & Anomaly
-
 
 - Drift Form: sensor_id, window_minutes, p_value_threshold, min_samples → response cards (p-value, drift flag)
 - Anomaly Form: sensor_readings JSON editor OR quick generator referencing last N from DB
@@ -182,13 +164,12 @@ Label: "🧪 Under Development"
 
 ### 5.6 Simulation Console
 
-
 Refactor into three horizontally stacked or accordion sections (Drift | Anomaly | Normal). Each:
+
 - Form → status spinner → summary metrics (events generated, simulation id)
 - Info panel: next expected system reactions
 
 ### 5.7 Advanced: Reporting (Prototype)
-
 
 - Form: report_type (enum), timeframe, format (disabled except JSON), include_sections multi-select
 - Call generate endpoint → show JSON
@@ -196,13 +177,11 @@ Refactor into three horizontally stacked or accordion sections (Drift | Anomaly 
 
 ### 5.8 Advanced: Model Metadata Explorer
 
-
 - Model name input → fetch versions list → table (version, stage, status, created)
 - Secondary fetch: feature schema presence (if available) displayed inline
 - Potential caching: 5m TTL (st.cache_data)
 
 ### 5.9 Experimental Sandbox (🧪)
-
 
 Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 
@@ -225,21 +204,22 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 
 ---
  
-## 7. Endpoint → UI Mapping (**ENHANCED WITH CURRENT ANALYSIS**)
+## 7. Endpoint → UI Mapping (Current Truth – Scope Frozen)
 
-| UI Panel | Endpoint(s) | Data Flow Summary | **Current Status** | **Required Actions** |
-|----------|-------------|-------------------|------------------|-------------------|
-| Overview | `/metrics`, `/api/v1/sensors/readings`, `/api/v1/sensors/sensors`, `/health` | Parallel fetch for KPIs, health status, recent readings | ⚠️ **Static Display** | Add auto-refresh, live metrics |
-| Data Explorer | `/api/v1/sensors/readings`, `/api/v1/sensors/sensors` | Server-side pagination, sensor filtering, date ranges | ❌ **500 Error** | Fix API client timeout/error handling |
-| Ingestion | `/api/v1/data/ingest`, `/api/v1/sensors/readings` (verification) | POST → immediate GET verification → display correlation_id | ✅ **Working** | Add CSV upload support |
-| Prediction | `/api/v1/ml/models/{m}/latest`, `/api/v1/ml/models/{m}/versions`, `/api/v1/ml/predict` | Auto-resolve (blank version fallback) → feature input → prediction + optional SHAP + latency capture | ✅ **Working** | Add SHAP async pipeline (future) |
-| Drift & Anomaly | `/api/v1/ml/check_drift`, `/api/v1/ml/detect_anomaly`, `/api/v1/sensors/readings` | Retrieve sensor data → analyze patterns → display results | ✅ **Working** | Add historical drift tracking |
-| Simulation | `/api/v1/simulate/drift-event`, `/api/v1/simulate/anomaly-event`, `/api/v1/simulate/normal-data` | POST simulation request → background ingestion → correlation tracking | ⚠️ **UI Crashes** | Fix nested expander layout issues |
-| Reporting (Advanced) | `/api/v1/reports/generate` | Generate structured reports with charts → display/download | ⚠️ **Synthetic** | Implement real artifact storage/download |
-| Decision Audit (Advanced) | `/api/v1/decisions`, `/api/v1/decisions/submit` | List/filter maintenance logs → display timeline | ❌ **UI Missing** | Create decision viewer interface |
-| Model Metadata (Advanced) | `/api/v1/ml/models/{m}/versions`, `/api/v1/ml/health` | List model versions, stages, health → cached display | ✅ **Optimized** | Expand with tag diffs + refresh button |
-| **Golden Path Demo** | `/api/v1/demo/golden-path` (POST), `/api/v1/demo/golden-path/status/{id}` (GET) | Live event-driven multi-agent pipeline (ingestion→processing→anomaly→validation→prediction→(decision optional)) with real EventBus observation & metrics | ✅ **Live Orchestration** | Steps, events, metrics, decision gating |
-| **System Health** | `/health`, `/health/db`, `/health/redis` | Comprehensive health monitoring | ✅ **Working** | Add component-wise status display |
+| UI Panel | Endpoints | Status (UI) | V1.0 Action | Deferred Work |
+|----------|-----------|-------------|-------------|---------------|
+| Data Explorer | `/api/v1/sensors/readings`, `/api/v1/sensors/sensors` | ✅ Working | None | Historical trends (defer) |
+| Ingestion | `/api/v1/data/ingest` (+ verify GET) | ✅ Working | None | Bulk ingest (defer) |
+| Prediction | `/api/v1/ml/predict`, models endpoints | ✅ Working | Ensure hints surfaced | Background SHAP |
+| Model Metadata | `/api/v1/ml/models/*`, `/api/v1/ml/health` | ✅ Working | Badge clarification | Recommendations optimization |
+| Drift Check | `/api/v1/ml/check_drift` | ✅ Working | None | History timeline |
+| Anomaly Detection | `/api/v1/ml/detect_anomaly` | ✅ Working | None | Composite scoring |
+| Simulation Console | `/api/v1/simulate/*` | ✅ Working | None | Advanced scenarios |
+| Decision Audit | `/api/v1/decisions*` | ✅ Working (create/list) | Doc clarification | Edit/delete UI |
+| Golden Path Demo | `/api/v1/demo/golden-path/*` | ✅ Working | Final status polish | Step metrics export |
+| Metrics Snapshot | `/metrics` | ✅ Working | Add label | Streaming push |
+| Reporting Prototype | `/api/v1/reports/generate` | ⚠️ Prototype | Add prototype disclaimer | Artifact storage/download |
+| Debug / Diagnostics | `/health/*` + custom | ✅ Working | None | Component status grid |
 
 ---
  
@@ -258,8 +238,11 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 ---
  
 ## 9. Under Development Zone Policy
+
 **Entry Criteria:** Feature lacks one of: reliability, acceptable latency, complete UX loop, or security assurance.  
+
 **Presentation Rules:**
+
 - Neutral styling (no green success tones)
 - Explicit disclaimer block: “Preview – Not production ready”
 - Links to roadmap issue / task identifier
@@ -315,6 +298,7 @@ Total ~5.0d (core) + 1 buffer day (risk / polish).
 ---
  
 ## 11. Risks & Mitigations
+
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | Hidden coupling in current monolith | Breakage on extraction | Incremental extraction + feature flag gating |
@@ -326,6 +310,7 @@ Total ~5.0d (core) + 1 buffer day (risk / polish).
 ---
  
 ## 12. Acceptance Criteria (Redesigned UI Initial Release)
+
 - Navigation shows ONLY: Overview, Data Explorer, Ingestion, Prediction, Drift & Anomaly, Simulation, Advanced (collapsed), Experimental (collapsed)
 - No broken panels accessible from primary navigation
 - All stable endpoints respond < 2s p95 for single-user scenario
@@ -336,6 +321,7 @@ Total ~5.0d (core) + 1 buffer day (risk / polish).
 
 ---
 ## 13. Future Enhancements (Post-Refactor)
+
 - Decision audit service & UI timeline view
 - Report artifact generation (PDF + CSV bundles)
 - Streaming metrics via websocket or polling diff
@@ -344,11 +330,11 @@ Total ~5.0d (core) + 1 buffer day (risk / polish).
 - Feature store lineage visualization
 
 ---
-## 15. **CRITICAL GAPS IDENTIFIED & IMPLEMENTATION GUIDANCE**
+## 15. Former Gap Log (Reclassified)
 
-### 15.1 **Golden Path Demo Orchestration Endpoint** (Critical Missing)
+### 15.1 Golden Path Demo Orchestration
 
-**Problem**: Current Golden Path demo is a placeholder that only checks system health. The UI redesign plan calls for real orchestration but no endpoint exists.
+Status: Implemented (endpoint + status polling with timeout). Action: polish completion vs timeout messaging (V1.0) – deeper metrics later (Deferred).
 
 **Required Implementation**: `/api/v1/demo/golden-path` endpoint
 
@@ -451,9 +437,9 @@ if st.session_state.get("golden_path_running", False):
                 st.session_state["golden_path_last_step"] = 0
 ```
 
-### 15.2 **Decision Audit UI Interface** (Backend Complete, UI Missing)
+### 15.2 Decision Audit UI Interface
 
-**Problem**: The decision audit endpoints (`/api/v1/decisions`) are fully implemented but there's no UI viewer.
+Status: Implemented (filter, pagination, CSV export). Scope clarification: create/list only in V1.0.
 
 **Required Implementation**: Decision viewer in Advanced section
 
@@ -498,9 +484,9 @@ def render_decision_log():
                     st.write(f"**Notes:** {decision['notes']}")
 ```
 
-### 15.3 **Performance Caching Layer** (Critical for Model Operations)
+### 15.3 Model Metadata Caching
 
-**Problem**: Model metadata queries take 30-40s due to repeated MLflow calls.
+Status: Implemented (cache TTL 300s). Future optimization: tag diff & recommendations (Deferred).
 
 **Required Implementation**: Caching decorators and session state
 
@@ -522,9 +508,9 @@ def get_cached_model_recommendations():
     pass
 ```
 
-### 15.4 **Report Artifact Storage** (Prototype → Production)
+### 15.4 Report Artifact Storage
 
-**Problem**: Reports are generated but not persistently stored or downloadable.
+Status: Prototype only (JSON response). Artifact persistence & retrieval Deferred.
 
 **Required Implementation**: File storage and download endpoints
 
@@ -547,9 +533,9 @@ async def download_report(report_id: str):
     )
 ```
 
-### 15.5 **Real-time Metrics Updates** (Static → Live)
+### 15.5 Real-time Metrics Updates
 
-**Problem**: Metrics display is static, misleadingly labeled as "live".
+Status: Snapshot with manual/auto refresh. Streaming/WebSocket Deferred (V1.5).
 
 **Required Implementation**: Auto-refresh with timestamps
 
@@ -578,11 +564,11 @@ def render_live_metrics():
 
 ---
 
-## 16. **COMPREHENSIVE VALIDATION SUMMARY**
+## 16. Validation Summary (Adjusted)
 
 ### 16.1 **UI Redesign Plan Assessment: ✅ VALIDATED & ENHANCED**
 
-**Overall Verdict**: The proposed UI redesign is **architecturally sound, technically feasible, and significantly enhanced** through this comprehensive system analysis.
+Overall Verdict: Architecture validated; scope intentionally trimmed to essentials; prior critical gaps resolved or deferred with explicit tracking.
 
 **Validation Results**:
 - ✅ **Backend Capability Alignment**: All proposed UI panels have corresponding functional endpoints
@@ -594,31 +580,33 @@ def render_live_metrics():
 
 ### 16.2 **Critical Implementation Enhancements Added**
 
-**New Capabilities Discovered**:
+Previously Uncatalogued Capabilities (Now Documented):
 1. **Advanced Health Monitoring**: Component-level health endpoints (`/health/db`, `/health/redis`)
 2. **Multi-Agent Visibility**: 12-agent system status with event bus monitoring
 3. **Enhanced Security**: Rate limiting status, correlation ID tracking
 4. **Performance Metrics**: TimescaleDB 37.3% improvement, S3 artifact health
 5. **Advanced ML Ops**: Model stage management, batch prediction capabilities
 
-**Missing Components with Solutions**:
-1. **Golden Path Demo**: Created complete endpoint specification with Redis status tracking
-2. **Decision Audit UI**: Provided full implementation guide for audit trail viewer
-3. **Performance Caching**: Detailed caching strategy for 30-40s MLflow operations
-4. **Report Downloads**: File storage and download endpoint specifications
-5. **Real-time Metrics**: Auto-refresh with proper timestamping
+Deferred Solution Targets (Explicit): streaming metrics, artifacts persistence, async SHAP, bulk ops, correlation analytics, recommendations, notifications, lineage, governance.
 
 ### 16.3 **Enhanced Execution Priority Matrix**
 
-| Priority | Task | Original Status | Enhanced Implementation | Days | Impact |
-|----------|------|----------------|------------------------|------|---------|
-| **P0** | Data Explorer Fix | "Broken" | Timeout handling + retry logic | 0.5 | Critical stability |
-| **P0** | Golden Path Demo | "Placeholder" | Full orchestration with Redis tracking | 1.0 | System showcase |
-| **P1** | MLflow Caching | "30-40s latency" | `@st.cache_data(ttl=300)` + session state | 0.5 | User experience |
-| **P1** | Decision Audit UI | "Missing viewer" | Complete UI with filtering/export | 0.75 | Audit compliance |
-| **P2** | Report Downloads | "Synthetic only" | File storage + download endpoints | 0.5 | Operational value |
-| **P2** | Live Metrics | "Static display" | Auto-refresh + timestamps | 0.25 | Accuracy |
-| **P3** | Layout Fixes | "UI crashes" | Remove nested expanders | 0.25 | Stability |
+| Priority | Task | Current Disposition | V1.0 Action | Release Phase |
+|----------|------|--------------------|-------------|--------------|
+| P0 | Golden Path Demo | Implemented | Final message polish | V1.0 |
+| P0 | Model Metadata Cache | Implemented | Add badge states | V1.0 |
+| P1 | Smoke Validation | Pending | Minimal script | V1.0 |
+| P2 | Report Artifacts | Not Implemented | None | V1.5 |
+| P2 | Streaming Metrics | Not Implemented | None | V1.5 |
+| P2 | Async SHAP | Not Implemented | None | V1.5 |
+| P3 | Bulk Operations | Not Implemented | None | V1.5 |
+| P3 | Correlation Analytics | Not Implemented | None | V1.5+ |
+| P3 | Recommendations Optimization | Not Implemented | None | V1.5+ |
+| P4 | Notifications UI | Not Implemented | None | V1.5+ |
+| P4 | Lineage / Governance | Not Implemented | None | V1.5+ |
+
+---
+**Last Updated:** 2025-09-28 (Scope Freeze Applied)
 
 ### 16.4 **Actionable Wiring Instructions**
 
