@@ -140,6 +140,63 @@ Next step: Log raw inbound `DATABASE_URL` early or echo inside container to conf
 
 - Provide export (CSV / JSON) of human decisions for audit & model alignment tasks.
 
+---
+
+## 19. Scope Freeze Addendum (2025-09-28)
+
+**Purpose:** Record the formal narrowing of V1.0 to a minimal, stable UI set and disposition of previously “pending” tasks.
+
+### 19.1 Final V1.0 UI Surface (Shipped / In-Scope)
+| Area | UI State | Notes |
+|------|----------|-------|
+| Ingestion | ✅ Working | Manual form + verify pattern |
+| Data Explorer | ✅ Working | Pagination + filters; CSV export optional |
+| Prediction | ✅ Working | Auto version resolve; explainability deferred |
+| Model Metadata | ✅ Working | Disabled vs empty state clarified (badge pending polish) |
+| Drift Check | ✅ Working | On-demand form |
+| Anomaly Detection | ✅ Working | On-demand batch |
+| Simulation Console | ✅ Working | Three modes; timeout protection |
+| Decision Audit (Human) | ✅ Working | Create/list/filter/CSV – no edit/delete in V1.0 |
+| Golden Path Demo | ✅ Working | Orchestrated; 90s timeout guard |
+| Metrics Snapshot | ✅ Working | Snapshot only – streaming deferred |
+| Reporting Prototype | ⚠️ Prototype | JSON-only; artifacts deferred |
+
+### 19.2 Removed / Superseded Items
+| Original Section Reference | Previous Intent | Current Disposition |
+|---------------------------|-----------------|--------------------|
+| Pending Implementation Tasks (Sec. 9) | Broader migration/test queue | Superseded: persistence finished; test expansion deferred |
+| Next Technical Steps (Sec. 13) | Immediate follow-ups | Folded into backlog / deferrals |
+
+### 19.3 Deferred to V1.5+ (Canonical)
+Streaming metrics, artifact persistence/download, background (async) SHAP, bulk ingestion & batch prediction UI, multi-sensor correlation analytics, model recommendation optimization/virtualization, notifications UI, feature lineage, governance & retention policies.
+
+### 19.4 Documentation Alignment Sources
+| Document | Role |
+|----------|------|
+| `PRIORITIZED_BACKLOG.md` | Canonical deferred list & V1.0 deliverables |
+| `V1_READINESS_CHECKLIST.md` | Backend vs UI matrices + closure tasks |
+| `SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md` | Exposure inventory & endpoint mapping |
+
+### 19.5 Acceptance Confirmation
+- No page references streaming, artifacts, SHAP background, bulk ops as present.
+- Deprecated `st.experimental_rerun` removed; centralized `safe_rerun` in use.
+- Golden Path either completes or times out with explicit user message < 90s.
+- Decision UI clearly indicates create/list only scope.
+
+### 19.6 Minimal Remaining Polish (Optional Pre-Tag)
+| Item | Effort | Status |
+|------|--------|--------|
+| Model metadata badge states | XS | Pending |
+| Golden Path final status wording | XS | Pending |
+| Smoke script (ingest→predict→decision→metrics) | S | Pending |
+| Metrics page “Snapshot Only” label | XS | Pending |
+
+### 19.7 Rationale for Deferral Strategy
+Bandwidth limited; prioritizing reliability > breadth. Deferred items either: (a) require additional backend contracts (artifacts, streaming), or (b) are experiential enhancements (correlation analytics) not critical for first user value demonstration.
+
+---
+_Addendum committed 2025-09-28 – further changes require explicit scope change approval._
+
 ## 15. Artifact Inventory (Today’s Key Changes)
 | Artifact | Change Type | Rationale |
 |----------|-------------|-----------|
