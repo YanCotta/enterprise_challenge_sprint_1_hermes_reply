@@ -11,8 +11,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - DISABLE_CHROMADB=true  # Disable ChromaDB for now due to SQLite version
-      - DISABLE_MLFLOW_MODEL_LOADING=true  # Fast-fail: disable MLflow model registry calls to avoid startup/network blocking
-      # MLFLOW_S3_ENDPOINT_URL removed - use standard AWS S3 endpoints for artifact access
+      - DISABLE_MLFLOW_MODEL_LOADING=false  # Allow MLflow-powered endpoints during validation
+      - MLFLOW_S3_ENDPOINT_URL=https://s3.us-east-2.amazonaws.com
     env_file:
       - .env
     depends_on:
@@ -158,7 +158,8 @@ services:
       - "5000:5000"
     environment:
       - MLFLOW_BACKEND_STORE_URI=sqlite:////mlflow_db/mlflow.db
-      - MLFLOW_ARTIFACT_ROOT=file:/mlruns
+      - MLFLOW_ARTIFACT_ROOT=s3://yan-smart-maintenance-artifacts
+      - MLFLOW_S3_ENDPOINT_URL=https://s3.us-east-2.amazonaws.com
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
