@@ -7,6 +7,7 @@ using our validated MLflow Model Registry integration from Day 11.
 
 import logging
 import uuid
+import math
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
@@ -48,6 +49,87 @@ def get_api_key_identifier(request: Request):
 
 # Initialize rate limiter for ML endpoints
 limiter = Limiter(key_func=get_api_key_identifier)
+
+ANOMALY_DEFAULT_FEATURE_ORDER = [
+    "value_lag_1",
+    "value_lag_2",
+    "value_lag_3",
+    "value_lag_4",
+    "value_lag_5",
+    "value_scaled",
+    "quality_scaled",
+]
+ANOMALY_HISTORY_LOOKBACK = 12  # Fetch a modest history window per sensor for lag construction
+ANOMALY_SCALE_BASELINES = {
+    "value": {"min": 12.816, "max": 83.193},
+    "quality": {"min": 0.0, "max": 1.0},
+}
+
+
+def _min_max_scale(value: float, lower: float, upper: float) -> float:
+    """Safely scale a numeric value into [0, 1] range."""
+    if upper <= lower:
+        return 0.5
+    scaled = (value - lower) / (upper - lower)
+    return float(min(1.0, max(0.0, scaled)))
+
+
+def _resolve_feature_order(
+    feature_names: Optional[List[str]],
+    model,
+    expected_count: Optional[int],
+) -> List[str]:
+    """Resolve the feature ordering to feed the anomaly model."""
+    if feature_names and isinstance(feature_names, list):
+        if expected_count is None or len(feature_names) == expected_count:
+            return feature_names
+
+    model_feature_names = getattr(model, "feature_names_in_", None)
+    if model_feature_names is not None:
+        model_feature_list = list(model_feature_names)
+        if expected_count is None or len(model_feature_list) == expected_count:
+            return model_feature_list
+
+    if expected_count:
+        if expected_count <= len(ANOMALY_DEFAULT_FEATURE_ORDER):
+            return ANOMALY_DEFAULT_FEATURE_ORDER[:expected_count]
+        padding = [
+            f"feature_{idx}" for idx in range(len(ANOMALY_DEFAULT_FEATURE_ORDER) + 1, expected_count + 1)
+        ]
+        return ANOMALY_DEFAULT_FEATURE_ORDER + padding
+
+    return ANOMALY_DEFAULT_FEATURE_ORDER
+
+
+async def _fetch_sensor_histories(
+    db: AsyncSession,
+    readings: List[SensorReading],
+    history_limit: int = ANOMALY_HISTORY_LOOKBACK,
+) -> Dict[str, List[SensorReading]]:
+    """Retrieve recent sensor readings per sensor_id for feature engineering."""
+    histories: Dict[str, List[SensorReading]] = {}
+    for reading in readings:
+        sensor_id = reading.sensor_id
+        if not sensor_id or sensor_id in histories:
+            continue
+        try:
+            raw_history = await crud_sensor_reading.get_sensor_readings_by_sensor_id(
+                db,
+                sensor_id=sensor_id,
+                limit=history_limit,
+            )
+            histories[sensor_id] = [
+                crud_sensor_reading.orm_to_pydantic(item) for item in raw_history
+            ]
+        except Exception as history_error:  # noqa: BLE001
+            logger.warning(
+                "Unable to load historical readings for sensor %s: %s",
+                sensor_id,
+                history_error,
+            )
+            histories[sensor_id] = []
+    return histories
+
 
 # ==============================================================================
 # REQUEST/RESPONSE SCHEMAS
@@ -301,83 +383,145 @@ def prepare_features_for_prediction(features: Dict[str, Any], model_name: str) -
 
 
 def analyze_sensor_readings_for_anomalies(
-    readings: List[SensorReading], 
-    model, 
-    sensitivity: float
+    readings: List[SensorReading],
+    model,
+    sensitivity: float,
+    feature_names: Optional[List[str]] = None,
+    sensor_histories: Optional[Dict[str, List[SensorReading]]] = None,
 ) -> List[AnomalyAlert]:
     """
     Analyze sensor readings for anomalies using the loaded model.
-    
-    Args:
-        readings: List of sensor readings to analyze
-        model: Loaded MLflow model
-        sensitivity: Detection sensitivity threshold
-        
-    Returns:
-        List of detected anomaly alerts
+
+    Builds feature vectors that mirror the feature engineering used during training
+    (lagged value windows and scaled value/quality columns).
     """
-    anomalies = []
-    
+    sensor_histories = sensor_histories or {}
+    anomalies: List[AnomalyAlert] = []
+    expected_features = getattr(model, "n_features_in_", None)
+    feature_order = _resolve_feature_order(feature_names, model, expected_features)
+
     try:
         for reading in readings:
-            # Prepare features for anomaly detection
-            # This is a simplified example - adjust based on your anomaly detection model
-            features = {
-                "value": reading.value,
-                "sensor_type": reading.sensor_type.value if hasattr(reading.sensor_type, 'value') else str(reading.sensor_type),
-                "quality": reading.quality
+            if reading.value is None:
+                logger.debug("Skipping reading %s due to missing value", reading.sensor_id)
+                continue
+
+            sensor_id = reading.sensor_id or "unknown"
+            history = sensor_histories.get(sensor_id, [])
+            sorted_history = sorted(
+                history,
+                key=lambda item: item.timestamp or datetime.min,
+            )
+
+            # Gather prior values strictly before the current reading when timestamps allow.
+            lag_candidates: List[float] = []
+            for item in sorted_history:
+                if item.value is None:
+                    continue
+                if reading.timestamp and item.timestamp and item.timestamp >= reading.timestamp:
+                    continue
+                lag_candidates.append(float(item.value))
+
+            current_value = float(reading.value)
+            if not lag_candidates:
+                lag_candidates = [current_value]
+
+            lag_values: List[float] = []
+            for offset in range(1, 6):
+                index = -offset
+                if len(lag_candidates) >= offset:
+                    lag_values.append(float(lag_candidates[index]))
+                else:
+                    lag_values.append(float(lag_candidates[0]))
+
+            # Min-max scaling for value and quality using training baselines extended with live data.
+            value_reference = lag_candidates + [current_value]
+            value_lower = min([ANOMALY_SCALE_BASELINES["value"]["min"]] + value_reference)
+            value_upper = max([ANOMALY_SCALE_BASELINES["value"]["max"]] + value_reference)
+            value_scaled = _min_max_scale(current_value, value_lower, value_upper)
+
+            quality_value = float(reading.quality) if reading.quality is not None else 0.5
+            quality_reference = [quality_value]
+            for item in sorted_history:
+                if item.quality is not None:
+                    quality_reference.append(float(item.quality))
+            quality_lower = min([ANOMALY_SCALE_BASELINES["quality"]["min"]] + quality_reference)
+            quality_upper = max([ANOMALY_SCALE_BASELINES["quality"]["max"]] + quality_reference)
+            quality_scaled = _min_max_scale(quality_value, quality_lower, quality_upper)
+
+            feature_payload: Dict[str, float] = {
+                "value_scaled": value_scaled,
+                "quality_scaled": quality_scaled,
             }
-            
-            # Convert to model input format
-            feature_array = np.array([[reading.value, reading.quality]])
-            
-            # Get anomaly prediction
-            prediction = model.predict(feature_array)
-            
-            # Check if anomaly detected (adjust logic based on your model output)
-            is_anomaly = False
-            confidence = 0.0
-            
-            if hasattr(prediction, '__len__') and len(prediction) > 0:
-                # For models that return anomaly scores
-                score = float(prediction[0])
-                is_anomaly = score > sensitivity
-                confidence = score
-            else:
-                # For models that return binary predictions
-                is_anomaly = bool(prediction)
-                confidence = 1.0 if is_anomaly else 0.0
-            
-            if is_anomaly:
-                anomaly = AnomalyAlert(
-                    sensor_id=reading.sensor_id,
-                    anomaly_type=AnomalyType.STATISTICAL_THRESHOLD,
-                    severity=min(5, max(1, int(confidence * 5))),  # Scale confidence to severity 1-5
-                    confidence=confidence,
-                    description=f"Anomaly detected in {reading.sensor_type} sensor. Value: {reading.value} {reading.unit}",
-                    evidence={
-                        "sensor_value": reading.value,
-                        "sensor_unit": reading.unit,
-                        "sensor_type": str(reading.sensor_type),
-                        "quality_score": reading.quality,
-                        "anomaly_score": confidence,
-                        "timestamp": reading.timestamp.isoformat() if reading.timestamp else None
-                    },
-                    recommended_actions=[
-                        "Investigate sensor reading",
-                        "Check sensor calibration",
-                        "Review historical data for patterns"
-                    ]
-                )
-                anomalies.append(anomaly)
-                
-    except Exception as e:
-        logger.error(f"Error analyzing sensor readings for anomalies: {e}")
+            for idx, name in enumerate(ANOMALY_DEFAULT_FEATURE_ORDER[:5]):
+                feature_payload[name] = lag_values[idx]
+
+            ordered_payload = {name: float(feature_payload.get(name, 0.0)) for name in feature_order}
+            feature_df = pd.DataFrame([ordered_payload], columns=feature_order)
+            feature_array = feature_df.to_numpy(dtype=float)
+
+            prediction = model.predict(feature_df)
+            prediction_array = np.asarray(prediction)
+            prediction_value = prediction_array.flat[0] if prediction_array.size else prediction
+            is_anomaly_label = bool(prediction_value == -1 or str(prediction_value).lower() == "anomaly")
+
+            anomaly_score = None
+            native_model = getattr(model, "_model_impl", None)
+            if native_model is not None:
+                if hasattr(native_model, "decision_function"):
+                    try:
+                        raw_decision = float(native_model.decision_function(feature_array)[0])
+                        anomaly_score = 1.0 / (1.0 + math.exp(raw_decision))
+                    except Exception as score_error:  # noqa: BLE001
+                        logger.debug("decision_function failed for %s: %s", sensor_id, score_error)
+                if anomaly_score is None and hasattr(native_model, "score_samples"):
+                    try:
+                        raw_score = float(native_model.score_samples(feature_array)[0])
+                        anomaly_score = 1.0 / (1.0 + math.exp(-raw_score))
+                    except Exception as score_error:  # noqa: BLE001
+                        logger.debug("score_samples failed for %s: %s", sensor_id, score_error)
+
+            if anomaly_score is None:
+                anomaly_score = 1.0 if is_anomaly_label else 0.0
+
+            is_anomaly = is_anomaly_label or anomaly_score >= sensitivity
+            if not is_anomaly:
+                continue
+
+            severity = min(5, max(1, int(round(anomaly_score * 5))))
+            anomaly = AnomalyAlert(
+                sensor_id=sensor_id,
+                anomaly_type=AnomalyType.ISOLATION_FOREST,
+                severity=severity,
+                confidence=anomaly_score,
+                description=(
+                    f"Isolation Forest detected anomaly (score={anomaly_score:.3f}, "
+                    f"sensitivity={sensitivity:.2f})"
+                ),
+                evidence={
+                    "sensor_value": current_value,
+                    "sensor_unit": reading.unit,
+                    "sensor_type": str(reading.sensor_type),
+                    "quality_score": quality_value,
+                    "feature_vector": ordered_payload,
+                },
+                recommended_actions=[
+                    "Investigate sensor reading",
+                    "Check sensor calibration",
+                    "Review historical data for patterns",
+                ],
+            )
+            anomalies.append(anomaly)
+
+    except HTTPException:
+        raise
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Error analyzing sensor readings for anomalies: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Anomaly analysis failed: {str(e)}"
-        )
-    
+            detail=f"Anomaly analysis failed: {str(e)}",
+        ) from e
+
     return anomalies
 
 
@@ -660,7 +804,7 @@ async def detect_anomaly(
     
     try:
         # Load anomaly detection model from MLflow Registry
-        model, _ = load_model(request.model_name, request.model_version)
+        model, feature_names = load_model(request.model_name, request.model_version)
 
         if model is None:
             raise HTTPException(
@@ -668,11 +812,16 @@ async def detect_anomaly(
                 detail=f"Anomaly detection model '{request.model_name}' version '{request.model_version}' not found"
             )
         
+        # Fetch sensor histories for feature enrichment
+        sensor_histories = await _fetch_sensor_histories(db, request.sensor_readings, ANOMALY_HISTORY_LOOKBACK)
+
         # Analyze sensor readings for anomalies
         detected_anomalies = analyze_sensor_readings_for_anomalies(
-            request.sensor_readings, 
-            model, 
-            request.sensitivity
+            request.sensor_readings,
+            model,
+            request.sensitivity,
+            feature_names=feature_names,
+            sensor_histories=sensor_histories,
         )
         
         # Prepare response
@@ -682,8 +831,8 @@ async def detect_anomaly(
             anomaly_count=len(detected_anomalies),
             model_info={
                 "model_name": request.model_name,
-                "model_version": request.model_version,
-                "sensitivity": request.sensitivity,
+                "model_version": str(request.model_version),
+                "sensitivity": f"{request.sensitivity:.3f}",
                 "loaded_from": "MLflow Model Registry"
             }
         )
