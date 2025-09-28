@@ -19,6 +19,45 @@ client = MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
 
 _model_cache: Dict[str, Tuple[Any, Optional[List[str]]]] = {}
 
+# Direct S3 fallbacks for scenarios where the MLflow registry is unavailable but
+# artifacts are still stored remotely. URIs are derived from docs/S3_ARTIFACT_MAPPING.md.
+S3_MODEL_URIS: Dict[str, str] = {
+    "ai4i_classifier_randomforest_baseline": "s3://yan-smart-maintenance-artifacts/4/c795e657a4d147f1ac84ea0dc2bb68f1/artifacts/model",
+    "anomaly_detector_refined_v2": "s3://yan-smart-maintenance-artifacts/2/b702f86472f44eefb1d24ec0b68361ad/artifacts/model",
+}
+
+# Feature name hints for S3 fallbacks when feature_names.txt is not accessible.
+S3_FEATURE_NAME_HINTS: Dict[str, List[str]] = {
+    "ai4i_classifier_randomforest_baseline": [
+        "Air_temperature_K",
+        "Process_temperature_K",
+        "Rotational_speed_rpm",
+        "Torque_Nm",
+        "Tool_wear_min",
+    ],
+}
+
+
+def _load_from_s3_fallback(model_name: str) -> Tuple[Optional[Any], Optional[List[str]]]:
+    """Attempt to load a model directly from S3 when the registry lookup fails."""
+
+    s3_uri = S3_MODEL_URIS.get(model_name)
+    if not s3_uri:
+        logger.debug("No S3 fallback registered for model '%s'", model_name)
+        return None, None
+
+    try:
+        logger.warning("Falling back to S3 for model '%s' (%s)", model_name, s3_uri)
+        loaded_model = mlflow.pyfunc.load_model(s3_uri)
+        feature_names = S3_FEATURE_NAME_HINTS.get(model_name)
+        if feature_names:
+            logger.info("Loaded S3 fallback with feature schema for model '%s'", model_name)
+        return loaded_model, feature_names
+    except Exception as s3_err:  # noqa: BLE001
+        logger.error("S3 fallback load failed for model '%s': %s", model_name, s3_err, exc_info=True)
+        print(f"Failed S3 fallback for model '{model_name}': {s3_err}")
+        return None, None
+
 
 def _debug_list_model_versions(model_name: str) -> None:
     """Log available versions for a model to aid troubleshooting."""
@@ -152,6 +191,10 @@ def load_model(model_name: str, model_version: str = "1") -> Tuple[Optional[Any]
         # Print full stack trace to stdout for container log capture
         traceback.print_exc()
         print(f"--- END MLFLOW LOAD EXCEPTION ---")
+        fallback_model, fallback_features = _load_from_s3_fallback(model_name)
+        if fallback_model is not None:
+            _model_cache[cache_key] = (fallback_model, fallback_features)
+            return fallback_model, fallback_features
     return None, None
 
 
