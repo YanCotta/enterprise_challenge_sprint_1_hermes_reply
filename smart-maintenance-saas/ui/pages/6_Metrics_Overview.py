@@ -28,7 +28,7 @@ def render_metrics_overview():
 
     top_col1, top_col2, top_col3 = st.columns([2,1,1])
     with top_col1:
-        st.caption("Snapshot view. Not streaming; use Refresh or wait auto-update.")
+        st.info("Snapshot Only – Streaming Deferred (V1.5). Use Refresh or auto-update for a new snapshot.")
     with top_col2:
         if st.button("🔄 Refresh Now"):
             st.session_state.metrics_last_refresh = None
