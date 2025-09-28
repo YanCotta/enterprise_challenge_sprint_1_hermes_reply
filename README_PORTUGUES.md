@@ -11,6 +11,8 @@
 [![Performance](https://img.shields.io/badge/API%20Response-<2s-purple)](.)
 [![Cloud](https://img.shields.io/badge/Cloud-Pronto-orange)](.)
 
+## DOCUMENTACAO DESATUALIZADA -> SERA ATUALIZADA ATE DIA 03/10, NO LANCAMENTO DA VERSAO 1.0
+
 ## Visão Geral
 
 Plataforma de manutenção preditiva pronta para produção, entregando escopo V1.0 mínimo com 94.5% de prontidão. Apresenta implantação cloud-native, orquestração multi-agente e insights de manutenção orientados por dados otimizados para aplicações industriais.

@@ -11,6 +11,8 @@
 [![Performance](https://img.shields.io/badge/API%20Response-<2s-purple)](.)
 [![Cloud](https://img.shields.io/badge/Cloud-Ready-orange)](.)
 
+## DOCUMENTATION OUTDATED, WILL BE UPDATED BY 10/03, AT V1.0 RELEASE
+
 ## Overview
 
 A production-ready predictive maintenance platform delivering V1.0 minimal scope with 94.5% readiness. Features cloud-native deployment, multi-agent orchestration, and data-driven maintenance insights optimized for industrial applications.
