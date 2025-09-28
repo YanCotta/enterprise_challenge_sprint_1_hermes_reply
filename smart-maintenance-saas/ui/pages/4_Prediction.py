@@ -97,6 +97,8 @@ def render_prediction_page():
         else:
             st.error("Prediction failed")
             st.caption(resp.get("error", "Unknown error"))
+            if resp.get("hint"):
+                st.caption(f"Hint: {resp['hint']}")
 
 
 render_prediction_page()
