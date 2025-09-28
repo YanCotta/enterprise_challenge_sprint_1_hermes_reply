@@ -472,3 +472,34 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 
 ---
 
+## 20. Session Update – 2025-09-28 (Golden Path Validation & Smoke Prep)
+
+### 20.1 Highlights
+
+- Resolved Golden Path prediction stall by publishing a fully populated `MaintenancePredictedEvent` within `apps/api/routers/demo.py`, aligning payload with strict datetime requirements.
+- Rebuilt `api`/`ui` images and confirmed the demo now reaches `complete` status with ingest-to-prediction latency surfaced in the UI.
+- Executed `scripts/smoke_v1.py` inside the API container; ingestion verification currently fails because the synthetic reading is not persisted fast enough to appear in `/api/v1/sensors/readings`. Added retries but observed consistent empty result.
+- Identified MLflow container startup failure due to remote backend dependencies; plan formed to point MLflow to local SQLite storage (`mlflow_db`, `mlflow_data`) so prediction endpoints can resolve model metadata during smoke validation.
+
+### 20.2 Current Findings
+
+| Area | Observation | Action |
+|------|-------------|--------|
+| Golden Path Demo | Completes end-to-end; optional human decision stage also triggered when requested. | No further action required before next UI checks. |
+| Smoke Script | Ingest step returns HTTP 200 but verification loop exhausts retries (`Reading not yet available`). | Investigate persistence lag or adjust script to read from a dedicated inspection endpoint (post-MLflow fix). |
+| MLflow Service | Container logs show Alembic revision errors against remote backend, preventing startup; smoke test prediction depends on this service. | Switch configuration to local backend/artifact folders and restart stack. |
+
+### 20.3 Next Steps (Post-Lunch)
+
+1. Update MLflow settings (`MLFLOW_BACKEND_STORE_URI`, `MLFLOW_ARTIFACT_ROOT`) to use local volumes and restart stack to confirm healthy state.
+2. Re-run `scripts/smoke_v1.py` to validate ingest → predict → decision → metrics once MLflow is reachable.
+3. Continue sequential UI verification across remaining pages, capturing any regressions introduced during recent refactors.
+4. Log outcomes back into this changelog alongside any additional fixes applied.
+
+### 20.4 Pending Risks
+
+- Smoke script currently classifies ingestion verification as failure, blocking full pass/fail reporting. Need a reliable sensor-readings confirmation or alternative success criterion.
+- MLflow unavailability keeps prediction endpoints from returning realistic model metadata; UI pages relying on metadata may still reflect degraded messaging until service healthy.
+
+---
+
