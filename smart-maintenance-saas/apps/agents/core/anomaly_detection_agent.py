@@ -24,6 +24,30 @@ from data.exceptions import (
 )
 
 
+ANOMALY_DEFAULT_FEATURE_ORDER = [
+    "value_lag_1",
+    "value_lag_2",
+    "value_lag_3",
+    "value_lag_4",
+    "value_lag_5",
+    "value_scaled",
+    "quality_scaled",
+]
+ANOMALY_HISTORY_LOOKBACK = 12
+ANOMALY_SCALE_BASELINES = {
+    "value": {"min": 12.816, "max": 83.193},
+    "quality": {"min": 0.0, "max": 1.0},
+}
+
+
+def _min_max_scale(value: float, lower: float, upper: float) -> float:
+    """Min-max scale a value with graceful handling of degenerate ranges."""
+    if upper <= lower:
+        return 0.5
+    scaled = (value - lower) / (upper - lower)
+    return float(min(1.0, max(0.0, scaled)))
+
+
 class AnomalyDetectionAgent(BaseAgent):
     """
     Agent responsible for detecting anomalies in processed sensor data using ML models.
@@ -129,6 +153,7 @@ class AnomalyDetectionAgent(BaseAgent):
             "sensor_vibr_001": {"mean": 0.05, "std": 0.02},
             "sensor_press_001": {"mean": 101.3, "std": 1.5},
         }
+        self.sensor_history: Dict[str, List[Dict[str, Any]]] = {}
         self._validate_historical_data() # Can raise ConfigurationError
         
         self.logger.info(
@@ -174,8 +199,58 @@ class AnomalyDetectionAgent(BaseAgent):
         )
 
     def _extract_features(self, reading: SensorReading) -> np.ndarray:
-        # This method is simple; if it grew complex, it could raise AgentProcessingError.
-        return np.array([[reading.value]])
+        sensor_id = reading.sensor_id or "unknown"
+        history = self.sensor_history.get(sensor_id, [])
+        reading_ts = reading.timestamp
+        if reading_ts is not None:
+            reading_ts = reading_ts.replace(tzinfo=None)
+
+        lag_candidates: List[float] = []
+        for entry in history:
+            entry_value = entry.get("value")
+            if entry_value is None:
+                continue
+            entry_ts = entry.get("timestamp")
+            if reading_ts is not None and entry_ts is not None and entry_ts >= reading_ts:
+                continue
+            lag_candidates.append(float(entry_value))
+
+        current_value = float(reading.value)
+        if not lag_candidates:
+            lag_candidates = [current_value]
+
+        lag_values: List[float] = []
+        fallback_value = lag_candidates[0]
+        for offset in range(1, 6):
+            if len(lag_candidates) >= offset:
+                lag_values.append(float(lag_candidates[-offset]))
+            else:
+                lag_values.append(float(fallback_value))
+
+        value_reference = lag_candidates + [current_value]
+        value_lower = min([ANOMALY_SCALE_BASELINES["value"]["min"]] + value_reference)
+        value_upper = max([ANOMALY_SCALE_BASELINES["value"]["max"]] + value_reference)
+        value_scaled = _min_max_scale(current_value, value_lower, value_upper)
+
+        quality_value = float(reading.quality) if reading.quality is not None else 0.5
+        quality_reference = [quality_value]
+        for entry in history:
+            entry_quality = entry.get("quality")
+            if entry_quality is not None:
+                quality_reference.append(float(entry_quality))
+        quality_lower = min([ANOMALY_SCALE_BASELINES["quality"]["min"]] + quality_reference)
+        quality_upper = max([ANOMALY_SCALE_BASELINES["quality"]["max"]] + quality_reference)
+        quality_scaled = _min_max_scale(quality_value, quality_lower, quality_upper)
+
+        feature_payload: Dict[str, float] = {
+            "value_scaled": value_scaled,
+            "quality_scaled": quality_scaled,
+        }
+        for idx, feature_name in enumerate(ANOMALY_DEFAULT_FEATURE_ORDER[:5]):
+            feature_payload[feature_name] = lag_values[idx]
+
+        ordered_features = [float(feature_payload.get(name, 0.0)) for name in ANOMALY_DEFAULT_FEATURE_ORDER]
+        return np.array([ordered_features], dtype=float)
 
     async def process(self, event: DataProcessedEvent) -> None:
         """
@@ -239,6 +314,7 @@ class AnomalyDetectionAgent(BaseAgent):
                         extra={"correlation_id": correlation_id}
                     )
                     return # Or raise AgentProcessingError if this is a hard failure
+                self._update_sensor_history(reading)
             except Exception as e: # Catch any unexpected error during feature extraction
                 raise AgentProcessingError(
                     message=f"Feature extraction failed for sensor {reading.sensor_id} in event {_event_id_for_log}: {str(e)}",
@@ -795,8 +871,8 @@ class AnomalyDetectionAgent(BaseAgent):
             normalized_score = max(-1.0, min(0.0, if_score)) # Cap score for safety
             if_confidence = 0.5 + (abs(normalized_score) * 0.5) # e.g. if_score -0.2 -> 0.5 + 0.1 = 0.6; if_score -0.5 -> 0.5 + 0.25 = 0.75
             if_confidence = max(0.5, min(1.0, if_confidence)) # Ensure it's within a sensible range for anomaly confidence
-        else: # Not an IF anomaly
-            if_confidence = 0.1 # Low confidence if IF doesn't flag it
+        else:  # Not an IF anomaly
+            if_confidence = 0.1  # Low confidence if IF doesn't flag it
 
         final_confidence_score = 0.0
         if if_prediction == -1 and stat_is_anomaly: # Both agree
@@ -918,12 +994,8 @@ class AnomalyDetectionAgent(BaseAgent):
             correlation_id = f"direct_detection_{sensor_reading.sensor_id}_{int(datetime.utcnow().timestamp())}"
             
             # Create features for ML models 
-            features = np.array([[
-                sensor_reading.value,
-                sensor_reading.quality,
-                hash(sensor_reading.sensor_id) % 1000,  # Sensor hash feature
-                1.0 if sensor_reading.unit else 0.0,    # Has unit feature
-            ]])
+            features = self._extract_features(sensor_reading)
+            self._update_sensor_history(sensor_reading)
             
             # Process with ML models to get anomaly prediction
             prediction, confidence = await self._process_ml_models(features, sensor_reading, correlation_id)
@@ -971,3 +1043,19 @@ class AnomalyDetectionAgent(BaseAgent):
                 exc_info=True
             )
             return None
+
+    def _update_sensor_history(self, reading: SensorReading) -> None:
+        sensor_id = reading.sensor_id or "unknown"
+        history = self.sensor_history.setdefault(sensor_id, [])
+        timestamp = reading.timestamp
+        if timestamp is not None:
+            timestamp = timestamp.replace(tzinfo=None)
+        history.append(
+            {
+                "value": float(reading.value),
+                "quality": float(reading.quality) if reading.quality is not None else None,
+                "timestamp": timestamp,
+            }
+        )
+        if len(history) > ANOMALY_HISTORY_LOOKBACK:
+            history.pop(0)
