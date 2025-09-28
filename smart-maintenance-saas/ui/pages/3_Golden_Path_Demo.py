@@ -30,9 +30,28 @@ def render_golden_path_page():
         st.session_state.correlation_id = None
     if "demo_start_time" not in st.session_state:
         st.session_state.demo_start_time = None
+    if "demo_terminal_state" not in st.session_state:
+        st.session_state.demo_terminal_state = None
+    if "demo_terminal_reason" not in st.session_state:
+        st.session_state.demo_terminal_reason = None
 
     # Demo timeout configuration (90 seconds max runtime)
     MAX_DEMO_RUNTIME_SECONDS = 90
+
+    if st.session_state.demo_terminal_state and not st.session_state.demo_running:
+        cid = st.session_state.get("correlation_id") or "unknown"
+        reason = st.session_state.get("demo_terminal_reason")
+        state = st.session_state.demo_terminal_state
+        if state == "success":
+            st.success(f"Completed Successfully – correlation_id={cid}")
+        elif state == "timeout":
+            detail = reason or f"Demo exceeded {MAX_DEMO_RUNTIME_SECONDS}s. Retry or inspect event bus." 
+            st.warning(f"Timed Out – correlation_id={cid}. {detail}")
+        elif state == "failed":
+            message = f"Failed – correlation_id={cid}"
+            if reason:
+                message += f" (reason: {reason})"
+            st.error(message)
 
     col_launch, col_opts = st.columns([2, 3])
     with col_opts:
@@ -47,6 +66,8 @@ def render_golden_path_page():
                     st.session_state.correlation_id = start_result["data"]["correlation_id"]
                     st.session_state.demo_running = True
                     st.session_state.demo_start_time = datetime.now()
+                    st.session_state.demo_terminal_state = None
+                    st.session_state.demo_terminal_reason = None
                     safe_rerun()
                 else:
                     st.error("Failed to start the demo.")
@@ -59,9 +80,13 @@ def render_golden_path_page():
         status_url = f"/api/v1/demo/golden-path/status/{st.session_state.correlation_id}"
         status_result = make_api_request("GET", status_url)
         if not status_result.get("success"):
-            st.error("Could not fetch demo status. It may have expired.")
+            error_msg = status_result.get("error", "Status endpoint unavailable")
             st.session_state.demo_running = False
-            st.stop()
+            st.session_state.demo_terminal_state = "failed"
+            st.session_state.demo_terminal_reason = error_msg
+            st.error("Failed to fetch demo status. It may have expired or the backend is unavailable.")
+            st.error(error_msg)
+            return
         data = status_result["data"]
 
         tabs = st.tabs(["Pipeline", "Events", "Metrics"])
@@ -84,9 +109,20 @@ def render_golden_path_page():
 
             overall = data.get("status")
             if overall == "complete":
-                st.success("🎉 Pipeline complete")
+                st.success(f"Completed Successfully – correlation_id={st.session_state.correlation_id}")
+                st.session_state.demo_terminal_state = "success"
+                st.session_state.demo_terminal_reason = None
             elif overall == "failed":
-                st.error("Pipeline failed – see Errors in Metrics tab")
+                failure_reason = None
+                if data.get("errors"):
+                    failure_reason = data["errors"]
+                    if isinstance(failure_reason, list):
+                        failure_reason = "; ".join(str(e) for e in failure_reason[:3])
+                st.error(f"Failed – correlation_id={st.session_state.correlation_id}")
+                if failure_reason:
+                    st.caption(f"Reason: {failure_reason}")
+                st.session_state.demo_terminal_state = "failed"
+                st.session_state.demo_terminal_reason = failure_reason
 
         # Events Tab
         with tabs[1]:
@@ -120,7 +156,9 @@ def render_golden_path_page():
             if st.session_state.demo_start_time:
                 elapsed = datetime.now() - st.session_state.demo_start_time
                 if elapsed.total_seconds() > MAX_DEMO_RUNTIME_SECONDS:
-                    st.warning(f"⏰ Demo timed out after {MAX_DEMO_RUNTIME_SECONDS}s. Status may be stale/incomplete.")
+                    st.warning(f"Timed Out – correlation_id={st.session_state.correlation_id}. Demo exceeded {MAX_DEMO_RUNTIME_SECONDS}s; status may be stale or incomplete.")
+                    st.session_state.demo_terminal_state = "timeout"
+                    st.session_state.demo_terminal_reason = None
                     st.session_state.demo_running = False
                     st.session_state.correlation_id = st.session_state.correlation_id  # keep for viewing
                 else:
