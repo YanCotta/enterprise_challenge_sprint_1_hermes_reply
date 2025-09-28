@@ -2,7 +2,7 @@ import json
 import uuid
 import logging
 import random
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Dict, Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Query
@@ -242,18 +242,19 @@ async def _seed_events(correlation_id: str, count: int, coordinator):
         correlation_id=correlation_id,
     )
     await coordinator.event_bus.publish(validated)
+    failure_date = datetime.utcnow() + timedelta(days=42)
     prediction = MaintenancePredictedEvent(
         original_anomaly_event_id=anomaly.event_id,
         equipment_id=raw["sensor_id"],
-        predicted_failure_date=datetime.utcnow().isoformat(),
-        confidence_interval_lower=None,
-        confidence_interval_upper=None,
+        predicted_failure_date=failure_date,
+        confidence_interval_lower=failure_date - timedelta(days=3),
+        confidence_interval_upper=failure_date + timedelta(days=3),
         prediction_confidence=0.88,
         time_to_failure_days=42,
         maintenance_type="preventive",
         prediction_method="demo",
         historical_data_points=count,
-        model_metrics={"demo": True},
+        model_metrics={"mae": 0.12, "rmse": 0.18},
         recommended_actions=["inspect bearing"],
         agent_id="prediction_agent_01",
         correlation_id=correlation_id,
