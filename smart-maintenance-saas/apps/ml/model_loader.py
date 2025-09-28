@@ -5,6 +5,7 @@ from mlflow.artifacts import download_artifacts
 import os
 import logging
 import traceback
+import json
 from typing import Any, Dict, List, Optional, Tuple
 
 # Set up logging
@@ -34,6 +35,15 @@ S3_FEATURE_NAME_HINTS: Dict[str, List[str]] = {
         "Rotational_speed_rpm",
         "Torque_Nm",
         "Tool_wear_min",
+    ],
+    "anomaly_detector_refined_v2": [
+        "value_lag_1",
+        "value_lag_2",
+        "value_lag_3",
+        "value_lag_4",
+        "value_lag_5",
+        "value_scaled",
+        "quality_scaled",
     ],
 }
 
@@ -160,10 +170,19 @@ def load_model(model_name: str, model_version: str = "1") -> Tuple[Optional[Any]
                     local_path = download_artifacts(run_id=run_id, artifact_path=artifact_rel_path)
                     if os.path.isfile(local_path):
                         with open(local_path, "r", encoding="utf-8") as f:
-                            # Strip whitespace, ignore empty lines
-                            feature_names = [line.strip() for line in f if line.strip()]
-                        print(f"Loaded feature schema from artifact: {artifact_rel_path} -> {feature_names}")
-                        break
+                            raw_content = f.read().strip()
+                        if raw_content:
+                            try:
+                                parsed = json.loads(raw_content)
+                                if isinstance(parsed, list) and all(isinstance(item, str) for item in parsed):
+                                    feature_names = parsed
+                                else:
+                                    feature_names = [line.strip() for line in raw_content.splitlines() if line.strip()]
+                            except json.JSONDecodeError:
+                                feature_names = [line.strip() for line in raw_content.splitlines() if line.strip()]
+                        if feature_names:
+                            print(f"Loaded feature schema from artifact: {artifact_rel_path} -> {feature_names}")
+                            break
                 except Exception:
                     # Silent fallback - we'll report absence below
                     continue
