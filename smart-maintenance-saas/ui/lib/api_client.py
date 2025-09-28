@@ -139,26 +139,26 @@ def make_api_request(
             except ValueError:
                 pass
             record_latency(endpoint, elapsed_ms, {"status": response.status_code, "error": True})
-            return {"success": False, "error": err_msg, "status_code": response.status_code}
+            return format_error_with_hint({"success": False, "error": err_msg, "status_code": response.status_code})
 
         except requests.exceptions.Timeout:
             attempt += 1
             if attempt >= retries:
-                return {"success": False, "error": f"Timeout after {timeout}s (attempts={retries})"}
+                return format_error_with_hint({"success": False, "error": f"Timeout after {timeout}s (attempts={retries})"})
             sleep_for = backoff_base ** (attempt - 1)
             st.warning(f"Request timeout. Retrying in {sleep_for:.1f}s ({attempt}/{retries}) ...")
             time.sleep(sleep_for)
         except requests.exceptions.ConnectionError as e:
             attempt += 1
             if attempt >= retries:
-                return {"success": False, "error": f"Connection error after {retries} attempts: {e}"}
+                return format_error_with_hint({"success": False, "error": f"Connection error after {retries} attempts: {e}"})
             sleep_for = backoff_base ** (attempt - 1)
             st.warning(f"Connection error. Retrying in {sleep_for:.1f}s ({attempt}/{retries}) ...")
             time.sleep(sleep_for)
         except requests.exceptions.RequestException as e:  # Catch-all for Requests
-            return {"success": False, "error": f"Request exception: {e}"}
+            return format_error_with_hint({"success": False, "error": f"Request exception: {e}"})
 
-    return {"success": False, "error": "Unknown failure after retries"}
+    return format_error_with_hint({"success": False, "error": "Unknown failure after retries"})
 
 
 def make_long_api_request(
@@ -188,11 +188,14 @@ def health_ping() -> Dict[str, Any]:
 # ---------------- Error Guidance Layer (B2) -----------------
 
 _ERROR_PATTERNS: Tuple[Tuple[str, str], ...] = (
-    ("model not found", "The specified model name or version isn't registered. Verify spelling or load the model in MLflow."),
-    ("not found", "The resource does not exist. It may have expired or the ID is incorrect."),
+    ("model not found", "Check model name or confirm registry availability (Model Metadata page)."),
+    ("no models found", "No registered models – add one or re-enable MLflow."),
+    ("feature mismatch", "Verify feature names/types; align with training schema."),
+    ("missing required", "Verify feature names/types; align with training schema."),
+    ("timeout", "Temporary connectivity issue – retry or confirm API base URL."),
+    ("connection error", "Temporary connectivity issue – retry or confirm API base URL."),
+    ("failed to establish a new connection", "Temporary connectivity issue – retry or confirm API base URL."),
     ("validation error", "Input payload failed validation. Check required fields and types."),
-    ("timeout", "The request exceeded the time limit. Try reducing payload size or retry later."),
-    ("connection error", "UI cannot reach API service. Confirm container/network health."),
     ("permission", "Your API key may lack required scope. Confirm credentials."),
     ("unsupported media type", "The server rejected the content type. Ensure JSON body and headers are correct."),
     ("rate limit", "Too many requests in a short time. Slow down or check rate limit configuration."),
