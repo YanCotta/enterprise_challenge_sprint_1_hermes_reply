@@ -134,7 +134,7 @@ class SchedulingAgent(BaseAgent):
             optimized_schedule = await self.schedule_maintenance_task(maintenance_request, correlation_id=correlation_id)
             
             if optimized_schedule.status == ScheduleStatus.SCHEDULED:
-                await self._publish_maintenance_scheduled_event(event_obj, optimized_schedule, correlation_id=correlation_id)
+                await self._publish_maintenance_scheduled_event(prediction_event, optimized_schedule, correlation_id=correlation_id)
                 self.logger.info(
                     f"Successfully scheduled maintenance for request {maintenance_request.id}",
                     extra={"correlation_id": correlation_id}
