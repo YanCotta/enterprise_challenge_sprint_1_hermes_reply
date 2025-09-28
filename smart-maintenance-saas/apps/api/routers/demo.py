@@ -19,6 +19,7 @@ from core.events.event_models import (
     DataProcessedEvent,
     DataProcessingFailedEvent,
 )
+from data.schemas import DecisionRequest, DecisionType
 
 logger = logging.getLogger(__name__)
 
@@ -300,11 +301,33 @@ async def start_golden_path_demo(
             for _ in range(30):  # ~30 * 0.5s = 15s timeout
                 status = ACTIVE_DEMOS.get(correlation_id)
                 if status and any(s["name"] == "prediction" and s["status"] == "complete" for s in status["steps"]):
-                    evt = HumanDecisionRequiredEvent(
+                    prediction_event = next(
+                        (evt for evt in status["events"] if evt.get("event_type") == "MaintenancePredictedEvent"),
+                        None,
+                    )
+                    preview_payload = prediction_event.get("payload", {}) if prediction_event else {}
+                    recommended_actions = preview_payload.get("recommended_actions") or ["inspect bearing"]
+                    if not isinstance(recommended_actions, list):
+                        recommended_actions = [str(recommended_actions)]
+
+                    decision_request = DecisionRequest(
+                        request_id=f"demo_decision_{correlation_id}",
+                        decision_type=DecisionType.MAINTENANCE_APPROVAL,
+                        context={
+                            "equipment_id": preview_payload.get("equipment_id") or f"demo-sensor-{correlation_id[:4]}",
+                            "predicted_failure_date": preview_payload.get("predicted_failure_date"),
+                            "prediction_confidence": preview_payload.get("prediction_confidence", 0.75),
+                            "time_to_failure_days": preview_payload.get("time_to_failure_days", 30),
+                            "recommended_actions": recommended_actions,
+                        },
+                        options=["approve", "modify", "reject", "defer"],
+                        priority="medium",
+                        requester_agent_id="demo_orchestrator",
                         correlation_id=correlation_id,
-                        timestamp=datetime.utcnow(),
-                        event_id=uuid.uuid4(),
-                        # Minimal payload fields with placeholders
+                    )
+                    evt = HumanDecisionRequiredEvent(
+                        payload=decision_request,
+                        correlation_id=correlation_id,
                     )
                     await coordinator.event_bus.publish(evt)
                     break
