@@ -132,9 +132,9 @@ class HumanInterfaceAgent(BaseAgent):
                 payload=decision_response,
                 correlation_id=event.correlation_id
             )
-            
-            await self.event_bus.publish("HumanDecisionResponseEvent", response_event)
-            
+
+            await self.event_bus.publish(response_event)
+
             logger.info(
                 f"Agent {self.agent_id} published decision response for request {decision_request.request_id}: "
                 f"'{decision}'. Correlation ID: {event.correlation_id}"
