@@ -26,6 +26,7 @@ def render_decision_log_page():
     """Renders the decision log page for viewing and submitting human decisions."""
     st.header("📋 Decision Audit Trail")
     st.caption("Filter, inspect, and record human decisions. Maintenance logs tab reserved for future integration.")
+    st.caption("Create/List only (update/delete deferred to V1.5+).")
 
     # --- STATE MANAGEMENT FOR PAGINATION ---
     if 'decision_log_offset' not in st.session_state:
