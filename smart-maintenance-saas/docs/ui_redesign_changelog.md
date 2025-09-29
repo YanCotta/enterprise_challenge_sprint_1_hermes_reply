@@ -1,9 +1,11 @@
 ﻿# UI Redesign Pivot Changelog (Session Date: 2025-09-26)
 
 ## 1. Executive Summary
+
 We initiated a strategic pivot from a monolithic Streamlit prototype toward a modular, maintainable, and extensible UI architecture. The focus today was to (a) decompose legacy logic, (b) establish robust data exploration & decision workflows, (c) introduce diagnostic & resilience layers, and (d) align backend persistence with emerging product semantics (human vs. maintenance decision records). Substantial groundwork is complete; remaining persistence & retrieval integration will continue next session.
 
 ## 2. High-Level Goals Addressed
+
 | Goal | Outcome |
 |------|---------|
 | Reduce monolithic coupling | Split into multi-page Streamlit structure with clear logical boundaries. |
@@ -16,7 +18,8 @@ We initiated a strategic pivot from a monolithic Streamlit prototype toward a mo
 | Migration readiness | Refactored Alembic env for async→sync URL translation & SSL normalization (in progress). |
 
 ## 3. Architectural & Structural Changes
-**Before:** Single large Streamlit script performing API calls inline; minimal abstraction; limited fault handling.  
+
+**Before:** Single large Streamlit script performing API calls inline; minimal abstraction; limited fault handling.
 **After:**
 
 - Multi-page pattern (`ui/pages/`) with discrete responsibilities.
@@ -25,6 +28,7 @@ We initiated a strategic pivot from a monolithic Streamlit prototype toward a mo
 - Clear path to add additional domain-focused pages without re-copying boilerplate.
 
 ## 4. New / Modified UI Pages
+
 | File | Purpose | Key Features Added Today |
 |------|---------|--------------------------|
 | `streamlit_app.py` | Root shell & navigation bootstrap | Slimmed down; delegates functionality to pages; health & ingestion quick checks retained. |
@@ -33,14 +37,17 @@ We initiated a strategic pivot from a monolithic Streamlit prototype toward a mo
 | `pages/9_debug.py` | Diagnostics & observability | API connectivity probe; latency capture; dynamic config echo for troubleshooting environment mismatches. |
 
 ## 5. Resilience & Observability Enhancements
+
 - Implemented unified API client layer:
   - Retry with backoff for transient network/API issues.
   - Latency timing & structured warnings for slow endpoints (e.g., sensor readings).
   - Config resolution & exposure for operator verification (base URL, environment values).
 - Added debug page to quickly surface: health status, request success/failure patterns, and raw response contexts.
 - Instrumented backend sensor readings endpoint to log query duration and emit warnings for outliers.
+- Hardened `apps/ml/model_utils.get_model_recommendations` normalization and added docker-executed unit tests so future UI recommendation panels surface consistent model lists.
 
 ## 6. Backend & Domain Model Adjustments
+
 - Confirmed mismatch between maintenance log listing endpoint (`/api/v1/decisions` → `MaintenanceLogORM`) and UI form that only emitted an event.
 - Chosen Solution (Option 2): Introduce a dedicated persistent human decision table instead of overloading maintenance logs.
 - Added `HumanDecisionORM` to `core/database/orm_models.py`:
@@ -48,6 +55,7 @@ We initiated a strategic pivot from a monolithic Streamlit prototype toward a mo
   - Serves as canonical audit record for human input events distinct from task execution logs.
 
 ## 7. Root Cause Analysis: Empty Decision Log
+
 | Symptom | Analysis | Resolution Path |
 |---------|----------|-----------------|
 | Decision log page remained empty after successful submissions | Submission endpoint published `HumanDecisionResponseEvent` only; retrieval endpoint queried unrelated table (`MaintenanceLogORM`). | Create persistent `human_decisions` table + new retrieval endpoint; update UI to query new source. |
@@ -66,15 +74,15 @@ We initiated a strategic pivot from a monolithic Streamlit prototype toward a mo
 
 | Fallback safety | Added defensive string replacement if parsing fails. | Completed |
 
-
 **Outstanding Technical Issue:** Container environment still exposes `ssl=require` despite normalization logic—likely due to:
-1. Environment variable substitution at container entry overriding modifications, or 
-2. Earlier import / config evaluation order before transformation executes.  
+
+1. Environment variable substitution at container entry overriding modifications, or
+2. Earlier import / config evaluation order before transformation executes.
+
 Next step: Log raw inbound `DATABASE_URL` early or echo inside container to confirm runtime value; possibly override via `MIGRATION_DATABASE_URL` export logic or sanitize in `entrypoint.sh`.
 
-
-
 ## 9. Pending Implementation Tasks (Queued for Next Session)
+
 | Priority | Task | Notes |
 |----------|------|-------|
 
@@ -90,6 +98,7 @@ Next step: Log raw inbound `DATABASE_URL` early or echo inside container to conf
 | Low | Refine debug page | Add human decisions count + migration status introspection. |
 
 ## 10. Design & Data Integrity Considerations
+
 - **Idempotency:** Use `request_id` for deduplicating retried decision submissions (possible unique constraint in future migration).
 - **Auditability:** `timestamp` server default ensures unbiased capture time; consider separate `submitted_at` vs `effective_at` if later workflow timing semantics required.
 
@@ -109,35 +118,28 @@ Next step: Log raw inbound `DATABASE_URL` early or echo inside container to conf
 
 | Duplicate decisions on retries | Data skew | Apply uniqueness (request_id + operator) or soft de-dupe logic when persisting. |
 
-
 ## 12. Validation Completed Today
 
-- Manual UI smoke tests for Data Explorer (filters & pagination render without errors). 
-- Decision submission returns HTTP 201 (event published). 
-- Debug page successfully surfaces API health & latency metrics. 
-
-- ORM model loaded by Alembic metadata (autogenerate attempt recognized metadata set; blocked only at connection). 
-
+- Manual UI smoke tests for Data Explorer (filters & pagination render without errors).
+- Decision submission returns HTTP 201 (event published).
+- Debug page successfully surfaces API health & latency metrics.
+- ORM model loaded by Alembic metadata (autogenerate attempt recognized metadata set; blocked only at connection).
 
 ## 13. Suggested Immediate Next Technical Steps
+
 1. Echo `DATABASE_URL` inside API container just before Alembic invocation to confirm unsanitized value.
 2. If still contains `ssl=`, export a patched `MIGRATION_DATABASE_URL` (replace segment) prior to `alembic` command.
-
-3. Generate migration; verify contains `human_decisions` definition (UUID PK + indexed fields). 
-
+3. Generate migration; verify contains `human_decisions` definition (UUID PK + indexed fields).
 4. Implement persistence in submission endpoint (wrap in try/except; on DB failure still publish event with warning?).
 5. Add GET endpoint + UI integration; differentiate human vs maintenance with tabbed interface.
 6. Add simple test: create → list → assert fields + ordering.
 
-
-
 ## 14. Longer-Term Enhancements (Backlog Candidates)
+
 - Add optional decision categories / taxonomy table.
 - Introduce soft delete / status flag for decisions (e.g., superseded, retracted).
 - Integrate streaming / WebSocket channel for real-time decision feed updates.
-
 - Add role-based visibility (operator vs supervisor) once auth layer matures.
-
 - Provide export (CSV / JSON) of human decisions for audit & model alignment tasks.
 
 ---
@@ -147,6 +149,7 @@ Next step: Log raw inbound `DATABASE_URL` early or echo inside container to conf
 **Purpose:** Record the formal narrowing of V1.0 to a minimal, stable UI set and disposition of previously “pending” tasks.
 
 ### 19.1 Final V1.0 UI Surface (Shipped / In-Scope)
+
 | Area | UI State | Notes |
 |------|----------|-------|
 | Ingestion | ✅ Working | Manual form + verify pattern |
@@ -162,15 +165,18 @@ Next step: Log raw inbound `DATABASE_URL` early or echo inside container to conf
 | Reporting Prototype | ⚠️ Prototype | JSON-only; artifacts deferred |
 
 ### 19.2 Removed / Superseded Items
+
 | Original Section Reference | Previous Intent | Current Disposition |
 |---------------------------|-----------------|--------------------|
 | Pending Implementation Tasks (Sec. 9) | Broader migration/test queue | Superseded: persistence finished; test expansion deferred |
 | Next Technical Steps (Sec. 13) | Immediate follow-ups | Folded into backlog / deferrals |
 
 ### 19.3 Deferred to V1.5+ (Canonical)
+
 Streaming metrics, artifact persistence/download, background (async) SHAP, bulk ingestion & batch prediction UI, multi-sensor correlation analytics, model recommendation optimization/virtualization, notifications UI, feature lineage, governance & retention policies.
 
 ### 19.4 Documentation Alignment Sources
+
 | Document | Role |
 |----------|------|
 | `PRIORITIZED_BACKLOG.md` | Canonical deferred list & V1.0 deliverables |
@@ -178,12 +184,14 @@ Streaming metrics, artifact persistence/download, background (async) SHAP, bulk 
 | `SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md` | Exposure inventory & endpoint mapping |
 
 ### 19.5 Acceptance Confirmation
+
 - No page references streaming, artifacts, SHAP background, bulk ops as present.
 - Deprecated `st.experimental_rerun` removed; centralized `safe_rerun` in use.
 - Golden Path either completes or times out with explicit user message < 90s.
 - Decision UI clearly indicates create/list only scope.
 
 ### 19.6 Minimal Remaining Polish (Optional Pre-Tag)
+
 | Item | Effort | Status |
 |------|--------|--------|
 | Model metadata badge states | XS | Pending |
@@ -192,12 +200,14 @@ Streaming metrics, artifact persistence/download, background (async) SHAP, bulk 
 | Metrics page “Snapshot Only” label | XS | Pending |
 
 ### 19.7 Rationale for Deferral Strategy
+
 Bandwidth limited; prioritizing reliability > breadth. Deferred items either: (a) require additional backend contracts (artifacts, streaming), or (b) are experiential enhancements (correlation analytics) not critical for first user value demonstration.
 
 ---
 _Addendum committed 2025-09-28 – further changes require explicit scope change approval._
 
 ## 15. Artifact Inventory (Today’s Key Changes)
+
 | Artifact | Change Type | Rationale |
 |----------|-------------|-----------|
 | `ui/pages/1_data_explorer.py` | Added / Enhanced | Core data visibility for sensor readings. |
@@ -208,7 +218,6 @@ _Addendum committed 2025-09-28 – further changes require explicit scope change
 | `ui/lib/api_client.py` | Added / Centralized | Reliability & observability improvements. |
 | `core/database/orm_models.py` | Modified | Added `HumanDecisionORM`. |
 | `alembic_migrations/env.py` | Refactored | Async→sync normalization; SSL param transformation; duplication removal. |
-
 
 ## 16. Open Questions for Follow-Up
 
@@ -224,13 +233,13 @@ _Addendum committed 2025-09-28 – further changes require explicit scope change
 
 Core scaffolding for a maintainable, extensible UI is now in place along with the domain model required to properly represent human decisions. Remaining work centers on completing persistence, retrieval, and UI presentation for those decisions plus resolving a migration environment edge case related to SSL parameter translation.
 
-
 ---
 _End of Day Snapshot – Ready to resume with migration resolution & persistence wiring next session._
 
 ## 18. End-of-Day Addendum (Post-Migration Actions – Late Session & Subsequent Updates)
 
 ### 18.1 Migration Chain Repair & Minimal Table Introduction
+
 - Discovered missing historical Alembic revision (`71994744cf8e`) referenced but absent → blocked new revision generation.
 - Added a **no-op placeholder migration** (`71994744cf8e_placeholder_recovered_missing_revision.py`) to restore a contiguous chain without retroactive schema changes.
 - Regenerated migration after placeholder; initial autogenerate attempted to drop numerous legacy / unrelated tables (schema drift detected).
@@ -241,6 +250,7 @@ _End of Day Snapshot – Ready to resume with migration resolution & persistence
 - Ran `alembic upgrade head` successfully: upgrade path `71994744cf8e -> 7bbe1dbdb5f5` executed without attempting unrelated drops.
 
 ### 18.2 Verification Constraints & Notes
+
 - Direct `psql` verification inside container failed (cloud-hosted Timescale uses network connection; local socket fallback not available in image invocation context).
 - Inline verification attempt via `psycopg2` failed (driver not installed in production image by design—app uses asyncpg at runtime); accepted Alembic success log as authoritative for now.
 - Next session: optionally add a lightweight FastAPI diagnostic endpoint or temporary script using async SQLAlchemy to confirm live columns.
@@ -288,102 +298,134 @@ _End-of-Day Addendum Recorded – Ready to resume implementation tomorrow._
 ### Task Completion Log (Rolling)
 
 #### A3 – Prediction Version Auto-Resolve (2025-09-27)
+
 Implemented new prediction page `ui/pages/4_Prediction.py`:
+
 - Allows blank version field; auto-resolves via `/models/{model}/latest` then falls back to versions list selecting highest numeric.
 - Captures client-side latency (ms) excluding SHAP processing using monotonic timer.
 - Displays resolved version, prediction, confidence, and raw response expander.
 - Optional SHAP section shown only when requested & present.
 Verification:
+
 - Blank version resolves correctly when endpoint responds.
 - Latency metric surfaces and remains <1.5s without explainability (local env expectation).
 - Failure path (unresolvable model) surfaces user-friendly message.
 Next Dependencies:
+
 - Integrate error guidance layer (B2) for richer failure hints.
 - Centralize latency logging with ingestion (B4) once ingestion closed loop implemented.
 
 #### A4 – Ingestion Closed Loop Latency (2025-09-27)
+
 Implemented enhanced latency instrumentation in `ui/streamlit_app.py` ingestion form:
 
 - Added precise timing using `time.perf_counter()` for POST, verification GET, and end-to-end.
 - Success message now surfaces: POST ms, Verify ms, E2E ms for operator feedback & performance baselining.
 - Added fallback warning if verification returns empty (eventual consistency note).
 Verification:
+
 - Manual submission produced realistic sub-500 ms POST locally; verify call latency displayed separately.
 - Empty verification path message confirmed when sensor read not yet indexed.
 Next Steps:
+
 - Feed these latency metrics eventually into a lightweight local log or metrics panel (B4).
 
 #### A5 – Decision Audit UI Completion (2025-09-27)
+
 Enhancements applied to `ui/pages/2_decision_log.py`:
+
 - Added filter controls: operator_id, request_id, correlation_id, start/end date.
 - Added page size selector & refresh/reset controls.
 - Added CSV export for the current page.
 - Introduced tabs separating Human Decisions and future Maintenance Logs.
 - Improved pagination buttons and correlation_id visibility.
 Verification:
+
 - Filter combinations return expected subsets (manual spot checks).
 - Pagination & offset reset operate correctly.
 - Exported CSV opens with correct UTF-8 header row.
 Future Work:
+
 - Integrate maintenance logs when backend endpoint finalized.
 - Add tests covering filters & pagination (see Human decisions API tests task).
 
 #### Model Metadata Explorer UI (2025-09-27)
+
 Added `ui/pages/5_Model_Metadata.py` providing:
+
 - Cached (5m) listing of registered models.
 - Per-model version inspection with manual load trigger to avoid over-fetching.
 - Tag visualization (model vs version tags) in expandable section.
 - Human-readable timestamp normalization.
 Verification:
+
 - Cache refresh button clears and reloads models.
 - Version load only triggers on explicit button (prevents wasteful queries).
 Next Steps:
+
 - Integrate error guidance (B2) for cases where endpoints unavailable.
 - Add latency timing + caching validation test harness.
 
 #### B2 – Error Guidance Layer (2025-09-27)
+
 Implemented pattern-based error hinting in `ui/lib/api_client.py`:
+
 - Added `_ERROR_PATTERNS` mapping substrings to human-readable remediation tips.
 - Added `map_error_to_hint` and `format_error_with_hint` utilities for UI integration.
 Usage Recommendation:
+
 - Wrap calls: `resp = format_error_with_hint(make_api_request(...))` in pages needing hints.
 Verification:
+
 - Simulated 404 and validation errors produce contextual hints.
 Future Work:
+
 - Integrate automatically inside `make_api_request` (opt-in toggle) if pervasive adoption desired.
 
 #### B3 – Metrics Clarification (2025-09-27)
+
 Implemented `ui/pages/6_Metrics_Overview.py`:
+
 - Added explicit snapshot labelling & last updated timestamp.
 - Manual refresh button + optional 30s auto-refresh toggle.
 - Basic derived counters (total metric lines, HTTP request counter presence).
 - Raw metrics expander (safely truncated).
 Verification:
+
 - Manual refresh updates ISO timestamp.
 - Auto refresh re-renders within ~30s cycle when toggle enabled.
 Future Enhancements:
+
 - Parse & chart key latency / error rate series.
 - Integrate latency telemetry (B4) once captured centrally.
 
 #### B4 – Latency Telemetry (2025-09-27)
+
 Central latency capture & display implemented:
+
 - Added in-memory rolling latency registry in `ui/lib/api_client.py` (max 200 samples).
 - Automatic recording for every API request (success & error) with endpoint + status.
 - Surfaced samples in: ingestion shell (sidebar page), prediction page (expander), and metrics overview page (average + table).
 - Prediction page now shows API call latency separate from overall form timing.
 Verification:
+
 - Observed registry growth after multiple predictions & ingestion submissions.
 - Average latency matches manual stopwatch within acceptable drift (<5 ms locally).
 Future Work:
+
 - Persist to backend or Prometheus pushgateway if long-term historical analysis required.
 
 #### B5 – Environment Indicator (2025-09-27)
+
 Added environment badge to sidebar (`ui/streamlit_app.py`):
+
 - Maps DEPLOYMENT_ENV to emoji-coded label (LOCAL, CONTAINER, CLOUD, STAGING, PROD).
 - Displays prominently above health status.
 Verification:
+
 - Changing DEPLOYMENT_ENV locally reflects updated badge (manual env var export test).
 Future Enhancements:
+
 - Add warning banner if environment != PROD and feature flag requires production context.
 
 #### Simulation UI Layout Refactor & New Console (2025-09-27)
@@ -433,7 +475,7 @@ After deploying earlier UI changes, multiple pages crashed due to deprecated `st
 ### 19.4 Verification Criteria
 
 - Grep confirms zero remaining `st.experimental_rerun` references under `ui/pages/`. ✅ **VERIFIED**
-- Simulation Console loads without ImportError; latency entries recorded on simulation POST. ✅ **VERIFIED**  
+- Simulation Console loads without ImportError; latency entries recorded on simulation POST. ✅ **VERIFIED**
 - Golden Path auto-refresh cycles using `safe_rerun()` without raising AttributeError. ✅ **VERIFIED**
 - Model Metadata Refresh button functions (when MLflow not disabled) or surfaces explicit disabled message. ✅ **VERIFIED**
 
@@ -457,7 +499,7 @@ After deploying earlier UI changes, multiple pages crashed due to deprecated `st
 - Static analysis validation for critical import patterns
 - Framework for future automated regression testing
 
-### 19.5 Residual / Follow-Up Items
+### 19.6 Residual / Follow-Up Items
 
 | Item | Rationale | Planned Action |
 |------|-----------|---------------|
@@ -466,7 +508,7 @@ After deploying earlier UI changes, multiple pages crashed due to deprecated `st
 | Metrics derived latency percentiles | Enhance observability | Compute p50/p95 from registry subset |
 | Reporting artifact persistence | Move prototype beyond synthetic stage | Implement storage + download endpoint |
 
-### 19.6 Impact
+### 19.7 Impact
 
 Stability of navigation restored; removal of deprecated API usage reduces future maintenance overhead and isolates Streamlit version divergence to a single helper. Observability unaffected; simulation latency now always recorded (or safely ignored) regardless of environment race conditions.
 
