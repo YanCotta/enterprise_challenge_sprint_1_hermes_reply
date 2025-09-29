@@ -2,9 +2,9 @@
 
 ## V1.0 System Capabilities & Exposure Blueprint (Scope Freeze)
 
-**Status:** Scope Frozen – Truth-Aligned Minimal UI  
-**Date:** 2025-09-28  
-**Author:** Automated Engineering Assistant  
+**Status:** Scope Frozen – Truth-Aligned Minimal UI
+**Date:** 2025-09-28
+**Author:** Automated Engineering Assistant
 **Purpose:** Provide a single, authoritative snapshot separating (a) backend capability readiness from (b) UI exposure, and (c) the limited V1.0 action set. All breadth / amplification features are explicitly deferred to V1.5+ and removed from active commitments.
 
 ---
@@ -21,6 +21,7 @@ The backend (FastAPI + TimescaleDB + MLflow + Redis + EventBus) is production-al
 Primary Outcome: A trustworthy “Analyst / Ops Dashboard” reflecting only what works today while transparently staging forthcoming capabilities.
 
 ---
+
 ## 1. Capability Inventory (Backend vs UI Exposure)
 
 | Domain | Capability | Backend State | UI Exposure | V1.0 Action | Deferred (Y/N) | Notes |
@@ -31,6 +32,7 @@ Primary Outcome: A trustworthy “Analyst / Ops Dashboard” reflecting only wha
 | Simulation | Drift/Anomaly/Normal synthetic | ✅ Stable | ✅ Exposed | None | N | Timeout protection active |
 | Prediction | Auto version resolve | ✅ Stable | ✅ Exposed | Completed – error hints surfaced | N | Latency captured |
 | Model Metadata | Registry & versions | ✅ Stable | ✅ Exposed | Completed – state badge live | N | 5m cache |
+| Model Recommendations | Sensor-type-aware suggestions | ✅ Stable (backend) | ℹ️ Backend Only | Harden normalization; UI virtualization deferred | Y | Docker-executed unit tests guarding normalization |
 | Drift Analysis | KS-test | ✅ Stable | ✅ Exposed | None | N | On-demand form |
 | Anomaly Detection | Batch anomalies | ✅ Stable | ✅ Exposed | None | N | On-demand form |
 | Golden Path Orchestration | Multi-agent pipeline | ✅ Stable | ✅ Exposed | Completed – terminal messaging polished | N | 90s timeout guard |
@@ -49,6 +51,7 @@ Primary Outcome: A trustworthy “Analyst / Ops Dashboard” reflecting only wha
 | Governance / Retention | Policy UI | ❌ Not Impl | ❌ Not Exposed | Defer | Y | Low early volume |
 
 ---
+
 ## 2. Capability Exposure Summary
 
 | Classification | Definition | Items |
@@ -61,17 +64,18 @@ Primary Outcome: A trustworthy “Analyst / Ops Dashboard” reflecting only wha
 No other categories are in play for this release.
 
 ---
+
 ## 3. UI Redesign Objectives
+
 1. Remove user confusion by surfacing ONLY stable features in the default navigation.
 2. Provide a clear boundary for experimental / under-development items (sandbox zone).
 3. Optimize perceived performance (defer or async-load heavyweight panels—version metadata, SHAP, model recommendations).
 4. Establish modular component functions to reduce monolithic Streamlit file complexity (goal: < 300 lines per functional module).
 5. Prepare for incremental activation (feature flags / dynamic registry of panels).
 
-
 ---
-## 4. Proposed Information Architecture
 
+## 4. Proposed Information Architecture
 
 ### 4.1 Primary Navigation (Stable)
 
@@ -87,34 +91,30 @@ No other categories are in play for this release.
 
 ### 4.2 Secondary Navigation (Expandable / Collapsible Sidebar Group)
 
-
 | Group: Advanced Analytics |
 | - Reporting (prototype) |
 | - Model Metadata Explorer (versions, stages, feature schema) |
 
 ### 4.3 Experimental Zone
 
-
 Label: "🧪 Under Development"
 
 | Experimental Panel | Status Note |
 |--------------------|-------------|
 | Golden Path Orchestration | Placeholder – awaiting event-driven pipeline assembly |
-
 | Decision Audit Trail | Backend endpoint implemented (Day 2) – UI viewer pending |
 | Report Artifact Downloads | Pending file generation & storage |
 | Live Metrics Streaming | Requires push or periodic incremental diff fetch |
-| Model Recommendations (Cached) | Awaiting caching layer & UI virtualization |
+| Model Recommendations (Cached) | Backend normalization hardened; caching & UI virtualization still pending |
 
 ---
- 
-## 5. Page-Level Functional Specs
 
+## 5. Page-Level Functional Specs
 
 ### 5.1 Overview Dashboard
 
-**Inputs:** None (auto-load + manual refresh button)  
-**Data Sources:** `/metrics`, `/api/v1/sensors/readings?limit=5`, aggregated counts  
+**Inputs:** None (auto-load + manual refresh button)
+**Data Sources:** `/metrics`, `/api/v1/sensors/readings?limit=5`, aggregated counts
 **Widgets:**
 
 - KPI bar (Ingested last 24h, Distinct sensors, Drift checks run, Anomalies detected)
@@ -125,7 +125,7 @@ Label: "🧪 Under Development"
 
 ### 5.2 Data Explorer
 
-**Core Contract:** Reliable retrieval & exploration; must load in < 2s for 100 rows  
+**Core Contract:** Reliable retrieval & exploration; must load in < 2s for 100 rows
 **Features (MVP):**
 
 - Server-side pagination controls (limit/offset)
@@ -147,8 +147,8 @@ Label: "🧪 Under Development"
 
 ### 5.4 ML Prediction
 
-**Modes:** Standard Prediction | Prediction + Explainability  
-**Controls:** Model name (select), version (auto resolved + editable), feature inputs, explain checkbox  
+**Modes:** Standard Prediction | Prediction + Explainability
+**Controls:** Model name (select), version (auto resolved + editable), feature inputs, explain checkbox
 **Panels:**
 
 - Results (prediction, confidence, version resolved, latency metric)
@@ -186,7 +186,7 @@ Refactor into three horizontally stacked or accordion sections (Drift | Anomaly 
 Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 
 ---
- 
+
 ## 6. Component Refactoring Plan
 
 | Legacy Monolith Section | New Module Target | Action |
@@ -203,7 +203,7 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 | Shared widgets (tables, badges) | `ui/lib/components.py` | Reusable rendering primitives |
 
 ---
- 
+
 ## 7. Endpoint → UI Mapping (Current Truth – Scope Frozen)
 
 | UI Panel | Endpoints | Status (UI) | V1.0 Action | Deferred Work |
@@ -222,7 +222,7 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 | Debug / Diagnostics | `/health/*` + custom | ✅ Working | None | Component status grid |
 
 ---
- 
+
 ## 8. UX & Performance Guidelines
 
 | Concern | Guideline | Implementation Detail |
@@ -236,10 +236,10 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 | Accessibility | Semantic headings + short labels | Use title case, avoid overloaded emoji |
 
 ---
- 
+
 ## 9. Under Development Zone Policy
 
-**Entry Criteria:** Feature lacks one of: reliability, acceptable latency, complete UX loop, or security assurance.  
+**Entry Criteria:** Feature lacks one of: reliability, acceptable latency, complete UX loop, or security assurance.
 
 **Presentation Rules:**
 
@@ -249,7 +249,7 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 - Disabled destructive actions (if any)
 
 ---
- 
+
 ## 10. Execution Roadmap (Refactor Sprint)
 
 ### 10.1 Day-by-Day Micro Plan (Derived + Merged)
@@ -280,6 +280,7 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 | B5 | Environmental Indicator | Show badge (Local / Container / Cloud) from env var. | Badge renders in sidebar header. |
 
 > NOTE: A6 can be concurrent with A3/A4 if capacity allows.
+
 | Order | Task | Outcome | Est |
 |-------|------|---------|-----|
 | 1 | Create modular `ui/pages` structure & shared libs | Foundation for decomposition | 0.5d |
@@ -296,7 +297,7 @@ Cards with disclaimers + CTA buttons disabled or linking to placeholder panels.
 Total ~5.0d (core) + 1 buffer day (risk / polish).
 
 ---
- 
+
 ## 11. Risks & Mitigations
 
 | Risk | Impact | Mitigation |
@@ -308,7 +309,7 @@ Total ~5.0d (core) + 1 buffer day (risk / polish).
 | Eventual audit/log endpoints delayed | Compliance gap | Provide interim export of decision submissions (local session log) |
 
 ---
- 
+
 ## 12. Acceptance Criteria (Redesigned UI Initial Release)
 
 - Navigation shows ONLY: Overview, Data Explorer, Ingestion, Prediction, Drift & Anomaly, Simulation, Advanced (collapsed), Experimental (collapsed)
@@ -320,6 +321,7 @@ Total ~5.0d (core) + 1 buffer day (risk / polish).
 - Ingestion shows persisted record within 2 refresh attempts (< 1s typical)
 
 ---
+
 ## 13. Future Enhancements (Post-Refactor)
 
 - Decision audit service & UI timeline view
@@ -330,6 +332,7 @@ Total ~5.0d (core) + 1 buffer day (risk / polish).
 - Feature store lineage visualization
 
 ---
+
 ## 15. Former Gap Log (Reclassified)
 
 ### 15.1 Golden Path Demo Orchestration
@@ -339,7 +342,9 @@ Status: Implemented (endpoint + status polling with timeout). Action: polish com
 **Required Implementation**: `/api/v1/demo/golden-path` endpoint
 
 ```python
+
 # apps/api/routers/demo.py (NEW FILE NEEDED)
+
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 import uuid
 import json
@@ -355,7 +360,7 @@ async def execute_golden_path_demo(
 ):
     """Execute the complete Golden Path demonstration pipeline."""
     correlation_id = str(uuid.uuid4())
-    
+
     # Store initial status in Redis
     redis_client = await get_redis_client()
     await redis_client.setex(
@@ -372,10 +377,10 @@ async def execute_golden_path_demo(
             "started_at": datetime.utcnow().isoformat()
         })
     )
-    
+
     # Execute pipeline in background
     background_tasks.add_task(run_golden_path_pipeline, correlation_id, sensor_count)
-    
+
     return {
         "correlation_id": correlation_id,
         "status": "started",
@@ -387,16 +392,18 @@ async def get_golden_path_status(correlation_id: str):
     """Get status of running Golden Path demo."""
     redis_client = await get_redis_client()
     status_data = await redis_client.get(f"demo:{correlation_id}")
-    
+
     if not status_data:
         raise HTTPException(404, "Demo not found or expired")
-    
+
     return json.loads(status_data)
 ```
 
 **UI Integration**:
 ```python
+
 # In UI - replace current placeholder with real orchestration
+
 import streamlit as st
 import time
 
@@ -444,10 +451,12 @@ Status: Implemented (filter, pagination, CSV export). Scope clarification: creat
 **Required Implementation**: Decision viewer in Advanced section
 
 ```python
+
 # ui/pages/decision_log.py (NEW FILE NEEDED)
+
 def render_decision_log():
     st.subheader("📋 Decision Audit Trail")
-    
+
     # Filters
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -456,18 +465,18 @@ def render_decision_log():
         status_filter = st.selectbox("Status", ["(all)", "completed", "scheduled", "cancelled"])
     with col3:
         limit = st.number_input("Limit", value=50, min_value=10, max_value=500)
-    
+
     # Fetch decisions
     params = {"limit": limit}
     if equipment_filter != "(all)":
         params["equipment_id"] = equipment_filter
     if status_filter != "(all)":
         params["status"] = status_filter
-    
+
     result = make_api_request("GET", "/api/v1/decisions", params)
     if result["success"]:
         decisions = result["data"]
-        
+
         # Display as expandable cards
         for decision in decisions:
             with st.expander(f"🔧 {decision['equipment_id']} - {decision['status']} ({decision['completion_date'][:10]})"):
@@ -479,7 +488,7 @@ def render_decision_log():
                 with col2:
                     st.write(f"**Status:** {decision['status']}")
                     st.write(f"**Completed:** {decision['completion_date']}")
-                
+
                 if decision['notes']:
                     st.write(f"**Notes:** {decision['notes']}")
 ```
@@ -491,7 +500,9 @@ Status: Implemented (cache TTL 300s). Future optimization: tag diff & recommenda
 **Required Implementation**: Caching decorators and session state
 
 ```python
+
 # ui/lib/api_client.py (ENHANCE EXISTING)
+
 import streamlit as st
 from datetime import datetime, timedelta
 
@@ -515,7 +526,9 @@ Status: Prototype only (JSON response). Artifact persistence & retrieval Deferre
 **Required Implementation**: File storage and download endpoints
 
 ```python
+
 # apps/api/routers/reporting.py (ENHANCE EXISTING)
+
 import os
 from fastapi.responses import FileResponse
 
@@ -525,7 +538,7 @@ async def download_report(report_id: str):
     report_path = f"reports/{report_id}.json"
     if not os.path.exists(report_path):
         raise HTTPException(404, "Report not found")
-    
+
     return FileResponse(
         path=report_path,
         filename=f"maintenance_report_{report_id}.json",
@@ -540,22 +553,24 @@ Status: Snapshot with manual/auto refresh. Streaming/WebSocket Deferred (V1.5).
 **Required Implementation**: Auto-refresh with timestamps
 
 ```python
+
 # ui/pages/overview.py (NEW FILE NEEDED)
+
 def render_live_metrics():
     st.subheader("📊 System Metrics")
-    
+
     # Auto-refresh controls
     col1, col2 = st.columns([3, 1])
     with col1:
         if 'last_metrics_update' not in st.session_state:
             st.session_state.last_metrics_update = datetime.now()
         st.caption(f"Last updated: {st.session_state.last_metrics_update.strftime('%H:%M:%S')}")
-    
+
     with col2:
         if st.button("🔄 Refresh"):
             st.session_state.last_metrics_update = datetime.now()
             st.rerun()
-    
+
     # Auto-refresh every 30 seconds
     if datetime.now() - st.session_state.last_metrics_update > timedelta(seconds=30):
         st.session_state.last_metrics_update = datetime.now()
@@ -581,6 +596,7 @@ Overall Verdict: Architecture validated; scope intentionally trimmed to essentia
 ### 16.2 **Critical Implementation Enhancements Added**
 
 Previously Uncatalogued Capabilities (Now Documented):
+
 1. **Advanced Health Monitoring**: Component-level health endpoints (`/health/db`, `/health/redis`)
 2. **Multi-Agent Visibility**: 12-agent system status with event bus monitoring
 3. **Enhanced Security**: Rate limiting status, correlation ID tracking
@@ -619,11 +635,13 @@ Deferred Solution Targets (Explicit): streaming metrics, artifacts persistence, 
 
 **Specific Code Changes Required**:
 ```python
+
 # Priority 1: Fix Data Explorer
+
 def make_api_request_enhanced(endpoint, timeout=30, retries=3):
     for attempt in range(retries):
         try:
-            response = requests.get(f"{API_BASE_URL}{endpoint}", 
+            response = requests.get(f"{API_BASE_URL}{endpoint}",
                                   headers=HEADERS, timeout=timeout)
             return {"success": True, "data": response.json()}
         except requests.Timeout:
@@ -633,6 +651,7 @@ def make_api_request_enhanced(endpoint, timeout=30, retries=3):
             return {"success": False, "error": f"Timeout after {timeout}s"}
 
 # Priority 2: Add Performance Caching
+
 @st.cache_data(ttl=300)
 def get_model_versions_cached(model_name):
     return make_api_request(f"/api/v1/ml/models/{model_name}/versions")
@@ -676,7 +695,9 @@ This section documents the specific technical changes implemented to resolve run
 
 **Code Changes**:
 ```python
+
 # Added timeout logic in ui/pages/3_Golden_Path_Demo.py
+
 if st.session_state.demo_start_time:
     elapsed = datetime.now() - st.session_state.demo_start_time
     if elapsed.total_seconds() > MAX_DEMO_RUNTIME_SECONDS:
@@ -697,7 +718,9 @@ if st.session_state.demo_start_time:
 
 **Code Changes**:
 ```python
+
 # Enhanced state handling in ui/pages/5_Model_Metadata.py
+
 if mlflow_disabled:
     st.info("🔧 MLflow model loading disabled by environment flag")
     return
@@ -745,6 +768,7 @@ Explicit state differentiation for Model Metadata Explorer troubleshooting:
 ## 19. Synchronization Update (2025-09-27)
 
 ### Newly Implemented Since Original Blueprint
+
 - Prediction page: blank version auto-resolve + client-side latency metric
 - Ingestion closed-loop latency: POST + verification + end-to-end timings
 - Decision audit log UI: filters (operator_id, request_id, correlation_id, date range), pagination, CSV export
@@ -756,24 +780,28 @@ Explicit state differentiation for Model Metadata Explorer troubleshooting:
 - Environment Indicator: dynamic badge for runtime context (local/container/cloud)
 
 ### Updated Status Classifications
+
 - Data Retrieval Explorer: restored (no 500 errors) – minor enhancement (CSV export) pending
 - ML Model Management: optimized via caching decorator – moved from performance-risk to stable
 - Multi-Agent System: showcased through Golden Path – moved from missing to fully exposed
 - Monitoring: snapshot clarity improved – mislabelled "live" removed; streaming remains future scope
 
 ### Documentation Hygiene Notes
+
 - Pending markdown lint cleanup (MD022/MD032/MD058) to run post-sprint polish
 - Changelog entries consolidated; this doc now authoritative
 
 ### Next Focus After Stabilization & V1.0 Validation
+
 1. Real-time metrics streaming (WebSocket/SSE implementation)
-2. Report artifact persistence & download endpoints  
+2. Report artifact persistence & download endpoints
 3. Enhanced automated test coverage for regression prevention
 4. Background SHAP processing pipeline (eliminate 30s+ UI blocking)
 5. Bulk data operations (CSV import/export, batch predictions)
 
 ### V1.0 Exit Criteria - ✅ ACHIEVED
-- ✅ All current stable features have verified functionality  
+
+- ✅ All current stable features have verified functionality
 - ✅ No user-facing page contains blocking runtime errors
 - ✅ Performance targets validated (sub-2s core operations)
 - ✅ Documentation fully aligned with deployed capabilities
