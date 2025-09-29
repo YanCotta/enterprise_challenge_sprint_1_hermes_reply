@@ -1,6 +1,7 @@
 # V1.0 Readiness Checklist
 
 ## Executive Summary
+
 Platform Readiness (Backend) remains high; **Backend Capability Readiness: 95–100% across core domains**. **UI Exposure Coverage: ~70%** (we surface only essential workflows). The earlier single composite score (94.5%) is now decomposed for clarity: reliability is strong; breadth is intentionally constrained.
 
 V1.0 delivers a truthful, minimal UI: ingestion, data exploration, prediction (auto version resolve), model metadata (browse + disabled state clarity), drift & anomaly checks, decision audit log (create/list only), simulation console, metrics snapshot (non‑streaming), JSON reporting prototype, and Golden Path demo (timeout protected). All amplification (“plus”) features—streaming metrics, artifact downloads, background SHAP, bulk operations, multi-sensor correlation, model recommendation optimization, notifications UI, feature lineage, governance—are **deferred to V1.5+**.
@@ -22,6 +23,7 @@ Goal for the remaining 5 days: tighten polish on existing pages (no new feature 
 | Golden Path Orchestration | ✅ Stable | Event-driven multi-step pipeline |
 | Human Decision Persistence | ✅ Stable (Create/List) | No update/delete (not needed V1.0) |
 | Model Registry (MLflow) | ✅ Stable | Disabled flag support |
+| Model Recommendations API | ✅ Stable | Normalized sensor-type handling + defensive fallbacks |
 | Reporting (JSON prototype) | ✅ Prototype | No artifact persistence |
 | Metrics (Prometheus snapshot) | ✅ Stable | No streaming |
 | Security (API key) | ✅ Stable | Scoped access |
@@ -99,6 +101,9 @@ All rows marked ❌ Not Exposed above map to Deferred V1.5+ (see `PRIORITIZED_BA
 - [x] Fallback pattern testing (simulation console robustness)  
 - [x] State differentiation verification (model metadata)
 - [x] Timeout protection validation (golden path demo)
+- [x] Targeted unit coverage for `get_model_recommendations` normalization (run via `docker compose exec api pytest tests/unit/ml/test_model_utils.py`)
+
+*Prep step: install `pytest` and `testcontainers` inside `smart_maintenance_api` before executing coverage commands until the dependencies are baked into the image.*
 
 ### 📝 V1.0 Closure Tasks (5-Day Window – Commit Only If Feasible)
 
