@@ -216,63 +216,92 @@ def _is_general_purpose_model(model_name: str) -> bool:
     return any(pattern in model_name for pattern in general_patterns)
 
 
-def get_model_recommendations(sensor_type: str, include_general: bool = True) -> List[str]:
-    """
-    Get recommended models for a specific sensor type with intelligent filtering.
-    
-    Args:
-        sensor_type: The type of sensor (e.g., 'temperature', 'vibration', 'pressure')
-        include_general: Whether to include general-purpose models that can handle single features
-        
-    Returns:
-        List of recommended model names, prioritized by compatibility
+def _normalize_sensor_type(sensor_type: Optional[Any]) -> str:
+    """Normalize user-provided sensor type values into a lowercase identifier."""
+    if sensor_type is None:
+        return ''
+    candidate = sensor_type.value if hasattr(sensor_type, 'value') else sensor_type
+    return str(candidate).lower().strip()
+
+
+def get_model_recommendations(sensor_type: Optional[Any], include_general: bool = True) -> List[str]:
+    """Return ML model names best suited for the provided sensor type.
+
+    The function is intentionally resilient to different representations of the
+    sensor type (plain strings, enums, dotted names) and falls back to safe
+    recommendations when MLflow metadata is unavailable or the sensor type
+    cannot be matched.
     """
     if getattr(settings, 'DISABLE_MLFLOW_MODEL_LOADING', False):
-        logger.debug(f"MLflow model loading disabled; returning no recommendations for sensor_type={sensor_type}.")
+        logger.debug(
+            f"MLflow model loading disabled; skipping recommendations for sensor_type={sensor_type!r}."
+        )
         return []
+
+    normalized_sensor_type = _normalize_sensor_type(sensor_type)
+    if normalized_sensor_type.startswith('sensortype.'):
+        normalized_sensor_type = normalized_sensor_type.replace('sensortype.', '', 1)
+
+    fallback_key = normalized_sensor_type or 'general'
+
+    if not normalized_sensor_type:
+        logger.warning("Sensor type not provided; returning fallback recommendations.")
+        return _get_fallback_recommendations(fallback_key)
+
     try:
         sensor_type_mapping = get_models_by_sensor_type()
-        recommendations = []
-        
-        # Normalize sensor type input
-        sensor_type_lower = sensor_type.lower().strip()
-        
-        # Handle SensorType enum string representation
-        if sensor_type_lower.startswith('sensortype.'):
-            sensor_type_lower = sensor_type_lower.replace('sensortype.', '')
-        
-        # First priority: exact sensor type matches
-        if sensor_type_lower in sensor_type_mapping:
-            recommendations.extend(sensor_type_mapping[sensor_type_lower])
-            logger.info(f"Found {len(sensor_type_mapping[sensor_type_lower])} specific models for {sensor_type_lower}")
-        
-        # Second priority: compatible related types
-        compatible_types = _get_compatible_sensor_types(sensor_type_lower)
+        if not isinstance(sensor_type_mapping, dict):
+            logger.warning("Sensor type mapping is invalid; using fallback recommendations.")
+            return _get_fallback_recommendations(fallback_key)
+
+        recommendations: List[str] = []
+        include_general_flag = bool(include_general)
+
+        if normalized_sensor_type in sensor_type_mapping:
+            specific_models = sensor_type_mapping[normalized_sensor_type]
+            recommendations.extend(specific_models)
+            logger.info(
+                "Found %d specific models for %s", len(specific_models), normalized_sensor_type
+            )
+
+        compatible_types = _get_compatible_sensor_types(normalized_sensor_type)
         for compatible_type in compatible_types:
+            if compatible_type == 'general' and not include_general_flag:
+                logger.debug(
+                    "Skipping general compatibility models because include_general=False"
+                )
+                continue
             if compatible_type in sensor_type_mapping:
                 for model in sensor_type_mapping[compatible_type]:
                     if model not in recommendations:
                         recommendations.append(model)
-                        logger.debug(f"Added compatible model {model} from {compatible_type} category")
-        
-        # Third priority: general-purpose models (only if specifically requested and safe)
-        if include_general and 'general' in sensor_type_mapping:
+                        logger.debug(
+                            "Added compatible model %s from %s category", model, compatible_type
+                        )
+
+        if include_general_flag and 'general' in sensor_type_mapping:
             for model in sensor_type_mapping['general']:
                 if model not in recommendations:
                     recommendations.append(model)
-                    logger.debug(f"Added general-purpose model {model}")
-        
-        # If no specific models found, provide safe fallback recommendations
+                    logger.debug("Added general-purpose model %s", model)
+
         if not recommendations:
-            recommendations = _get_fallback_recommendations(sensor_type_lower)
-            logger.warning(f"No specific models found for {sensor_type_lower}, using fallback recommendations")
-        
-        logger.info(f"Final recommendations for sensor type '{sensor_type}': {recommendations}")
+            logger.warning(
+                "No specific models found for %s; using fallback recommendations.",
+                normalized_sensor_type,
+            )
+            return _get_fallback_recommendations(fallback_key)
+
+        logger.info(
+            "Final recommendations for sensor type %r: %s", sensor_type, recommendations
+        )
         return recommendations
-        
-    except Exception as e:
-        logger.error(f"Error getting model recommendations for sensor type '{sensor_type}': {e}")
-        return _get_fallback_recommendations(sensor_type.lower())
+
+    except Exception as exc:  # pragma: no cover - defensive guard
+        logger.error(
+            "Error getting model recommendations for sensor type %r: %s", sensor_type, exc
+        )
+        return _get_fallback_recommendations(fallback_key)
 
 
 def _get_compatible_sensor_types(sensor_type: str) -> List[str]:
