@@ -1,5 +1,12 @@
 ﻿# UI Redesign Pivot Changelog (Session Date: 2025-09-26)
 
+## 2025-09-30 – Maintenance Timeout & UX Polish
+
+- Extended the maintenance scheduling API timeout to 45s so the prediction page no longer throws 504s when the agent needs extra time to assign a technician; documented in `apps/api/routers/maintenance.py` and verified against live event logs.
+- Updated the golden path demo observer to treat `MaintenanceScheduledEvent` as a completion signal with clearer step messaging, eliminating the pipeline stall that previously hit the 90s timeout guard.
+- Reworked the simulation console history layout to avoid nested expanders, preventing the StreamlitAPIException while still exposing payloads and responses per run.
+- Slimmed the reporting prototype downloads by omitting base64 chart blobs; users still see inline previews plus byte-size summaries in the exported JSON.
+
 ## 1. Executive Summary
 
 We initiated a strategic pivot from a monolithic Streamlit prototype toward a modular, maintainable, and extensible UI architecture. The focus today was to (a) decompose legacy logic, (b) establish robust data exploration & decision workflows, (c) introduce diagnostic & resilience layers, and (d) align backend persistence with emerging product semantics (human vs. maintenance decision records). Substantial groundwork is complete; remaining persistence & retrieval integration will continue next session.
