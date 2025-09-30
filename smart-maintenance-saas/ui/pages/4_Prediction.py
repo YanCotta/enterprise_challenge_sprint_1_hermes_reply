@@ -15,21 +15,35 @@ def _auto_resolve_version(model_name: str) -> str | None:
     if not model_name:
         return None
     latest = make_api_request("GET", f"/api/v1/ml/models/{model_name}/latest")
-    if latest.get("success") and latest.get("data"):
-        data = latest["data"]
-        version = data.get("version") or data.get("latest_version")
-        if version:
-            return str(version)
+    if latest.get("success"):
+        latest_data = latest.get("data") or {}
+        if isinstance(latest_data, dict):
+            version = (
+                latest_data.get("resolved_version")
+                or latest_data.get("version")
+                or latest_data.get("latest_version")
+            )
+            if version is not None:
+                return str(version)
     versions = make_api_request("GET", f"/api/v1/ml/models/{model_name}/versions")
-    if versions.get("success") and versions.get("data"):
-        try:
-            vs = versions["data"]
-            # Expect list of dicts with 'version' key
-            parsed = [int(v.get("version")) for v in vs if str(v.get("version", "")).isdigit()]
-            if parsed:
-                return str(max(parsed))
-        except Exception:
-            pass
+    if versions.get("success"):
+        versions_payload = versions.get("data") or {}
+        version_entries = (
+            versions_payload.get("versions")
+            if isinstance(versions_payload, dict)
+            else versions_payload
+        )
+        if isinstance(version_entries, list):
+            try:
+                parsed = [
+                    int(v.get("version"))
+                    for v in version_entries
+                    if str(v.get("version", "")).isdigit()
+                ]
+                if parsed:
+                    return str(max(parsed))
+            except Exception:
+                pass
     return None
 
 
@@ -71,7 +85,7 @@ def render_prediction_page():
                 "Tool_wear_min": wear,
             },
             "sensor_id": "prediction_demo_sensor_001",
-            "include_explainability": explain,
+            "explain": explain,
         }
         t0 = time.perf_counter()
         resp = make_api_request("POST", "/api/v1/ml/predict", json_data=payload)
@@ -82,7 +96,7 @@ def render_prediction_page():
             colA, colB = st.columns([1,2])
             with colA:
                 st.metric("Prediction", data.get("prediction"))
-                st.metric("Confidence", f"{data.get('confidence', data.get('prediction_confidence','?'))}")
+                st.metric("Confidence", f"{data.get('confidence', '?')}")
                 st.caption(f"Model: {model_name} v{resolved_version}")
             with colB:
                 with st.expander("Raw Response", expanded=False):
