@@ -705,3 +705,13 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 - Cached the Data Explorer sensor dropdown via `_fetch_sensor_options()` to trim redundant API calls and improve perceived responsiveness.
 
 
+## 25. Release Checklist Progress (2025-09-30)
+
+- Hardened the `DISABLE_MLFLOW_MODEL_LOADING` flag path across model utilities, loader helpers, and ML endpoints, with regression coverage validating both enabled and disabled modes.
+- Extended ML version auto-resolution tests to lock in fallback behaviour when registry lookups fail, ensuring UI `auto` requests stay reliable.
+- Added integration coverage for the event bus retry/DLQ flow so scheduling and anomaly agents handle publish failures deterministically.
+- Cached the Data Explorer sensor dropdown fetch to reduce latency on repeat visits and documented the change in `ui/pages/1_data_explorer.py`.
+- Normalized ML endpoint error payloads to FastAPI `{"detail": ...}` envelopes, keeping UI hint parsing consistent across failure modes.
+- Introduced configurable Redis initialization defaults plus init/teardown regression tests to prevent “client not initialized” crashes in Docker deployments.
+
+
