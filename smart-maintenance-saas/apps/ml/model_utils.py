@@ -322,6 +322,8 @@ def _get_compatible_sensor_types(sensor_type: str) -> List[str]:
     compatibility_map = {
         'temperature': ['general'],  # Only general anomaly detectors work with single temp values
         'pressure': ['general'],     # Only general anomaly detectors work with single pressure values  
+        'humidity': ['general'],     # Treat humidity as a single-value stream like temperature/pressure
+        'voltage': ['general'],      # Voltage sensors share general-purpose anomaly models
         'vibration': ['bearing'],    # Vibration analysis models often work for bearing data
         'bearing': ['vibration'],    # Bearing models often work for vibration data
         'audio': [],                 # Audio models require specific feature engineering
