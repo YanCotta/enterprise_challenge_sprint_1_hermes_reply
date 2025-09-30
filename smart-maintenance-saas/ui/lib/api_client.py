@@ -138,12 +138,29 @@ def make_api_request(
                     err_msg = _format_error(err_msg, str(detail))
             except ValueError:
                 pass
+            
+            # Log failed API request for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"API request failed: {method} {url} - {err_msg}",
+                extra={
+                    "endpoint": endpoint,
+                    "params": params,
+                    "status_code": response.status_code,
+                    "method": method
+                }
+            )
+            
             record_latency(endpoint, elapsed_ms, {"status": response.status_code, "error": True})
             return format_error_with_hint({"success": False, "error": err_msg, "status_code": response.status_code})
 
         except requests.exceptions.Timeout:
             attempt += 1
             if attempt >= retries:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"API request timeout: {method} {url} after {retries} attempts", extra={"endpoint": endpoint, "timeout": timeout})
                 return format_error_with_hint({"success": False, "error": f"Timeout after {timeout}s (attempts={retries})"})
             sleep_for = backoff_base ** (attempt - 1)
             st.warning(f"Request timeout. Retrying in {sleep_for:.1f}s ({attempt}/{retries}) ...")
@@ -151,11 +168,17 @@ def make_api_request(
         except requests.exceptions.ConnectionError as e:
             attempt += 1
             if attempt >= retries:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"API connection error: {method} {url} - {e}", extra={"endpoint": endpoint, "attempts": retries})
                 return format_error_with_hint({"success": False, "error": f"Connection error after {retries} attempts: {e}"})
             sleep_for = backoff_base ** (attempt - 1)
             st.warning(f"Connection error. Retrying in {sleep_for:.1f}s ({attempt}/{retries}) ...")
             time.sleep(sleep_for)
         except requests.exceptions.RequestException as e:  # Catch-all for Requests
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"API request exception: {method} {url} - {e}", extra={"endpoint": endpoint})
             return format_error_with_hint({"success": False, "error": f"Request exception: {e}"})
 
     return format_error_with_hint({"success": False, "error": "Unknown failure after retries"})

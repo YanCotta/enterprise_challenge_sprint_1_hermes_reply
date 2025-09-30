@@ -47,8 +47,18 @@ if submitted:
     if resp.get("success"):
         report = resp.get("data")
         st.success("Report generated")
+        
+        # Add download button for JSON
+        st.download_button(
+            "⬇️ Download JSON",
+            data=json.dumps(report, indent=2),
+            file_name=f"report_{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+            mime="application/json",
+            use_container_width=True
+        )
+        
         st.json(report)
-        st.caption("Download options deferred to V1.5+; copy JSON as needed.")
+        st.caption("JSON download available; PDF/CSV formats deferred to V1.5+.")
     else:
         st.error(resp.get("error", "Failed to generate report."))
         if resp.get("hint"):

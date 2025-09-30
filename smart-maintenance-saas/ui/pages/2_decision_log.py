@@ -1,13 +1,22 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timezone, date
+from typing import Optional
 import uuid
 
 from lib.api_client import make_api_request
 from lib.rerun import safe_rerun
 
 
-def _fetch_human_decisions(limit: int, offset: int, operator_id: str | None, request_id: str | None, correlation_id: str | None, start_dt: date | None, end_dt: date | None):
+def _fetch_human_decisions(
+    limit: int, 
+    offset: int, 
+    operator_id: Optional[str], 
+    request_id: Optional[str], 
+    correlation_id: Optional[str], 
+    start_dt: Optional[date], 
+    end_dt: Optional[date]
+):
     params = {"limit": limit, "offset": offset}
     if operator_id:
         params["operator_id"] = operator_id
