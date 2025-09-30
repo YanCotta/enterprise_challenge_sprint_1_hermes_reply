@@ -555,6 +555,8 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 - Confirmed prediction page enhancements from A3 remain stable after dependency refresh; auto-version resolution works when backend responds and latency metrics surface as designed.
 - Exercised B4 latency telemetry registry across ingestion, prediction, and simulation flows; verified samples persist for recent-call panels without UI regressions.
 - Walked through Golden Path demo upgrades (Section 18.3) to ensure end-to-end completion, including optional human decision branch; no stalls observed after patched prediction events.
+
+**2025-09-30 Update:** Added an optional in-module fallback for API key configuration in `ui/lib/api_client.py`, allowing the UI container to run when backend modules (`core.security`) are unavailable. Please re-run the Streamlit UI and confirm the manual ingestion and data explorer pages load normally.
 - Re-ran smoke script’s ingestion segment to reproduce known verification lag, establishing baseline before new backend adjustments.
 
 ### 21.2 New Fixes Applied (Jules Critical List)
