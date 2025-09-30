@@ -6,6 +6,7 @@ suitable models based on sensor type and other criteria.
 """
 
 import os
+import time
 import logging
 from typing import Dict, List, Optional, Tuple, Any
 from mlflow.tracking import MlflowClient
@@ -18,6 +19,10 @@ logger = logging.getLogger(__name__)
 
 # MLflow configuration
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
+
+# Simple in-memory cache so backend stays Streamlit-free.
+_SENSOR_TYPES_CACHE: Dict[str, Any] = {"value": None, "expires_at": 0.0}
+_SENSOR_TYPES_CACHE_TTL = 300
 
 
 def _get_mlflow_client():
@@ -385,7 +390,6 @@ def get_model_details(model_name: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-@st.cache_data(ttl=300)
 def suggest_sensor_types() -> List[str]:
     """
     Get a list of available sensor types based on registered models.
@@ -393,6 +397,11 @@ def suggest_sensor_types() -> List[str]:
     Returns:
         List of sensor types that have associated models
     """
+    now = time.time()
+    cached_value = _SENSOR_TYPES_CACHE["value"]
+    if cached_value and now < _SENSOR_TYPES_CACHE["expires_at"]:
+        return cached_value
+
     try:
         sensor_type_mapping = get_models_by_sensor_type()
         sensor_types = list(sensor_type_mapping.keys())
@@ -409,6 +418,8 @@ def suggest_sensor_types() -> List[str]:
         
         sensor_types.sort()
         logger.info(f"Available sensor types: {sensor_types}")
+        _SENSOR_TYPES_CACHE["value"] = sensor_types
+        _SENSOR_TYPES_CACHE["expires_at"] = now + _SENSOR_TYPES_CACHE_TTL
         return sensor_types
         
     except Exception as e:
