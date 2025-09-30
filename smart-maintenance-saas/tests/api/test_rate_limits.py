@@ -15,6 +15,7 @@ import time
 
 from apps.api.main import app
 from core.config.settings import settings
+from core.security.api_keys import API_KEY_HEADER_NAME, get_configured_api_keys
 
 
 @pytest.fixture(autouse=True)
@@ -68,7 +69,7 @@ class TestRateLimiting:
         1. Makes 10 successful requests to /check_drift with the same API key
         2. Asserts that the 11th request is rejected with 429 Too Many Requests
         """
-        headers = {"X-API-Key": test_api_key}
+        headers = {API_KEY_HEADER_NAME: test_api_key}
         endpoint = "/api/v1/ml/check_drift"
         
         successful_requests = 0
@@ -101,8 +102,8 @@ class TestRateLimiting:
         endpoint = "/api/v1/ml/check_drift"
         
         # Test with first API key
-        headers_key1 = {"X-API-Key": "test-key-1"}
-        headers_key2 = {"X-API-Key": "test-key-2"}
+        headers_key1 = {API_KEY_HEADER_NAME: "test-key-1"}
+        headers_key2 = {API_KEY_HEADER_NAME: "test-key-2"}
         
         # Make 10 requests with key1
         for i in range(10):
@@ -151,7 +152,7 @@ class TestRateLimiting:
         
         This test verifies that 429 responses include appropriate headers and error details.
         """
-        headers = {"X-API-Key": test_api_key}
+        headers = {API_KEY_HEADER_NAME: test_api_key}
         endpoint = "/api/v1/ml/check_drift"
         
         # Exhaust the rate limit
@@ -181,7 +182,7 @@ class TestRateLimiting:
         Note: This test is marked as slow and might be skipped in CI due to the time requirement.
         It verifies that after waiting for the rate limit window to expire, requests work again.
         """
-        headers = {"X-API-Key": test_api_key}
+        headers = {API_KEY_HEADER_NAME: test_api_key}
         endpoint = "/api/v1/ml/check_drift"
         
         # Exhaust the rate limit
@@ -238,7 +239,7 @@ class TestRateLimitConfiguration:
             "features": {"test_feature": 1.0}
         }
         
-        headers = {"X-API-Key": "test-api-key"}
+        headers = {API_KEY_HEADER_NAME: "test-api-key"}
         
         # Make multiple requests to predict endpoint
         for i in range(15):  # More than drift limit
@@ -256,7 +257,7 @@ class TestRateLimitConfiguration:
         endpoint = "/api/v1/ml/check_drift"
         
         # Test with API key - should use key-based identification
-        headers_with_key = {"X-API-Key": "unique-test-key"}
+        headers_with_key = {API_KEY_HEADER_NAME: "unique-test-key"}
         
         # Make 10 requests with API key
         for i in range(10):
