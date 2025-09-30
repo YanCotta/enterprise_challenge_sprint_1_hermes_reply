@@ -14,6 +14,20 @@ from lib.api_client import make_api_request
 from lib.rerun import safe_rerun
 
 
+@st.cache_data(ttl=900)
+def _fetch_sensor_options() -> list[str]:
+    """Return cached sensor filter options with a 15-minute TTL."""
+    response = make_api_request("GET", "/api/v1/sensors/sensors")
+    if not response.get("success"):
+        error_message = response.get("error") or "Unable to load sensor list"
+        raise RuntimeError(error_message)
+
+    payload = response.get("data") or []
+    sensor_ids = [item.get("sensor_id") for item in payload if isinstance(item, dict) and item.get("sensor_id")]
+    options = ["(all)"] + sensor_ids if sensor_ids else ["(all)"]
+    return options
+
+
 def render_data_explorer():
     """Render the data explorer page for viewing and filtering sensor readings."""
     st.header("📂 Data Explorer")
@@ -22,27 +36,19 @@ def render_data_explorer():
     # --- STATE MANAGEMENT ---
     if "data_explorer_offset" not in st.session_state:
         st.session_state.data_explorer_offset = 0
-    if "data_explorer_sensors" not in st.session_state:
-        st.session_state.data_explorer_sensors = []
 
     # --- CONTROLS ---
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         page_size = st.selectbox("Page Size", [25, 50, 100, 250], index=1)
     with c2:
-        if not st.session_state.data_explorer_sensors:
-            with st.spinner("Loading sensor list..."):
-                sensors_resp = make_api_request("GET", "/api/v1/sensors/sensors")
-                if sensors_resp["success"]:
-                    sensor_payload = sensors_resp["data"] or []
-                    if isinstance(sensor_payload, list) and sensor_payload:
-                        sensor_ids = [s.get("sensor_id") for s in sensor_payload if s.get("sensor_id")]
-                        st.session_state.data_explorer_sensors = ["(all)"] + sensor_ids if sensor_ids else ["(all)"]
-                    else:
-                        st.session_state.data_explorer_sensors = ["(all)"]
-                else:
-                    st.session_state.data_explorer_sensors = ["(all)"]
-        sensor_filter = st.selectbox("Filter by Sensor ID", st.session_state.data_explorer_sensors)
+        with st.spinner("Loading sensor list..."):
+            try:
+                sensor_options = _fetch_sensor_options()
+            except RuntimeError as sensor_err:
+                st.warning(f"Sensor list unavailable: {sensor_err}")
+                sensor_options = ["(all)"]
+        sensor_filter = st.selectbox("Filter by Sensor ID", sensor_options)
     with c3:
         start_date = st.date_input("Start Date", value=None)
     with c4:
