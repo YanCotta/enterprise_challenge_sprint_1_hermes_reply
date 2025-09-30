@@ -703,7 +703,7 @@ Component: {component}
             }
 
             # Determine recipients
-            recipients = self._determine_recipients_for_maintenance(event_data)
+            recipients = self._determine_recipients_for_maintenance(event)
 
             # Create and send notifications
             for recipient in recipients:
@@ -735,8 +735,24 @@ Component: {component}
         )
 
         try:
-            # Extract prediction data
-            prediction_details = event.prediction_details
+            # Extract prediction data with graceful fallback
+            prediction_details = getattr(event, "prediction_details", None)
+            if not prediction_details:
+                prediction_details = {
+                    "component": event.equipment_id,
+                    "predicted_failure_time": event.predicted_failure_date.strftime('%Y-%m-%d %H:%M:%S UTC'),
+                    "time_to_failure": f"{event.time_to_failure_days:.1f} days",
+                    "confidence": event.prediction_confidence,
+                    "model_name": event.prediction_method,
+                    "key_indicators": f"Historical points: {event.historical_data_points}",
+                    "trend_analysis": "Synthetic trend for demo pipeline",
+                    "recommended_actions": event.recommended_actions or ["Inspect equipment"],
+                    "maintenance_window": (
+                        f"{event.confidence_interval_lower.strftime('%Y-%m-%d')} - {event.confidence_interval_upper.strftime('%Y-%m-%d')}"
+                        if event.confidence_interval_lower and event.confidence_interval_upper
+                        else "Next available slot"
+                    ),
+                }
             
             # Prepare template data
             template_data = {
@@ -751,14 +767,14 @@ Component: {component}
                 'trend_analysis': prediction_details.get('trend_analysis', 'Degradation pattern detected'),
                 'recommended_actions': '\n'.join([f"• {action}" for action in prediction_details.get('recommended_actions', ['Schedule inspection'])]),
                 'suggested_maintenance_window': prediction_details.get('maintenance_window', 'Next available slot'),
-                'predicted_at': event.predicted_at.strftime('%Y-%m-%d %H:%M:%S UTC'),
+                'predicted_at': getattr(event, 'predicted_at', event.timestamp).strftime('%Y-%m-%d %H:%M:%S UTC'),
                 'agent_id': event.agent_id,
                 'event_id': str(event.event_id),
                 'correlation_id': correlation_id
             }
 
             # Determine recipients based on prediction urgency
-            recipients = self._determine_recipients_for_prediction(event_data, prediction_details)
+            recipients = self._determine_recipients_for_prediction(event, prediction_details)
 
             # Create and send notifications
             for recipient in recipients:
