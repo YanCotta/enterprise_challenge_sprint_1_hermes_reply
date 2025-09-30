@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     secret_key: str = "change_this_to_a_secure_random_key_in_production"
     access_token_expire_minutes: int = 60
     API_KEY: str = "your_default_api_key"  # Static API Key for basic auth
+    ALLOW_ANONYMOUS_API_ACCESS: bool = Field(
+        default=True,
+        description=(
+            "Allow requests without API keys to pass through authentication dependencies. "
+            "Set to False in hardened environments to enforce API key usage."
+        ),
+    )
 
     # Agents
     agent_communication_timeout: int = 30
@@ -104,6 +111,15 @@ class Settings(BaseSettings):
     ORCHESTRATOR_VERY_URGENT_MAINTENANCE_DAYS_FACTOR: float = Field(
         default=0.5,
         description="Factor of URGENT_MAINTENANCE_DAYS to determine 'very urgent' threshold (e.g., 0.5 for half)."
+    )
+
+    # Health checks
+    HEALTHCHECK_ENFORCE_DEPENDENCIES: bool = Field(
+        default=False,
+        description=(
+            "Return HTTP 503 when a dependency check fails. When False, the API reports a "
+            "degraded status with HTTP 200 to keep readiness probes green during local/test runs."
+        ),
     )
 
     class Config:
