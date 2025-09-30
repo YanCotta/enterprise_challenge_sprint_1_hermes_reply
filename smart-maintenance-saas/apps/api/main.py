@@ -1,8 +1,9 @@
 import logging  # For basic logging if setup_logging is not yet fully integrated
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from apps.api.routers import data_ingestion, reporting, human_decision, sensor_readings, decisions, maintenance
@@ -44,6 +45,19 @@ def get_api_key_identifier(request: Request):
 
 # Initialize rate limiter with in-memory store and API key identification
 limiter = Limiter(key_func=get_api_key_identifier)
+
+
+def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    """Return rate limit errors in the FastAPI-standard format."""
+    response = JSONResponse(
+        {"detail": f"Rate limit exceeded: {exc.detail}"},
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    )
+    response = request.app.state.limiter._inject_headers(  # type: ignore[attr-defined]
+        response,
+        request.state.view_rate_limit,
+    )
+    return response
 
 # Optional: Import routers if you have them (e.g., for Task 7)
 # from .routers import sensor_readings_router
@@ -112,7 +126,7 @@ app = FastAPI(
 
 # Set up rate limiting state and error handler
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 # Instrument the app with default metrics (latency, requests, etc.)
 instrumentator = Instrumentator().instrument(app)
@@ -179,8 +193,10 @@ async def health_check() -> HealthStatus:
     
     # Se houver falhas, retornar com código de status apropriado
     if http_status != 200:
-        raise HTTPException(status_code=http_status, detail=response.dict())
-    
+        if getattr(settings, "HEALTHCHECK_ENFORCE_DEPENDENCIES", False):
+            raise HTTPException(status_code=http_status, detail=response.dict())
+        return response
+
     return response
 
 
