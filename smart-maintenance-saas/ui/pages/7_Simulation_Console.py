@@ -84,28 +84,35 @@ def _render_runs_table():
     if not st.session_state.simulation_runs:
         st.info("No simulations launched yet.")
         return
-    with st.expander("Recent Simulation Runs", expanded=True):
-        for run in st.session_state.simulation_runs[:25]:
-            status = "✅" if run["response"].get("success") else "❌"
-            header = f"{status} {run['type']} • {run['id']} • {run['latency_ms']:.0f} ms"
-            with st.container():
-                st.markdown(f"**{header}**")
-                cols = st.columns(4)
-                with cols[0]:
-                    st.caption(f"Started: {run['started_at']}")
-                with cols[1]:
-                    st.caption(f"Events: {run['response'].get('data', {}).get('events_generated', '?') if run['response'].get('success') else '-'}")
-                with cols[2]:
-                    st.caption(f"Correlation: {run['response'].get('data', {}).get('correlation_id', '-') if run['response'].get('success') else '-'}")
-                with cols[3]:
-                    st.caption(f"Simulation ID: {run['response'].get('data', {}).get('simulation_id', '-') if run['response'].get('success') else '-'}")
-                with st.expander("Payload", expanded=False):
-                    st.json(run["payload"])
-                if run["response"].get("success"):
-                    with st.expander("Raw Response", expanded=False):
-                        st.json(run["response"]["data"])
-                else:
-                    st.warning(run["response"].get("error", "Unknown error"))
+    st.subheader("Recent Simulation Runs")
+    for run in st.session_state.simulation_runs[:25]:
+        status = "✅" if run["response"].get("success") else "❌"
+        header = f"{status} {run['type']} • {run['id']} • {run['latency_ms']:.0f} ms"
+        with st.expander(header, expanded=False):
+            cols = st.columns(4)
+            with cols[0]:
+                st.caption(f"Started: {run['started_at']}")
+            with cols[1]:
+                st.caption(
+                    f"Events: {run['response'].get('data', {}).get('events_generated', '?') if run['response'].get('success') else '-'}"
+                )
+            with cols[2]:
+                st.caption(
+                    f"Correlation: {run['response'].get('data', {}).get('correlation_id', '-') if run['response'].get('success') else '-'}"
+                )
+            with cols[3]:
+                st.caption(
+                    f"Simulation ID: {run['response'].get('data', {}).get('simulation_id', '-') if run['response'].get('success') else '-'}"
+                )
+
+            st.markdown("**Payload**")
+            st.json(run["payload"])
+
+            if run["response"].get("success"):
+                st.markdown("**Raw Response**")
+                st.json(run["response"]["data"])
+            else:
+                st.warning(run["response"].get("error", "Unknown error"))
 
 
 def render_simulation_console():
