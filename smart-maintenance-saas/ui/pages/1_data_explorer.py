@@ -33,8 +33,13 @@ def render_data_explorer():
         if not st.session_state.data_explorer_sensors:
             with st.spinner("Loading sensor list..."):
                 sensors_resp = make_api_request("GET", "/api/v1/sensors/sensors")
-                if sensors_resp["success"] and sensors_resp.get("data"):
-                    st.session_state.data_explorer_sensors = ["(all)"] + [s['sensor_id'] for s in sensors_resp['data']]
+                if sensors_resp["success"]:
+                    sensor_payload = sensors_resp["data"] or []
+                    if isinstance(sensor_payload, list) and sensor_payload:
+                        sensor_ids = [s.get("sensor_id") for s in sensor_payload if s.get("sensor_id")]
+                        st.session_state.data_explorer_sensors = ["(all)"] + sensor_ids if sensor_ids else ["(all)"]
+                    else:
+                        st.session_state.data_explorer_sensors = ["(all)"]
                 else:
                     st.session_state.data_explorer_sensors = ["(all)"]
         sensor_filter = st.selectbox("Filter by Sensor ID", st.session_state.data_explorer_sensors)
