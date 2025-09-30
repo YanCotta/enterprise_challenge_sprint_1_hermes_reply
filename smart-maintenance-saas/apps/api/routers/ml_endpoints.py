@@ -8,7 +8,7 @@ using our validated MLflow Model Registry integration from Day 11.
 import logging
 import uuid
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -26,6 +26,15 @@ from data.schemas import AnomalyAlert, AnomalyType, SensorReading
 from scipy.stats import ks_2samp
 
 from core.database.crud.crud_sensor_reading import crud_sensor_reading
+
+try:  # Resolve model versions when "auto" requested
+    import mlflow
+    from mlflow.tracking import MlflowClient
+    MLFLOW_AVAILABLE = True
+except ImportError:  # pragma: no cover - optional dependency already present in services
+    MLFLOW_AVAILABLE = False
+    mlflow = None
+    MlflowClient = None
 
 # SHAP for explainable AI
 try:
@@ -261,6 +270,40 @@ class DriftCheckResponse(BaseModel):
         json_encoders = {datetime: lambda dt: dt.isoformat()}
 
 
+class ForecastPoint(BaseModel):
+    """Single forecasted point returned to the caller."""
+
+    timestamp: datetime = Field(..., description="Forecasted timestamp in UTC")
+    predicted_value: float = Field(..., description="Model predicted value for the timestamp")
+    lower_bound: Optional[float] = Field(None, description="Lower prediction interval bound if available")
+    upper_bound: Optional[float] = Field(None, description="Upper prediction interval bound if available")
+
+
+class ForecastResponse(BaseModel):
+    """Forecast results generated for a sensor."""
+
+    sensor_id: str
+    model_name: str
+    model_version: str
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    history_points: int
+    horizon_steps: int
+    cadence_minutes: int
+    forecast: List[ForecastPoint]
+    metrics: Optional[Dict[str, Any]] = None
+
+
+class ForecastRequest(BaseModel):
+    """Payload for generating forecasts for a sensor."""
+
+    sensor_id: str = Field(..., description="Sensor identifier to forecast for")
+    model_name: str = Field(..., description="Registered model name")
+    model_version: str = Field(default="auto", description="Specific model version or 'auto' for latest")
+    history_window: int = Field(default=288, ge=10, le=1000, description="Number of latest readings to use")
+    horizon_steps: int = Field(default=12, ge=1, le=288, description="Number of future predictions to generate")
+    cadence_minutes: Optional[int] = Field(None, description="Override cadence in minutes; defaults to sensor cadence")
+
+
 # ==============================================================================
 # HELPER FUNCTIONS
 # ==============================================================================
@@ -334,6 +377,45 @@ def compute_shap_explanation(model, feature_array: np.ndarray, feature_names: Li
     except Exception as e:
         logger.warning(f"Failed to compute SHAP values: {e}")
         return None
+
+
+def _resolve_model_version(model_name: str, requested_version: str) -> str:
+    """Resolve model version when callers request 'auto' or 'latest'."""
+
+    if requested_version and requested_version.lower() not in {"auto", "latest"}:
+        return requested_version
+
+    if not MLFLOW_AVAILABLE:
+        logger.warning(
+            "MLflow unavailable while resolving version for %s; defaulting to '1'",
+            model_name,
+        )
+        return "1"
+
+    client = MlflowClient()
+    stage_preferences = [["Production"], ["Staging"], ["None"], None]
+    for stages in stage_preferences:
+        try:
+            latest_versions = (
+                client.get_latest_versions(model_name, stages=stages)
+                if stages is not None
+                else client.get_latest_versions(model_name)
+            )
+            if latest_versions:
+                return latest_versions[0].version
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Failed to resolve version for %s using stages %s: %s", model_name, stages, exc)
+            continue
+
+    try:
+        all_versions = client.search_model_versions(f"name='{model_name}'")
+        if all_versions:
+            sorted_versions = sorted(all_versions, key=lambda mv: int(mv.version), reverse=True)
+            return sorted_versions[0].version
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Unable to enumerate versions for %s: %s", model_name, exc)
+
+    return "1"
 
 
 def prepare_features_for_prediction(features: Dict[str, Any], model_name: str) -> np.ndarray:
@@ -820,6 +902,152 @@ async def predict(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prediction failed: {str(e)}"
         )
+
+
+@router.post(
+    "/forecast",
+    response_model=ForecastResponse,
+    tags=["ML Prediction"],
+    dependencies=[Security(api_key_auth, scopes=["ml:predict"])],
+)
+async def forecast_sensor(
+    request: ForecastRequest,
+    db: AsyncSession = Depends(get_async_db),
+) -> ForecastResponse:
+    """Generate time-series forecasts for a sensor using registered MLflow models."""
+
+    history = await crud_sensor_reading.get_sensor_readings_by_sensor_id(
+        db,
+        sensor_id=request.sensor_id,
+        limit=request.history_window,
+    )
+
+    if not history:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No readings found for sensor '{request.sensor_id}'",
+        )
+
+    history_sorted = sorted(
+        [h for h in history if h.timestamp is not None],
+        key=lambda item: item.timestamp,
+    )
+
+    if not history_sorted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Sensor '{request.sensor_id}' does not have timestamped readings",
+        )
+
+    history_df = pd.DataFrame(
+        {
+            "timestamp": [item.timestamp.replace(tzinfo=None) if item.timestamp.tzinfo else item.timestamp for item in history_sorted],
+            "value": [float(item.value) if item.value is not None else np.nan for item in history_sorted],
+            "quality": [float(item.quality) if item.quality is not None else np.nan for item in history_sorted],
+        }
+    ).dropna(subset=["timestamp", "value"])
+
+    if history_df.empty:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Insufficient data after cleaning to perform forecast",
+        )
+
+    cadence_minutes = request.cadence_minutes
+    if cadence_minutes is None and len(history_df) >= 2:
+        diffs = history_df["timestamp"].diff().dropna()
+        if not diffs.empty:
+            median_minutes = float(diffs.dt.total_seconds().median() / 60.0)
+            if median_minutes > 0:
+                cadence_minutes = max(1, int(round(median_minutes)))
+
+    if cadence_minutes is None or cadence_minutes <= 0:
+        cadence_minutes = 5  # sensible default for synthetic dataset cadence
+
+    resolved_version = _resolve_model_version(request.model_name, request.model_version)
+    model, _ = load_model(request.model_name, resolved_version)
+
+    if model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Model '{request.model_name}' version '{resolved_version}' not found",
+        )
+
+    last_timestamp = history_df["timestamp"].iloc[-1]
+    future_index = pd.date_range(
+        start=last_timestamp + pd.Timedelta(minutes=cadence_minutes),
+        periods=request.horizon_steps,
+        freq=f"{cadence_minutes}min",
+    )
+
+    future_payload = pd.DataFrame({"ds": future_index})
+
+    try:
+        forecast_raw = model.predict(future_payload)
+    except Exception as exc:  # noqa: BLE001
+        logger.error(
+            "Forecast prediction failed for %s v%s: %s",
+            request.model_name,
+            resolved_version,
+            exc,
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Forecast prediction failed: {exc}",
+        ) from exc
+
+    if isinstance(forecast_raw, pd.DataFrame):
+        forecast_df = forecast_raw.copy()
+    else:
+        forecast_df = pd.DataFrame({"yhat": np.array(forecast_raw).reshape(-1)})
+        forecast_df["ds"] = future_index[: len(forecast_df)]
+
+    forecast_points: List[ForecastPoint] = []
+    for _, row in forecast_df.head(request.horizon_steps).iterrows():
+        raw_ts = row.get("ds") or row.get("timestamp")
+        if pd.isna(raw_ts):
+            continue
+        ts = pd.to_datetime(raw_ts).to_pydatetime()
+        if ts.tzinfo:
+            ts = ts.astimezone(timezone.utc).replace(tzinfo=None)
+        predicted = row.get("yhat")
+        if predicted is None or pd.isna(predicted):
+            continue
+        lower = row.get("yhat_lower")
+        upper = row.get("yhat_upper")
+        forecast_points.append(
+            ForecastPoint(
+                timestamp=ts,
+                predicted_value=float(predicted),
+                lower_bound=float(lower) if lower is not None and not pd.isna(lower) else None,
+                upper_bound=float(upper) if upper is not None and not pd.isna(upper) else None,
+            )
+        )
+
+    if not forecast_points:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Forecast model returned empty results",
+        )
+
+    metrics = {
+        "history_start": history_df["timestamp"].iloc[0].isoformat(),
+        "history_end": history_df["timestamp"].iloc[-1].isoformat(),
+        "history_points": len(history_df),
+        "cadence_minutes": cadence_minutes,
+    }
+
+    return ForecastResponse(
+        sensor_id=request.sensor_id,
+        model_name=request.model_name,
+        model_version=resolved_version,
+        history_points=len(history_df),
+        horizon_steps=len(forecast_points),
+        cadence_minutes=cadence_minutes,
+        forecast=forecast_points,
+        metrics=metrics,
+    )
 
 
 @router.post("/detect_anomaly", response_model=AnomalyDetectionResponse, tags=["ML Anomaly Detection"], dependencies=[Security(api_key_auth, scopes=["ml:anomaly"])])
