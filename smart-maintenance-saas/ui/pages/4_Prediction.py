@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -7,6 +8,10 @@ import streamlit as st  # type: ignore
 from lib.api_client import make_api_request, get_latency_samples
 
 st.set_page_config(page_title="Prediction", page_icon="🤖")
+
+if "last_schedule_response" not in st.session_state:
+    st.session_state.last_schedule_response = None
+    st.session_state.last_schedule_sensor = None
 
 
 @dataclass(frozen=True)
@@ -148,6 +153,64 @@ def _run_anomaly(model: BaselineModel, history_rows: List[Dict[str, object]]):
     return make_api_request("POST", "/api/v1/ml/detect_anomaly", json_data=payload)
 
 
+def _build_schedule_request(
+    sensor_id: str,
+    sensor_type: str,
+    model: BaselineModel,
+    forecast_df: pd.DataFrame,
+    history_df: pd.DataFrame,
+    payload: Dict[str, object],
+) -> Optional[Dict[str, object]]:
+    """Derive a maintenance schedule request payload from forecast results."""
+    if forecast_df.empty:
+        return None
+
+    terminal_ts = forecast_df["timestamp"].max()
+    if pd.isna(terminal_ts):
+        return None
+
+    predicted_failure = pd.to_datetime(terminal_ts, utc=True, errors="coerce")
+    if pd.isna(predicted_failure):
+        return None
+
+    predicted_failure_dt = predicted_failure.to_pydatetime()
+    now_utc = datetime.now(timezone.utc)
+    time_to_failure_days = max((predicted_failure_dt - now_utc).total_seconds() / 86400.0, 0.1)
+
+    recommended_actions = payload.get("recommended_actions")
+    if not isinstance(recommended_actions, list) or not recommended_actions:
+        recommended_actions = [
+            "Dispatch technician for preventive inspection",
+            "Verify cooling system and sensor calibration",
+        ]
+
+    model_metrics = payload.get("model_metrics") if isinstance(payload.get("model_metrics"), dict) else {}
+
+    return {
+        "sensor_id": sensor_id,
+        "sensor_type": sensor_type,
+        "equipment_id": payload.get("equipment_id") or sensor_id,
+        "predicted_failure_date": predicted_failure_dt.isoformat(),
+        "time_to_failure_days": round(time_to_failure_days, 2),
+        "maintenance_type": payload.get("maintenance_type", "preventive"),
+        "prediction_method": payload.get("prediction_method") or model.model_name,
+        "prediction_confidence": payload.get("prediction_confidence", 0.82),
+        "historical_data_points": payload.get("history_points", len(history_df.index)),
+        "model_name": payload.get("model_name") or model.model_name,
+        "model_version": payload.get("model_version") or model.model_version,
+        "model_metrics": model_metrics,
+        "recommended_actions": recommended_actions,
+        "trigger_source": "prediction_page",
+        "correlation_id": payload.get("correlation_id"),
+        "prediction_agent_id": payload.get("prediction_agent_id", "ui_prediction_demo"),
+        "include_report": True,
+        "metadata": {
+            "history_points": payload.get("history_points", len(history_df.index)),
+            "horizon_steps": payload.get("horizon_steps"),
+        },
+    }
+
+
 def render_prediction_page():
     st.header("🤖 Model Prediction")
     st.caption(
@@ -171,6 +234,10 @@ def render_prediction_page():
     sensor_id = st.selectbox("Sensor", sensor_options)
     selected_sensor = next((entry for entry in sensors_for_type if entry["sensor_id"] == sensor_id), None)
     latest_state = (selected_sensor or {}).get("latest") or {}
+
+    if st.session_state.get("last_schedule_sensor") != sensor_id:
+        st.session_state.last_schedule_sensor = sensor_id
+        st.session_state.last_schedule_response = None
 
     col_state, col_meta = st.columns([2, 1])
     with col_state:
@@ -273,20 +340,106 @@ def render_prediction_page():
             )
 
         if not history_df.empty and not forecast_df.empty:
-            history_df_plot = history_df[["timestamp", "value"]].rename(columns={"value": "Historical"})
-            combined = history_df_plot.copy()
-            combined.set_index("timestamp", inplace=True)
-            combined["Forecast"] = None
-            for _, row in forecast_df.iterrows():
-                combined.loc[row["timestamp"], "Forecast"] = row.get("predicted_value")
-            combined = combined.sort_index()
-            st.line_chart(combined)
+            history_series = (
+                history_df
+                .set_index("timestamp")
+                ["value"]
+                .rename("Historical")
+            )
+            forecast_series = (
+                forecast_df
+                .set_index("timestamp")
+                ["predicted_value"]
+                .rename("Forecast")
+            )
+
+            chart_df = pd.concat([history_series, forecast_series], axis=1)
+            chart_df = chart_df.apply(pd.to_numeric, errors="coerce")
+            chart_df = chart_df.sort_index()
+            st.line_chart(chart_df)
 
         with st.expander("Forecast Table", expanded=False):
             st.dataframe(forecast_df, use_container_width=True)
 
         with st.expander("Historical Context", expanded=False):
             st.dataframe(history_df, use_container_width=True)
+
+        st.divider()
+        st.subheader("Maintenance Automation (Demo Pipeline)")
+        st.caption(
+            "Trigger the multi-agent scheduling workflow. The maintenance order flows through the SchedulingAgent "
+            "and appears automatically on the Reporting Prototype and Golden Path views."
+        )
+
+        schedule_request = _build_schedule_request(
+            sensor_id=sensor_id,
+            sensor_type=sensor_type,
+            model=chosen_model,
+            forecast_df=forecast_df,
+            history_df=history_df,
+            payload=payload,
+        )
+
+        schedule_btn_col, info_col = st.columns([1, 3])
+        with schedule_btn_col:
+            disabled = schedule_request is None
+            trigger_clicked = st.button(
+                "Create Maintenance Order",
+                type="primary",
+                disabled=disabled,
+            )
+        with info_col:
+            if schedule_request is None:
+                st.info("Run a forecast with at least one horizon step to enable maintenance scheduling.")
+            else:
+                st.caption(
+                    "We derive a predicted failure window from the forecast horizon, send it through the SchedulingAgent, "
+                    "and persist the outcome for downstream reporting."
+                )
+
+        if schedule_request and trigger_clicked:
+            with st.spinner("Coordinating maintenance schedule via multi-agent pipeline..."):
+                schedule_resp = make_api_request(
+                    "POST",
+                    "/api/v1/maintenance/schedule",
+                    json_data=schedule_request,
+                )
+            if schedule_resp.get("success"):
+                st.session_state.last_schedule_response = schedule_resp.get("data")
+                st.success("Maintenance order dispatched. Check the Reporting Prototype for the live feed.")
+            else:
+                st.error(schedule_resp.get("error", "Failed to schedule maintenance."))
+                if schedule_resp.get("hint"):
+                    st.caption(f"Hint: {schedule_resp['hint']}")
+
+        schedule_data = st.session_state.get("last_schedule_response") or {}
+        if schedule_data:
+            meta = schedule_data.get("metadata", {})
+            schedule_details = schedule_data.get("schedule", {})
+            schedule_cols = st.columns(3)
+            schedule_cols[0].metric(
+                "Schedule Status",
+                schedule_data.get("status", "Scheduled"),
+            )
+            schedule_cols[1].metric(
+                "Start",
+                schedule_details.get("scheduled_start_time", "pending"),
+            )
+            schedule_cols[2].metric(
+                "Technician",
+                schedule_data.get("assigned_technician_id", "TBD"),
+            )
+
+            st.caption(
+                f"Correlation ID: {schedule_data.get('correlation_id')} — model {meta.get('model_name', 'n/a')}"
+            )
+
+            with st.expander("Scheduled Maintenance Payload", expanded=False):
+                st.json(schedule_data)
+
+            st.caption(
+                "Tip: open the Reporting Prototype page to preview the automatically generated maintenance report feed."
+            )
 
     else:
         resp = _run_anomaly(chosen_model, history_rows)
