@@ -7,8 +7,37 @@ from data.schemas import (
     AnomalyType,
     AnomalyStatus,
     MaintenanceTask,
-    MaintenanceTaskStatus
+    MaintenanceTaskStatus,
+    SensorReading,
+    SensorReadingCreate,
+    SensorType,
 )
+
+
+class TestSensorReadingSensorType:
+
+    def test_sensor_reading_create_accepts_humidity_string(self):
+        reading = SensorReadingCreate(
+            sensor_id="sensor-h-001",
+            value=52.3,
+            sensor_type="humidity",
+            unit="%",
+            timestamp=datetime.utcnow(),
+        )
+
+        assert reading.sensor_type == SensorType.HUMIDITY
+
+    def test_sensor_reading_accepts_voltage_enum(self):
+        reading = SensorReading(
+            sensor_id="sensor-v-001",
+            value=230.0,
+            sensor_type=SensorType.VOLTAGE,
+            unit="V",
+            timestamp=datetime.utcnow(),
+            ingestion_timestamp=datetime.utcnow(),
+        )
+
+        assert reading.sensor_type == SensorType.VOLTAGE
 
 class TestAnomalyAlertEnumUsage:
 
