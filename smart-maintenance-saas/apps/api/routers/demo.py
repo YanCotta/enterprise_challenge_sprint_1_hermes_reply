@@ -408,7 +408,6 @@ async def start_golden_path_demo(
     if include_decision:
         async def decision_injector():
             # wait until prediction step completes then publish decision required
-            prediction_event_payload: Dict[str, Any] = {}
             for _ in range(30):  # ~30 * 0.5s = 15s timeout
                 status = await _load_demo_status(correlation_id)
                 if status and any(s["name"] == "prediction" and s["status"] == "complete" for s in status["steps"]):
@@ -416,17 +415,31 @@ async def start_golden_path_demo(
                         (evt for evt in status["events"] if evt.get("event_type") == "MaintenancePredictedEvent"),
                         None,
                     )
-                    prediction_event_payload = prediction_event.get("payload", {}) if prediction_event else {}
+                    prediction_event_payload: Dict[str, Any] = prediction_event.get("payload", {}) if prediction_event else {}
+                    prediction_event_id = prediction_event.get("event_id") if prediction_event else None
+
                     recommended_actions = prediction_event_payload.get("recommended_actions") or ["inspect bearing"]
                     if not isinstance(recommended_actions, list):
                         recommended_actions = [str(recommended_actions)]
 
+                    resolved_request_id = (
+                        f"maintenance_approval_{prediction_event_id}"
+                        if prediction_event_id
+                        else f"maintenance_approval_{correlation_id}"
+                    )
+
+                    failure_date = prediction_event_payload.get("predicted_failure_date")
+                    if isinstance(failure_date, datetime):
+                        failure_date_iso = failure_date.isoformat()
+                    else:
+                        failure_date_iso = str(failure_date) if failure_date else None
+
                     decision_request = DecisionRequest(
-                        request_id=f"demo_decision_{correlation_id}",
+                        request_id=resolved_request_id,
                         decision_type=DecisionType.MAINTENANCE_APPROVAL,
                         context={
                             "equipment_id": prediction_event_payload.get("equipment_id") or f"demo-sensor-{correlation_id[:4]}",
-                            "predicted_failure_date": prediction_event_payload.get("predicted_failure_date"),
+                            "predicted_failure_date": failure_date_iso,
                             "prediction_confidence": prediction_event_payload.get("prediction_confidence", 0.75),
                             "time_to_failure_days": prediction_event_payload.get("time_to_failure_days", 30),
                             "recommended_actions": recommended_actions,
