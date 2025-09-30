@@ -482,18 +482,21 @@ After deploying earlier UI changes, multiple pages crashed due to deprecated `st
 ### 19.5 Additional Stability Improvements (2025-09-27 Post-Fix)
 
 **Golden Path Demo Timeout Protection**:
+
 - Added 90-second maximum runtime limit with stale timeout detection
 - Session state tracking prevents infinite polling loops
 - Clear countdown and timeout messaging for users
 - Graceful degradation when demos exceed time limits
 
 **Model Metadata State Clarity**:
+
 - Explicit differentiation between MLflow disabled, empty registry, and API errors
 - Health check validation to determine root cause of empty states
 - Improved error messaging with actionable guidance for users
 - State matrix documented for troubleshooting reference
 
 **Test Coverage Foundation**:
+
 - Added `docs/TEST_PLAN_V1.md` with comprehensive V1.0 test strategy
 - Created basic stability validation tests in `tests/test_v1_stability.py`
 - Static analysis validation for critical import patterns
@@ -542,6 +545,33 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 
 - Smoke script currently classifies ingestion verification as failure, blocking full pass/fail reporting. Need a reliable sensor-readings confirmation or alternative success criterion.
 - MLflow unavailability keeps prediction endpoints from returning realistic model metadata; UI pages relying on metadata may still reflect degraded messaging until service healthy.
+
+---
+
+## 21. Validation Recap & Latest Fixes (2025-09-30)
+
+### 21.1 Previously Delivered Cloud Copilot Work (Validated)
+
+- Confirmed prediction page enhancements from A3 remain stable after dependency refresh; auto-version resolution works when backend responds and latency metrics surface as designed.
+- Exercised B4 latency telemetry registry across ingestion, prediction, and simulation flows; verified samples persist for recent-call panels without UI regressions.
+- Walked through Golden Path demo upgrades (Section 18.3) to ensure end-to-end completion, including optional human decision branch; no stalls observed after patched prediction events.
+- Re-ran smoke script’s ingestion segment to reproduce known verification lag, establishing baseline before new backend adjustments.
+
+### 21.2 New Fixes Applied (Jules Critical List)
+
+| Area | Change | Notes |
+|------|--------|-------|
+| Data Explorer | Adjusted sensor dropdown population to read the wrapped `{"data": [...]}` payload and harden empty responses. | Prevents crashes when API returns `{success: true, data: []}`. |
+| Prediction Page | Updated `_auto_resolve_version` to parse nested response fields, renamed payload key to `explain`, simplified confidence metric. | Restores version auto-selection and SHAP trigger path. |
+| Decisions API | Extended CRUD + router to support filters (operator, request, correlation, date), serialize results with structured logging. | Enables UI filters to function once API rebuilt. |
+| Demo Router | Removed in-memory `ACTIVE_DEMOS`, introduced Redis-backed atomic updates with transaction retry, injected synthetic `HumanDecisionResponseEvent` to complete decision stage. | Eliminates race conditions across workers and unblocks demo completion when human step enabled. |
+| Sensor Readings Logging | Guarded `.isoformat()` calls to handle `None` timestamps. | Prevents backend 500 when filters omitted. |
+
+### 21.3 Verification & Next Steps
+
+- Pending container restart (`docker compose up -d --build api`) required before re-testing UI; API currently reflects earlier image.
+- Once services healthy, rerun page-by-page validation plan (Data Explorer, Prediction, Decisions, Demo) to ensure fixes behaved as expected.
+- Continue tracking MLflow configuration issue (Section 20.4) prior to full smoke sign-off.
 
 ---
 
