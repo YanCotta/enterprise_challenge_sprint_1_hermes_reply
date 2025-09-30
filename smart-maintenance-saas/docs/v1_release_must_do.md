@@ -11,3 +11,10 @@ These action items consolidate the high-priority fixes we must finish before tag
 | Medium | UI Performance | Cache the Data Explorer sensor list fetch (`ui/pages/1_data_explorer.py`) with a reasonable TTL so repeated visits do not trigger avoidable latency. | Page reloads reuse cached data; cache invalidation verified after TTL expires. | latest_system_audit_2.md §UI Layer |
 
 Once these are complete, rerun the smoke workflow (forecast → schedule → reporting) to verify a clean pass before deployment prep.
+
+## Completion Tracker
+
+- [x] Hardened the `DISABLE_MLFLOW_MODEL_LOADING` flag across `apps/ml/model_loader.py`, `apps/ml/model_utils.py`, and `apps/api/routers/ml_endpoints.py`, plus regression tests in `tests/unit/ml/test_model_loader_disable.py` and `tests/unit/api/test_ml_version_resolution.py`.
+- [x] Added ML version auto-resolution tests and shared helper coverage in `apps/api/routers/ml_endpoints.py` / `tests/unit/api/test_ml_version_resolution.py`.
+- [x] Introduced event bus retry and DLQ integration tests in `tests/integration/test_event_bus_retry.py`.
+- [x] Cached Data Explorer sensor list fetch via `_fetch_sensor_options()` in `ui/pages/1_data_explorer.py` to cut redundant API calls.
