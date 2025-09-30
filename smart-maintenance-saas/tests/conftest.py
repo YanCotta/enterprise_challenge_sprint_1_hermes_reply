@@ -10,6 +10,8 @@ import os
 from typing import AsyncGenerator, Dict, Generator
 
 import pytest
+from fastapi.testclient import TestClient
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -19,6 +21,7 @@ from sqlalchemy.ext.asyncio import (
 from testcontainers.postgres import PostgresContainer
 
 from core.config import settings
+from apps.api.main import app
 from core.database.base import Base
 
 
@@ -201,3 +204,28 @@ def test_settings() -> Generator[Dict, None, None]:
     # Restore original values
     for key, value in original_values.items():
         setattr(settings, key, value)
+
+
+@pytest.fixture
+def client() -> Generator[TestClient, None, None]:
+    """Provide a FastAPI test client for API tests."""
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+@pytest.fixture
+async def async_client() -> AsyncGenerator[AsyncClient, None]:
+    """Provide an async HTTP client bound to the FastAPI app."""
+    async with AsyncClient(app=app, base_url="http://test") as http_client:
+        yield http_client
+
+
+@pytest.fixture
+def sample_drift_payload() -> Dict[str, int | float | str]:
+    """Standard payload used across rate limit tests."""
+    return {
+        "sensor_id": "test_sensor_rate_limit",
+        "window_minutes": 30,
+        "p_value_threshold": 0.05,
+        "min_samples": 10,
+    }
