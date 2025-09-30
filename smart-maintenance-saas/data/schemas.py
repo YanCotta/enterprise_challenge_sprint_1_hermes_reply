@@ -365,6 +365,73 @@ class OptimizedSchedule(BaseModel):
 
 
 # =============================================================================
+# MAINTENANCE AUTOMATION (DEMO PIPELINE)
+# =============================================================================
+
+
+class MaintenanceScheduleRequest(BaseModel):
+    """Schema used by demo endpoints to request an automated maintenance schedule."""
+
+    sensor_id: str = Field(..., description="Sensor identifier that triggered the schedule request")
+    sensor_type: Optional[str] = Field(None, description="Optional sensor type for reporting context")
+    equipment_id: Optional[str] = Field(None, description="Equipment or asset identifier")
+    predicted_failure_date: datetime = Field(..., description="Predicted failure datetime emitted by the model")
+    time_to_failure_days: float = Field(..., ge=0, description="Estimated days until failure from prediction time")
+    maintenance_type: str = Field(default="preventive", description="Requested maintenance type")
+    prediction_method: str = Field(default="demo", description="Model or heuristic used to derive the prediction")
+    prediction_confidence: float = Field(default=0.8, ge=0, le=1, description="Confidence score from the prediction stage")
+    historical_data_points: int = Field(default=0, ge=0, description="Count of historical points used for the forecast")
+    model_name: Optional[str] = Field(None, description="Model name resolved by the UI/agent")
+    model_version: Optional[str] = Field(None, description="Model version resolved by the UI/agent")
+    model_metrics: Dict[str, float] = Field(default_factory=dict, description="Model performance metrics surfaced to the scheduler")
+    recommended_actions: List[str] = Field(default_factory=list, description="Suggested maintenance actions")
+    trigger_source: str = Field(default="ui", description="Source of the request (prediction_page, golden_path, etc.)")
+    correlation_id: Optional[str] = Field(None, description="Correlation identifier to link with other events")
+    prediction_agent_id: Optional[str] = Field("ui_prediction_demo", description="Agent identifier stamped onto prediction events")
+    include_report: bool = Field(default=True, description="Whether to generate a demo report alongside scheduling")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional context forwarded to reporting")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class MaintenanceScheduleResponse(BaseModel):
+    """Response payload returned when a maintenance schedule is successfully created."""
+
+    correlation_id: str = Field(..., description="Correlation identifier associated with the schedule")
+    status: str = Field(..., description="Outcome status e.g. Scheduled/Failed_To_Schedule")
+    schedule: Dict[str, Any] = Field(..., description="Optimized schedule details emitted by the SchedulingAgent")
+    assigned_technician_id: Optional[str] = Field(None, description="Technician assigned by the scheduling logic")
+    scheduled_start_time: Optional[datetime] = Field(None, description="Scheduled start time in UTC")
+    scheduled_end_time: Optional[datetime] = Field(None, description="Scheduled end time in UTC")
+    generated_report_id: Optional[str] = Field(None, description="Identifier of the generated maintenance report, if any")
+    report_summary: Optional[str] = Field(None, description="Human-readable summary of the generated report")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata (model info, trigger source, etc.)")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class MaintenanceScheduleRecord(BaseModel):
+    """Serialized maintenance schedule record exposed to UI feeds."""
+
+    correlation_id: str = Field(..., description="Correlation identifier linking schedule to upstream events")
+    equipment_id: str = Field(..., description="Equipment scheduled for maintenance")
+    maintenance_type: str = Field(..., description="Maintenance type (preventive/corrective/etc.)")
+    scheduled_start_time: Optional[datetime] = Field(None, description="Scheduled maintenance start time")
+    scheduled_end_time: Optional[datetime] = Field(None, description="Scheduled maintenance end time")
+    assigned_technician_id: Optional[str] = Field(None, description="Technician assigned, if any")
+    optimization_score: Optional[float] = Field(None, description="Optimization score emitted by the scheduling agent")
+    status: str = Field(..., description="Scheduling status")
+    recorded_at: datetime = Field(..., description="When the record was captured for UI consumption")
+    schedule_details: Dict[str, Any] = Field(..., description="Raw schedule payload for drill-down views")
+    context: Dict[str, Any] = Field(default_factory=dict, description="UI or pipeline context associated with the schedule")
+
+    class Config:
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+# =============================================================================
 # REPORTING MODELS
 # =============================================================================
 
