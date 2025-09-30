@@ -575,3 +575,85 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 
 ---
 
+## 22. Conversation Summary (2025-09-30)
+
+### 22.1 Conversation Overview
+
+- Primary Objectives: ensure the golden path demo and multi-agent pipeline stay fully functional ahead of UI testing.
+- Session Context: diagnosed coroutine misuse and payload gaps, patched backend, rebuilt API, reran demos confirming success, now requested documentation.
+- User Intent Evolution: moved from failure reports to pipeline fixes to verification and finally to producing this consolidated summary.
+
+### 22.2 Technical Foundation
+
+- FastAPI backend demo router now handles synchronous Redis mutations and richer synthetic events.
+- Event-driven agents (notably the notification agent) handle incomplete prediction payloads gracefully.
+- Dockerized infrastructure ensures rebuilt API images pick up backend patches.
+- Verification harness relies on direct HTTP calls to `/api/v1/demo/golden-path` endpoints.
+
+### 22.3 Codebase Status
+
+- `apps/api/routers/demo.py`: orchestrates demo status; currently synchronous mutator, enriched payloads, consistent equipment IDs; key segments include `_update_demo_status` retry loop and `_seed_events`; depends on event bus, Redis client, and Pydantic models.
+- `apps/agents/core/notification_agent.py`: handles maintenance and anomaly events; now resilient to missing `prediction_details`, uses event objects for recipient logic, and falls back to `timestamp` values.
+- Other files remain unchanged in this workstream; focus stayed on the demo router and notification agent.
+
+### 22.4 Problem Resolution
+
+- Issues: coroutine mutator misuse, missing payload fields, undefined `event_data` references.
+- Solutions: convert mutator to a synchronous function, enrich synthetic payloads, guard prediction details, and pass full event objects.
+- Debugging: inspected Docker logs and repeated `curl` checks to verify fixes.
+- Lessons: synthetic demo artifacts must align with production schemas; synchronous mutation simplifies Redis usage.
+
+### 22.5 Progress Tracking
+
+- Completed Tasks: fixed demo router and notification agent, rebuilt API, reran demos confirming completion.
+- Partially Complete: pending UI validation of the golden path page and notification messaging review.
+- Validated Outcomes: API logs clean, status endpoint returns `complete`, event list includes maintenance scheduling and human decision entries.
+
+### 22.6 Active Work State
+
+- Current Focus: deliver structured documentation of recent backend stabilization work.
+- Recent Context: executed demo runs with and without decision stages, inspected status and events via HTTP.
+- Working Code: rebuilt backend container includes latest fixes and runs cleanly.
+- Immediate Context: this summary acts as a handoff before UI testing resumes.
+
+### 22.7 Recent Operations
+
+- Last Agent Commands: triggered golden path demos, polled status endpoints, inspected event lists; earlier rebuilt the API container.
+- Tool Results Summary: both demo runs completed (`status: complete`) with 19 and 23 events respectively; maintenance scheduling and human decision events confirmed.
+- Pre-Summary State: verifying pipeline completion immediately before documenting.
+- Operation Context: ensures backend stability prior to broader UI validation efforts.
+
+### 22.8 Continuation Plan
+
+- Pending Task 1: proceed with golden path UI verification.
+- Pending Task 2: optionally review notification messaging for clarity.
+- Priority Information: Streamlit golden path page should be retested using new backend state.
+- Next Action: run UI walkthroughs to confirm front-end alignment with the stabilized pipeline.
+
+---
+
+## 23. Forecast Workflow Refresh (2025-09-30)
+
+### 23.1 Highlights
+
+- Implemented MLflow-backed `/api/v1/ml/forecast` endpoint with auto model-version resolution and structured forecast payloads.
+- Refactored `ui/pages/4_Prediction.py` to center on sensor-type selection, curated baseline models, and richer result visualization (chart + tables + latency metrics).
+- Added historical-context expander to expose the raw history powering each forecast run for demo transparency.
+
+### 23.2 Backend Changes
+
+| File | Change | Notes |
+|------|--------|-------|
+| `apps/api/routers/ml_endpoints.py` | Added MLflow client guard, forecast schemas, `_resolve_model_version`, and new `/forecast` route | Handles pandas history assembly, horizon shaping, and UTC-safe timestamps. |
+
+### 23.3 UI Changes
+
+| File | Change | Notes |
+|------|--------|-------|
+| `ui/pages/4_Prediction.py` | Reworked prediction flow around cached sensor catalog, baseline model picker, and forecast/anomaly helpers | Presents combined history/forecast chart, forecast table, and newly added historical context table. |
+
+### 23.4 Open Follow-Ups
+
+- Resolve lint warnings for MLflow/pandas imports once type checker environment has the dependencies (or add ignores where appropriate).
+- Run end-to-end forecast + anomaly tests in Streamlit after rebuilding containers to validate the refreshed UX.
+
