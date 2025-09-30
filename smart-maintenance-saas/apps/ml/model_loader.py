@@ -1,22 +1,37 @@
-import mlflow
-import mlflow.pyfunc
-from mlflow.tracking import MlflowClient
-from mlflow.artifacts import download_artifacts
 import os
 import logging
 import traceback
 import json
 from typing import Any, Dict, List, Optional, Tuple
 
+import mlflow
+import mlflow.pyfunc
+from mlflow.tracking import MlflowClient
+from mlflow.artifacts import download_artifacts
+
+from core.config.settings import settings
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
-MLFLOW_TRACKING_URI = "http://mlflow:5000"
-os.environ["MLFLOW_TRACKING_URI"] = MLFLOW_TRACKING_URI
-mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
 
-# Initialize MLflow client for model registry operations
-client = MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
+
+def mlflow_disabled() -> bool:
+    """Determine if MLflow interactions are disabled via env/settings."""
+    env_override = os.getenv("DISABLE_MLFLOW_MODEL_LOADING")
+    if env_override is not None:
+        return env_override.lower() in {"1", "true", "yes", "on"}
+    return getattr(settings, "DISABLE_MLFLOW_MODEL_LOADING", False)
+
+
+if not mlflow_disabled():
+    os.environ["MLFLOW_TRACKING_URI"] = MLFLOW_TRACKING_URI
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    _MLFLOW_CLIENT: Optional[MlflowClient] = MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
+else:
+    logger.info("MLflow model loading disabled; skipping MlflowClient initialization.")
+    _MLFLOW_CLIENT = None
 
 _model_cache: Dict[str, Tuple[Any, Optional[List[str]]]] = {}
 
@@ -51,6 +66,10 @@ S3_FEATURE_NAME_HINTS: Dict[str, List[str]] = {
 def _load_from_s3_fallback(model_name: str) -> Tuple[Optional[Any], Optional[List[str]]]:
     """Attempt to load a model directly from S3 when the registry lookup fails."""
 
+    if mlflow_disabled():
+        logger.debug("MLflow disabled; skipping S3 fallback for model '%s'", model_name)
+        return None, None
+
     s3_uri = S3_MODEL_URIS.get(model_name)
     if not s3_uri:
         logger.debug("No S3 fallback registered for model '%s'", model_name)
@@ -72,7 +91,10 @@ def _load_from_s3_fallback(model_name: str) -> Tuple[Optional[Any], Optional[Lis
 def _debug_list_model_versions(model_name: str) -> None:
     """Log available versions for a model to aid troubleshooting."""
     try:
-        versions = client.search_model_versions(f"name='{model_name}'")
+        if _MLFLOW_CLIENT is None:
+            logger.debug("Mlflow client unavailable; cannot list versions for '%s'", model_name)
+            return
+        versions = _MLFLOW_CLIENT.search_model_versions(f"name='{model_name}'")
         if not versions:
             print(f"[model_loader] No versions found for model '{model_name}'.")
             return
@@ -103,6 +125,14 @@ def load_model(model_name: str, model_version: str = "1") -> Tuple[Optional[Any]
         (model, feature_names) where ``feature_names`` is ``None`` if unavailable.
         If loading fails, returns ``(None, None)``.
     """
+    if mlflow_disabled():
+        logger.warning(
+            "MLflow model loading disabled; returning no model for '%s' (requested version %s)",
+            model_name,
+            model_version,
+        )
+        return None, None
+
     # Determine if model_name is already a complete URI
     if model_name.startswith("runs:/"):
         # Direct run URI - use as-is
@@ -134,12 +164,17 @@ def load_model(model_name: str, model_version: str = "1") -> Tuple[Optional[Any]
         if model_uri.startswith("models:/"):
             # model_name may already be a full models URI or a plain name
             try:
+                if _MLFLOW_CLIENT is None:
+                    logger.warning(
+                        "Mlflow client unavailable; cannot resolve model version for '%s'", model_name
+                    )
+                    return None, None
                 if model_name.startswith("models:/"):
                     # Parse name/version from the URI: models:/<name>/<version>
                     _, _, name_part, version_part = model_name.split("/", 3)
-                    mv_info = client.get_model_version(name_part, version_part)
+                    mv_info = _MLFLOW_CLIENT.get_model_version(name_part, version_part)
                 else:
-                    mv_info = client.get_model_version(model_name, model_version)
+                    mv_info = _MLFLOW_CLIENT.get_model_version(model_name, model_version)
                 run_id = mv_info.run_id
                 print(f"Found model version; associated run_id: {run_id}")
             except Exception as e:
