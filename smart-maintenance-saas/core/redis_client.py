@@ -235,7 +235,12 @@ async def get_redis_client() -> RedisClient:
     """
     global _redis_client
     if _redis_client is None:
-        raise RuntimeError("Redis client not initialized. Call init_redis_client() first.")
+        try:
+            await init_redis_client()
+        except Exception as exc:
+            raise RuntimeError(
+                "Redis client not initialized and automatic initialization failed."
+            ) from exc
     return _redis_client
 
 
