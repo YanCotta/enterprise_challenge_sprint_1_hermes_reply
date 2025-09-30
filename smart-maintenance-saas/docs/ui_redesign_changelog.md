@@ -697,4 +697,11 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 - Recorded the UX changes in `docs/ui_redesign_changelog.md` to document the new end-to-end maintenance automation narrative.
 - Tests not run (environment dependencies like FastAPI/Streamlit/Pydantic still unresolved locally).
 
+### 24.6 Release Hardening (2025-09-30)
+
+- Enforced the `DISABLE_MLFLOW_MODEL_LOADING` guard throughout `apps/ml/model_loader.py`, `apps/ml/model_utils.py`, and the ML endpoints, adding regression coverage in `tests/unit/ml/test_model_loader_disable.py` and `tests/unit/api/test_ml_version_resolution.py`.
+- Centralized ML version auto-resolution logic in `_resolve_model_version` (ML endpoints) with explicit tests to keep `auto` requests stable in offline deployments.
+- Added event bus retry/DLQ integration tests (`tests/integration/test_event_bus_retry.py`) to validate resilience guarantees before tagging v1.0.
+- Cached the Data Explorer sensor dropdown via `_fetch_sensor_options()` to trim redundant API calls and improve perceived responsiveness.
+
 
