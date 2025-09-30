@@ -184,16 +184,25 @@ async def _handle_demo_event(correlation_id: str, event_obj: Any):
                     step["started_at"] = now_iso
                     step["message"] = f"{evt_type} observed"
                 step["events"] += 1
-                if evt_type in {"MaintenancePredictedEvent", "HumanDecisionResponseEvent"}:
-                    if evt_type == "MaintenancePredictedEvent":
-                        ingestion_step = _find_step(status, "ingestion")
-                        if ingestion_step and ingestion_step.get("started_at"):
-                            t0 = datetime.fromisoformat(ingestion_step["started_at"])
-                            t1 = datetime.utcnow()
-                            status["metrics"]["latency_ms_ingest_to_prediction"] = int((t1 - t0).total_seconds() * 1000)
+
+                if evt_type == "MaintenancePredictedEvent":
+                    ingestion_step = _find_step(status, "ingestion")
+                    if ingestion_step and ingestion_step.get("started_at"):
+                        t0 = datetime.fromisoformat(ingestion_step["started_at"])
+                        t1 = datetime.utcnow()
+                        status["metrics"]["latency_ms_ingest_to_prediction"] = int((t1 - t0).total_seconds() * 1000)
+
+                completion_messages = {
+                    "MaintenancePredictedEvent": "Prediction complete",
+                    "MaintenanceScheduledEvent": "Maintenance scheduled",
+                    "HumanDecisionResponseEvent": "Human decision recorded",
+                }
+
+                if evt_type in completion_messages:
                     if step["status"] != "complete":
                         step["status"] = "complete"
                         step["completed_at"] = now_iso
+                    step["message"] = completion_messages[evt_type]
 
         # Error events
         if evt_type == "DataProcessingFailedEvent":
