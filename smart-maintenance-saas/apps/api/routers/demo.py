@@ -165,7 +165,7 @@ async def _handle_demo_event(correlation_id: str, event_obj: Any):
     evt_type = event_obj.__class__.__name__
     now_iso = datetime.utcnow().isoformat()
 
-    async def _mutate(status: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def _mutate(status: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         if not status:
             return None
 
@@ -283,9 +283,11 @@ async def _event_bus_observer(event_obj: Any):
 async def _seed_events(correlation_id: str, count: int, coordinator):
     """Publish synthetic SensorDataReceivedEvent events to kick off real pipeline."""
     from random import random as rnd
+
+    equipment_id = f"demo-sensor-{correlation_id[:4]}"
     for i in range(count):
         raw = {
-            "sensor_id": f"demo-sensor-{correlation_id[:4]}",
+        "sensor_id": equipment_id,
             "value": round(25 + (rnd() * 2) + (5 if i == count // 2 else 0), 2),
             "unit": "celsius",
             "simulation": True,
@@ -294,16 +296,48 @@ async def _seed_events(correlation_id: str, count: int, coordinator):
         evt = SensorDataReceivedEvent(raw_data=raw, sensor_id=raw["sensor_id"], correlation_id=correlation_id)
         await coordinator.event_bus.publish(evt)
     # Force anomaly + validation + prediction path if not naturally triggered (lightweight synthetic events)
+    now = datetime.utcnow()
+    anomaly_alert_payload = {
+    "sensor_id": equipment_id,
+        "anomaly_type": "temperature_spike",
+        "severity": 4,
+        "confidence": 0.95,
+        "description": "Temperature exceeded the expected baseline during demo run",
+        "evidence": {
+            "current_value": raw["value"],
+            "baseline": 25.0,
+            "deviation_magnitude": round(raw["value"] - 25.0, 2),
+        },
+        "recommended_actions": ["Inspect bearing", "Verify cooling system"],
+        "created_at": now.isoformat(),
+    }
+    triggering_reading_payload = {
+    "sensor_id": equipment_id,
+        "sensor_type": "temperature",
+        "timestamp": now.isoformat(),
+        "value": raw["value"],
+        "unit": raw["unit"],
+        "quality": 0.98,
+        "metadata": {
+            "equipment_id": equipment_id,
+            "source": "golden_path_demo",
+        },
+    }
     anomaly = AnomalyDetectedEvent(
         anomaly_details={"type": "temperature_spike", "score": 0.95},
-        triggering_data={"sensor_id": raw["sensor_id"], "value": raw["value"]},
+        triggering_data={
+        "sensor_id": equipment_id,
+            "value": raw["value"],
+            "unit": raw["unit"],
+            "timestamp": now.isoformat(),
+        },
         severity="high",
         correlation_id=correlation_id,
     )
     await coordinator.event_bus.publish(anomaly)
     validated = AnomalyValidatedEvent(
-        original_anomaly_alert_payload={"score": 0.95},
-        triggering_reading_payload={"sensor_id": raw["sensor_id"], "value": raw["value"]},
+        original_anomaly_alert_payload=anomaly_alert_payload,
+        triggering_reading_payload=triggering_reading_payload,
         validation_status="CONFIRMED",
         final_confidence=0.93,
         validation_reasons=["threshold_exceeded"],
@@ -313,8 +347,8 @@ async def _seed_events(correlation_id: str, count: int, coordinator):
     await coordinator.event_bus.publish(validated)
     failure_date = datetime.utcnow() + timedelta(days=42)
     prediction = MaintenancePredictedEvent(
-        original_anomaly_event_id=anomaly.event_id,
-        equipment_id=raw["sensor_id"],
+    original_anomaly_event_id=anomaly.event_id,
+    equipment_id=equipment_id,
         predicted_failure_date=failure_date,
         confidence_interval_lower=failure_date - timedelta(days=3),
         confidence_interval_upper=failure_date + timedelta(days=3),
