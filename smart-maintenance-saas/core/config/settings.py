@@ -41,8 +41,20 @@ class Settings(BaseSettings):
     # Test Database
     test_database_url: PostgresDsn = "postgresql://smart_user:strong_password@localhost:5432/smart_maintenance_db_test"  # type: ignore
 
-    # Redis (for future use)
-    redis_url: RedisDsn = "redis://localhost:6379"  # type: ignore
+    # Redis
+    redis_url: RedisDsn = "redis://redis:6379/0"  # type: ignore
+    REDIS_MAX_CONNECTIONS: int = Field(
+        default=50,
+        description="Maximum number of concurrent Redis connections available to the shared pool.",
+    )
+    REDIS_INIT_MAX_RETRIES: int = Field(
+        default=5,
+        description="Maximum attempts when initializing the Redis client during startup.",
+    )
+    REDIS_INIT_RETRY_DELAY_SECONDS: float = Field(
+        default=1.0,
+        description="Delay in seconds between Redis initialization retries.",
+    )
 
     # Kafka (for future use)
     kafka_bootstrap_servers: str = "localhost:9092"
