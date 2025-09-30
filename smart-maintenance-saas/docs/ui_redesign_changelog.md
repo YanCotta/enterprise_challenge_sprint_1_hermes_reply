@@ -657,3 +657,44 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 - Resolve lint warnings for MLflow/pandas imports once type checker environment has the dependencies (or add ignores where appropriate).
 - Run end-to-end forecast + anomaly tests in Streamlit after rebuilding containers to validate the refreshed UX.
 
+---
+
+## 24. Maintenance Automation Wiring (2025-09-30)
+
+### 24.1 Highlights
+
+- Added `/api/v1/maintenance/schedule` and `/api/v1/maintenance/scheduled` endpoints to bridge UI forecasts with the SchedulingAgent and expose a rolling feed stored by the coordinator.
+- Prediction page now offers a "Create Maintenance Order" action post-forecast, automatically invoking the multi-agent pipeline and surfacing results inline.
+- Golden Path demo metrics tab renders the maintenance schedule feed for the active correlation id, underscoring end-to-end orchestration.
+- Reporting Prototype page pulls the same feed to demonstrate automated report population without manual export steps.
+
+### 24.2 Backend Changes
+
+| File | Change | Notes |
+|------|--------|-------|
+| `apps/api/routers/maintenance.py` | New router | Handles schedule requests (with optional report generation) and exposes recent schedules for UI consumption. |
+| `apps/system_coordinator.py` | Event capture & context registry | Registers schedule context from UI/demo, listens for `MaintenanceScheduledEvent`, and persists a capped feed. |
+| `apps/api/routers/demo.py` | Context registration | Golden Path now tags maintenance predictions so scheduled events inherit demo metadata. |
+
+### 24.3 UI Changes
+
+| File | Change | Notes |
+|------|--------|-------|
+| `ui/pages/4_Prediction.py` | Added maintenance automation section | Builds payload from forecast, triggers new endpoint, and shows inline confirmation with correlation id. |
+| `ui/pages/3_Golden_Path_Demo.py` | Metrics tab feed | Displays the maintenance schedule feed aligned with the current correlation id. |
+| `ui/pages/8_Reporting_Prototype.py` | Automated feed table | Renders latest schedules to emphasise report auto-population. |
+
+### 24.4 Demo Narrative Callouts
+
+- Pipeline now demonstrates `prediction → scheduling → reporting` without manual steps; UI copy highlights multi-agent flow and real-world connector placeholders.
+- Feed + correlation id reinforce that downstream integrations (email, CMMS, etc.) are the remaining production wiring tasks.
+
+### 24.5 Implementation Summary
+
+- Hooked maintenance scheduling into the golden path demo by registering context in `apps/api/routers/demo.py`, ensuring downstream events carry the demo metadata.
+- Added a dedicated maintenance router (`apps/api/routers/maintenance.py`) plus coordinator feed handling (`apps/system_coordinator.py` and `core/events/scheduling_events.py`) so UI requests can trigger the multi-agent pipeline and immediately surface recent schedules.
+- Updated Streamlit pages (`ui/pages/3_Golden_Path_Demo.py`, `ui/pages/4_Prediction.py`, `ui/pages/8_Reporting_Prototype.py`) to trigger scheduling from forecasts and display the rolling maintenance feed with helpful copy and formatting.
+- Recorded the UX changes in `docs/ui_redesign_changelog.md` to document the new end-to-end maintenance automation narrative.
+- Tests not run (environment dependencies like FastAPI/Streamlit/Pydantic still unresolved locally).
+
+
