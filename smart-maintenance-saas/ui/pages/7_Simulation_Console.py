@@ -60,7 +60,10 @@ if "simulation_runs" not in st.session_state:
 def _launch_simulation(sim_type: str, params: dict):
     meta = SIM_TYPES[sim_type]
     endpoint = meta["endpoint"]
-    payload = meta["payload_builder"](params.get("sensor_id") or f"demo-sensor-{uuid.uuid4().hex[:4]}", **params)
+    sensor_identifier = params.get("sensor_id") or f"demo-sensor-{uuid.uuid4().hex[:4]}"
+    builder_kwargs = dict(params)
+    builder_kwargs.pop("sensor_id", None)
+    payload = meta["payload_builder"](sensor_identifier, **builder_kwargs)
     t0 = time.perf_counter()
     resp = make_api_request("POST", endpoint, json_data=payload)
     latency_ms = (time.perf_counter() - t0) * 1000
