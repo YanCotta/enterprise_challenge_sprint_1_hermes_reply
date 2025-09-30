@@ -23,6 +23,8 @@ from typing import Any, Dict, Optional
 
 import requests
 
+from core.security.api_keys import API_KEY_HEADER_NAME, get_preferred_api_key
+
 DEFAULT_BASE_URL = "http://localhost:8000"
 DEFAULT_MODEL_NAME = "ai4i_classifier_randomforest_baseline"
 DEFAULT_SENSOR_ID = "smoke_sensor_v1"
@@ -51,7 +53,7 @@ class SmokeRunner:
     def __init__(self, base_url: str, api_key: str, sensor_id: str, model_name: str) -> None:
         self.base_url = base_url.rstrip("/")
         self.headers = {
-            "X-API-Key": api_key,
+            API_KEY_HEADER_NAME: api_key,
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
@@ -236,7 +238,11 @@ class SmokeRunner:
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run V1.0 smoke validation flow.")
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="API base URL (default: %(default)s)")
-    parser.add_argument("--api-key", required=True, help="API key with required scopes")
+    parser.add_argument(
+        "--api-key",
+        default=get_preferred_api_key(),
+        help="API key with required scopes (default: first configured key)",
+    )
     parser.add_argument("--sensor-id", default=DEFAULT_SENSOR_ID, help="Sensor ID for ingestion (default: %(default)s)")
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME, help="Model name for prediction (default: %(default)s)")
     return parser.parse_args(argv)
