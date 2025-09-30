@@ -17,7 +17,17 @@ def _deprecated_local_rerun():  # retained temporarily in case of stray imports
 @st.cache_data(ttl=300)
 def _cached_registered_models():
     """Cache raw API response to preserve success/error context."""
-    return make_api_request("GET", "/api/v1/ml/models")
+    resp = make_api_request("GET", "/api/v1/ml/models")
+    # API returns {"models": [...], "count": N} on success
+    if resp.get("success") and resp.get("data"):
+        # Extract the models array from the response
+        data = resp["data"]
+        if isinstance(data, dict) and "models" in data:
+            return {"success": True, "data": data["models"], "error": None}
+        # Fallback if data is already a list
+        elif isinstance(data, list):
+            return {"success": True, "data": data, "error": None}
+    return resp
 
 
 @st.cache_data(ttl=300)

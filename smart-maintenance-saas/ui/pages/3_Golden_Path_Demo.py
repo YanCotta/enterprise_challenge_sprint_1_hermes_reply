@@ -155,16 +155,23 @@ def render_golden_path_page():
             # Check for stale timeout
             if st.session_state.demo_start_time:
                 elapsed = datetime.now() - st.session_state.demo_start_time
-                if elapsed.total_seconds() > MAX_DEMO_RUNTIME_SECONDS:
+                elapsed_seconds = elapsed.total_seconds()
+                
+                if elapsed_seconds > MAX_DEMO_RUNTIME_SECONDS:
                     st.warning(f"Timed Out – correlation_id={st.session_state.correlation_id}. Demo exceeded {MAX_DEMO_RUNTIME_SECONDS}s; status may be stale or incomplete.")
                     st.session_state.demo_terminal_state = "timeout"
                     st.session_state.demo_terminal_reason = None
                     st.session_state.demo_running = False
                     st.session_state.correlation_id = st.session_state.correlation_id  # keep for viewing
                 else:
-                    # Continue polling
-                    remaining = MAX_DEMO_RUNTIME_SECONDS - int(elapsed.total_seconds())
-                    st.caption(f"Auto-refreshing... (timeout in {remaining}s)")
+                    # Continue polling - show progress
+                    remaining = MAX_DEMO_RUNTIME_SECONDS - int(elapsed_seconds)
+                    progress_value = elapsed_seconds / MAX_DEMO_RUNTIME_SECONDS
+                    
+                    # Display progress bar and time remaining
+                    st.progress(progress_value, text=f"Demo in progress... ({int(elapsed_seconds)}s / {MAX_DEMO_RUNTIME_SECONDS}s)")
+                    st.caption(f"⏱ Elapsed: {int(elapsed_seconds)}s | Timeout in: {remaining}s | Auto-refreshing every 2s...")
+                    
                     time.sleep(2)
                     safe_rerun()
             else:

@@ -529,6 +529,39 @@ def analyze_sensor_readings_for_anomalies(
 # API ENDPOINTS
 # ==============================================================================
 
+@router.get("/models", tags=["ML Models"], dependencies=[Security(api_key_auth, scopes=["ml:predict"])])
+async def list_registered_models():
+    """List all registered models from the MLflow registry.
+    
+    Returns a list of models with their metadata including name, version, tags, and timestamps.
+    This endpoint provides the data needed for the Model Metadata UI page.
+    
+    Returns:
+        List of model dictionaries with keys: name, description, latest_version, 
+        creation_timestamp, last_updated_timestamp, tags, version_tags, current_stage, run_id
+    """
+    try:
+        from apps.ml.model_utils import get_all_registered_models
+        
+        # Check if MLflow is disabled
+        import os
+        if os.getenv("DISABLE_MLFLOW_MODEL_LOADING", "false").lower() in ("1", "true", "yes"):
+            return {"models": [], "message": "MLflow model loading is disabled"}
+        
+        # Call the utility function (without Streamlit caching)
+        models = get_all_registered_models()
+        
+        logger.info(f"Retrieved {len(models)} registered models")
+        return {"models": models, "count": len(models)}
+        
+    except Exception as e:
+        logger.error(f"Failed to list registered models: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Failed to retrieve models from MLflow registry: {str(e)}"
+        ) from e
+
+
 @router.get("/models/{model_name}/versions", tags=["ML Models"], dependencies=[Security(api_key_auth, scopes=["ml:predict"])])
 async def list_model_versions(model_name: str):
     """List available versions for a given model in the MLflow registry.
