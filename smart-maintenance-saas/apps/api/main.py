@@ -1,6 +1,7 @@
 import logging  # For basic logging if setup_logging is not yet fully integrated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi import Limiter
@@ -58,6 +59,29 @@ def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSO
         request.state.view_rate_limit,
     )
     return response
+
+
+def request_validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """Normalize FastAPI validation errors to a single detail string."""
+    errors = []
+    for err in exc.errors():
+        loc = " → ".join(str(part) for part in err.get("loc", [])) or "payload"
+        msg = err.get("msg", "Invalid input")
+        errors.append(f"{loc}: {msg}")
+
+    max_items = 5
+    truncated = len(errors) > max_items
+    summary = "; ".join(errors[:max_items]) if errors else "Request validation failed"
+    if truncated:
+        summary = f"{summary}; (+{len(errors) - max_items} more validation issues)"
+
+    logging.warning("Request validation error on %s: %s", request.url.path, summary)
+    return JSONResponse(
+        {"detail": f"Request validation failed: {summary}"},
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
 
 # Optional: Import routers if you have them (e.g., for Task 7)
 # from .routers import sensor_readings_router
@@ -127,6 +151,7 @@ app = FastAPI(
 # Set up rate limiting state and error handler
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_exception_handler(RequestValidationError, request_validation_exception_handler)
 
 # Instrument the app with default metrics (latency, requests, etc.)
 instrumentator = Instrumentator().instrument(app)
