@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from core.database.session import AsyncSessionLocal
 from core.database.crud.crud_sensor_reading import CRUDSensorReading
+from core.security.api_keys import API_KEY_HEADER_NAME, get_configured_api_keys
 from data.schemas import SensorReadingCreate
 
 logger = logging.getLogger(__name__)
@@ -434,8 +435,7 @@ async def trigger_drift_check(correlation_id: str, simulation_id: str):
             "Content-Type": "application/json",
             "X-Request-ID": correlation_id,
             "X-Simulation-ID": simulation_id,
-            # Use canonical header casing; header names are case-insensitive, kept consistent here
-            "X-API-Key": os.getenv("API_KEY", ""),
+            API_KEY_HEADER_NAME: os.getenv("API_KEY") or get_configured_api_keys()[0],
         }
 
         payload = {
