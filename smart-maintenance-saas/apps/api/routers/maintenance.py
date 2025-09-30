@@ -21,7 +21,7 @@ from data.schemas import (
 
 router = APIRouter()
 
-_SCHEDULE_TIMEOUT_SECONDS = 15
+_SCHEDULE_TIMEOUT_SECONDS = 45
 logger = logging.getLogger(__name__)
 
 
