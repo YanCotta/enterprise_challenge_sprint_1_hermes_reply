@@ -20,7 +20,7 @@ from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.dependencies import api_key_auth
-from apps.ml.model_loader import load_model
+from apps.ml.model_loader import load_model, mlflow_disabled
 from core.database.session import get_async_db
 from data.schemas import AnomalyAlert, AnomalyType, SensorReading
 from scipy.stats import ks_2samp
@@ -73,6 +73,66 @@ ANOMALY_SCALE_BASELINES = {
     "value": {"min": 12.816, "max": 83.193},
     "quality": {"min": 0.0, "max": 1.0},
 }
+
+FALLBACK_MODEL_VERSIONS: tuple[str, ...] = ("5", "4", "3", "2", "1")
+
+
+def _ensure_mlflow_enabled() -> None:
+    """Raise a consistent HTTPException when MLflow access is disabled."""
+    if mlflow_disabled():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="MLflow model loading is disabled",
+        )
+
+
+def _resolve_model_version(model_name: str, requested_version: str) -> str:
+    """Resolve an explicit model version when 'auto' or 'latest' is requested."""
+    if requested_version not in {"auto", "latest"}:
+        return requested_version
+
+    if mlflow_disabled():
+        logger.warning(
+            "MLflow disabled; cannot auto-resolve version for model '%s'.", model_name
+        )
+        return requested_version
+
+    if MLFLOW_AVAILABLE and MlflowClient is not None:
+        try:
+            client = MlflowClient()
+            latest_versions = client.get_latest_versions(model_name, stages=["None"])
+            if latest_versions:
+                resolved = latest_versions[0].version
+                logger.info(
+                    "Auto-resolved model '%s' to version %s via MLflow registry.",
+                    model_name,
+                    resolved,
+                )
+                return resolved
+        except Exception as mlflow_error:  # pragma: no cover - warnings for fallback path
+            logger.warning(
+                "MLflow version resolution failed for model '%s': %s", model_name, mlflow_error
+            )
+
+    for fallback_version in FALLBACK_MODEL_VERSIONS:
+        try:
+            model, _ = load_model(model_name, fallback_version)
+            if model is not None:
+                logger.info(
+                    "Fallback resolved model '%s' to version %s via load_model check.",
+                    model_name,
+                    fallback_version,
+                )
+                return fallback_version
+        except Exception:  # noqa: BLE001 - silent fallback to next version
+            continue
+
+    logger.warning(
+        "Unable to resolve model version for '%s'; leaving request version '%s' unchanged.",
+        model_name,
+        requested_version,
+    )
+    return requested_version
 
 
 def _min_max_scale(value: float, lower: float, upper: float) -> float:
@@ -623,13 +683,9 @@ async def list_registered_models():
         creation_timestamp, last_updated_timestamp, tags, version_tags, current_stage, run_id
     """
     try:
+        _ensure_mlflow_enabled()
         from apps.ml.model_utils import get_all_registered_models
-        
-        # Check if MLflow is disabled
-        import os
-        if os.getenv("DISABLE_MLFLOW_MODEL_LOADING", "false").lower() in ("1", "true", "yes"):
-            return {"models": [], "message": "MLflow model loading is disabled"}
-        
+
         # Call the utility function (without Streamlit caching)
         models = get_all_registered_models()
         
@@ -652,6 +708,7 @@ async def list_model_versions(model_name: str):
     a 404 is raised.
     """
     try:
+        _ensure_mlflow_enabled()
         import mlflow
         client = mlflow.tracking.MlflowClient()
         # Get *all* registered models then filter; or use search_model_versions
@@ -685,6 +742,7 @@ async def get_latest_model_version(model_name: str):
     2. Fallback: list all versions and pick max numeric.
     """
     try:
+        _ensure_mlflow_enabled()
         import mlflow
         client = mlflow.tracking.MlflowClient()
         # Attempt to get latest in preferred stage ordering
@@ -732,30 +790,9 @@ async def predict(
     logger.info(f"Prediction request for model: {request.model_name} v{request.model_version}")
     
     try:
+        _ensure_mlflow_enabled()
         # Step 1: Resolve model version automatically if needed
-        resolved_version = request.model_version
-        if request.model_version == "latest" or request.model_version == "auto":
-            try:
-                # Try to get the latest version from MLflow
-                import mlflow
-                client = mlflow.tracking.MlflowClient()
-                latest_versions = client.get_latest_versions(request.model_name, stages=["None"])
-                if latest_versions:
-                    resolved_version = latest_versions[0].version
-                    logger.info(f"Auto-resolved version for {request.model_name}: {resolved_version}")
-                else:
-                    # Fallback: try common version numbers
-                    for version in ["4", "3", "2", "1"]:
-                        try:
-                            model, _ = load_model(request.model_name, version)
-                            if model is not None:
-                                resolved_version = version
-                                logger.info(f"Fallback resolved version for {request.model_name}: {resolved_version}")
-                                break
-                        except:
-                            continue
-            except Exception as e:
-                logger.warning(f"Auto-resolution failed, using original version: {e}")
+        resolved_version = _resolve_model_version(request.model_name, request.model_version)
         
         # Step 2: Load model with resolved version
         model, feature_names = load_model(request.model_name, resolved_version)
@@ -916,6 +953,8 @@ async def forecast_sensor(
 ) -> ForecastResponse:
     """Generate time-series forecasts for a sensor using registered MLflow models."""
 
+    _ensure_mlflow_enabled()
+
     history = await crud_sensor_reading.get_sensor_readings_by_sensor_id(
         db,
         sensor_id=request.sensor_id,
@@ -1061,16 +1100,20 @@ async def detect_anomaly(
     This endpoint analyzes sensor data for unusual patterns and generates
     anomaly alerts with confidence scores and recommended actions.
     """
+    _ensure_mlflow_enabled()
+
     logger.info(f"Anomaly detection request for {len(request.sensor_readings)} readings")
     
     try:
+        resolved_version = _resolve_model_version(request.model_name, request.model_version)
+
         # Load anomaly detection model from MLflow Registry
-        model, feature_names = load_model(request.model_name, request.model_version)
+        model, feature_names = load_model(request.model_name, resolved_version)
 
         if model is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Anomaly detection model '{request.model_name}' version '{request.model_version}' not found"
+                detail=f"Anomaly detection model '{request.model_name}' version '{resolved_version}' not found"
             )
         
         # Fetch sensor histories for feature enrichment
@@ -1092,7 +1135,7 @@ async def detect_anomaly(
             anomaly_count=len(detected_anomalies),
             model_info={
                 "model_name": request.model_name,
-                "model_version": str(request.model_version),
+                "model_version": str(resolved_version),
                 "sensitivity": f"{request.sensitivity:.3f}",
                 "loaded_from": "MLflow Model Registry"
             }
@@ -1210,6 +1253,7 @@ async def ml_health_check():
     Verifies connectivity to MLflow and basic model loading capability.
     """
     try:
+        _ensure_mlflow_enabled()
         # Test MLflow connectivity by attempting to load a model that actually exists
         # Using version "4" (latest actual version) instead of "latest" string
         test_model, _ = load_model("anomaly_detector_refined_v2", "4")  # Use actual version number
@@ -1222,19 +1266,16 @@ async def ml_health_check():
                 "test_model_loaded": True,
                 "timestamp": datetime.utcnow().isoformat()
             }
-        else:
-            return {
-                "status": "degraded",
-                "mlflow_connection": "ok", 
-                "model_registry": "models not loading",
-                "test_model_loaded": False,
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="MLflow reachable but model artifacts are unavailable",
+        )
+
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"ML health check failed: {e}")
-        return {
-            "status": "unhealthy",
-            "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        logger.error("ML health check failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"ML health check failed: {e}",
+        ) from e
