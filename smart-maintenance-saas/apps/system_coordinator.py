@@ -2,6 +2,7 @@ import logging
 import asyncio # Make sure asyncio is imported
 from typing import List, Callable, Optional, Dict, Any # Added Dict, Any for specific_settings
 from datetime import datetime
+from collections import deque
 from data.schemas import SensorReading, SensorReadingCreate, AnomalyAlert, SensorType
 
 # Event Bus
@@ -23,6 +24,7 @@ from apps.agents.core.orchestrator_agent import OrchestratorAgent
 from apps.agents.decision.scheduling_agent import SchedulingAgent
 from apps.agents.interface.human_interface_agent import HumanInterfaceAgent
 from apps.agents.decision.reporting_agent import ReportingAgent
+from core.events.event_models import MaintenanceScheduledEvent
 
 # Conditionally import LearningAgent only if ChromaDB is not disabled
 if os.getenv('DISABLE_CHROMADB', '').lower() != 'true':
@@ -193,14 +195,26 @@ class SystemCoordinator:
             )
         else:
             logger.warning("LearningAgent is disabled due to ChromaDB being unavailable or disabled")
-            
+        
         logger.info(f"SystemCoordinator initialized with {len(self._agents_list)} agents and event bus.")
+
+        # Rolling feed of maintenance schedules for UI/Reports (demo scope)
+        self._maintenance_schedule_feed: deque[Dict[str, Any]] = deque(maxlen=100)
+        self._pending_schedule_context: Dict[str, Dict[str, Any]] = {}
 
     @property
     def reporting_agent(self) -> Optional[ReportingAgent]:
         """Get the ReportingAgent instance from the agents list."""
         for agent in self._agents_list:
             if isinstance(agent, ReportingAgent):
+                return agent
+        return None
+
+    @property
+    def scheduling_agent(self) -> Optional[SchedulingAgent]:
+        """Get the SchedulingAgent instance if available."""
+        for agent in self._agents_list:
+            if isinstance(agent, SchedulingAgent):
                 return agent
         return None
 
@@ -274,6 +288,12 @@ class SystemCoordinator:
         logger.info(f"Event bus has {len(self.event_bus._subscribers)} event subscriptions")
         logger.info("All agents startup process initiated concurrently.")
 
+        # Subscribe coordinator-level feed listeners once agents are online
+        await self.event_bus.subscribe(
+            MaintenanceScheduledEvent.__name__,
+            self._maintenance_schedule_listener,
+        )
+
     async def shutdown_system(self):
         """
         Manages the graceful shutdown sequence of all agents in the system.
@@ -302,6 +322,61 @@ class SystemCoordinator:
             except Exception as e:
                 logger.error(f"Error shutting down event bus: {e}", exc_info=True)
         logger.info("All agents shutdown process completed.")
+
+    def register_schedule_context(self, correlation_id: str, context: Dict[str, Any]) -> None:
+        """Store context metadata to be merged when MaintenanceScheduledEvent arrives."""
+        if correlation_id:
+            self._pending_schedule_context[correlation_id] = context
+
+    def get_recent_maintenance_schedules(
+        self,
+        limit: int = 25,
+        correlation_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Return recent maintenance schedules captured from the event bus."""
+        records: List[Dict[str, Any]] = list(self._maintenance_schedule_feed)
+        if correlation_id:
+            records = [item for item in records if item.get("correlation_id") == correlation_id]
+        if limit:
+            records = records[-limit:]
+        return list(reversed(records))
+
+    async def _maintenance_schedule_listener(self, event: MaintenanceScheduledEvent) -> None:
+        """Capture MaintenanceScheduledEvent payloads for UI/reporting consumption."""
+        try:
+            payload = event.model_dump(mode="json")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Failed to serialize MaintenanceScheduledEvent via model_dump: %s", exc)
+            payload = {
+                "correlation_id": event.correlation_id,
+                "equipment_id": getattr(event, "equipment_id", "unknown"),
+                "schedule_details": getattr(event, "schedule_details", {}),
+                "assigned_technician_id": getattr(event, "assigned_technician_id", None),
+                "scheduled_start_time": getattr(event, "scheduled_start_time", None),
+                "scheduled_end_time": getattr(event, "scheduled_end_time", None),
+                "optimization_score": getattr(event, "optimization_score", None),
+            }
+
+        context: Dict[str, Any] = {}
+        if event.correlation_id and event.correlation_id in self._pending_schedule_context:
+            context = self._pending_schedule_context.pop(event.correlation_id, {})
+
+        schedule_details = payload.get("schedule_details") or {}
+        record = {
+            "correlation_id": payload.get("correlation_id") or str(payload.get("event_id")),
+            "equipment_id": payload.get("equipment_id", "unknown"),
+            "maintenance_type": context.get("maintenance_type") or schedule_details.get("maintenance_type", "preventive"),
+            "scheduled_start_time": schedule_details.get("scheduled_start_time") or payload.get("scheduled_start_time"),
+            "scheduled_end_time": schedule_details.get("scheduled_end_time") or payload.get("scheduled_end_time"),
+            "assigned_technician_id": payload.get("assigned_technician_id") or schedule_details.get("assigned_technician_id"),
+            "optimization_score": payload.get("optimization_score") or schedule_details.get("optimization_score"),
+            "status": schedule_details.get("status") or "Scheduled",
+            "recorded_at": datetime.utcnow().isoformat(),
+            "schedule_details": schedule_details,
+            "context": context,
+        }
+
+        self._maintenance_schedule_feed.append(record)
 
 if __name__ == '__main__':
     # Basic test logic
