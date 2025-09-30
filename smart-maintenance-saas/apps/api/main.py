@@ -35,11 +35,12 @@ from core.database.session import (
 )
 from core.database.session import get_async_db
 from core.redis_client import init_redis_client, close_redis_client
+from core.security.api_keys import API_KEY_HEADER_NAME
 
 # Rate limiting configuration
 def get_api_key_identifier(request: Request):
     """Get rate limiting identifier from X-API-Key header, fallback to IP address."""
-    api_key = request.headers.get("X-API-Key")
+    api_key = request.headers.get(API_KEY_HEADER_NAME)
     if api_key:
         return f"api_key:{api_key}"
     return get_remote_address(request)
