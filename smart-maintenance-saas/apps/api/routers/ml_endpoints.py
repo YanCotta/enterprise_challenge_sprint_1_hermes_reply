@@ -873,17 +873,21 @@ async def predict(
                 logger.info(f"Successfully adapted features from {len(request.features)} to {expected_features}")
                 
             except Exception as adapt_error:
-                logger.error(f"Feature adaptation failed: {adapt_error}")
+                logger.error(
+                    "Feature adaptation failed for model %s v%s (%d features provided): %s",
+                    request.model_name,
+                    resolved_version,
+                    len(request.features),
+                    adapt_error,
+                )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={
-                        "error": "Feature adaptation failed",
-                        "model_name": request.model_name,
-                        "model_version": resolved_version,
-                        "provided_features": len(request.features),
-                        "adaptation_error": str(adapt_error),
-                        "suggestion": "Try using a different model or check feature requirements"
-                    }
+                    detail=(
+                        "Feature adaptation failed for model "
+                        f"'{request.model_name}' (version {resolved_version}). "
+                        f"Provided {len(request.features)} features; "
+                        f"error: {adapt_error}. Try a different model or verify feature requirements."
+                    ),
                 )
         
         # At this point we have a successful prediction
