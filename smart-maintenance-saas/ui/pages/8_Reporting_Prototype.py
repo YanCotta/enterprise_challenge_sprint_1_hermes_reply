@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, time
 
+import pandas as pd
 import streamlit as st
 
 from lib.api_client import make_api_request
@@ -10,6 +11,34 @@ st.set_page_config(page_title="Reporting Prototype", page_icon="🧾")
 st.header("🧾 Reporting Prototype")
 st.warning("Prototype – JSON only; artifact downloads deferred (V1.5+).")
 st.caption("Generate lightweight JSON summaries. Artifact persistence and streaming remain deferred.")
+
+st.subheader("Automated Maintenance Feed")
+feed_resp = make_api_request("GET", "/api/v1/maintenance/scheduled", params={"limit": 15})
+if feed_resp.get("success"):
+    feed_records = feed_resp.get("data") or []
+    if feed_records:
+        table_rows = [
+            {
+                "Correlation": rec.get("correlation_id"),
+                "Equipment": rec.get("equipment_id"),
+                "Maintenance": rec.get("maintenance_type"),
+                "Start": rec.get("scheduled_start_time"),
+                "End": rec.get("scheduled_end_time"),
+                "Technician": rec.get("assigned_technician_id"),
+                "Status": rec.get("status"),
+            }
+            for rec in feed_records
+        ]
+        feed_df = pd.DataFrame(table_rows)
+        st.dataframe(feed_df, use_container_width=True)
+        st.caption(
+            "This feed is populated automatically whenever the prediction page or Golden Path demo triggers the "
+            "SchedulingAgent."
+        )
+    else:
+        st.info("No maintenance schedules have been generated yet this session.")
+else:
+    st.warning(feed_resp.get("error", "Failed to load maintenance schedule feed."))
 
 with st.form("report_form"):
     report_type = st.selectbox(
