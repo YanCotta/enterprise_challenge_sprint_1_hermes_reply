@@ -1,3 +1,4 @@
+import base64
 import json
 from datetime import datetime, time
 
@@ -74,20 +75,47 @@ if submitted:
         resp = make_api_request("POST", "/api/v1/reports/generate", json_data=payload)
 
     if resp.get("success"):
-        report = resp.get("data")
+        report = resp.get("data") or {}
         st.success("Report generated")
-        
-        # Add download button for JSON
+
+        parsed_content = None
+        raw_content = report.get("content")
+        if isinstance(raw_content, str):
+            try:
+                parsed_content = json.loads(raw_content)
+            except json.JSONDecodeError:
+                parsed_content = None
+
+        if parsed_content is not None:
+            st.subheader("Report Content")
+            st.json(parsed_content)
+        elif raw_content:
+            st.subheader("Report Content")
+            st.code(raw_content[:2000], language="json")
+
+        charts = report.get("charts_encoded") or {}
+        if charts:
+            st.subheader("Embedded Visuals (Prototype)")
+            for chart_id, encoded in charts.items():
+                try:
+                    image_bytes = base64.b64decode(encoded)
+                    st.image(image_bytes, caption=f"{chart_id} preview", use_column_width=True)
+                except Exception:  # noqa: BLE001
+                    st.caption(f"Unable to preview chart {chart_id}; leaving encoded in download.")
+
+        download_payload = dict(report)
+        if parsed_content is not None:
+            download_payload["content"] = parsed_content
+
         st.download_button(
             "⬇️ Download JSON",
-            data=json.dumps(report, indent=2),
+            data=json.dumps(download_payload, indent=2),
             file_name=f"report_{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
             mime="application/json",
-            use_container_width=True
+            use_container_width=True,
         )
-        
-        st.json(report)
-        st.caption("JSON download available; PDF/CSV formats deferred to V1.5+.")
+
+        st.caption("JSON download flattens nested content for readability; PDF/CSV formats remain deferred to V1.5+.")
     else:
         st.error(resp.get("error", "Failed to generate report."))
         if resp.get("hint"):
