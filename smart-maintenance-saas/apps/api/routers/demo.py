@@ -362,6 +362,16 @@ async def _seed_events(correlation_id: str, count: int, coordinator):
         agent_id="prediction_agent_01",
         correlation_id=correlation_id,
     )
+    coordinator.register_schedule_context(
+        correlation_id,
+        {
+            "sensor_id": equipment_id,
+            "sensor_type": "temperature",
+            "trigger_source": "golden_path_demo",
+            "maintenance_type": "preventive",
+            "prediction_confidence": 0.88,
+        },
+    )
     await coordinator.event_bus.publish(prediction)
 
 
