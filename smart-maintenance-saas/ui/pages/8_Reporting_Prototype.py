@@ -93,19 +93,28 @@ if submitted:
             st.subheader("Report Content")
             st.code(raw_content[:2000], language="json")
 
-        charts = report.get("charts_encoded") or {}
-        if charts:
+        encoded_charts = report.get("charts_encoded") or {}
+        chart_summaries = {}
+        if encoded_charts:
             st.subheader("Embedded Visuals (Prototype)")
-            for chart_id, encoded in charts.items():
+            for chart_id, encoded in encoded_charts.items():
                 try:
                     image_bytes = base64.b64decode(encoded)
                     st.image(image_bytes, caption=f"{chart_id} preview", use_column_width=True)
+                    chart_summaries[chart_id] = {"bytes": len(image_bytes)}
                 except Exception:  # noqa: BLE001
                     st.caption(f"Unable to preview chart {chart_id}; leaving encoded in download.")
+                    chart_summaries[chart_id] = {"bytes": len(encoded or "")}
 
-        download_payload = dict(report)
+        download_payload = {
+            key: value
+            for key, value in report.items()
+            if key != "charts_encoded"
+        }
         if parsed_content is not None:
             download_payload["content"] = parsed_content
+        if chart_summaries:
+            download_payload["charts_summary"] = chart_summaries
 
         st.download_button(
             "⬇️ Download JSON",
@@ -115,6 +124,8 @@ if submitted:
             use_container_width=True,
         )
 
+        if encoded_charts:
+            st.caption("Chart bitmaps stay in the UI preview. The download includes lightweight summaries only.")
         st.caption("JSON download flattens nested content for readability; PDF/CSV formats remain deferred to V1.5+.")
     else:
         st.error(resp.get("error", "Failed to generate report."))
