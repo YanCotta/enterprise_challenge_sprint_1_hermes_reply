@@ -27,6 +27,8 @@ _SENSOR_TYPES_CACHE_TTL = 300
 
 def _get_mlflow_client():
     """Get a configured MLflow client."""
+    if getattr(settings, 'DISABLE_MLFLOW_MODEL_LOADING', False):
+        raise RuntimeError("MLflow model loading disabled")
     import mlflow
     import os
     
