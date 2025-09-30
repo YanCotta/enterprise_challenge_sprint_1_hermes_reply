@@ -1,11 +1,13 @@
+import asyncio
 import json
 import uuid
 import logging
-import random
 from datetime import datetime, date, timedelta
-from typing import Dict, Any
+from typing import Any, Callable, Dict, Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Query
+
+from redis.exceptions import WatchError
 
 from core.redis_client import get_redis_client
 from core.events.event_models import (
@@ -19,7 +21,7 @@ from core.events.event_models import (
     DataProcessedEvent,
     DataProcessingFailedEvent,
 )
-from data.schemas import DecisionRequest, DecisionType
+from data.schemas import DecisionRequest, DecisionType, DecisionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +29,9 @@ router = APIRouter(prefix="/api/v1/demo", tags=["Demo"])
 
 DEMO_TTL_SECONDS = 3600
 
-# In-memory active demo registry (lightweight; Redis is canonical persistence)
-ACTIVE_DEMOS: Dict[str, Dict[str, Any]] = {}
+# Redis key helpers
+def _demo_key(correlation_id: str) -> str:
+    return f"demo:{correlation_id}"
 
 STEP_MAP = {
     "SensorDataReceivedEvent": "ingestion",
@@ -89,17 +92,66 @@ def _json_default(obj):
     return str(obj)
 
 
-async def _persist_status(correlation_id: str):
+async def _load_demo_status(correlation_id: str) -> Optional[Dict[str, Any]]:
+    """Fetch the current demo status from Redis."""
     redis_client = await get_redis_client()
-    payload = ACTIVE_DEMOS.get(correlation_id)
-    if not payload:
-        return
-    # Truncate events buffer to last 200 for size safety
-    if len(payload["events"]) > 200:
-        payload["events"] = payload["events"][-200:]
-    async with redis_client.get_redis() as r:
-        # Use custom default to safely serialize any lingering datetime objects
-        await r.setex(f"demo:{correlation_id}", DEMO_TTL_SECONDS, json.dumps(payload, default=_json_default))
+    async with redis_client.get_redis() as redis_conn:
+        raw = await redis_conn.get(_demo_key(correlation_id))
+        if not raw:
+            return None
+        return json.loads(raw)
+
+
+async def _save_demo_status(correlation_id: str, status: Dict[str, Any]) -> None:
+    """Persist demo status to Redis with TTL refresh."""
+    # Clamp rolling event buffer to avoid unbounded growth
+    if len(status.get("events", [])) > 200:
+        status["events"] = status["events"][-200:]
+
+    redis_client = await get_redis_client()
+    async with redis_client.get_redis() as redis_conn:
+        await redis_conn.setex(
+            _demo_key(correlation_id),
+            DEMO_TTL_SECONDS,
+            json.dumps(status, default=_json_default),
+        )
+
+
+async def _update_demo_status(
+    correlation_id: str,
+    mutator: Callable[[Optional[Dict[str, Any]]], Optional[Dict[str, Any]]],
+) -> None:
+    """Atomically apply a mutation to the demo status stored in Redis."""
+    redis_client = await get_redis_client()
+    async with redis_client.get_redis() as redis_conn:
+        key = _demo_key(correlation_id)
+        while True:
+            pipe = redis_conn.pipeline()
+            try:
+                await pipe.watch(key)
+                current_raw = await redis_conn.get(key)
+                current_status = json.loads(current_raw) if current_raw else None
+                updated_status = mutator(current_status)
+                if updated_status is None:
+                    await pipe.unwatch()
+                    return
+
+                if len(updated_status.get("events", [])) > 200:
+                    updated_status["events"] = updated_status["events"][-200:]
+
+                pipe.multi()
+                pipe.setex(
+                    key,
+                    DEMO_TTL_SECONDS,
+                    json.dumps(updated_status, default=_json_default),
+                )
+                await pipe.execute()
+                return
+            except WatchError:
+                # Concurrent update detected; retry mutation
+                continue
+            finally:
+                await pipe.reset()
 
 
 def _find_step(status: Dict[str, Any], step_name: str):
@@ -110,97 +162,114 @@ def _find_step(status: Dict[str, Any], step_name: str):
 
 
 async def _handle_demo_event(correlation_id: str, event_obj: Any):
-    status = ACTIVE_DEMOS.get(correlation_id)
-    if not status:
-        return
     evt_type = event_obj.__class__.__name__
-    step_name = STEP_MAP.get(evt_type)
     now_iso = datetime.utcnow().isoformat()
 
-    # Metrics
-    status["metrics"]["total_events"] += 1
-    status["metrics"]["last_event_at"] = now_iso
+    async def _mutate(status: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        if not status:
+            return None
 
-    # Step accounting
-    if step_name:
-        step = _find_step(status, step_name)
-        if step:
-            if step["status"] == "pending":
-                step["status"] = "running"
-                step["started_at"] = now_iso
-                step["message"] = f"{evt_type} observed"
-            step["events"] += 1
-            # Mark completion on certain terminal events
-            if evt_type in {"MaintenancePredictedEvent", "HumanDecisionResponseEvent"}:
-                if evt_type == "MaintenancePredictedEvent":
-                    # compute latency from first ingestion event
-                    ingestion_step = _find_step(status, "ingestion")
-                    if ingestion_step and ingestion_step.get("started_at"):
-                        t0 = datetime.fromisoformat(ingestion_step["started_at"])
-                        t1 = datetime.utcnow()
-                        status["metrics"]["latency_ms_ingest_to_prediction"] = int((t1 - t0).total_seconds() * 1000)
-                if step["status"] != "complete":
-                    step["status"] = "complete"
-                    step["completed_at"] = now_iso
+        step_name = STEP_MAP.get(evt_type)
 
-    # Error events
-    if evt_type == "DataProcessingFailedEvent":
-        status["errors"].append({
-            "at": now_iso,
-            "agent_id": getattr(event_obj, 'agent_id', None),
-            "message": getattr(event_obj, 'error_message', 'processing failed')
-        })
-        status["status"] = "failed"
-        status["completed_at"] = now_iso
+        # Metrics
+        status["metrics"]["total_events"] += 1
+        status["metrics"]["last_event_at"] = now_iso
 
-    # Append simplified event record
-    preview = event_obj.dict() if hasattr(event_obj, 'dict') else {}
-    # Normalize datetime fields in preview & reduce large dicts
-    for k, v in list(preview.items()):
-        if isinstance(v, (datetime, date)):
-            preview[k] = v.isoformat()
-        elif isinstance(v, dict):
-            # Convert nested datetime values
-            changed = False
-            for nk, nv in list(v.items()):
-                if isinstance(nv, (datetime, date)):
-                    v[nk] = nv.isoformat()
-                    changed = True
+        # Step accounting
+        if step_name:
+            step = _find_step(status, step_name)
+            if step:
+                if step["status"] == "pending":
+                    step["status"] = "running"
+                    step["started_at"] = now_iso
+                    step["message"] = f"{evt_type} observed"
+                step["events"] += 1
+                if evt_type in {"MaintenancePredictedEvent", "HumanDecisionResponseEvent"}:
+                    if evt_type == "MaintenancePredictedEvent":
+                        ingestion_step = _find_step(status, "ingestion")
+                        if ingestion_step and ingestion_step.get("started_at"):
+                            t0 = datetime.fromisoformat(ingestion_step["started_at"])
+                            t1 = datetime.utcnow()
+                            status["metrics"]["latency_ms_ingest_to_prediction"] = int((t1 - t0).total_seconds() * 1000)
+                    if step["status"] != "complete":
+                        step["status"] = "complete"
+                        step["completed_at"] = now_iso
+
+        # Error events
+        if evt_type == "DataProcessingFailedEvent":
+            status["errors"].append(
+                {
+                    "at": now_iso,
+                    "agent_id": getattr(event_obj, "agent_id", None),
+                    "message": getattr(event_obj, "error_message", "processing failed"),
+                }
+            )
+            status["status"] = "failed"
+            status["completed_at"] = now_iso
+
+        # Append simplified event record
+        preview = event_obj.dict() if hasattr(event_obj, "dict") else {}
+        for key, value in list(preview.items()):
+            if isinstance(value, (datetime, date)):
+                preview[key] = value.isoformat()
+            elif isinstance(value, dict):
+                for nested_key, nested_value in list(value.items()):
+                    if isinstance(nested_value, (datetime, date)):
+                        value[nested_key] = nested_value.isoformat()
+                try:
+                    serialized = json.dumps(value, default=_json_default)
+                except TypeError:
+                    value = {
+                        nk: (
+                            nv.isoformat()
+                            if isinstance(nv, (datetime, date))
+                            else str(nv)
+                        )
+                        for nk, nv in value.items()
+                    }
+                    serialized = json.dumps(value)
+                if len(serialized) > 400:
+                    preview[key] = {"_truncated": True}
+
+        raw_ts = getattr(event_obj, "timestamp", datetime.utcnow())
+        if isinstance(raw_ts, (datetime, date)):
+            ts_iso = raw_ts.isoformat()
+        else:
             try:
-                size_candidate = json.dumps(v, default=_json_default)
-            except TypeError:
-                # Fallback convert everything to str
-                v = {kk: (vv.isoformat() if isinstance(vv, (datetime, date)) else str(vv)) for kk, vv in v.items()}
-                size_candidate = json.dumps(v)
-            if len(size_candidate) > 400:
-                preview[k] = {"_truncated": True}
-    raw_ts = getattr(event_obj, 'timestamp', datetime.utcnow())
-    if isinstance(raw_ts, (datetime, date)):
-        ts_iso = raw_ts.isoformat()
-    else:
-        # Attempt parse if string, otherwise fallback current time
-        try:
-            parsed = datetime.fromisoformat(str(raw_ts))
-            ts_iso = parsed.isoformat()
-        except Exception:
-            ts_iso = datetime.utcnow().isoformat()
-    status["events"].append({
-        "event_type": evt_type,
-        "event_id": str(getattr(event_obj, 'event_id', '')),
-        "timestamp": ts_iso,
-        "correlation_id": getattr(event_obj, 'correlation_id', correlation_id),
-        "payload": preview,
-    })
+                parsed = datetime.fromisoformat(str(raw_ts))
+                ts_iso = parsed.isoformat()
+            except Exception:
+                ts_iso = datetime.utcnow().isoformat()
 
-    # Determine overall completion (prediction + optional decision loop)
-    prediction_done = any(s["name"] == "prediction" and s["status"] == "complete" for s in status["steps"])
-    decision_required = status.get("include_decision")
-    decision_done = not decision_required or any(s["name"] == "human_decision" and s["status"] == "complete" for s in status["steps"])
-    if prediction_done and decision_done and status["status"] not in ("complete", "failed"):
-        status["status"] = "complete"
-        status["completed_at"] = now_iso
+        status["events"].append(
+            {
+                "event_type": evt_type,
+                "event_id": str(getattr(event_obj, "event_id", "")),
+                "timestamp": ts_iso,
+                "correlation_id": getattr(event_obj, "correlation_id", correlation_id),
+                "payload": preview,
+            }
+        )
 
-    await _persist_status(correlation_id)
+        prediction_done = any(
+            s["name"] == "prediction" and s["status"] == "complete"
+            for s in status["steps"]
+        )
+        decision_required = status.get("include_decision")
+        decision_done = (
+            not decision_required
+            or any(
+                s["name"] == "human_decision" and s["status"] == "complete"
+                for s in status["steps"]
+            )
+        )
+        if prediction_done and decision_done and status["status"] not in ("complete", "failed"):
+            status["status"] = "complete"
+            status["completed_at"] = now_iso
+
+        return status
+
+    await _update_demo_status(correlation_id, _mutate)
 
 
 async def _event_bus_observer(event_obj: Any):
@@ -208,8 +277,7 @@ async def _event_bus_observer(event_obj: Any):
     correlation_id = getattr(event_obj, 'correlation_id', None)
     if not correlation_id:
         return
-    if correlation_id in ACTIVE_DEMOS:
-        await _handle_demo_event(correlation_id, event_obj)
+    await _handle_demo_event(correlation_id, event_obj)
 
 
 async def _seed_events(correlation_id: str, count: int, coordinator):
@@ -272,9 +340,7 @@ async def start_golden_path_demo(
 ):
     correlation_id = str(uuid.uuid4())
     status_payload = _initial_status(correlation_id, include_decision)
-    ACTIVE_DEMOS[correlation_id] = status_payload
-    # Persist initial
-    await _persist_status(correlation_id)
+    await _save_demo_status(correlation_id, status_payload)
 
     # Access coordinator / event bus from app state
     coordinator = request.app.state.coordinator
@@ -298,15 +364,16 @@ async def start_golden_path_demo(
     if include_decision:
         async def decision_injector():
             # wait until prediction step completes then publish decision required
+            prediction_event_payload: Dict[str, Any] = {}
             for _ in range(30):  # ~30 * 0.5s = 15s timeout
-                status = ACTIVE_DEMOS.get(correlation_id)
+                status = await _load_demo_status(correlation_id)
                 if status and any(s["name"] == "prediction" and s["status"] == "complete" for s in status["steps"]):
                     prediction_event = next(
                         (evt for evt in status["events"] if evt.get("event_type") == "MaintenancePredictedEvent"),
                         None,
                     )
-                    preview_payload = prediction_event.get("payload", {}) if prediction_event else {}
-                    recommended_actions = preview_payload.get("recommended_actions") or ["inspect bearing"]
+                    prediction_event_payload = prediction_event.get("payload", {}) if prediction_event else {}
+                    recommended_actions = prediction_event_payload.get("recommended_actions") or ["inspect bearing"]
                     if not isinstance(recommended_actions, list):
                         recommended_actions = [str(recommended_actions)]
 
@@ -314,10 +381,10 @@ async def start_golden_path_demo(
                         request_id=f"demo_decision_{correlation_id}",
                         decision_type=DecisionType.MAINTENANCE_APPROVAL,
                         context={
-                            "equipment_id": preview_payload.get("equipment_id") or f"demo-sensor-{correlation_id[:4]}",
-                            "predicted_failure_date": preview_payload.get("predicted_failure_date"),
-                            "prediction_confidence": preview_payload.get("prediction_confidence", 0.75),
-                            "time_to_failure_days": preview_payload.get("time_to_failure_days", 30),
+                            "equipment_id": prediction_event_payload.get("equipment_id") or f"demo-sensor-{correlation_id[:4]}",
+                            "predicted_failure_date": prediction_event_payload.get("predicted_failure_date"),
+                            "prediction_confidence": prediction_event_payload.get("prediction_confidence", 0.75),
+                            "time_to_failure_days": prediction_event_payload.get("time_to_failure_days", 30),
                             "recommended_actions": recommended_actions,
                         },
                         options=["approve", "modify", "reject", "defer"],
@@ -325,14 +392,31 @@ async def start_golden_path_demo(
                         requester_agent_id="demo_orchestrator",
                         correlation_id=correlation_id,
                     )
-                    evt = HumanDecisionRequiredEvent(
+                    decision_required_event = HumanDecisionRequiredEvent(
                         payload=decision_request,
                         correlation_id=correlation_id,
                     )
-                    await coordinator.event_bus.publish(evt)
+                    await coordinator.event_bus.publish(decision_required_event)
+
+                    await asyncio.sleep(5)
+                    response_payload = DecisionResponse(
+                        request_id=decision_request.request_id,
+                        decision="approved",
+                        justification="Auto-approved by demo injector",
+                        operator_id="demo_operator",
+                        timestamp=datetime.utcnow(),
+                        confidence=0.95,
+                        additional_notes="Synthetic decision for golden path",
+                        correlation_id=correlation_id,
+                    )
+                    decision_response_event = HumanDecisionResponseEvent(
+                        payload=response_payload,
+                        correlation_id=correlation_id,
+                    )
+                    await coordinator.event_bus.publish(decision_response_event)
                     break
                 await asyncio.sleep(0.5)
-        import asyncio
+
         background_tasks.add_task(decision_injector)
 
     return {
@@ -346,7 +430,7 @@ async def start_golden_path_demo(
 async def get_golden_path_status(correlation_id: str):
     redis_client = await get_redis_client()
     async with redis_client.get_redis() as r:
-        raw = await r.get(f"demo:{correlation_id}")
+        raw = await r.get(_demo_key(correlation_id))
         if not raw:
             raise HTTPException(status_code=404, detail="Demo not found or expired")
         return json.loads(raw)
