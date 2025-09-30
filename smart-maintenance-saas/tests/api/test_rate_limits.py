@@ -14,6 +14,22 @@ from datetime import datetime, timedelta
 import time
 
 from apps.api.main import app
+from core.config.settings import settings
+
+
+@pytest.fixture(autouse=True)
+def allow_test_api_keys(monkeypatch):
+    """Ensure the test API keys are accepted by the application."""
+    keys = [
+        getattr(settings, "API_KEY", ""),
+        "test-api-key-rate-limit",
+        "test-key-1",
+        "test-key-2",
+        "unique-test-key",
+    ]
+    deduped = [key for key in dict.fromkeys(keys) if key]
+    monkeypatch.setenv("API_KEYS", ",".join(deduped))
+    yield
 
 
 class TestRateLimiting:
@@ -42,7 +58,7 @@ class TestRateLimiting:
     @pytest.fixture
     def test_api_key(self):
         """Test API key for rate limiting tests."""
-        return "test-api-key-rate-limit"
+        return getattr(settings, "API_KEY", "test-api-key-rate-limit") or "test-api-key-rate-limit"
 
     def test_rate_limit_enforcement_with_api_key(self, client, sample_drift_payload, test_api_key):
         """
