@@ -31,6 +31,7 @@ from apscheduler.triggers.cron import CronTrigger
 # Add project root to path for importing our modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from core.notifications.email_service import email_service
+from core.security.api_keys import API_KEY_HEADER_NAME, get_configured_api_keys
 
 # Configure structured logging
 logging.basicConfig(
@@ -64,10 +65,10 @@ class DriftCheckAgent:
     """Automated drift monitoring agent with scheduling and alerting"""
     
     def __init__(self):
-        self.api_base_url = os.getenv('API_BASE_URL', 'http://localhost:8000')
-        self.redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
-        self.slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
-        self.api_key = os.getenv('API_KEY', '')
+    self.api_base_url = os.getenv('API_BASE_URL', 'http://localhost:8000')
+    self.redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+    self.slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+    self.api_key = os.getenv('API_KEY') or get_configured_api_keys()[0]
         
         # Drift detection configuration
         self.drift_threshold = float(os.getenv('DRIFT_THRESHOLD', '0.1'))
@@ -164,7 +165,7 @@ class DriftCheckAgent:
         headers = {
             'Content-Type': 'application/json',
             'X-Request-ID': correlation_id,
-            'X-API-Key': self.api_key,
+            API_KEY_HEADER_NAME: self.api_key,
         }
         
         try:
