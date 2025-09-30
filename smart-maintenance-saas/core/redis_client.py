@@ -14,6 +14,8 @@ from contextlib import asynccontextmanager
 import redis.asyncio as redis
 from redis.asyncio import Redis
 
+from core.config.settings import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +50,7 @@ class RedisClient:
                 self.redis_url,
                 decode_responses=True,
                 encoding="utf-8",
-                max_connections=10,
+                max_connections=settings.REDIS_MAX_CONNECTIONS,
                 retry_on_timeout=True,
                 retry_on_error=[redis.ConnectionError, redis.TimeoutError],
             )
@@ -221,6 +223,7 @@ class RedisClient:
 
 # Global Redis client instance
 _redis_client: Optional[RedisClient] = None
+_init_lock = asyncio.Lock()
 
 
 async def get_redis_client() -> RedisClient:
@@ -244,7 +247,12 @@ async def get_redis_client() -> RedisClient:
     return _redis_client
 
 
-async def init_redis_client(redis_url: Optional[str] = None) -> RedisClient:
+async def init_redis_client(
+    redis_url: Optional[str] = None,
+    *,
+    retries: Optional[int] = None,
+    retry_delay: Optional[float] = None,
+) -> RedisClient:
     """
     Initialize the global Redis client.
     
@@ -255,9 +263,41 @@ async def init_redis_client(redis_url: Optional[str] = None) -> RedisClient:
         RedisClient: The initialized Redis client
     """
     global _redis_client
-    _redis_client = RedisClient(redis_url)
-    await _redis_client.connect()
-    return _redis_client
+
+    if _redis_client and _redis_client.is_connected:
+        return _redis_client
+
+    target_url = redis_url or os.getenv("REDIS_URL") or str(settings.redis_url)
+    max_retries = retries if retries is not None else settings.REDIS_INIT_MAX_RETRIES
+    delay = retry_delay if retry_delay is not None else settings.REDIS_INIT_RETRY_DELAY_SECONDS
+
+    last_exception: Optional[Exception] = None
+
+    async with _init_lock:
+        if _redis_client and _redis_client.is_connected:
+            return _redis_client
+
+        for attempt in range(1, max_retries + 1):
+            client = RedisClient(target_url)
+            try:
+                await client.connect()
+                _redis_client = client
+                return _redis_client
+            except Exception as exc:  # noqa: BLE001
+                last_exception = exc
+                logger.warning(
+                    "Redis initialization attempt %d/%d failed for %s: %s",
+                    attempt,
+                    max_retries,
+                    target_url,
+                    exc,
+                )
+                if attempt < max_retries:
+                    await asyncio.sleep(delay)
+
+        raise RuntimeError(
+            f"Failed to initialize Redis client after {max_retries} attempts"
+        ) from last_exception
 
 
 async def close_redis_client() -> None:
