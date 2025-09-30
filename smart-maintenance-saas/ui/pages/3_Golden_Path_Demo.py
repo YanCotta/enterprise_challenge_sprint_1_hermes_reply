@@ -149,6 +149,29 @@ def render_golden_path_page():
                 st.error("Errors detected:")
                 st.json(data["errors"])
 
+            st.markdown("**Maintenance Schedule Feed**")
+            feed_resp = make_api_request(
+                "GET",
+                "/api/v1/maintenance/scheduled",
+                params={
+                    "limit": 5,
+                    "correlation_id": st.session_state.correlation_id,
+                },
+            )
+            if feed_resp.get("success"):
+                schedules = feed_resp.get("data") or []
+                if schedules:
+                    for record in schedules:
+                        header = (
+                            f"{record.get('status', 'Scheduled')} – Start: {record.get('scheduled_start_time', 'pending')}"
+                        )
+                        with st.expander(header):
+                            st.json(record)
+                else:
+                    st.info("No maintenance schedules recorded yet for this run.")
+            else:
+                st.warning("Unable to load maintenance schedule feed for this correlation ID.")
+
         # Auto refresh while running with timeout protection
         current_status = data.get("status")
         if current_status not in ("complete", "failed"):
