@@ -12,12 +12,18 @@ from data.schemas import ReportRequest, ReportResult # Added
 from apps.system_coordinator import SystemCoordinator
 from core.events.event_bus import EventBus
 from apps.agents.decision.reporting_agent import ReportingAgent
+from core.security.api_keys import API_KEY_HEADER_NAME, get_preferred_api_key
 
 # EventBus import for type hinting mock, if needed, but patch path is string-based
 # from core.events.event_bus import EventBus
 
 
 BASE_URL = "http://test"  # Base URL for the test client
+# Shared headers for authenticated requests
+@pytest.fixture
+def auth_headers() -> dict[str, str]:
+    return {API_KEY_HEADER_NAME: get_preferred_api_key()}
+
 
 # Setup mock coordinator for tests
 @pytest.fixture(autouse=True)
@@ -78,9 +84,9 @@ async def test_unauthorized_submit_decision():
 
 # Authorized Access Tests
 @pytest.mark.asyncio
-async def test_authorized_ingest_data_basic_check():
+async def test_authorized_ingest_data_basic_check(auth_headers):
     """Test authorized access to /api/v1/data/ingest for basic success (status 200)."""
-    headers = {"X-API-Key": settings.API_KEY}
+    headers = dict(auth_headers)
     json_body = {
         "sensor_id": "sensor_auth_check_001",
         "value": 25.0,
@@ -93,9 +99,9 @@ async def test_authorized_ingest_data_basic_check():
 
 
 @pytest.mark.asyncio
-async def test_authorized_generate_report_basic_check():
+async def test_authorized_generate_report_basic_check(auth_headers):
     """Test authorized access to /api/v1/reports/generate (now POST) for basic success."""
-    headers = {"X-API-Key": settings.API_KEY}
+    headers = dict(auth_headers)
     # Changed to POST and added a minimal valid ReportRequest body
     json_body = ReportRequest(
         report_type="basic_check_report",
@@ -122,9 +128,9 @@ async def test_authorized_generate_report_basic_check():
 
 
 @pytest.mark.asyncio
-async def test_authorized_submit_decision():
+async def test_authorized_submit_decision(auth_headers):
     """Test authorized access to the /api/v1/decisions/submit endpoint."""
-    headers = {"X-API-Key": settings.API_KEY}
+    headers = dict(auth_headers)
     json_body = {
         "request_id": "test_request_123", 
         "decision": "approved", 
@@ -138,9 +144,9 @@ async def test_authorized_submit_decision():
 
 # Specific Endpoint Tests for /api/v1/data/ingest
 @pytest.mark.asyncio
-async def test_ingest_data_publishes_event():
+async def test_ingest_data_publishes_event(auth_headers):
     """Test that /api/v1/data/ingest correctly forms and publishes a SensorDataReceivedEvent."""
-    headers = {"X-API-Key": settings.API_KEY}
+    headers = dict(auth_headers)
     request_payload = {
         "sensor_id": "sensor_event_test_002", 
         "value": 1012.5,
@@ -166,9 +172,9 @@ async def test_ingest_data_publishes_event():
 
 # Specific Endpoint Tests for /api/v1/reports/generate
 @pytest.mark.asyncio
-async def test_generate_report_calls_agent_and_returns_result():
+async def test_generate_report_calls_agent_and_returns_result(auth_headers):
     """Test that /api/v1/reports/generate calls the reporting agent and returns its result."""
-    headers = {"X-API-Key": settings.API_KEY}
+    headers = dict(auth_headers)
 
     report_request_payload = ReportRequest(
         report_type="sample_report",
