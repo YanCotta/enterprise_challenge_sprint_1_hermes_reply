@@ -6,31 +6,18 @@ from fastapi.security import SecurityScopes
 from fastapi.security.api_key import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
-import os
+
 from core.config.settings import settings
 from core.database.session import get_async_db
 from core.redis_client import get_redis_client
+from core.security.api_keys import (
+    API_KEY_HEADER_NAME,
+    get_preferred_api_key,
+    load_allowed_api_keys,
+)
 
 
-def _load_allowed_api_keys() -> set[str]:
-    """Return the configured set of allowed API keys."""
-    allowed_keys: set[str] = set()
-
-    primary_key = os.getenv("API_KEY", getattr(settings, "API_KEY", None))
-    if primary_key:
-        allowed_keys.add(primary_key)
-
-    additional_keys = os.getenv("API_KEYS") or os.getenv("ALLOWED_API_KEYS")
-    if additional_keys:
-        for key in additional_keys.split(","):
-            key = key.strip()
-            if key:
-                allowed_keys.add(key)
-
-    return allowed_keys
-
-API_KEY_NAME = "X-API-Key" # Ensure this matches the client-side header name
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+api_key_header = APIKeyHeader(name=API_KEY_HEADER_NAME, auto_error=False)
 
 async def get_api_key(api_key: Optional[str] = Security(api_key_header)):
     """
@@ -47,7 +34,7 @@ async def get_api_key(api_key: Optional[str] = Security(api_key_header)):
             detail="API key missing: X-API-KEY header is required"
         )
 
-    allowed_keys = _load_allowed_api_keys()
+    allowed_keys = load_allowed_api_keys()
     if not allowed_keys or api_key not in allowed_keys:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -76,7 +63,7 @@ async def api_key_auth(
             detail="Not authenticated: API key required." # Updated detail
         )
 
-    allowed_keys = _load_allowed_api_keys()
+    allowed_keys = load_allowed_api_keys()
     if not allowed_keys or api_key_header_value not in allowed_keys:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -92,7 +79,11 @@ async def api_key_auth(
 
     # Return a dictionary that could be used by the endpoint if needed,
     # e.g., to access user details or validated scopes.
-    return {"api_key": api_key_header_value, "scopes": security_scopes.scopes}
+    return {
+        "api_key": api_key_header_value,
+        "preferred_key": get_preferred_api_key(),
+        "scopes": security_scopes.scopes,
+    }
 
 
 # Database dependency
