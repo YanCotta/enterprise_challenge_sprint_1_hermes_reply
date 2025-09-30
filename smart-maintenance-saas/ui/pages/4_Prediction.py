@@ -297,35 +297,62 @@ def render_prediction_page():
 
         submitted = st.form_submit_button("Run Inference", use_container_width=True)
 
-    if not submitted:
-        return
-
-    history_rows, history_df = _fetch_history(sensor_id, history_window)
-    if not history_rows:
-        st.error("Unable to retrieve sensor history for inference.")
-        return
+    stored_context = st.session_state.get("prediction_last_run")
+    if submitted:
+        history_rows, history_df = _fetch_history(sensor_id, history_window)
+        if not history_rows:
+            st.error("Unable to retrieve sensor history for inference.")
+            return
+    elif chosen_model.mode == "forecast":
+        if (
+            stored_context
+            and stored_context.get("sensor_id") == sensor_id
+            and stored_context.get("model_id") == chosen_model.identifier
+        ):
+            history_records = stored_context.get("history", [])
+            forecast_records = stored_context.get("forecast", [])
+            history_df = pd.DataFrame(history_records)
+            forecast_df = pd.DataFrame(forecast_records)
+            if not history_df.empty and "timestamp" in history_df.columns:
+                history_df["timestamp"] = pd.to_datetime(history_df["timestamp"], utc=True, errors="coerce")
+            if not forecast_df.empty and "timestamp" in forecast_df.columns:
+                forecast_df["timestamp"] = pd.to_datetime(forecast_df["timestamp"], utc=True, errors="coerce")
+            payload = stored_context.get("payload", {})
+            metrics = stored_context.get("metrics", {})
+            schedule_request = stored_context.get("schedule_request")
+        else:
+            st.info("Run inference to preview forecast automation and scheduling.")
+            st.session_state.last_schedule_response = None
+            return
+    else:
+        if not submitted:
+            return
 
     if chosen_model.mode == "forecast":
-        resp = _run_forecast(chosen_model, sensor_id, horizon or chosen_model.default_horizon, history_window)
-        if not resp.get("success"):
-            st.error("Forecast request failed")
-            st.caption(resp.get("error", "Unknown error"))
-            if resp.get("hint"):
-                st.caption(f"Hint: {resp['hint']}")
-            return
-        payload = resp.get("data", {})
-        forecast_points = payload.get("forecast", [])
-        forecast_df = pd.DataFrame(forecast_points)
-        if not forecast_df.empty:
-            forecast_df["timestamp"] = pd.to_datetime(forecast_df["timestamp"], utc=True, errors="coerce")
-            forecast_df = forecast_df.sort_values("timestamp")
+        if submitted:
+            resp = _run_forecast(chosen_model, sensor_id, horizon or chosen_model.default_horizon, history_window)
+            if not resp.get("success"):
+                st.error("Forecast request failed")
+                st.caption(resp.get("error", "Unknown error"))
+                if resp.get("hint"):
+                    st.caption(f"Hint: {resp['hint']}")
+                return
+            payload = resp.get("data", {})
+            forecast_points = payload.get("forecast", [])
+            forecast_df = pd.DataFrame(forecast_points)
+            if not forecast_df.empty:
+                forecast_df["timestamp"] = pd.to_datetime(forecast_df["timestamp"], utc=True, errors="coerce")
+                forecast_df = forecast_df.sort_values("timestamp")
 
-        st.success(
-            f"Forecast generated with {payload.get('model_name')} v{payload.get('model_version')} "
-            f"using {payload.get('history_points')} historical readings."
-        )
+            st.success(
+                f"Forecast generated with {payload.get('model_name')} v{payload.get('model_version')} "
+                f"using {payload.get('history_points')} historical readings."
+            )
 
-        metrics = payload.get("metrics", {})
+            metrics = payload.get("metrics", {})
+        else:
+            st.success("Replaying the most recent forecast for this sensor/model combination.")
+
         met_col1, met_col2, met_col3 = st.columns(3)
         with met_col1:
             st.metric("Cadence (min)", _format_metric_value(payload.get("cadence_minutes")))
@@ -371,14 +398,36 @@ def render_prediction_page():
             "and appears automatically on the Reporting Prototype and Golden Path views."
         )
 
-        schedule_request = _build_schedule_request(
-            sensor_id=sensor_id,
-            sensor_type=sensor_type,
-            model=chosen_model,
-            forecast_df=forecast_df,
-            history_df=history_df,
-            payload=payload,
-        )
+        if submitted:
+            schedule_request = _build_schedule_request(
+                sensor_id=sensor_id,
+                sensor_type=sensor_type,
+                model=chosen_model,
+                forecast_df=forecast_df,
+                history_df=history_df,
+                payload=payload,
+            )
+            if schedule_request:
+                history_records = history_df.assign(
+                    timestamp=history_df["timestamp"].astype(str)
+                ).to_dict("records")
+                forecast_records = forecast_df.assign(
+                    timestamp=forecast_df["timestamp"].astype(str)
+                ).to_dict("records")
+                st.session_state.prediction_last_run = {
+                    "sensor_id": sensor_id,
+                    "sensor_type": sensor_type,
+                    "model_id": chosen_model.identifier,
+                    "mode": chosen_model.mode,
+                    "history": history_records,
+                    "forecast": forecast_records,
+                    "payload": payload,
+                    "metrics": metrics,
+                    "schedule_request": schedule_request,
+                }
+                st.session_state.last_schedule_response = None
+        else:
+            schedule_request = schedule_request or None
 
         schedule_btn_col, info_col = st.columns([1, 3])
         with schedule_btn_col:
