@@ -109,21 +109,20 @@ class AnomalyDetectionAgent(BaseAgent):
         
         # Fallback models for graceful degradation (only if serverless disabled)
         try:
-            if not self.use_serverless_models:
-                self.scaler = StandardScaler()
-                if_params = getattr(self.settings, 'isolation_forest_params', {})
-                default_if_params = {
-                    'contamination': 'auto', 'random_state': 42, 'n_estimators': 100,
-                    'max_samples': 'auto', 'max_features': 1.0
-                }
-                final_if_params = {**default_if_params, **if_params}
-                self.isolation_forest = IsolationForest(**final_if_params)
-                self.isolation_forest_fitted = False # Flag to indicate if the model has been fitted
-            else:
-                # Serverless mode - no local models needed
-                self.scaler = None
-                self.isolation_forest = None
-                self.isolation_forest_fitted = False
+            self.scaler = StandardScaler()
+            if_params = getattr(self.settings, 'isolation_forest_params', {})
+            default_if_params = {
+                'contamination': 'auto', 'random_state': 42, 'n_estimators': 100,
+                'max_samples': 'auto', 'max_features': 1.0
+            }
+            final_if_params = {**default_if_params, **if_params}
+            self.isolation_forest = IsolationForest(**final_if_params)
+            self.isolation_forest_fitted = False # Flag to indicate if the model has been fitted
+
+            if self.use_serverless_models:
+                self.logger.info(
+                    "Serverless mode enabled; local IsolationForest fallback initialized for resilience."
+                )
             
             # Initialize statistical detector, which can also be a fallback
             stat_config = getattr(self.settings, 'statistical_detector_config', {})
