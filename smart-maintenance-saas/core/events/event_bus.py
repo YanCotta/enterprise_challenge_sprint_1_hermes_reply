@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 import traceback
 from collections import defaultdict
@@ -11,6 +12,33 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from core.config.settings import settings
 # from data.exceptions import EventHandlerError, SmartMaintenanceBaseException # Not strictly needed if not raising new exceptions yet
+
+# Helper payload wrapper to support both attribute and dict-style access
+class _EventPayload:
+    def __init__(self, data: Dict[str, Any]):
+        self._data = dict(data)
+
+    def __getattr__(self, item: str) -> Any:
+        try:
+            return self._data[item]
+        except KeyError as exc:
+            raise AttributeError(item) from exc
+
+    def __getitem__(self, item: str) -> Any:
+        return self._data[item]
+
+    def __contains__(self, item: str) -> bool:
+        return item in self._data
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._data.get(key, default)
+
+    def items(self):
+        return self._data.items()
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dict(self._data)
+
 
 # Set up a basic logger for the module
 logger = logging.getLogger(__name__)
@@ -170,7 +198,18 @@ class EventBus:
                         if event_obj is not None:  # Pattern 1 (event object)
                             await handler(event_obj)
                         else:  # Pattern 2 (event_type, data_dict)
-                            await handler(event_type_name, data_dict_payload)
+                            handler_signature = inspect.signature(handler)
+                            param_count = len(handler_signature.parameters)
+
+                            # Provide attribute-style access when handlers expect an object input
+                            payload_arg: Any = data_dict_payload
+                            if isinstance(payload_arg, dict):
+                                payload_arg = _EventPayload(payload_arg)
+
+                            if param_count >= 2:
+                                await handler(event_type_name, data_dict_payload)
+                            else:
+                                await handler(payload_arg)
 
                         logger.info(f"Handler '{handler_name}' successfully processed event '{event_type_name}' on attempt {attempt + 1}.")
                         break  # Success, exit retry loop
