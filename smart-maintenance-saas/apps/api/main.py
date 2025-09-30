@@ -5,7 +5,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from apps.api.routers import data_ingestion, reporting, human_decision, sensor_readings, decisions
+from apps.api.routers import data_ingestion, reporting, human_decision, sensor_readings, decisions, maintenance
 from apps.api.middleware.request_id import RequestIDMiddleware
 from sqlalchemy import select, text  # Import text for raw SQL
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -252,6 +252,12 @@ app.include_router(
     reporting.router,
     prefix="/api/v1/reports",
     tags=["Reporting"]
+)
+
+app.include_router(
+    maintenance.router,
+    prefix="/api/v1/maintenance",
+    tags=["Maintenance"]
 )
 
 app.include_router(
