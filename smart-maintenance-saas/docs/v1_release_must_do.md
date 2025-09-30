@@ -45,17 +45,17 @@ _Merged from the former v1.0 must-do checklist, V1 Readiness Checklist, Prioriti
 
 | Capability | UI Exposure | Coverage Notes | V1.0 Action |
 |-----------|-------------|----------------|-------------|
-| Ingestion | ✅ Exposed | Manual form + verify pattern. | Keep stable. |
+| Ingestion | ✅ Exposed | Manual form + verify pattern; verification sometimes races eventual consistency (expected). | Keep stable; monitor ingest→verify latency. |
 | Data Explorer | ✅ Exposed | Pagination, filters, cached sensor list. | Monitor latency, keep cache TTL. |
-| Prediction | ✅ Exposed | Auto version resolve, SHAP optional. | Maintain hint messaging. |
+| Prediction | ⚠️ Partial | Forecast renders, but "Create maintenance order" currently resets the page instead of confirming the automation. | Investigate reset and confirm maintenance order persistence. |
 | Model Metadata | ✅ Exposed | Disabled vs empty state clarity. | Badge already live. |
 | Drift Check | ✅ Exposed | Form-based. | None. |
 | Anomaly Detection | ✅ Exposed | Form-based; humidity/voltage accepted. | None. |
-| Simulation | ✅ Exposed | Tabs for drift/anomaly/normal; latency capture. | None. |
-| Golden Path | ✅ Exposed | 90s timeout guard, decision stage optional. | Polish messaging as needed. |
+| Simulation | ⚠️ Partial | Triggering drift simulation raises `TypeError` from payload builder. | Fix payload builder to accept sensor_id param. |
+| Golden Path | ⚠️ Partial | Human decision stage causes demo to time out at 90s with queued stages. | Extend timeout or unblock validation/prediction stages. |
 | Decision Log | ✅ Exposed | Create/list/filter/CSV export. | Clarify no edit/delete. |
 | Metrics Snapshot | ✅ Exposed | Manual/auto refresh; labelled “Snapshot Only”. | None. |
-| Reporting JSON | ⚠️ Minimal | Prototype JSON panel only. | Label prototype and defer enhancements. |
+| Reporting JSON | ⚠️ Minimal | Prototype JSON panel only; downloaded JSON currently in raw string/base64 mix. | Label prototype and defer enhancements; improve readability when possible. |
 | Streaming Metrics | ❌ Deferred | Backend not implemented. | Defer (see Section 3). |
 | Artifact Downloads | ❌ Deferred | Persistence layer missing. | Defer. |
 | Background SHAP | ❌ Deferred | Queue infra absent. | Defer. |
@@ -95,6 +95,8 @@ Streaming metrics, report artifacts (PDF/CSV), background SHAP processing, bulk 
 | High | ML Agents | Ensure anomaly detector fallback path (IsolationForest + statistical backup) behaves correctly when `DISABLE_MLFLOW_MODEL_LOADING` is true. | AnomalyDetectionAgent integration suite green with serverless flag; manual anomaly request returns 200 with fallback payload. | Open. |
 | High | Deployment | Populate production-ready `.env` (or secrets store) and validate values against `docs/DEPLOYMENT_SETUP.md`. | Deployment script finds `.env`, health checks succeed. | Open (operational). |
 | High | Deployment | Finalize deployment automation (shell script + smoke test) and record execution. | `scripts/deploy_vm.sh` (or equivalent) runs end-to-end on target VM, invoking smoke tests with zero failures. | Open (wip). |
+| High | Demo & Workflow | Resolve Golden Path timeout when human decision stage enabled (validation/prediction remain queued past 90s). | Demo completes with human stage on; status transitions through all stages < timeout. | Open (timed out 2025-09-30). |
+| High | UI & Scheduling | Fix prediction page "Create maintenance order" action so it confirms scheduling instead of resetting form. | Button triggers maintenance workflow and surfaces confirmation without page reset. | Open. |
 
 ### 4.2 Medium-Priority Improvements
 
@@ -103,6 +105,8 @@ Streaming metrics, report artifacts (PDF/CSV), background SHAP processing, bulk 
 | Medium | Knowledge Agent | Decide on `DISABLE_CHROMADB` production policy and update LearningAgent expectations/tests. | Learning agent test suite passes under the chosen configuration; docs updated. | Open. |
 | Medium | Deployment | Introduce multi-stage Docker builds (API/UI) to shrink image size and speed redeploys. | New Dockerfiles build, images functionally equivalent, size reduction documented. | Open. |
 | Medium | Testing | Expand event bus integration tests to cover handler retries and DLQ paths beyond existing coverage. | Tests cover success, retry, DLQ with deterministic assertions. | Partially complete (baseline tests exist; broaden scenarios). |
+| Medium | Simulation UI | Fix Simulation Console drift payload builder (`TypeError` on sensor_id) so all tabs execute successfully. | Drift/anomaly/normal simulations run without exceptions; latency samples recorded. | Open (UI regression). |
+| Medium | Reporting Prototype | Improve JSON export readability (currently raw encoded blob) or document expected format. | Downloaded JSON matches structured content or docs clarify encoding. | Open (prototype). |
 
 ### 4.3 Low-Priority Follow-Ups
 
