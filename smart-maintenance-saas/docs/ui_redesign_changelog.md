@@ -575,6 +575,17 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 - Once services healthy, rerun page-by-page validation plan (Data Explorer, Prediction, Decisions, Demo) to ensure fixes behaved as expected.
 - Continue tracking MLflow configuration issue (Section 20.4) prior to full smoke sign-off.
 
+### 21.4 Streamlit UI Stabilization (2025-09-30)
+
+| Area | Update | Retest Guidance |
+|------|--------|-----------------|
+| Golden Path Demo | Demo router’s decision injector now derives request IDs from the emitted `MaintenancePredictedEvent`, allowing the human decision stage to finish and clearing the 90s timeout. | Launch the demo with “Include human decision stage” enabled and confirm the success banner before 90s elapse. |
+| Prediction Page | Cached the most recent inference run in `st.session_state`, so scheduling no longer clears the page and confirmations remain visible after button clicks. | Run a forecast, trigger “Create Maintenance Order,” and verify the confirmation + schedule payload stay rendered. |
+| Simulation Console | Removed duplicate `sensor_id` binding when forwarding kwargs to payload builders, eliminating the drift tab’s `TypeError`. | Exercise all three tabs using a custom sensor ID and ensure each returns latency + correlation metadata. |
+| Reporting Prototype | Parsed JSON content for display/download and surfaced base64 chart previews, keeping the prototype readable while artifacts remain deferred. | Generate each report type, confirm the prettified JSON download, and note any charts that fail to render. |
+
+Next step: once the API container is rebuilt, rerun the UI smoke tour focusing on these four areas and capture any remaining gaps before sign-off.
+
 ---
 
 ## 22. Conversation Summary (2025-09-30)
