@@ -2,8 +2,8 @@
 
 *[English](README.md) | **Português***
 
-**Status:** Estável (Escopo V1.0 Mínimo) | Prontidão: 94.5% | Recursos Adiados Rastreados  
-**Última Sincronização:** 2025-12-19
+**Status:** V1.0 Pronto para Produção | Documentação Sincronizada  
+**Última Atualização:** 2025-09-30
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-V1.0%20Pronto-brightgreen)](.)
@@ -11,11 +11,9 @@
 [![Performance](https://img.shields.io/badge/API%20Response-<2s-purple)](.)
 [![Cloud](https://img.shields.io/badge/Cloud-Pronto-orange)](.)
 
-## DOCUMENTACAO DESATUALIZADA -> SERA ATUALIZADA ATE DIA 03/10, NO LANCAMENTO DA VERSAO 1.0
-
 ## Visão Geral
 
-Plataforma de manutenção preditiva pronta para produção, entregando escopo V1.0 mínimo com 94.5% de prontidão. Apresenta implantação cloud-native, orquestração multi-agente e insights de manutenção orientados por dados otimizados para aplicações industriais.
+Plataforma SaaS de manutenção preditiva pronta para produção, otimizada para aplicações industriais. Apresenta implantação cloud-native (TimescaleDB, Redis, S3), orquestração multi-agente com fluxos de trabalho orientados por eventos e insights de manutenção baseados em ML. A V1.0 entrega capacidades essenciais com adiamentos de recursos intencionais documentados no playbook de implantação.
 
 ## Início Rápido
 
@@ -52,17 +50,17 @@ docker compose up -d --build
 
 ## Escopo V1.0 Mínimo vs Adiado
 
-### ✅ Escopo V1.0 Mínimo (Entregue - 94.5% Pronto)
-1. **Ingestão de dados + explorador** - Ingestão de arquivo único com rastreamento de correlação
-2. **Previsão ML** - Resolução automática de versão (SHAP intencionalmente adiado)  
-3. **Explorador básico de metadados de modelo** - Diferenciação de estado (desabilitado/vazio/erro/populado)
-4. **Verificações de drift & anomalia sob demanda** - Análise de gatilho manual
-5. **Demo Golden Path** - Fluxo de trabalho instrumentado com proteção de timeout de 90s
-6. **Log de auditoria de decisões** - Decisões humanas persistidas com exportação CSV
-7. **Relatórios** - Protótipo apenas JSON (downloads de artefatos adiados)
-8. **Snapshot de métricas** - Métricas pontuais (streaming adiado)
-9. **Console de simulação** - Cenários de teste normal/drift/anomalia
-10. **Camada de estabilidade** - Abstração central de rerun segura
+### ✅ Capacidades V1.0 Entregues
+1. **Ingestão de dados + explorador** - Ingestão de arquivo único com rastreamento de correlação e paginação
+2. **Previsão ML** - Resolução automática de versão com integração ao registro de modelos (MLflow opcional)
+3. **Explorador de metadados de modelo** - Diferenciação de estado (desabilitado/vazio/erro/populado)
+4. **Detecção de drift & anomalia** - Análise sob demanda com teste KS e Isolation Forest
+5. **Demo Golden Path** - Fluxo de trabalho instrumentado com proteção de timeout de 90s e monitoramento de eventos
+6. **Log de auditoria de decisões** - Decisões humanas persistidas com filtragem e exportação CSV
+7. **Protótipo de relatórios** - Geração de relatórios JSON com pré-visualização de gráficos (artefatos adiados)
+8. **Snapshot de métricas** - Métricas Prometheus pontuais (streaming adiado)
+9. **Console de simulação** - Cenários de teste normal/drift/anomalia com rastreamento de latência
+10. **Camada de estabilidade** - Abstração central de rerun segura prevenindo crashes em tempo de execução
 
 ### 🚫 Adiado para V1.5+ (Explicitamente Fora do Escopo)
 - Artefatos de relatório (geração/download de arquivos)
@@ -77,12 +75,11 @@ docker compose up -d --build
 
 ## Matriz de Links
 
-### Documentação Autoritativa (Fontes da Verdade)
-- [Resumo Executivo](smart-maintenance-saas/docs/EXECUTIVE_SUMMARY.md) - Status de estabilização do sistema
-- [Backlog Priorizado](smart-maintenance-saas/docs/PRIORITIZED_BACKLOG.md) - Escopo V1.0 & recursos adiados  
-- [Checklist de Prontidão V1.0](smart-maintenance-saas/docs/V1_READINESS_CHECKLIST.md) - Avaliação de prontidão 94.5%
-- [Capacidades do Sistema & Redesign de UI](smart-maintenance-saas/docs/SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md) - Matriz completa de capacidades
-- [Changelog de Redesign de UI](smart-maintenance-saas/docs/ui_redesign_changelog.md) - Trilha de evolução V1.0
+### Documentação Autoritativa (Fonte Única da Verdade)
+- [Playbook de Implantação V1.0](smart-maintenance-saas/docs/v1_release_must_do.md) - **Referência canônica**: Substitui backlog anterior, checklist de prontidão e docs de auditoria; consolida escopo, tarefas e procedimentos de implantação
+- [Changelog de Redesign de UI](smart-maintenance-saas/docs/ui_redesign_changelog.md) - Trilha de evolução da UI V1.0 com implementações de recursos e correções
+- [Changelog Sprint 4](smart-maintenance-saas/docs/legacy/sprint_4_changelog.md) - Marcos de implantação cloud, integração MLflow e conquistas de infraestrutura
+- [Resumo Executivo](smart-maintenance-saas/docs/EXECUTIVE_SUMMARY.md) - Status de estabilização do sistema e confirmação de prontidão V1.0
 
 ### Documentação Principal
 - [Sistema & Arquitetura](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md) - Arquitetura de alto nível
@@ -92,31 +89,30 @@ docker compose up -d --build
 - [Documentação de Segurança](smart-maintenance-saas/docs/SECURITY.md) - Arquitetura de segurança
 
 ### Performance & Testes  
-- [Baseline de Performance](smart-maintenance-saas/docs/PERFORMANCE_BASELINE.md) - Metas SLO & métricas
-- [Resultados de Teste de Carga](smart-maintenance-saas/docs/DAY_17_LOAD_TEST_REPORT.md) - Validação de 103.8 RPS
-- [Plano de Teste V1](smart-maintenance-saas/docs/TEST_PLAN_V1.md) - Framework de estratégia de teste
-- [Plano de Cobertura](smart-maintenance-saas/docs/COVERAGE_IMPROVEMENT_PLAN.md) - Estratégia de cobertura de teste
+- [Resultados de Teste de Carga](smart-maintenance-saas/docs/legacy/DAY_17_LOAD_TEST_REPORT.md) - Validação de 103.8 RPS (arquivado)
+- [Resultados de Performance](smart-maintenance-saas/docs/legacy/DAY_18_PERFORMANCE_RESULTS.md) - Otimização TimescaleDB (arquivado)
+- [Baseline de Performance](smart-maintenance-saas/docs/legacy/PERFORMANCE_BASELINE.md) - Metas SLO & métricas (arquivado)
+- [Plano de Cobertura](smart-maintenance-saas/docs/legacy/COVERAGE_IMPROVEMENT_PLAN.md) - Estratégia de cobertura de teste (arquivado)
 
 ### Operações & Implantação
-- [Guia de Implantação Cloud](smart-maintenance-saas/docs/CLOUD_DEPLOYMENT_GUIDE.md) - Configuração & provisionamento cloud  
-- [Guia de Configuração DVC](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md) - Controle de versão de dados
-- [Orientação de Desenvolvimento](smart-maintenance-saas/docs/DEVELOPMENT_ORIENTATION.md) - Padrões de engenharia
+- [Guia de Implantação Cloud](smart-maintenance-saas/docs/CLOUD_DEPLOYMENT_GUIDE.md) - Implantação específica por plataforma (Render, Railway, Heroku) com configuração de ambiente
+- [Configuração de Implantação](smart-maintenance-saas/docs/DEPLOYMENT_SETUP.md) - Configuração de ambiente e gerenciamento de .env
+- [Guia de Configuração DVC](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md) - Configuração de controle de versão de dados
+- [Orientação de Desenvolvimento](smart-maintenance-saas/docs/legacy/DEVELOPMENT_ORIENTATION.md) - Padrões de engenharia (arquivado)
 
 ### Legado & Histórico
 - [Índice de Documentação Legada](smart-maintenance-saas/docs/legacy/INDEX.md) - Documentos históricos arquivados
 
 ## Contribuição
 
-Este é software V1.0 pronto para produção. Para contribuições:
+Contribuições bem-vindas para melhorias V1.0+. Processo de revisão:
 
-1. Revisar escopo autoritativo em V1_READINESS_CHECKLIST.md
-2. Alinhar com conjunto mínimo de recursos V1.0 (sem aumento de escopo)  
-3. Testar mudanças contra suíte de testes existente
-4. Atualizar documentação para quaisquer mudanças arquiteturais
-5. Seguir checklist de auditoria de segurança para mudanças relacionadas à segurança
+1. Consultar [Playbook de Implantação V1.0](smart-maintenance-saas/docs/v1_release_must_do.md) para escopo atual e recursos adiados
+2. Verificar alinhamento com capacidades entregues (sem aumento de escopo V1.0)
+3. Testar mudanças contra suítes de teste existentes (ver diretório `tests/`)
+4. Atualizar documentação relevante para mudanças arquiteturais ou de API
+5. Seguir diretrizes da [Documentação de Segurança](smart-maintenance-saas/docs/SECURITY.md) para mudanças relacionadas à segurança
 
 ---
 
-**Conquista V1.0:** 94.5% de prontidão para produção com todos os fluxos de trabalho principais operacionais e bloqueadores de implantação resolvidos.
-
-**Próxima Fase:** Endurecimento V1.1 (cobertura de teste aprimorada, percentis de métricas, design de persistência de artefatos) começa após ciclo de feedback do usuário.
+**Lançamento V1.0:** Todos os fluxos de trabalho principais operacionais com implantação cloud verificada. Capacidades de backend com 100% de prontidão; UI intencionalmente expõe conjunto mínimo de fluxos de trabalho conforme Seção 2 do playbook de implantação.
