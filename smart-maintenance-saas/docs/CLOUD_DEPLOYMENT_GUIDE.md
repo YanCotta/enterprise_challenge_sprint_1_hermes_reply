@@ -4,6 +4,11 @@
 **Status:** V1.0 Production Ready  
 **Related:** See [v1_release_must_do.md Section 7](./v1_release_must_do.md) for deployment checklist and VM procedures
 
+**Architecture Diagrams:**
+- [Deployment Architecture](./SYSTEM_AND_ARCHITECTURE.md#appendix-d-deployment-architecture-future-oriented-illustration) - Cloud deployment topology
+- [Docker Services Architecture](./SYSTEM_AND_ARCHITECTURE.md#26-docker-services-architecture) - Container orchestration
+- [High-Level System Overview](./SYSTEM_AND_ARCHITECTURE.md#21-high-level-system-overview) - Complete system architecture
+
 ## Overview
 
 This guide covers deploying the optimized Streamlit UI to cloud platforms like Render, Railway, Heroku, and others. All deployment flows assume you provision and maintain the canonical `.env` that ships in the repository root (`smart-maintenance-saas/.env`). Treat that file as the single source of truth for required environment variables; copy its values into any platform-specific secret managers before bootstrapping containers or services.

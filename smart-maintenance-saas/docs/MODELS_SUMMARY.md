@@ -8,6 +8,11 @@
 - [ml/README.md](./ml/README.md) - Training pipelines and feature engineering
 - [Sprint 4 Changelog](./legacy/sprint_4_changelog.md) - S3 serverless model loading achievements
 
+**Architecture Diagrams:**
+- [MLflow Model Management Pipeline](./SYSTEM_AND_ARCHITECTURE.md#23-mlflow-model-management-pipeline) - Model registry and lifecycle
+- [MLOps Automation](./SYSTEM_AND_ARCHITECTURE.md#28-mlops-automation-drift-detection-to-retraining) - Drift detection and retraining workflow
+- [Notebook Training Pipeline](./SYSTEM_AND_ARCHITECTURE.md#213-notebook-training-pipeline-and-makefile-automation) - Training automation
+
 ---
 
 ## 1. Executive Summary (V1.0 Production Status)

@@ -15,6 +15,12 @@
 
 Plataforma SaaS de manutenção preditiva pronta para produção, otimizada para aplicações industriais. Apresenta implantação cloud-native (TimescaleDB, Redis, S3), orquestração multi-agente com fluxos de trabalho orientados por eventos e insights de manutenção baseados em ML. A V1.0 entrega capacidades essenciais com adiamentos de recursos intencionais documentados no playbook de implantação.
 
+**Visualizações de Arquitetura:** Veja [Diagramas da Arquitetura do Sistema](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#2-system-architecture-visualizations) para guias visuais abrangentes incluindo:
+- [Visão Geral do Sistema de Alto Nível](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#21-high-level-system-overview) - Arquitetura completa do sistema
+- [Sistema Multi-Agente](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#27-complete-multi-agent-system-architecture) - 12 agentes especializados
+- [Pipeline de Ingestão de Dados](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#29-data-ingestion-and-processing-pipeline) - Fluxo de dados orientado por eventos
+- [Endpoints da API](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#214-api-endpoints-architecture) - Estrutura da API REST
+
 ## Início Rápido
 
 **Pré-requisitos:** Docker & Docker Compose, serviços de cloud configurados
@@ -37,11 +43,11 @@ docker compose up -d --build
 ## Capacidades Principais
 
 **V1.0 Entregue:**
-- Ingestão de dados + explorador  
-- Previsão ML (resolução automática de versão)
+- Ingestão de dados + explorador ([veja diagrama do pipeline](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#29-data-ingestion-and-processing-pipeline))
+- Previsão ML (resolução automática de versão) ([veja pipeline ML](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#23-mlflow-model-management-pipeline))
 - Explorador básico de metadados de modelo (diferenciação de estado)
-- Verificações de drift & anomalia sob demanda
-- Demo Golden Path (proteção de timeout de 90s)
+- Verificações de drift & anomalia sob demanda ([veja automação MLOps](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#28-mlops-automation-drift-detection-to-retraining))
+- Demo Golden Path (proteção de timeout de 90s) ([veja fluxo de eventos](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#22-production-event-driven-architecture-flow))
 - Log de auditoria de decisões (exportação CSV)
 - Relatórios (protótipo apenas JSON)
 - Snapshot de métricas (não-streaming)
@@ -82,11 +88,11 @@ docker compose up -d --build
 - [Resumo Executivo](smart-maintenance-saas/docs/EXECUTIVE_SUMMARY.md) - Status de estabilização do sistema e confirmação de prontidão V1.0
 
 ### Documentação Principal
-- [Sistema & Arquitetura](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md) - Arquitetura de alto nível
-- [Referência da API](smart-maintenance-saas/docs/api.md) - Endpoints REST & integração
-- [Documentação do Banco de Dados](smart-maintenance-saas/docs/db/README.md) - Schema & recursos TimescaleDB
-- [Documentação ML](smart-maintenance-saas/docs/ml/README.md) - Modelos & pipelines
-- [Documentação de Segurança](smart-maintenance-saas/docs/SECURITY.md) - Arquitetura de segurança
+- [Sistema & Arquitetura](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md) - Arquitetura de alto nível com diagramas abrangentes ([índice de visualizações](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#2-system-architecture-visualizations))
+- [Referência da API](smart-maintenance-saas/docs/api.md) - Endpoints REST & integração ([veja diagrama da arquitetura da API](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#214-api-endpoints-architecture))
+- [Documentação do Banco de Dados](smart-maintenance-saas/docs/db/README.md) - Schema & recursos TimescaleDB ([veja arquitetura do DB](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#24-timescaledb-performance-architecture))
+- [Documentação ML](smart-maintenance-saas/docs/ml/README.md) - Modelos & pipelines ([veja diagrama do pipeline ML](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#23-mlflow-model-management-pipeline))
+- [Documentação de Segurança](smart-maintenance-saas/docs/SECURITY.md) - Arquitetura de segurança ([veja fluxo de segurança](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#211-security-and-authentication-flow))
 
 ### Performance & Testes  
 - [Resultados de Teste de Carga](smart-maintenance-saas/docs/legacy/DAY_17_LOAD_TEST_REPORT.md) - Validação de 103.8 RPS (arquivado)
@@ -95,8 +101,8 @@ docker compose up -d --build
 - [Plano de Cobertura](smart-maintenance-saas/docs/legacy/COVERAGE_IMPROVEMENT_PLAN.md) - Estratégia de cobertura de teste (arquivado)
 
 ### Operações & Implantação
-- [Guia de Implantação Cloud](smart-maintenance-saas/docs/CLOUD_DEPLOYMENT_GUIDE.md) - Implantação específica por plataforma (Render, Railway, Heroku) com configuração de ambiente
-- [Configuração de Implantação](smart-maintenance-saas/docs/DEPLOYMENT_SETUP.md) - Configuração de ambiente e gerenciamento de .env
+- [Guia de Implantação Cloud](smart-maintenance-saas/docs/CLOUD_DEPLOYMENT_GUIDE.md) - Implantação específica por plataforma (Render, Railway, Heroku) com configuração de ambiente ([veja arquitetura de implantação](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#appendix-d-deployment-architecture-future-oriented-illustration))
+- [Configuração de Implantação](smart-maintenance-saas/docs/DEPLOYMENT_SETUP.md) - Configuração de ambiente e gerenciamento de .env ([veja serviços Docker](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#26-docker-services-architecture))
 - [Guia de Configuração DVC](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md) - Configuração de controle de versão de dados
 - [Orientação de Desenvolvimento](smart-maintenance-saas/docs/legacy/DEVELOPMENT_ORIENTATION.md) - Padrões de engenharia (arquivado)
 

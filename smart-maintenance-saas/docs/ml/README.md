@@ -7,6 +7,12 @@
 - [MODELS_SUMMARY.md](../MODELS_SUMMARY.md) - 17+ production models inventory
 - [Sprint 4 Changelog](../legacy/sprint_4_changelog.md) - MLflow S3 integration achievements
 
+**Architecture Diagrams:**
+- [MLflow Model Management Pipeline](../SYSTEM_AND_ARCHITECTURE.md#23-mlflow-model-management-pipeline) - Model lifecycle and registry
+- [MLOps Automation: Drift Detection to Retraining](../SYSTEM_AND_ARCHITECTURE.md#28-mlops-automation-drift-detection-to-retraining) - Automated drift detection and retraining workflow
+- [Multi-Agent System Architecture](../SYSTEM_AND_ARCHITECTURE.md#27-complete-multi-agent-system-architecture) - ML agents in the system
+- [Notebook Training Pipeline](../SYSTEM_AND_ARCHITECTURE.md#213-notebook-training-pipeline-and-makefile-automation) - Training automation workflow
+
 Comprehensive documentation of ML models, training pipelines, and MLflow registry integration with S3 artifact storage (17+ models deployed).
 
 ## Overview

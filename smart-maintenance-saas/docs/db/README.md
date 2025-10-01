@@ -7,6 +7,11 @@
 - [Sprint 4 Changelog](../legacy/sprint_4_changelog.md) - Cloud TimescaleDB deployment achievements
 - [SYSTEM_AND_ARCHITECTURE.md](../SYSTEM_AND_ARCHITECTURE.md) - High-level architecture
 
+**Architecture Diagrams:**
+- [TimescaleDB Performance Architecture](../SYSTEM_AND_ARCHITECTURE.md#24-timescaledb-performance-architecture) - Database optimization and structure
+- [Data Ingestion Pipeline](../SYSTEM_AND_ARCHITECTURE.md#29-data-ingestion-and-processing-pipeline) - Data flow into TimescaleDB
+- [Redis Event Bus Architecture](../SYSTEM_AND_ARCHITECTURE.md#210-redis-event-bus-architecture) - Event storage and caching
+
 Authoritative description of the production time-series data layer powering ingestion, ML feature extraction, drift detection, and analytics. Cloud deployment on Render with TimescaleDB extension enabled.
 
 #### Core Tables (Quick Summary)

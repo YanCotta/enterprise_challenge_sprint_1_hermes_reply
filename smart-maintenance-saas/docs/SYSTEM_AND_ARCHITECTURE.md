@@ -538,7 +538,7 @@ flowchart TB
     subgraph "Storage Layer"
         TS[(TimescaleDB<br/>Hypertable Storage<br/>Auto Compression)]
         REDIS_CACHE[(Redis Cache<br/>Recent Results)]
-        AUDIT[Audit Trail<br/>Event Log)]
+        AUDIT[Audit Trail<br/>Event Log]
     end
 
     subgraph "ML Pipeline"

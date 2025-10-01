@@ -6,12 +6,14 @@
 
 > **AUTHORITATIVE SOURCE** → [V1.0 Deployment Playbook](./v1_release_must_do.md) is the canonical reference for V1.0 scope, readiness status, task tracking, and deployment procedures. It replaces the former Prioritized Backlog, V1 Readiness Checklist, and audit markdown files.
 
+**System Architecture:** For comprehensive visual guides of the system, see [SYSTEM_AND_ARCHITECTURE.md Section 2](./SYSTEM_AND_ARCHITECTURE.md#2-system-architecture-visualizations) which includes 14+ detailed diagrams covering all major components.
+
 ---
 ## 1. Core System Overview & Authoritative References
 - [V1.0 Deployment Playbook](./v1_release_must_do.md) – **Single source of truth**: V1.0 scope, readiness status, task board, deployment checklist, and risk register
 - [Executive Summary](./EXECUTIVE_SUMMARY.md) – Current system status aligned with deployment playbook
 - [UI Redesign Changelog](./ui_redesign_changelog.md) – V1.0 UI evolution trail with implementation details
-- [System and Architecture](./SYSTEM_AND_ARCHITECTURE.md) – High-level architecture & component model  
+- [System and Architecture](./SYSTEM_AND_ARCHITECTURE.md) – High-level architecture & component model with [14+ visual diagrams](./SYSTEM_AND_ARCHITECTURE.md#2-system-architecture-visualizations)
 - [Legacy Documentation Index](./legacy/INDEX.md) – Archived historical documents and superseded files
 
 ## 2. API & Interfaces

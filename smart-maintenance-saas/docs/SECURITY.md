@@ -7,6 +7,11 @@
 - [COMPREHENSIVE_DOCUMENTATION.md Section 6](./COMPREHENSIVE_DOCUMENTATION.md) - Security documentation index
 - [legacy/SECURITY_AUDIT_CHECKLIST.md](./legacy/SECURITY_AUDIT_CHECKLIST.md) - Archived audit checklist
 
+**Architecture Diagrams:**
+- [Security and Authentication Flow](./SYSTEM_AND_ARCHITECTURE.md#211-security-and-authentication-flow) - Complete security architecture
+- [API Endpoints Architecture](./SYSTEM_AND_ARCHITECTURE.md#214-api-endpoints-architecture) - Secured API structure
+- [High-Level System Overview](./SYSTEM_AND_ARCHITECTURE.md#21-high-level-system-overview) - Security layers in system architecture
+
 This document outlines the proactive threat model for the Smart Maintenance SaaS, based on the STRIDE framework.
 
 ## V1.0 Security Status

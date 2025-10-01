@@ -6,6 +6,12 @@
 - [v1_release_must_do.md](./v1_release_must_do.md) - V1.0 Deployment Playbook (canonical reference)
 - [COMPREHENSIVE_DOCUMENTATION.md](./COMPREHENSIVE_DOCUMENTATION.md) - Complete documentation index
 - [EXECUTIVE_SUMMARY.md](./EXECUTIVE_SUMMARY.md) - System status and release readiness
+- [SYSTEM_AND_ARCHITECTURE.md](./SYSTEM_AND_ARCHITECTURE.md) - Architecture overview with diagrams
+
+**Architecture Diagrams:**
+- [API Endpoints Architecture](./SYSTEM_AND_ARCHITECTURE.md#214-api-endpoints-architecture) - Complete API structure diagram
+- [Event-Driven Architecture](./SYSTEM_AND_ARCHITECTURE.md#22-production-event-driven-architecture-flow) - Request flow and event processing
+- [Data Ingestion Pipeline](./SYSTEM_AND_ARCHITECTURE.md#29-data-ingestion-and-processing-pipeline) - Data flow through the API
 
 ---
 
