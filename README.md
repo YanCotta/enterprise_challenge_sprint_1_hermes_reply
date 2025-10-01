@@ -2,8 +2,8 @@
 
 *[**English**](README.md) | [Português](README_PORTUGUES.md)*
 
-**Status:** Stable (Minimal V1.0 Scope) | Readiness: 94.5% | Deferred Features Tracked  
-**Last Synchronized:** 2025-12-19
+**Status:** V1.0 Production Ready | Documentation Synchronized  
+**Last Updated:** 2025-09-30
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-V1.0%20Ready-brightgreen)](.)
@@ -11,11 +11,9 @@
 [![Performance](https://img.shields.io/badge/API%20Response-<2s-purple)](.)
 [![Cloud](https://img.shields.io/badge/Cloud-Ready-orange)](.)
 
-## DOCUMENTATION OUTDATED, WILL BE UPDATED BY 10/03, AT V1.0 RELEASE
-
 ## Overview
 
-A production-ready predictive maintenance platform delivering V1.0 minimal scope with 94.5% readiness. Features cloud-native deployment, multi-agent orchestration, and data-driven maintenance insights optimized for industrial applications.
+A production-ready predictive maintenance SaaS platform optimized for industrial applications. Features cloud-native deployment (TimescaleDB, Redis, S3), multi-agent orchestration with event-driven workflows, and ML-powered maintenance insights. V1.0 delivers core capabilities with intentional feature deferrals documented in the deployment playbook.
 
 ## Quick Start
 
@@ -52,17 +50,17 @@ docker compose up -d --build
 
 ## Minimal V1.0 Scope vs Deferred
 
-### ✅ V1.0 Minimal Scope (Delivered - 94.5% Ready)
-1. **Data ingestion + explorer** - Single file ingestion with correlation tracking
-2. **ML prediction** - Auto version resolve (SHAP intentionally deferred)  
-3. **Basic model metadata explorer** - State differentiation (disabled/empty/error/populated)
-4. **Drift & anomaly on-demand checks** - Manual trigger analysis
-5. **Golden Path demo** - Instrumented workflow with 90s timeout protection
-6. **Decision audit log** - Human decisions persisted with CSV export
-7. **Reporting** - JSON-only prototype (artifact downloads deferred)
-8. **Metrics snapshot** - Point-in-time metrics (streaming deferred)
-9. **Simulation console** - Normal/drift/anomaly test scenarios
-10. **Stability layer** - Central safe rerun abstraction
+### ✅ V1.0 Delivered Capabilities
+1. **Data ingestion + explorer** - Single file ingestion with correlation tracking and pagination
+2. **ML prediction** - Auto version resolution with model registry integration (MLflow optional)
+3. **Model metadata explorer** - State differentiation (disabled/empty/error/populated)
+4. **Drift & anomaly detection** - On-demand KS-test and Isolation Forest analysis
+5. **Golden Path demo** - Instrumented workflow with 90s timeout protection and event monitoring
+6. **Decision audit log** - Human decisions persisted with filtering and CSV export
+7. **Reporting prototype** - JSON report generation with chart previews (artifacts deferred)
+8. **Metrics snapshot** - Point-in-time Prometheus metrics (streaming deferred)
+9. **Simulation console** - Normal/drift/anomaly test scenarios with latency tracking
+10. **Stability layer** - Central safe rerun abstraction preventing runtime crashes
 
 ### 🚫 Deferred to V1.5+ (Explicitly Out-of-Scope)
 - Report artifacts (file generation/download)
@@ -77,12 +75,11 @@ docker compose up -d --build
 
 ## Links Matrix
 
-### Authoritative Documentation (Truth Sources)
-- [Executive Summary](smart-maintenance-saas/docs/EXECUTIVE_SUMMARY.md) - System stabilization status
-- [Prioritized Backlog](smart-maintenance-saas/docs/PRIORITIZED_BACKLOG.md) - V1.0 scope & deferred features  
-- [V1.0 Readiness Checklist](smart-maintenance-saas/docs/V1_READINESS_CHECKLIST.md) - 94.5% readiness assessment
-- [System Capabilities & UI Redesign](smart-maintenance-saas/docs/SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md) - Complete capability matrix
-- [UI Redesign Changelog](smart-maintenance-saas/docs/ui_redesign_changelog.md) - V1.0 evolution trail
+### Authoritative Documentation (Single Source of Truth)
+- [V1.0 Deployment Playbook](smart-maintenance-saas/docs/v1_release_must_do.md) - **Canonical reference**: Replaces former backlog, readiness checklist, and audit docs; merged scope, tasks, and deployment procedures
+- [UI Redesign Changelog](smart-maintenance-saas/docs/ui_redesign_changelog.md) - V1.0 UI evolution trail with feature implementations and fixes
+- [Sprint 4 Changelog](smart-maintenance-saas/docs/legacy/sprint_4_changelog.md) - Cloud deployment milestones, MLflow integration, and infrastructure achievements
+- [Executive Summary](smart-maintenance-saas/docs/EXECUTIVE_SUMMARY.md) - System stabilization status and V1.0 readiness confirmation
 
 ### Core Documentation
 - [System & Architecture](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md) - High-level architecture
@@ -92,31 +89,32 @@ docker compose up -d --build
 - [Security Documentation](smart-maintenance-saas/docs/SECURITY.md) - Security architecture
 
 ### Performance & Testing  
-- [Performance Baseline](smart-maintenance-saas/docs/PERFORMANCE_BASELINE.md) - SLO targets & metrics
-- [Load Test Results](smart-maintenance-saas/docs/DAY_17_LOAD_TEST_REPORT.md) - 103.8 RPS validation
-- [Test Plan V1](smart-maintenance-saas/docs/TEST_PLAN_V1.md) - Test strategy framework
-- [Coverage Plan](smart-maintenance-saas/docs/COVERAGE_IMPROVEMENT_PLAN.md) - Test coverage strategy
+- [Load Test Results](smart-maintenance-saas/docs/legacy/DAY_17_LOAD_TEST_REPORT.md) - 103.8 RPS validation (archived)
+- [Performance Results](smart-maintenance-saas/docs/legacy/DAY_18_PERFORMANCE_RESULTS.md) - TimescaleDB optimization (archived)
+- [Performance Baseline](smart-maintenance-saas/docs/legacy/PERFORMANCE_BASELINE.md) - SLO targets & metrics (archived)
+- [Coverage Plan](smart-maintenance-saas/docs/legacy/COVERAGE_IMPROVEMENT_PLAN.md) - Test coverage strategy (archived)
 
 ### Operations & Deployment
-- [Cloud Deployment Guide](smart-maintenance-saas/docs/CLOUD_DEPLOYMENT_GUIDE.md) - Cloud setup & provisioning  
-- [DVC Setup Guide](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md) - Data version control
-- [Development Orientation](smart-maintenance-saas/docs/DEVELOPMENT_ORIENTATION.md) - Engineering standards
+- [Cloud Deployment Guide](smart-maintenance-saas/docs/CLOUD_DEPLOYMENT_GUIDE.md) - Platform-specific deployment (Render, Railway, Heroku) with environment setup
+- [Deployment Setup](smart-maintenance-saas/docs/DEPLOYMENT_SETUP.md) - Environment configuration and .env management
+- [DVC Setup Guide](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md) - Data version control setup
+- [Development Orientation](smart-maintenance-saas/docs/legacy/DEVELOPMENT_ORIENTATION.md) - Engineering standards (archived)
 
 ### Legacy & Historical
 - [Legacy Documentation Index](smart-maintenance-saas/docs/legacy/INDEX.md) - Archived historical documents
 
 ## Contribution
 
-This is V1.0 production-ready software. For contributions:
+Contributions welcome for V1.0+ enhancements. Review process:
 
-1. Review authoritative scope in V1_READINESS_CHECKLIST.md
-2. Align with minimal V1.0 feature set (no scope creep)  
-3. Test changes against existing test suite
-4. Update documentation for any architectural changes
-5. Follow security audit checklist for security-related changes
+1. Consult [V1.0 Deployment Playbook](smart-maintenance-saas/docs/v1_release_must_do.md) for current scope and deferred features
+2. Verify alignment with delivered capabilities (no V1.0 scope creep)
+3. Test changes against existing test suites (see `tests/` directory)
+4. Update relevant documentation for architectural or API changes
+5. Follow [Security Documentation](smart-maintenance-saas/docs/SECURITY.md) guidelines for security-related changes
 
 ---
 
-**V1.0 Achievement:** 94.5% production readiness with all core workflows operational and deployment blockers resolved.
+**V1.0 Release:** All core workflows operational with cloud deployment verified. Backend capabilities at 100% readiness; UI intentionally exposes minimal workflow set per deployment playbook Section 2.
 
 **Next Phase:** V1.1 hardening (enhanced test coverage, metrics percentiles, artifact persistence design) begins after user feedback cycle.
