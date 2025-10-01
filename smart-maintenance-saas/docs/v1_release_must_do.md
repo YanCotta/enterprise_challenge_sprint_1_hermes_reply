@@ -2,6 +2,14 @@
 
 _Merged from the former v1.0 must-do checklist, V1 Readiness Checklist, Prioritized Backlog, and both latest system audit reports._
 
+**System Architecture:** For comprehensive visual guides of the V1.0 system architecture, see [SYSTEM_AND_ARCHITECTURE.md](./SYSTEM_AND_ARCHITECTURE.md) which includes:
+- [High-Level System Overview](./SYSTEM_AND_ARCHITECTURE.md#21-high-level-system-overview) - Complete architecture visualization
+- [Multi-Agent System](./SYSTEM_AND_ARCHITECTURE.md#27-complete-multi-agent-system-architecture) - All 12 agents and their interactions
+- [Data Ingestion Pipeline](./SYSTEM_AND_ARCHITECTURE.md#29-data-ingestion-and-processing-pipeline) - Event-driven data flow
+- [MLOps Automation](./SYSTEM_AND_ARCHITECTURE.md#28-mlops-automation-drift-detection-to-retraining) - Drift detection and retraining
+- [API Endpoints](./SYSTEM_AND_ARCHITECTURE.md#214-api-endpoints-architecture) - REST API structure
+- [Deployment Architecture](./SYSTEM_AND_ARCHITECTURE.md#appendix-d-deployment-architecture-future-oriented-illustration) - Cloud deployment topology
+
 ## 1. Executive Summary
 
 - Platform reliability remains strong (backend capability readiness 95–100% across core domains), while UI intentionally exposes the minimal set of workflows required for a truthful v1.0 demo.
