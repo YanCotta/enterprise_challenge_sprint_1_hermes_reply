@@ -96,11 +96,11 @@ graph TB
     API --> METRICS
     API --> SECURITY
 
-    classDef external fill:#1565C0,color:#ffffff
-    classDef api fill:#6A1B9A,color:#ffffff
-    classDef core fill:#2E7D32,color:#ffffff
-    classDef data fill:#EF6C00,color:#ffffff
-    classDef infra fill:#AD1457,color:#ffffff
+    classDef external fill:#0D47A1,color:#ffffff,stroke:#062a5e,stroke-width:3px
+    classDef api fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
+    classDef core fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef data fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef infra fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
 
     class IOT,USERS,MOBILE external
     class LB,API,AUTH,METRICS api
@@ -143,31 +143,31 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     subgraph "Model Training"
-        NOTEBOOKS[Jupyter Notebooks]
-        DATASETS[Real-World Datasets]
-        TRAINING[Model Training Pipeline]
+        NOTEBOOKS[Jupyter Notebooks<br/>Papermill Execution]
+        DATASETS[Real-World Datasets<br/>AI4I, NASA, XJTU, MIMII]
+        TRAINING[Model Training Pipeline<br/>Automated via Makefile]
     end
 
     subgraph "MLflow Registry"
-        REGISTRY[Model Registry]
-        ARTIFACTS[Artifact Storage]
-        VERSIONING[Model Versioning]
-        METADATA[Experiment Metadata]
+        REGISTRY[Model Registry<br/>Version Control]
+        ARTIFACTS[S3 Artifact Storage<br/>AWS S3 Backend]
+        VERSIONING[Model Versioning<br/>Timestamp Tags]
+        METADATA[Experiment Metadata<br/>SQLite Backend]
     end
 
     subgraph "Production Deployment"
-        LOADER[Model Loader]
-        CACHE[Model Cache]
-        INFERENCE[Real-time Inference]
-        MONITORING[Model Monitoring]
+        LOADER[Model Loader<br/>S3 Download]
+        CACHE[Model Cache<br/>In-Memory]
+        INFERENCE[Real-time Inference<br/>FastAPI Endpoints]
+        MONITORING[Model Monitoring<br/>Drift Detection]
     end
 
     subgraph "Data Sources"
-        AI4I[AI4I Industrial Dataset]
-        NASA[NASA Bearing Dataset]
-        XJTU[XJTU Bearing Dataset]
-        MIMII[MIMII Audio Dataset]
-        KAGGLE[Kaggle Pump Dataset]
+        AI4I[AI4I Industrial Dataset<br/>99.90% Accuracy]
+        NASA[NASA Bearing Dataset<br/>72.8% Accuracy]
+        XJTU[XJTU Bearing Dataset<br/>Vibration Analysis]
+        MIMII[MIMII Audio Dataset<br/>93.3% Accuracy]
+        KAGGLE[Kaggle Pump Dataset<br/>100% Accuracy]
     end
 
     AI4I --> DATASETS
@@ -188,10 +188,10 @@ flowchart LR
     CACHE --> INFERENCE
     INFERENCE --> MONITORING
 
-    classDef training fill:#00695C,color:#ffffff
-    classDef registry fill:#2E7D32,color:#ffffff
-    classDef deployment fill:#EF6C00,color:#ffffff
-    classDef data fill:#6A1B9A,color:#ffffff
+    classDef training fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef registry fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef deployment fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef data fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
 
     class NOTEBOOKS,DATASETS,TRAINING training
     class REGISTRY,ARTIFACTS,VERSIONING,METADATA registry
@@ -204,27 +204,27 @@ flowchart LR
 ```mermaid
 graph TD
     subgraph "Data Ingestion Layer"
-        API_INGEST[API Ingestion Endpoint]
-        VALIDATION[Data Validation]
-        TRANSFORM[Data Transformation]
+        API_INGEST[API Ingestion Endpoint<br/>/api/v1/ingest]
+        VALIDATION[Data Validation<br/>Pydantic Schema]
+        TRANSFORM[Data Transformation<br/>Normalization]
     end
 
     subgraph "TimescaleDB Core"
-        HYPERTABLE[sensor_readings Hypertable]
-        COMPRESSION[Automatic Compression]
-        PARTITIONING[Time-based Partitioning]
+        HYPERTABLE[sensor_readings Hypertable<br/>Time-based Partitioning]
+        COMPRESSION[Automatic Compression<br/>30% Space Savings]
+        PARTITIONING[Time-based Partitioning<br/>1-day Chunks]
     end
 
     subgraph "Performance Optimization"
-        CONT_AGG[Continuous Aggregates]
-        INDEXES[Optimized Indexes]
-        RETENTION[Retention Policies]
+        CONT_AGG[Continuous Aggregates<br/>Hourly Summaries]
+        INDEXES[Optimized Indexes<br/>Composite Keys]
+        RETENTION[Retention Policies<br/>Automated Cleanup]
     end
 
     subgraph "Query Performance"
-        HOURLY_VIEW[Hourly Summary Views]
-        SENSOR_INDEX[Sensor-Time Index]
-        TIME_INDEX[Time Range Index]
+        HOURLY_VIEW[Hourly Summary Views<br/>37% Faster Queries]
+        SENSOR_INDEX[Sensor-Time Index<br/>idx_sensor_timestamp]
+        TIME_INDEX[Time Range Index<br/>idx_timestamp]
     end
 
     API_INGEST --> VALIDATION
@@ -242,10 +242,10 @@ graph TD
     COMPRESSION --> RETENTION
     PARTITIONING --> INDEXES
 
-    classDef ingestion fill:#1565C0,color:#ffffff
-    classDef core fill:#2E7D32,color:#ffffff
-    classDef optimization fill:#EF6C00,color:#ffffff
-    classDef performance fill:#6A1B9A,color:#ffffff
+    classDef ingestion fill:#0D47A1,color:#ffffff,stroke:#062a5e,stroke-width:3px
+    classDef core fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef optimization fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef performance fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
 
     class API_INGEST,VALIDATION,TRANSFORM ingestion
     class HYPERTABLE,COMPRESSION,PARTITIONING core
@@ -301,15 +301,624 @@ flowchart TB
     LOGS --> REDIS_CONTAINER
     ALERTS --> MEMORY
 
-    classDef testing fill:#00695C,color:#ffffff
-    classDef results fill:#2E7D32,color:#ffffff
-    classDef monitoring fill:#6A1B9A,color:#ffffff
-    classDef infrastructure fill:#AD1457,color:#ffffff
+    classDef testing fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:2px
+    classDef results fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:2px
+    classDef monitoring fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:2px
+    classDef infrastructure fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:2px
 
     class LOCUST,CONCURRENT,DURATION testing
     class THROUGHPUT,LATENCY,STABILITY,RESOURCE results
     class PROMETHEUS,HEALTH,LOGS,ALERTS monitoring
     class API_CONTAINER,DB_CONTAINER,REDIS_CONTAINER,MEMORY infrastructure
+```
+
+### 2.6. Docker Services Architecture
+
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        UI[Streamlit UI<br/>Port 8501<br/>User Interface]
+    end
+
+    subgraph "API Layer"
+        API[FastAPI Service<br/>Port 8000<br/>Main Backend]
+    end
+
+    subgraph "Agent Services"
+        DRIFT[Drift Detection Agent<br/>Monitors Model Performance<br/>Every 6 hours]
+        RETRAIN[Retrain Agent<br/>Auto Model Updates<br/>Event-Driven]
+    end
+
+    subgraph "Data Layer"
+        DB[(TimescaleDB<br/>Port 5433<br/>Time-Series Storage)]
+        REDIS[(Redis<br/>Port 6379<br/>Cache & Events)]
+        MLFLOW[MLflow Registry<br/>Port 5000<br/>Model Storage]
+    end
+
+    subgraph "ML Execution"
+        NOTEBOOK[Notebook Runner<br/>Papermill Execution<br/>Training Pipelines]
+        ML[ML Utility<br/>Ad-hoc Operations<br/>Locust Testing]
+    end
+
+    subgraph "Infrastructure"
+        TOXIPROXY[Toxiproxy<br/>Port 8474<br/>Chaos Engineering]
+        TOXINIT[Toxiproxy Init<br/>One-time Setup]
+    end
+
+    UI --> API
+    API --> DB
+    API --> REDIS
+    API --> MLFLOW
+    
+    DRIFT --> DB
+    DRIFT --> REDIS
+    DRIFT --> MLFLOW
+    
+    RETRAIN --> REDIS
+    RETRAIN --> MLFLOW
+    
+    NOTEBOOK --> MLFLOW
+    ML --> MLFLOW
+    
+    API --> TOXIPROXY
+    TOXIPROXY --> DB
+    TOXIPROXY --> REDIS
+    TOXINIT --> TOXIPROXY
+
+    classDef frontend fill:#1A237E,color:#ffffff,stroke:#0d1642,stroke-width:3px
+    classDef api fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef agent fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef data fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef ml fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
+    classDef infra fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+
+    class UI frontend
+    class API api
+    class DRIFT,RETRAIN agent
+    class DB,REDIS,MLFLOW data
+    class NOTEBOOK,ML ml
+    class TOXIPROXY,TOXINIT infra
+```
+
+### 2.7. Complete Multi-Agent System Architecture
+
+```mermaid
+graph TB
+    subgraph "Core Agents"
+        DAA[Data Acquisition Agent<br/>Ingestion & Validation]
+        ADA[Anomaly Detection Agent<br/>ML-based Analysis]
+        VA[Validation Agent<br/>False Positive Reduction]
+        ORCH[Orchestrator Agent<br/>Workflow Coordination]
+    end
+
+    subgraph "Decision Agents"
+        PA[Prediction Agent<br/>Prophet Forecasting]
+        SA[Scheduling Agent<br/>Task Optimization]
+        NA[Notification Agent<br/>Multi-channel Alerts]
+        RA[Reporting Agent<br/>Analytics & Insights]
+    end
+
+    subgraph "Interface & Learning"
+        HIA[Human Interface Agent<br/>Human-in-the-Loop]
+        LA[Learning Agent<br/>RAG with ChromaDB]
+        MLA[Maintenance Log Agent<br/>History Tracking]
+    end
+
+    subgraph "MLOps Agents"
+        DCA[Drift Check Agent<br/>Performance Monitoring]
+        RTR[Retrain Agent<br/>Auto Retraining]
+        MSA[Model Selection Agent<br/>Intelligent Routing]
+        CEA[Chaos Engineering Agent<br/>Resilience Testing]
+    end
+
+    subgraph "Event Infrastructure"
+        EB[Redis Event Bus<br/>Pub/Sub + DLQ<br/>Retry Logic]
+    end
+
+    DAA --> EB
+    EB --> ADA
+    ADA --> EB
+    EB --> VA
+    VA --> EB
+    EB --> ORCH
+    ORCH --> EB
+    EB --> PA
+    PA --> EB
+    EB --> SA
+    SA --> EB
+    EB --> NA
+    EB --> RA
+    EB --> HIA
+    EB --> LA
+    EB --> MLA
+    
+    DCA --> EB
+    EB --> RTR
+    RTR --> EB
+    EB --> MSA
+    EB --> CEA
+
+    classDef core fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef decision fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef interface fill:#1A237E,color:#ffffff,stroke:#0d1642,stroke-width:3px
+    classDef mlops fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef eventbus fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+
+    class DAA,ADA,VA,ORCH core
+    class PA,SA,NA,RA decision
+    class HIA,LA,MLA interface
+    class DCA,RTR,MSA,CEA mlops
+    class EB eventbus
+```
+
+### 2.8. MLOps Automation: Drift Detection to Retraining
+
+```mermaid
+flowchart LR
+    subgraph "Monitoring"
+        SENSOR[Sensor Data Stream]
+        DCA[Drift Check Agent<br/>Every 6 Hours<br/>KS Test + PSI]
+        METRICS[Performance Metrics<br/>Accuracy Tracking]
+    end
+
+    subgraph "Event Bus"
+        REDIS[Redis Event Bus<br/>drift_events Channel]
+        DLQ[Dead Letter Queue<br/>Failed Events]
+    end
+
+    subgraph "Automated Retraining"
+        RTR[Retrain Agent<br/>Event Consumer]
+        POLICY[Retraining Policy<br/>24h Cooldown<br/>Max 1 Concurrent]
+        TRAIN[Training Execution<br/>make train-anomaly<br/>make train-forecast]
+    end
+
+    subgraph "Model Registry"
+        MLR[MLflow Registry<br/>S3 Artifacts]
+        VERSION[Model Versioning<br/>Timestamp Tags]
+        CACHE[Model Cache<br/>Production Ready]
+    end
+
+    subgraph "Notifications"
+        SLACK[Slack Webhook<br/>Drift Alerts]
+        EMAIL[Email Service<br/>Training Status]
+    end
+
+    SENSOR --> DCA
+    DCA --> METRICS
+    DCA -->|DriftDetectedEvent| REDIS
+    REDIS --> RTR
+    REDIS --> DLQ
+    RTR --> POLICY
+    POLICY -->|Approved| TRAIN
+    TRAIN --> MLR
+    MLR --> VERSION
+    VERSION --> CACHE
+    
+    DCA --> SLACK
+    RTR --> EMAIL
+    TRAIN -->|RetrainCompleted| REDIS
+    TRAIN -->|RetrainFailed| DLQ
+
+    classDef monitoring fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef eventbus fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+    classDef retraining fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef registry fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef notifications fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
+
+    class SENSOR,DCA,METRICS monitoring
+    class REDIS,DLQ eventbus
+    class RTR,POLICY,TRAIN retraining
+    class MLR,VERSION,CACHE registry
+    class SLACK,EMAIL notifications
+```
+
+### 2.9. Data Ingestion and Processing Pipeline
+
+```mermaid
+flowchart TB
+    subgraph "Data Sources"
+        IOT[IoT Sensors<br/>Real-time Streams]
+        BATCH[Batch Uploads<br/>CSV/JSON Files]
+        API_EXT[External APIs<br/>Third-party Data]
+    end
+
+    subgraph "Ingestion Layer"
+        API_IN[FastAPI Endpoint<br/>/api/v1/ingest]
+        VALIDATE[Schema Validation<br/>Pydantic Models]
+        ENRICH[Data Enrichment<br/>Metadata Addition]
+        IDEMPOTENCY[Idempotency Check<br/>Redis Dedup<br/>10min TTL]
+    end
+
+    subgraph "Event Processing"
+        EVENT[DataIngestionEvent<br/>Correlation ID]
+        DAA[Data Acquisition Agent<br/>Business Logic]
+        PROCESS[DataProcessedEvent<br/>Ready for ML]
+    end
+
+    subgraph "Storage Layer"
+        TS[(TimescaleDB<br/>Hypertable Storage<br/>Auto Compression)]
+        REDIS_CACHE[(Redis Cache<br/>Recent Results)]
+        AUDIT[Audit Trail<br/>Event Log)]
+    end
+
+    subgraph "ML Pipeline"
+        ADA[Anomaly Detection<br/>Isolation Forest]
+        VA[Validation Agent<br/>Rule Engine]
+        PA[Prediction Agent<br/>Prophet Model]
+    end
+
+    IOT --> API_IN
+    BATCH --> API_IN
+    API_EXT --> API_IN
+    
+    API_IN --> VALIDATE
+    VALIDATE --> IDEMPOTENCY
+    IDEMPOTENCY -->|New| ENRICH
+    IDEMPOTENCY -->|Duplicate| REDIS_CACHE
+    ENRICH --> EVENT
+    
+    EVENT --> DAA
+    DAA --> TS
+    DAA --> PROCESS
+    
+    PROCESS --> ADA
+    ADA --> VA
+    VA --> PA
+    
+    TS --> AUDIT
+    REDIS_CACHE --> AUDIT
+
+    classDef sources fill:#1A237E,color:#ffffff,stroke:#0d1642,stroke-width:3px
+    classDef ingestion fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef processing fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef storage fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+    classDef ml fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+
+    class IOT,BATCH,API_EXT sources
+    class API_IN,VALIDATE,ENRICH,IDEMPOTENCY ingestion
+    class EVENT,DAA,PROCESS processing
+    class TS,REDIS_CACHE,AUDIT storage
+    class ADA,VA,PA ml
+```
+
+### 2.10. Redis Event Bus Architecture
+
+```mermaid
+graph TB
+    subgraph "Event Publishers"
+        API[FastAPI Endpoints]
+        AGENTS[Agent System]
+        SCHEDULER[Cron Schedulers]
+    end
+
+    subgraph "Redis Event Bus Core"
+        PUBSUB[Redis Pub/Sub<br/>Event Channels]
+        STREAM[Event Stream<br/>Ordered Log]
+        RETRY[Retry Queue<br/>Exponential Backoff]
+        DLQ[Dead Letter Queue<br/>Failed Events]
+    end
+
+    subgraph "Event Subscribers"
+        DAA_SUB[Data Acquisition<br/>Subscriber]
+        ADA_SUB[Anomaly Detection<br/>Subscriber]
+        RTR_SUB[Retrain Agent<br/>Subscriber]
+        DRIFT_SUB[Drift Monitor<br/>Subscriber]
+    end
+
+    subgraph "Event Types"
+        DATA_EVENT[DataIngestionEvent<br/>DataProcessedEvent]
+        ANOMALY_EVENT[AnomalyDetectedEvent<br/>AnomalyValidatedEvent]
+        ML_EVENT[DriftDetectedEvent<br/>RetrainCompletedEvent]
+        MAINT_EVENT[MaintenanceScheduledEvent<br/>MaintenanceCompletedEvent]
+    end
+
+    subgraph "Monitoring"
+        METRICS[Event Metrics<br/>Throughput & Latency]
+        AUDIT[Audit Trail<br/>Event History]
+        CORRELATION[Correlation IDs<br/>Request Tracing]
+    end
+
+    API --> PUBSUB
+    AGENTS --> PUBSUB
+    SCHEDULER --> PUBSUB
+    
+    PUBSUB --> STREAM
+    STREAM --> DAA_SUB
+    STREAM --> ADA_SUB
+    STREAM --> RTR_SUB
+    STREAM --> DRIFT_SUB
+    
+    STREAM -->|Failed| RETRY
+    RETRY -->|Max Retries| DLQ
+    RETRY -->|Success| STREAM
+    
+    DATA_EVENT --> PUBSUB
+    ANOMALY_EVENT --> PUBSUB
+    ML_EVENT --> PUBSUB
+    MAINT_EVENT --> PUBSUB
+    
+    STREAM --> METRICS
+    STREAM --> AUDIT
+    PUBSUB --> CORRELATION
+
+    classDef publishers fill:#1A237E,color:#ffffff,stroke:#0d1642,stroke-width:3px
+    classDef bus fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+    classDef subscribers fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef events fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef monitoring fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+
+    class API,AGENTS,SCHEDULER publishers
+    class PUBSUB,STREAM,RETRY,DLQ bus
+    class DAA_SUB,ADA_SUB,RTR_SUB,DRIFT_SUB subscribers
+    class DATA_EVENT,ANOMALY_EVENT,ML_EVENT,MAINT_EVENT events
+    class METRICS,AUDIT,CORRELATION monitoring
+```
+
+### 2.11. Security and Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant CLIENT as Client/IoT Device
+    participant LB as Load Balancer<br/>Rate Limiting
+    participant API as FastAPI Gateway
+    participant AUTH as Auth Middleware
+    participant RATE as Rate Limiter<br/>10/min ML Endpoints
+    participant IDEMPOTENCY as Idempotency Cache
+    participant AGENT as Agent System
+    participant DB as Database
+
+    CLIENT->>+LB: HTTP Request
+    LB->>LB: Initial Rate Check
+    LB->>+API: Forward Request
+    API->>API: Generate Correlation ID
+    API->>+AUTH: X-API-Key Header
+    
+    alt Invalid API Key
+        AUTH->>CLIENT: 401 Unauthorized
+    end
+    
+    AUTH->>AUTH: Validate API Key
+    AUTH->>+RATE: Check Rate Limit
+    
+    alt Rate Limit Exceeded
+        RATE->>CLIENT: 429 Too Many Requests
+    end
+    
+    RATE->>+IDEMPOTENCY: Check Request ID
+    
+    alt Duplicate Request
+        IDEMPOTENCY->>CLIENT: 200 OK (Cached)
+    end
+    
+    IDEMPOTENCY->>+AGENT: Process Request
+    AGENT->>+DB: Store Data
+    DB-->>-AGENT: Confirmation
+    AGENT-->>-IDEMPOTENCY: Result
+    IDEMPOTENCY->>IDEMPOTENCY: Cache Result (10min TTL)
+    IDEMPOTENCY-->>-RATE: Success
+    RATE-->>-AUTH: Success
+    AUTH-->>-API: Response
+    API-->>-LB: JSON Response + Correlation ID
+    LB-->>-CLIENT: 200 OK
+
+    Note over CLIENT,DB: All requests include correlation IDs<br/>for distributed tracing
+```
+
+### 2.12. Chaos Engineering and Resilience Testing
+
+```mermaid
+graph TB
+    subgraph "Test Orchestration"
+        CHAOS[Chaos Engineering Agent<br/>Automated Testing]
+        SCENARIOS[Test Scenarios<br/>Network Failures<br/>Latency Injection<br/>Service Crashes]
+    end
+
+    subgraph "Toxiproxy Layer"
+        TOXIAPI[Toxiproxy API<br/>Port 8474<br/>Control Plane]
+        TOXIDB[DB Proxy<br/>Port 5434<br/>PostgreSQL]
+        TOXIREDIS[Redis Proxy<br/>Port 6380<br/>Redis]
+    end
+
+    subgraph "Services Under Test"
+        API[FastAPI Service]
+        AGENTS[Agent System]
+        DRIFT[Drift Agent]
+        RETRAIN[Retrain Agent]
+    end
+
+    subgraph "Actual Data Stores"
+        DB[(TimescaleDB<br/>Port 5432)]
+        REDIS[(Redis<br/>Port 6379)]
+    end
+
+    subgraph "Validation & Monitoring"
+        HEALTH[Health Checks<br/>Service Status]
+        METRICS[Performance Metrics<br/>Response Times]
+        RECOVERY[Recovery Tests<br/>Automatic Healing]
+    end
+
+    CHAOS --> SCENARIOS
+    SCENARIOS --> TOXIAPI
+    
+    TOXIAPI -->|Configure Toxics| TOXIDB
+    TOXIAPI -->|Configure Toxics| TOXIREDIS
+    
+    API --> TOXIDB
+    API --> TOXIREDIS
+    AGENTS --> TOXIDB
+    AGENTS --> TOXIREDIS
+    DRIFT --> TOXIDB
+    RETRAIN --> TOXIREDIS
+    
+    TOXIDB --> DB
+    TOXIREDIS --> REDIS
+    
+    API --> HEALTH
+    AGENTS --> METRICS
+    DRIFT --> RECOVERY
+
+    classDef orchestration fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+    classDef toxiproxy fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef services fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef datastores fill:#1A237E,color:#ffffff,stroke:#0d1642,stroke-width:3px
+    classDef validation fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+
+    class CHAOS,SCENARIOS orchestration
+    class TOXIAPI,TOXIDB,TOXIREDIS toxiproxy
+    class API,AGENTS,DRIFT,RETRAIN services
+    class DB,REDIS datastores
+    class HEALTH,METRICS,RECOVERY validation
+```
+
+### 2.13. Notebook Training Pipeline and Makefile Automation
+
+```mermaid
+flowchart TB
+    subgraph "Training Orchestration"
+        MAKEFILE[Makefile Targets<br/>train-anomaly<br/>train-forecast<br/>classification-gauntlet]
+        DOCKER_COMPOSE[Docker Compose<br/>notebook_runner Service<br/>Papermill Execution]
+    end
+
+    subgraph "Jupyter Notebooks"
+        NB00[00_synthetic_data_validation<br/>Data Quality Checks]
+        NB01[01_synthetic_data_exploration<br/>EDA & Visualization]
+        NB02[02_anomaly_isolation_forest<br/>Anomaly Detection Training]
+        NB03[03_forecast_prophet<br/>Time Series Forecasting]
+        NB04[04_forecasting_tuning<br/>Hyperparameter Optimization]
+        NB05[05_classification_benchmark<br/>AI4I Dataset - 99.90%]
+        NB06[06_vibration_benchmark<br/>NASA Bearing - 72.8%]
+        NB07[07_audio_benchmark<br/>MIMII Sound - 93.3%]
+        NB08[08_pump_classification<br/>Kaggle Pump - 100%]
+        NB09[09_xjtu_vibration<br/>XJTU Bearing Analysis]
+    end
+
+    subgraph "Data Sources"
+        SYNTHETIC[Synthetic Data<br/>Generated Sensor Data]
+        REALWORLD[Real-World Datasets<br/>5 Industrial Sources]
+    end
+
+    subgraph "MLflow Integration"
+        TRACKING[Experiment Tracking<br/>Metrics & Parameters]
+        ARTIFACTS[Model Artifacts<br/>S3 Storage]
+        REGISTRY[Model Registry<br/>Version Control]
+    end
+
+    subgraph "Output & Results"
+        MODELS[Trained Models<br/>17+ Production Models]
+        PLOTS[Visualizations<br/>Performance Plots]
+        DOCS[Documentation<br/>Training Reports]
+    end
+
+    MAKEFILE --> DOCKER_COMPOSE
+    DOCKER_COMPOSE --> NB00
+    DOCKER_COMPOSE --> NB02
+    DOCKER_COMPOSE --> NB03
+    DOCKER_COMPOSE --> NB05
+    DOCKER_COMPOSE --> NB06
+    DOCKER_COMPOSE --> NB07
+    
+    NB00 --> SYNTHETIC
+    NB01 --> SYNTHETIC
+    NB02 --> SYNTHETIC
+    NB03 --> SYNTHETIC
+    
+    NB05 --> REALWORLD
+    NB06 --> REALWORLD
+    NB07 --> REALWORLD
+    NB08 --> REALWORLD
+    NB09 --> REALWORLD
+    
+    NB02 --> TRACKING
+    NB03 --> TRACKING
+    NB05 --> TRACKING
+    NB06 --> TRACKING
+    NB07 --> TRACKING
+    
+    TRACKING --> ARTIFACTS
+    ARTIFACTS --> REGISTRY
+    
+    REGISTRY --> MODELS
+    NB01 --> PLOTS
+    NB04 --> DOCS
+
+    classDef orchestration fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+    classDef notebooks fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef data fill:#1A237E,color:#ffffff,stroke:#0d1642,stroke-width:3px
+    classDef mlflow fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef output fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+
+    class MAKEFILE,DOCKER_COMPOSE orchestration
+    class NB00,NB01,NB02,NB03,NB04,NB05,NB06,NB07,NB08,NB09 notebooks
+    class SYNTHETIC,REALWORLD data
+    class TRACKING,ARTIFACTS,REGISTRY mlflow
+    class MODELS,PLOTS,DOCS output
+```
+
+### 2.14. API Endpoints Architecture
+
+```mermaid
+graph TB
+    subgraph "Public API Gateway"
+        MAIN[FastAPI Main<br/>Port 8000<br/>apps/api/main.py]
+    end
+
+    subgraph "Data Ingestion Routes"
+        INGEST[/api/v1/ingest<br/>POST - Sensor Data]
+        READINGS[/api/v1/sensor-readings<br/>GET - Query Data]
+    end
+
+    subgraph "ML Endpoints"
+        PREDICT[/api/v1/ml/predict<br/>POST - Model Inference]
+        DRIFT[/api/v1/ml/check_drift<br/>POST - Drift Detection]
+        MODELS[/api/v1/ml/models<br/>GET - Model List]
+    end
+
+    subgraph "Decision & Workflow"
+        DECISIONS[/api/v1/decisions<br/>GET/POST - Decisions]
+        HUMAN[/api/v1/human-decisions<br/>POST - Human Review]
+        MAINTENANCE[/api/v1/maintenance<br/>GET/POST - Tasks]
+    end
+
+    subgraph "Reporting & Analytics"
+        REPORT[/api/v1/reports<br/>GET - Analytics]
+        SIMULATE[/api/v1/simulate<br/>POST - Test Scenarios]
+        DEMO[/api/v1/demo<br/>POST - Demo Workflows]
+    end
+
+    subgraph "System Monitoring"
+        HEALTH[/health<br/>GET - Service Health]
+        HEALTHDB[/health/db<br/>GET - Database Health]
+        METRICS[/metrics<br/>GET - Prometheus]
+    end
+
+    MAIN --> INGEST
+    MAIN --> READINGS
+    MAIN --> PREDICT
+    MAIN --> DRIFT
+    MAIN --> MODELS
+    MAIN --> DECISIONS
+    MAIN --> HUMAN
+    MAIN --> MAINTENANCE
+    MAIN --> REPORT
+    MAIN --> SIMULATE
+    MAIN --> DEMO
+    MAIN --> HEALTH
+    MAIN --> HEALTHDB
+    MAIN --> METRICS
+
+    classDef gateway fill:#1A237E,color:#ffffff,stroke:#0d1642,stroke-width:3px
+    classDef ingestion fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef ml fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef workflow fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef reporting fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
+    classDef monitoring fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+
+    class MAIN gateway
+    class INGEST,READINGS ingestion
+    class PREDICT,DRIFT,MODELS ml
+    class DECISIONS,HUMAN,MAINTENANCE workflow
+    class REPORT,SIMULATE,DEMO reporting
+    class HEALTH,HEALTHDB,METRICS monitoring
 ```
 
 ---
@@ -379,33 +988,33 @@ The platform implements a sophisticated multi-agent architecture for specialized
 
 ```mermaid
 graph LR
-    DA[Data Acquisition Agent] --> EB[Event Bus]
-    EB --> AD[Anomaly Detection Agent]
+    DA[Data Acquisition Agent<br/>Ingestion] --> EB[Event Bus<br/>Redis Pub/Sub]
+    EB --> AD[Anomaly Detection Agent<br/>ML Analysis]
     AD --> EB
-    EB --> VA[Validation Agent]
+    EB --> VA[Validation Agent<br/>Rule Engine]
     VA --> EB
-    EB --> OA[Orchestrator Agent]
+    EB --> OA[Orchestrator Agent<br/>Coordinator]
     OA --> EB
-    EB --> PA[Prediction Agent]
+    EB --> PA[Prediction Agent<br/>Prophet]
     PA --> EB
-    EB --> SA[Scheduling Agent]
+    EB --> SA[Scheduling Agent<br/>Optimization]
     SA --> EB
-    EB --> NA[Notification Agent]
+    EB --> NA[Notification Agent<br/>Alerts]
     NA --> EB
-    EB --> RA[Reporting Agent]
+    EB --> RA[Reporting Agent<br/>Analytics]
     RA --> EB
-    EB --> HIA[Human Interface Agent]
+    EB --> HIA[Human Interface Agent<br/>HITL]
     HIA --> EB
-    EB --> LA[Learning Agent]
+    EB --> LA[Learning Agent<br/>RAG/ChromaDB]
     LA --> EB
-    EB --> MLA[Maintenance Log Agent]
-    EB --> DCA[Drift Check Agent]
+    EB --> MLA[Maintenance Log Agent<br/>History]
+    EB --> DCA[Drift Check Agent<br/>Monitoring]
     DCA --> EB
-    EB --> RTR[Retrain Agent]
+    EB --> RTR[Retrain Agent<br/>Auto Update]
     RTR --> EB
 
-    classDef agent fill:#2E7D32,color:#ffffff
-    classDef eventbus fill:#6A1B9A,color:#ffffff
+    classDef agent fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef eventbus fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
 
     class DA,AD,VA,OA,PA,SA,NA,RA,HIA,LA,MLA,DCA,RTR agent
     class EB eventbus
@@ -429,33 +1038,33 @@ graph LR
 ```mermaid
 graph TD
     subgraph "Classification Models"
-        AI4I[AI4I Industrial Failure - 99.90%]
-        PUMP[Kaggle Pump Maintenance - 100%]
-        MULTI[Multi-class Variants]
+        AI4I[AI4I Industrial Failure<br/>99.90% Accuracy<br/>RandomForest]
+        PUMP[Kaggle Pump Maintenance<br/>100% Accuracy<br/>XGBoost]
+        MULTI[Multi-class Variants<br/>Ensemble Methods]
     end
 
     subgraph "Anomaly Detection"
-        NASA[NASA Bearing Vibration - 72.8%]
-        XJTU[XJTU Bearing Analysis]
-        ISOLATION[Isolation Forest Ensemble]
+        NASA[NASA Bearing Vibration<br/>72.8% Accuracy<br/>Isolation Forest]
+        XJTU[XJTU Bearing Analysis<br/>Run-to-Failure<br/>Statistical]
+        ISOLATION[Isolation Forest Ensemble<br/>Unsupervised Learning]
     end
 
     subgraph "Signal Processing"
-        VIBRATION[Vibration Signal Analysis]
-        AUDIO[MIMII Audio - 93.3%]
-        FFT[FFT Feature Extraction]
+        VIBRATION[Vibration Signal Analysis<br/>FFT Features]
+        AUDIO[MIMII Audio<br/>93.3% Accuracy<br/>MFCC]
+        FFT[FFT Feature Extraction<br/>Frequency Domain]
     end
 
     subgraph "Forecasting"
-        PROPHET[Prophet Time Series]
-        SEASONAL[Seasonal Decomposition]
-        TREND[Trend Analysis]
+        PROPHET[Prophet Time Series<br/>Seasonal Decomposition]
+        SEASONAL[Seasonal Decomposition<br/>Trend Analysis]
+        TREND[Trend Analysis<br/>Maintenance Scheduling]
     end
 
-    classDef classification fill:#1565C0,color:#ffffff
-    classDef anomaly fill:#2E7D32,color:#ffffff
-    classDef signal fill:#EF6C00,color:#ffffff
-    classDef forecast fill:#6A1B9A,color:#ffffff
+    classDef classification fill:#0D47A1,color:#ffffff,stroke:#062a5e,stroke-width:3px
+    classDef anomaly fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef signal fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef forecast fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
 
     class AI4I,PUMP,MULTI classification
     class NASA,XJTU,ISOLATION anomaly
@@ -470,16 +1079,16 @@ The system implements comprehensive model drift detection and automated response
 ```mermaid
 graph TD
     subgraph "Drift Detection Pipeline"
-        DCA[Drift Check Agent]
-        DETECT[Statistical Drift Detection]
-        ALERT[Alert Generation]
-        RTR[Retrain Agent]
+        DCA[Drift Check Agent<br/>Scheduled Monitoring]
+        DETECT[Statistical Drift Detection<br/>KS Test + PSI]
+        ALERT[Alert Generation<br/>Slack + Redis]
+        RTR[Retrain Agent<br/>Auto Retraining]
     end
 
     subgraph "Intelligent Model Selection"
-        ROUTER[Model Router]
-        PERF[Performance Tracker]
-        SELECT[Context-Aware Selection]
+        ROUTER[Model Router<br/>Context-Aware]
+        PERF[Performance Tracker<br/>Real-time Metrics]
+        SELECT[Context-Aware Selection<br/>Best Model Choice]
     end
 
     DCA --> DETECT
@@ -488,6 +1097,12 @@ graph TD
     ROUTER --> PERF
     PERF --> SELECT
     SELECT --> DCA
+
+    classDef detection fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+    classDef selection fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+
+    class DCA,DETECT,ALERT,RTR detection
+    class ROUTER,PERF,SELECT selection
 ```
 
 **Key Features:**
@@ -505,24 +1120,25 @@ Day 23 added a fully automated MLOps loop powered by the Redis-backed event bus,
 ```mermaid
 flowchart LR
     subgraph Monitoring
-        DCA[Drift Check Agent]
-        METRICS[(Perf/Drift Metrics)]
+        DCA[Drift Check Agent<br/>Every 6h]
+        METRICS[(Performance Metrics<br/>Drift Tracking)]
     end
     subgraph Control
-        EB[Redis Event Bus]
-        DLQ[Dead Letter Queue]
+        EB[Redis Event Bus<br/>Pub/Sub]
+        DLQ[Dead Letter Queue<br/>Failed Events]
     end
     subgraph Retraining
-        RTR[Retrain Agent]
-        JOB[Training Job]
-        MLR[MLflow Registry]
+        RTR[Retrain Agent<br/>Event Consumer]
+        JOB[Training Job<br/>Makefile]
+        MLR[MLflow Registry<br/>S3 Artifacts]
     end
     subgraph Serving
-        CACHE[(Model Cache)]
-        API[FastAPI Inference]
+        CACHE[(Model Cache<br/>In-Memory)]
+        API[FastAPI Inference<br/>Endpoints]
     end
     subgraph Ops
-        EMAIL[Email Notification Service]
+        EMAIL[Email Notification<br/>Service]
+        SLACK[Slack Webhook<br/>Alerts]
     end
 
     DCA --> METRICS
@@ -532,21 +1148,22 @@ flowchart LR
     JOB -->|artifacts| MLR
     JOB -->|RetrainCompleted/Failed| EB
     EB --> EMAIL
+    EB --> SLACK
     MLR -->|promote| CACHE
     CACHE --> API
     EB --> DLQ
 
-    classDef mon fill:#00695C,color:#ffffff
-    classDef bus fill:#6A1B9A,color:#ffffff
-    classDef rt fill:#EF6C00,color:#ffffff
-    classDef serve fill:#2E7D32,color:#ffffff
-    classDef ops fill:#AD1457,color:#ffffff
+    classDef mon fill:#004D40,color:#ffffff,stroke:#00251a,stroke-width:3px
+    classDef bus fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+    classDef rt fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef serve fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef ops fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
 
     class DCA,METRICS mon
     class EB,DLQ bus
     class RTR,JOB,MLR rt
     class CACHE,API serve
-    class EMAIL ops
+    class EMAIL,SLACK ops
 ```
 
 Operational notes:
@@ -701,27 +1318,27 @@ services:
 ```mermaid
 flowchart LR
     subgraph "Data Sources"
-        SENSORS[IoT Sensors]
-        BATCH[Batch Imports]
-        EXTERNAL[External APIs]
+        SENSORS[IoT Sensors<br/>Real-time]
+        BATCH[Batch Imports<br/>CSV/JSON]
+        EXTERNAL[External APIs<br/>Third-party]
     end
 
     subgraph "Ingestion Layer"
-        VALIDATE[Schema Validation]
-        ENRICH[Data Enrichment]
-        CORRELATION[ID Assignment]
+        VALIDATE[Schema Validation<br/>Pydantic]
+        ENRICH[Data Enrichment<br/>Metadata]
+        CORRELATION[ID Assignment<br/>Tracing]
     end
 
     subgraph "Processing Layer"
-        EVENT_BUS[Event Bus]
-        ML_PIPELINE[ML Processing]
-        BUSINESS_RULES[Business Logic]
+        EVENT_BUS[Event Bus<br/>Redis Pub/Sub]
+        ML_PIPELINE[ML Processing<br/>Agents]
+        BUSINESS_RULES[Business Logic<br/>Validation]
     end
 
     subgraph "Storage Layer"
-        TIMESERIES[TimescaleDB]
-        CACHE[Redis Cache]
-        ARTIFACTS[MLflow Artifacts]
+        TIMESERIES[TimescaleDB<br/>Hypertables]
+        CACHE[Redis Cache<br/>Hot Data]
+        ARTIFACTS[MLflow Artifacts<br/>S3 Storage]
     end
 
     SENSORS --> VALIDATE
@@ -742,10 +1359,10 @@ flowchart LR
     BUSINESS_RULES --> TIMESERIES
     BUSINESS_RULES --> CACHE
 
-    classDef sources fill:#1565C0,color:#ffffff
-    classDef ingestion fill:#2E7D32,color:#ffffff
-    classDef processing fill:#EF6C00,color:#ffffff
-    classDef storage fill:#6A1B9A,color:#ffffff
+    classDef sources fill:#0D47A1,color:#ffffff,stroke:#062a5e,stroke-width:3px
+    classDef ingestion fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef processing fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef storage fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
 
     class SENSORS,BATCH,EXTERNAL sources
     class VALIDATE,ENRICH,CORRELATION ingestion
@@ -826,39 +1443,39 @@ Key architectural strengths include the custom event bus design for low-latency 
 
 ```mermaid
 sequenceDiagram
-    participant API as API Gateway
-    participant DAA as Data Acquisition
-    participant EB as Event Bus
-    participant ADA as Anomaly Detection
-    participant VA as Validation Agent
-    participant OA as Orchestrator
-    participant PA as Prediction Agent
-    participant SA as Scheduling Agent
-    participant NA as Notification Agent
-    participant MLA as Maintenance Log
+    participant API as API Gateway<br/>FastAPI
+    participant DAA as Data Acquisition<br/>Agent
+    participant EB as Event Bus<br/>Redis
+    participant ADA as Anomaly Detection<br/>Agent
+    participant VA as Validation Agent<br/>Rules
+    participant OA as Orchestrator<br/>Coordinator
+    participant PA as Prediction Agent<br/>Prophet
+    participant SA as Scheduling Agent<br/>Optimizer
+    participant NA as Notification Agent<br/>Alerts
+    participant MLA as Maintenance Log<br/>History
 
     API->>+DAA: Sensor Data
     DAA->>DAA: Validate & Enrich
     DAA->>EB: DataProcessedEvent
     EB->>+ADA: Process Data
-    ADA->>ADA: ML Analysis
+    ADA->>ADA: ML Analysis<br/>Isolation Forest
     ADA->>EB: AnomalyDetectedEvent
     EB->>+VA: Validate Anomaly
-    VA->>VA: Apply Rules & Context
+    VA->>VA: Apply Rules & Context<br/>False Positive Check
     VA->>EB: AnomalyValidatedEvent
     EB->>+OA: Orchestrate Decision
-    OA->>OA: Decision Logic
+    OA->>OA: Decision Logic<br/>Routing
     OA->>EB: TriggerPredictionEvent
     EB->>+PA: Generate Prediction
-    PA->>PA: Prophet Analysis
+    PA->>PA: Prophet Analysis<br/>Time-to-Failure
     PA->>EB: MaintenancePredictedEvent
     EB->>+SA: Schedule Maintenance
-    SA->>SA: Optimize Schedule
+    SA->>SA: Optimize Schedule<br/>Resource Allocation
     SA->>EB: MaintenanceScheduledEvent
     EB->>+NA: Send Notifications
-    NA->>NA: Multi-channel Notify
+    NA->>NA: Multi-channel Notify<br/>Email/Slack
     EB->>+MLA: Log Maintenance
-    MLA->>MLA: Record History
+    MLA->>MLA: Record History<br/>Persistence
 ```
 
 ### Appendix B: Data Pipeline Architecture
@@ -866,36 +1483,36 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     subgraph "Data Ingestion"
-        SENSORS[📡 IoT Sensors]
-        API_IN[🔌 API Endpoints]
-        BATCH[📦 Batch Import]
+        SENSORS[📡 IoT Sensors<br/>Real-time Streams]
+        API_IN[🔌 API Endpoints<br/>REST/WebSocket]
+        BATCH[📦 Batch Import<br/>CSV/JSON Files]
     end
 
     subgraph "Processing Pipeline"
-        VALIDATE[✅ Data Validation]
-        ENRICH[🔄 Data Enrichment]
-        NORMALIZE[⚖️ Normalization]
-        ANOMALY[🔍 Anomaly Detection]
+        VALIDATE[✅ Data Validation<br/>Pydantic Schema]
+        ENRICH[🔄 Data Enrichment<br/>Metadata Addition]
+        NORMALIZE[⚖️ Normalization<br/>Standardization]
+        ANOMALY[🔍 Anomaly Detection<br/>Isolation Forest]
     end
 
     subgraph "Storage & Analytics"
-        TIMESERIES[(⏰ Time Series DB)]
-        VECTOR[(🧠 Vector DB)]
-        WAREHOUSE[(🏢 Data Warehouse)]
-        CACHE[(⚡ Cache Layer)]
+        TIMESERIES[(⏰ Time Series DB<br/>TimescaleDB)]
+        VECTOR[(🧠 Vector DB<br/>ChromaDB)]
+        WAREHOUSE[(🏢 Data Warehouse<br/>PostgreSQL)]
+        CACHE[(⚡ Cache Layer<br/>Redis)]
     end
 
     subgraph "Machine Learning"
-        TRAIN[🎓 Model Training]
-        PREDICT[🔮 Predictions]
-        FEEDBACK[🔄 Feedback Loop]
+        TRAIN[🎓 Model Training<br/>Jupyter + MLflow]
+        PREDICT[🔮 Predictions<br/>Real-time Inference]
+        FEEDBACK[🔄 Feedback Loop<br/>Continuous Learning]
     end
 
     subgraph "Output Systems"
-        DASHBOARD[📊 Dashboards]
-        ALERTS[🚨 Alerts]
-        REPORTS[📈 Reports]
-        API_OUT[📤 API Responses]
+        DASHBOARD[📊 Dashboards<br/>Streamlit UI]
+        ALERTS[🚨 Alerts<br/>Multi-channel]
+        REPORTS[📈 Reports<br/>Analytics]
+        API_OUT[📤 API Responses<br/>JSON/REST]
     end
 
     SENSORS --> VALIDATE
@@ -920,11 +1537,11 @@ flowchart LR
     FEEDBACK --> REPORTS
     CACHE --> API_OUT
 
-    classDef ingestion fill:#1565C0,color:#ffffff
-    classDef processing fill:#2E7D32,color:#ffffff
-    classDef storage fill:#EF6C00,color:#ffffff
-    classDef ml fill:#6A1B9A,color:#ffffff
-    classDef output fill:#AD1457,color:#ffffff
+    classDef ingestion fill:#0D47A1,color:#ffffff,stroke:#062a5e,stroke-width:3px
+    classDef processing fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef storage fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef ml fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
+    classDef output fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
 
     class SENSORS,API_IN,BATCH ingestion
     class VALIDATE,ENRICH,NORMALIZE,ANOMALY processing
@@ -938,37 +1555,37 @@ flowchart LR
 ```mermaid
 graph TD
     subgraph "Event Sources"
-        DATA_IN[📊 Data Ingestion]
-        USER_ACTION[👤 User Actions]
-        SYSTEM_EVENT[⚙️ System Events]
-        TIMER[⏰ Scheduled Tasks]
+        DATA_IN[📊 Data Ingestion<br/>Sensor Streams]
+        USER_ACTION[👤 User Actions<br/>UI Interactions]
+        SYSTEM_EVENT[⚙️ System Events<br/>Health/Status]
+        TIMER[⏰ Scheduled Tasks<br/>Cron Jobs]
     end
 
     subgraph "Event Bus Core"
-        ROUTER[📡 Event Router]
-        QUEUE[📬 Event Queue]
-        DISPATCH[🚀 Event Dispatcher]
+        ROUTER[📡 Event Router<br/>Topic-based]
+        QUEUE[📬 Event Queue<br/>Redis Streams]
+        DISPATCH[🚀 Event Dispatcher<br/>Pub/Sub]
     end
 
     subgraph "Event Processors"
-        ANOMALY_PROC[🔍 Anomaly Processor]
-        VALIDATION_PROC[✅ Validation Processor]
-        PREDICTION_PROC[🔮 Prediction Processor]
-        SCHEDULE_PROC[📅 Schedule Processor]
-        NOTIFY_PROC[📢 Notification Processor]
+        ANOMALY_PROC[🔍 Anomaly Processor<br/>ML Detection]
+        VALIDATION_PROC[✅ Validation Processor<br/>Rule Engine]
+        PREDICTION_PROC[🔮 Prediction Processor<br/>Prophet Model]
+        SCHEDULE_PROC[📅 Schedule Processor<br/>Optimization]
+        NOTIFY_PROC[📢 Notification Processor<br/>Multi-channel]
     end
 
     subgraph "Event Persistence"
-        EVENT_LOG[(📜 Event Log)]
-        METRICS[(📊 Event Metrics)]
-        AUDIT[(🔍 Audit Trail)]
+        EVENT_LOG[(📜 Event Log<br/>Audit Trail)]
+        METRICS[(📊 Event Metrics<br/>Performance)]
+        AUDIT[(🔍 Audit Trail<br/>Compliance)]
     end
 
     subgraph "Event Consumers"
-        DASHBOARD_SUB[📊 Dashboard Updates]
-        ALERT_SUB[🚨 Alert System]
-        REPORT_SUB[📈 Reporting]
-        API_SUB[🔌 API Responses]
+        DASHBOARD_SUB[📊 Dashboard Updates<br/>Real-time UI]
+        ALERT_SUB[🚨 Alert System<br/>Notifications]
+        REPORT_SUB[📈 Reporting<br/>Analytics]
+        API_SUB[🔌 API Responses<br/>Client Apps]
     end
 
     DATA_IN --> ROUTER
@@ -996,11 +1613,11 @@ graph TD
     DISPATCH --> REPORT_SUB
     DISPATCH --> API_SUB
 
-    classDef source fill:#1565C0,color:#ffffff
-    classDef core fill:#2E7D32,color:#ffffff
-    classDef processor fill:#6A1B9A,color:#ffffff
-    classDef persistence fill:#EF6C00,color:#ffffff
-    classDef consumer fill:#AD1457,color:#ffffff
+    classDef source fill:#0D47A1,color:#ffffff,stroke:#062a5e,stroke-width:3px
+    classDef core fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef processor fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
+    classDef persistence fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef consumer fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
 
     class DATA_IN,USER_ACTION,SYSTEM_EVENT,TIMER source
     class ROUTER,QUEUE,DISPATCH core
@@ -1014,53 +1631,53 @@ graph TD
 ```mermaid
 graph TB
     subgraph "Load Balancer Layer"
-        LB[⚖️ Load Balancer]
-        SSL[🔒 SSL Termination]
+        LB[⚖️ Load Balancer<br/>NGINX/HAProxy]
+        SSL[🔒 SSL Termination<br/>TLS 1.3]
     end
 
     subgraph "Application Layer"
         subgraph "API Cluster"
-            API1[🚀 FastAPI Instance 1]
-            API2[🚀 FastAPI Instance 2]
-            API3[🚀 FastAPI Instance 3]
+            API1[🚀 FastAPI Instance 1<br/>Auto-scaling]
+            API2[🚀 FastAPI Instance 2<br/>High Availability]
+            API3[🚀 FastAPI Instance 3<br/>Load Distribution]
         end
 
         subgraph "Agent Cluster"
-            AGENT1[🤖 Agent Pod 1]
-            AGENT2[🤖 Agent Pod 2]
-            AGENT3[🤖 Agent Pod 3]
+            AGENT1[🤖 Agent Pod 1<br/>Core Agents]
+            AGENT2[🤖 Agent Pod 2<br/>MLOps Agents]
+            AGENT3[🤖 Agent Pod 3<br/>Decision Agents]
         end
 
         subgraph "Worker Cluster"
-            WORKER1[⚙️ Background Worker 1]
-            WORKER2[⚙️ Background Worker 2]
+            WORKER1[⚙️ Background Worker 1<br/>Async Tasks]
+            WORKER2[⚙️ Background Worker 2<br/>Scheduled Jobs]
         end
     end
 
     subgraph "Data Layer"
         subgraph "Primary Database"
-            DB_MASTER[(🗄️ PostgreSQL Master)]
-            DB_REPLICA[(📚 PostgreSQL Replica)]
+            DB_MASTER[(🗄️ PostgreSQL Master<br/>Write Operations)]
+            DB_REPLICA[(📚 PostgreSQL Replica<br/>Read Operations)]
         end
 
         subgraph "Specialized Storage"
-            TIMESCALE[(⏰ TimescaleDB)]
-            VECTOR[(🧠 ChromaDB)]
-            REDIS[(⚡ Redis Cluster)]
+            TIMESCALE[(⏰ TimescaleDB<br/>Time-Series Data)]
+            VECTOR[(🧠 ChromaDB<br/>Vector Embeddings)]
+            REDIS[(⚡ Redis Cluster<br/>Cache & Events)]
         end
     end
 
     subgraph "Monitoring & Observability"
-        METRICS[📊 Prometheus]
-        LOGS[📝 Elasticsearch]
-        GRAFANA[📈 Grafana]
-        JAEGER[🔍 Jaeger Tracing]
+        METRICS[📊 Prometheus<br/>Metrics Collection]
+        LOGS[📝 Elasticsearch<br/>Log Aggregation]
+        GRAFANA[📈 Grafana<br/>Visualization]
+        JAEGER[🔍 Jaeger Tracing<br/>Distributed Tracing]
     end
 
     subgraph "Infrastructure"
-        DOCKER[🐳 Docker Swarm]
-        K8S[☸️ Kubernetes]
-        STORAGE[💾 Persistent Volumes]
+        DOCKER[🐳 Docker Swarm<br/>Container Orchestration]
+        K8S[☸️ Kubernetes<br/>Production Workloads]
+        STORAGE[💾 Persistent Volumes<br/>Data Persistence]
     end
 
     LB --> SSL
@@ -1093,11 +1710,11 @@ graph TB
     DOCKER --> K8S
     K8S --> STORAGE
 
-    classDef lb fill:#1565C0,color:#ffffff
-    classDef app fill:#2E7D32,color:#ffffff
-    classDef data fill:#EF6C00,color:#ffffff
-    classDef monitor fill:#6A1B9A,color:#ffffff
-    classDef infra fill:#AD1457,color:#ffffff
+    classDef lb fill:#0D47A1,color:#ffffff,stroke:#062a5e,stroke-width:3px
+    classDef app fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef data fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef monitor fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
+    classDef infra fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
 
     class LB,SSL lb
     class API1,API2,API3,AGENT1,AGENT2,AGENT3,WORKER1,WORKER2 app
@@ -1111,40 +1728,40 @@ graph TB
 ```mermaid
 flowchart TB
     subgraph "Data Collection"
-        SENSORS[📡 Sensor Data]
-        HISTORICAL[📚 Historical Data]
-        FEEDBACK[🔄 Feedback Data]
+        SENSORS[📡 Sensor Data<br/>IoT Streams]
+        HISTORICAL[📚 Historical Data<br/>Archive Storage]
+        FEEDBACK[🔄 Feedback Data<br/>User Input]
     end
 
     subgraph "Feature Engineering"
-        EXTRACT[🔍 Feature Extraction]
-        TRANSFORM[🔄 Data Transformation]
-        SELECT[✅ Feature Selection]
+        EXTRACT[🔍 Feature Extraction<br/>FFT/MFCC/Statistical]
+        TRANSFORM[🔄 Data Transformation<br/>Normalization]
+        SELECT[✅ Feature Selection<br/>Importance Ranking]
     end
 
     subgraph "Model Training"
-        ANOMALY_TRAIN[🎯 Anomaly Detection Training]
-        PROPHET_TRAIN[📈 Prophet Model Training]
-        VALIDATION_TRAIN[✅ Validation Model Training]
+        ANOMALY_TRAIN[🎯 Anomaly Detection Training<br/>Isolation Forest]
+        PROPHET_TRAIN[📈 Prophet Model Training<br/>Time-Series]
+        VALIDATION_TRAIN[✅ Validation Model Training<br/>Rule-based]
     end
 
     subgraph "Model Deployment"
-        ANOMALY_MODEL[🔍 Isolation Forest Model]
-        PROPHET_MODEL[🔮 Prophet Predictor]
-        ENSEMBLE[🎭 Ensemble Decision]
+        ANOMALY_MODEL[🔍 Isolation Forest Model<br/>Unsupervised]
+        PROPHET_MODEL[🔮 Prophet Predictor<br/>Forecasting]
+        ENSEMBLE[🎭 Ensemble Decision<br/>Combined Confidence]
     end
 
     subgraph "Real-time Inference"
-        STREAM_DATA[📊 Streaming Data]
-        PREPROCESS[⚙️ Preprocessing]
-        INFERENCE[🧠 Model Inference]
-        POSTPROCESS[🔧 Postprocessing]
+        STREAM_DATA[📊 Streaming Data<br/>Real-time Input]
+        PREPROCESS[⚙️ Preprocessing<br/>Feature Extraction]
+        INFERENCE[🧠 Model Inference<br/>Prediction]
+        POSTPROCESS[🔧 Postprocessing<br/>Result Formatting]
     end
 
     subgraph "Model Management"
-        MONITOR[📊 Model Monitoring]
-        RETRAIN[🔄 Retraining Pipeline]
-        VERSIONING[📦 Model Versioning]
+        MONITOR[📊 Model Monitoring<br/>Drift Detection]
+        RETRAIN[🔄 Retraining Pipeline<br/>Auto-update]
+        VERSIONING[📦 Model Versioning<br/>MLflow Registry]
     end
 
     SENSORS --> EXTRACT
@@ -1175,12 +1792,12 @@ flowchart TB
     MONITOR --> RETRAIN
     RETRAIN --> VERSIONING
 
-    classDef collection fill:#1565C0,color:#ffffff
-    classDef engineering fill:#2E7D32,color:#ffffff
-    classDef training fill:#EF6C00,color:#ffffff
-    classDef deployment fill:#6A1B9A,color:#ffffff
-    classDef inference fill:#AD1457,color:#ffffff
-    classDef management fill:#455A64,color:#ffffff
+    classDef collection fill:#0D47A1,color:#ffffff,stroke:#062a5e,stroke-width:3px
+    classDef engineering fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef training fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef deployment fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
+    classDef inference fill:#880E4F,color:#ffffff,stroke:#440727,stroke-width:3px
+    classDef management fill:#37474F,color:#ffffff,stroke:#1b2529,stroke-width:3px
 
     class SENSORS,HISTORICAL,FEEDBACK collection
     class EXTRACT,TRANSFORM,SELECT engineering
@@ -1243,31 +1860,31 @@ A **PostgreSQL** database with the **TimescaleDB** extension is used for data pe
 ```mermaid
 graph TD
     subgraph "External Interfaces"
-        UI[User Interface / API Clients]
+        UI[User Interface / API Clients<br/>Web/Mobile Apps]
     end
 
     subgraph "Backend System"
-        API[API Gateway - FastAPI]
-        EventBus[Event Bus]
+        API[API Gateway - FastAPI<br/>Rate Limiting & Auth]
+        EventBus[Event Bus<br/>Redis Pub/Sub + DLQ]
 
         subgraph "Agents"
-            DAA[Data Acquisition Agent]
-            ADA[Anomaly Detection Agent]
-            VA[Validation Agent]
-            Orch[Orchestrator Agent]
-            PA[Prediction Agent]
-            SA[Scheduling Agent]
-            NA[Notification Agent]
-            HIA[Human Interface Agent]
-            RA[Reporting Agent]
-            LA[Learning Agent]
-            MLA[Maintenance Log Agent]
+            DAA[Data Acquisition Agent<br/>Ingestion]
+            ADA[Anomaly Detection Agent<br/>ML Analysis]
+            VA[Validation Agent<br/>Rule Engine]
+            Orch[Orchestrator Agent<br/>Coordinator]
+            PA[Prediction Agent<br/>Prophet]
+            SA[Scheduling Agent<br/>Optimization]
+            NA[Notification Agent<br/>Alerts]
+            HIA[Human Interface Agent<br/>HITL]
+            RA[Reporting Agent<br/>Analytics]
+            LA[Learning Agent<br/>RAG/ChromaDB]
+            MLA[Maintenance Log Agent<br/>History]
         end
 
         subgraph "Data Persistence"
-            DB[(PostgreSQL with TimescaleDB)]
-            VDB[(ChromaDB Vector DB)]
-            MLF[(MLflow Model Registry)]
+            DB[(PostgreSQL with TimescaleDB<br/>Time-Series Storage)]
+            VDB[(ChromaDB Vector DB<br/>RAG Embeddings)]
+            MLF[(MLflow Model Registry<br/>S3 Artifacts)]
         end
     end
 
@@ -1307,10 +1924,10 @@ graph TD
     ADA --> MLF
     PA --> MLF
 
-    classDef api fill:#6A1B9A,color:#ffffff
-    classDef agent fill:#2E7D32,color:#ffffff
-    classDef eventbus fill:#EF6C00,color:#ffffff
-    classDef database fill:#1565C0,color:#ffffff
+    classDef api fill:#4A148C,color:#ffffff,stroke:#1a0632,stroke-width:3px
+    classDef agent fill:#1B5E20,color:#ffffff,stroke:#0d2f10,stroke-width:3px
+    classDef eventbus fill:#E65100,color:#ffffff,stroke:#732800,stroke-width:3px
+    classDef database fill:#0D47A1,color:#ffffff,stroke:#062a5e,stroke-width:3px
 
     class UI,API api
     class DAA,ADA,VA,Orch,PA,SA,NA,HIA,RA,LA,MLA agent
