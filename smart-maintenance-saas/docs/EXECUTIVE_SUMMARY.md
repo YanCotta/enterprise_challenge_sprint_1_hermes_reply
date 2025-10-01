@@ -3,6 +3,11 @@
 **Last Updated:** 2025-09-30  
 **Authoritative Source:** This summary reflects the current state documented in [v1_release_must_do.md](./v1_release_must_do.md) (V1.0 Deployment Playbook)
 
+**System Architecture:** See [SYSTEM_AND_ARCHITECTURE.md](./SYSTEM_AND_ARCHITECTURE.md) for comprehensive architecture visualizations including:
+- [High-Level System Overview](./SYSTEM_AND_ARCHITECTURE.md#21-high-level-system-overview)
+- [Multi-Agent System Architecture](./SYSTEM_AND_ARCHITECTURE.md#27-complete-multi-agent-system-architecture)
+- [MLOps Automation](./SYSTEM_AND_ARCHITECTURE.md#28-mlops-automation-drift-detection-to-retraining)
+
 ## System Stabilization Status: ✅ PRODUCTION READY
 
 The Smart Maintenance SaaS platform is **ready for V1.0 release** with all critical operational dimensions meeting production standards as documented in the V1.0 Deployment Playbook Section 10.

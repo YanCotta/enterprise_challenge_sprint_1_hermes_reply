@@ -4,6 +4,10 @@
 **Status:** V1.0 Production Ready  
 **Related:** [v1_release_must_do.md Section 7](./v1_release_must_do.md) - Complete deployment checklist and procedures
 
+**Architecture Diagrams:**
+- [Docker Services Architecture](./SYSTEM_AND_ARCHITECTURE.md#26-docker-services-architecture) - Service configuration and dependencies
+- [Deployment Architecture](./SYSTEM_AND_ARCHITECTURE.md#appendix-d-deployment-architecture-future-oriented-illustration) - Cloud deployment topology
+
 This document outlines the required environment configuration for deploying Smart Maintenance SaaS. The `.env` file stored at the repository root (`smart-maintenance-saas/.env`) is the authoritative reference for all services (API, UI, MLflow, background agents). Follow the steps below before running docker-compose stacks or provisioning cloud services.
 
 ## 1. Prepare the `.env`
