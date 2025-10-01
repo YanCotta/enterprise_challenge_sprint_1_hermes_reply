@@ -1,43 +1,43 @@
 # Smart Maintenance SaaS – System & Architecture (V1.0)
 
-**Last Synchronized:** 2025-12-19  
-**Status:** Stable (Minimal V1.0 Scope) | Readiness: 94.5% | Deferred Features Tracked  
-**Authoritative Source of Truth:** See [V1_READINESS_CHECKLIST.md](./V1_READINESS_CHECKLIST.md), [EXECUTIVE_SUMMARY.md](./EXECUTIVE_SUMMARY.md), and [SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md](./SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md) for full V1.0 scope, readiness status, and deferred features.  
-**Scope of THIS Document:** High‑signal architectural overview for engineers and auditors. Deep narratives, agent-by-agent behavior traces, and historical evolution are documented in the authoritative capability matrix.  
-**Current Production Readiness:** 94.5% (V1.0 Minimal Scope Locked)  
+**Last Updated:** 2025-09-30  
+**Status:** V1.0 Production Ready  
+**Authoritative Source:** [v1_release_must_do.md](./v1_release_must_do.md) - V1.0 Deployment Playbook (replaces former readiness checklist and capability matrix)  
+**Scope:** High-level architectural overview for engineers and auditors. Detailed capability status, task tracking, and deployment procedures are in the deployment playbook.  
 **Document Philosophy:** Minimize duplication. Link to canonical artifacts instead of restating them.
 
 ## 1. Introduction
 
-This document provides a comprehensive overview of the system architecture for the Smart Maintenance SaaS platform. The platform is a **cloud-native, event-driven system** with **revolutionary S3 serverless model loading** that delivers scalable, resilient predictive maintenance solutions for industrial applications.
+This document provides a comprehensive overview of the system architecture for the Smart Maintenance SaaS platform. The platform is a **cloud-native, event-driven system** with **S3 serverless model loading** that delivers scalable, resilient predictive maintenance solutions for industrial applications.
 
 ### 1.1. Architecture Overview (Concise)
 
 Core properties:
 
-- **Event‑Driven Core:** Custom in‑memory event bus (retry + DLQ) enabling asynchronous agent orchestration.
-- **Multi‑Agent Execution Model:** Specialized agents (ingestion, anomaly detection, validation, prediction, scheduling, reporting, learning, drift, retrain, notification, maintenance log) communicating via events.
-- **Temporal & Analytical Storage:** PostgreSQL + TimescaleDB (hypertables, compression, continuous aggregates) for sensor & derived features.
-- **Model Lifecycle:** MLflow registry (17+ models) + lightweight model cache for near zero‑latency inference.
-- **Resilience Patterns:** Correlation IDs, idempotency cache, retry with exponential backoff, health & metrics endpoints.
-- **Performance Provenance:** Validated 103.8 RPS peak (Day 17) and ≥30% query acceleration via TimescaleDB optimizations (Day 18). See `PERFORMANCE_BASELINE.md`.
+- **Event-Driven Core:** Custom in-memory event bus (retry + DLQ) enabling asynchronous agent orchestration.
+- **Multi-Agent Execution Model:** 12 specialized agents (ingestion, anomaly detection, validation, prediction, scheduling, reporting, learning, drift, retrain, notification, maintenance log, human decision) communicating via events.
+- **Temporal & Analytical Storage:** PostgreSQL + TimescaleDB (hypertables, compression, continuous aggregates) with cloud deployment (Render) verified.
+- **Model Lifecycle:** MLflow registry (17+ models) with S3 artifact storage + lightweight model cache for near-zero latency inference.
+- **Resilience Patterns:** Correlation IDs, idempotency cache (Redis), retry with exponential backoff, health & metrics endpoints.
+- **Performance Provenance:** Validated 103.8 RPS peak ([legacy performance reports](./legacy/DAY_17_LOAD_TEST_REPORT.md)) and ≥30% query acceleration via TimescaleDB optimizations.
 - **Cloud Mode Toggle:** Environment-driven latency/caching policies; same container images usable locally & in cloud.
+- **Offline ML Mode:** `DISABLE_MLFLOW_MODEL_LOADING` flag enables operation without MLflow registry access.
 
-Out‑of‑scope in this file (see unified doc): detailed dataset performance tables, full agent message taxonomies, gap remediation phases, ML model per‑version metrics.
+Out-of-scope in this file: detailed dataset performance tables, full agent message taxonomies, gap remediation phases. See [v1_release_must_do.md](./v1_release_must_do.md) for comprehensive capability matrix and deferred features.
 
-### 1.2. Status Snapshot
+### 1.2. V1.0 Status Snapshot
 
 | Layer | Status | Notes |
 |-------|--------|-------|
-| API / Gateway | Stable | FastAPI + metrics + auth + rate limiting |
-| Event Bus | Stable | In‑memory; future Kafka migration earmarked (post‑V1) |
-| Agents | Operational | All defined agents load; some UI surfacing still WIP |
-| ML Registry | Stable | 17+ registered models; drift + retrain loop wired |
-| Database Layer | Optimized | Continuous aggregates + composite indexes validated |
-| Caching | Basic | Redis present; advanced inference/result caching backlog |
-| UI | Partially Hardened | Reliability improvements underway (cloud parity confirmed) |
+| API / Gateway | ✅ Ready | FastAPI + metrics + auth + rate limiting operational |
+| Event Bus | ✅ Stable | In-memory with retry/DLQ; Kafka migration earmarked post-V1.0 |
+| Multi-Agent System | ✅ Operational | All 12 agents functional; UI exposes ~70% intentionally (see playbook Section 2.2) |
+| ML Registry | ✅ Stable | 17+ models with S3 backend; offline mode available |
+| Database Layer | ✅ Optimized | Cloud TimescaleDB with continuous aggregates + composite indexes |
+| Caching | ✅ Basic | Redis coordination active; advanced caching deferred |
+| UI | ✅ Adequate | All golden-path workflows functional with error handling |
 
-For detailed feature implementations, capability status, and deferred features: [SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md](./SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md).
+For detailed feature implementations, capability status, and deferred features: [v1_release_must_do.md Sections 2-3](./v1_release_must_do.md).
 
 ---
 

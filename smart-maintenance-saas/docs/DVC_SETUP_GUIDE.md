@@ -1,5 +1,9 @@
 # DVC Setup Guide - Data Version Control with Google Drive
 
+**Last Updated:** 2025-09-30  
+**Status:** Optional setup for local development  
+**Note:** V1.0 production uses cloud TimescaleDB and S3 artifact storage directly; DVC provides alternative for local dataset management
+
 ## 🎯 Overview
 
 This project uses DVC (Data Version Control) to manage large datasets and ML artifacts. All data is stored in a shared Google Drive folder, allowing complete reproducibility of the development environment.

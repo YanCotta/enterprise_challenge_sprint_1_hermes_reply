@@ -1,81 +1,11 @@
-# Smart Maintenance SaaS - Complete Documentation Index
+# Prediction Service (Future Microservice)
 
-## Core Documentation
-
-### Getting Started
-
-- **[Main README](../../../../README.md)** - Project overview, quick start, and repository structure
-- **[Backend README](../../../README.md)** - Docker deployment and getting started guide
-- **[Development Orientation](../../../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
-
-### Project History & Changelog
-
-- **[30-Day Sprint Changelog](../../../../30-day-sprint-changelog.md)** - Complete development history and daily progress
-- **[Final Sprint Summary](../../../../final_30_day_sprint.md)** - Executive summary of sprint achievements
-
-## System Architecture & Design
-
-### Architecture Documentation
-
-- **[System and Architecture](../../../docs/SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
-- **[System Screenshots](../../../docs/SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
-- **[Comprehensive System Analysis](../../../docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
-- **[Microservice Migration Strategy](../../../docs/MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
-
-### Database Design
-
-- **[Database Documentation](../../../docs/db/README.md)** - Database schema and design documentation
-- **[Database ERD](../../../docs/db/erd.dbml)** - Entity Relationship Diagram source
-- **[Database Schema](../../../docs/db/schema.sql)** - Complete SQL schema definition
-
-## API & Integration
-
-### API Documentation
-
-- **[API Reference](../../../docs/api.md)** - Complete REST API documentation and examples
-- **[Configuration Management](../../core/config/README.md)** - Centralized configuration system
-- **[Logging Configuration](../../core/logging_config.md)** - Structured JSON logging setup
-
-## Performance & Testing
-
-### Performance Documentation
-
-- **[Performance Baseline](../../../docs/PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
-- **[Day 17 Load Test Report](../../../docs/DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
-- **[Day 18 Performance Results](../../../docs/DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
-- **[Load Testing Instructions](../../../docs/LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
-
-### Testing Documentation
-
-- **[Test Documentation](../../tests/README.md)** - Test organization and execution guide
-- **[Coverage Improvement Plan](../../../docs/COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
-
-## Machine Learning & Data Science
-
-### ML Documentation
-
-- **[ML Documentation](../../../docs/ml/README.md)** - Machine learning models and pipelines
-- **[Models Summary](../../../docs/MODELS_SUMMARY.md)** - Overview of all 17+ production models
-- **[Project Gauntlet Plan](../../../docs/PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
-
-## Security & Operations
-
-### Security Documentation
-
-- **[Security Documentation](../../../docs/SECURITY.md)** - Security architecture and implementation
-- **[Security Audit Checklist](../../../docs/SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
-
----
-
-*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
-
----
-
-# Prediction Service
+**Status:** Placeholder / Not for V1.0 Production  
+**Related:** [legacy/MICROSERVICE_MIGRATION_STRATEGY.md](../../docs/legacy/MICROSERVICE_MIGRATION_STRATEGY.md) - Migration strategy for post-V1.0
 
 ## Overview
 
-The Prediction Service is a future microservice designed to handle ML model predictions and inference for the Smart Maintenance SaaS platform.
+The Prediction Service is a future microservice placeholder for eventual dedicated ML inference. **V1.0 implements predictions within the main API via integrated ML endpoints and agent orchestration.**
 
 ## Purpose
 

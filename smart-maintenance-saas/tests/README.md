@@ -1,53 +1,10 @@
-# Smart Maintenance SaaS - Complete Documentation Index
+# Smart Maintenance SaaS - Test Documentation
 
-## Core Documentation
+**Last Updated:** 2025-09-30  
+**Status:** V1.0 Critical Path Coverage  
+**Related:** [v1_release_must_do.md Section 6](../docs/v1_release_must_do.md) - Testing & validation plan
 
-### Getting Started
-
-- **[Main README](../../README.md)** - Project overview, quick start, and repository structure
-- **[Backend README](../README.md)** - Docker deployment and getting started guide
-- **[Development Orientation](../../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
-
-### Project History & Changelog
-
-- **[30-Day Sprint Changelog](../../30-day-sprint-changelog.md)** - Complete development history and daily progress
-- **[Final Sprint Summary](../../final_30_day_sprint.md)** - Executive summary of sprint achievements
-
-## System Architecture & Design
-
-### Architecture Documentation
-
-- **[System and Architecture](../docs/SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
-- **[System Screenshots](../docs/SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
-- **[Comprehensive System Analysis](../docs/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md)** - Detailed technical analysis report
-- **[Microservice Migration Strategy](../docs/MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
-
-### Database Design
-
-- **[Database Documentation](../docs/db/README.md)** - Database schema and design documentation
-- **[Database ERD](../docs/db/erd.dbml)** - Entity Relationship Diagram source
-- **[Database ERD (PNG)](../docs/db/erd.png)** - Entity Relationship Diagram visualization
-- **[Database ERD (Dark Mode)](../docs/db/erd_darkmode.png)** - Entity Relationship Diagram (dark theme)
-- **[Database Schema](../docs/db/schema.sql)** - Complete SQL schema definition
-
-## API & Integration
-
-### API Documentation
-
-- **[API Reference](../docs/api.md)** - Complete REST API documentation and examples
-- **[Configuration Management](../core/config/README.md)** - Centralized configuration system
-- **[Logging Configuration](../core/logging_config.md)** - Structured JSON logging setup
-
-## Performance & Testing
-
-### Performance Documentation
-
-- **[Performance Baseline](../docs/PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
-- **[Day 17 Load Test Report](../docs/DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
-- **[Day 18 Performance Results](../docs/DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
-- **[Load Testing Instructions](../docs/LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
-
-### Testing Documentation
+Test organization, execution guide, and coverage status for the Smart Maintenance SaaS platform.
 
 - **[Test Documentation](./README.md)** - Test organization and execution guide
 - **[Coverage Improvement Plan](../docs/COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status

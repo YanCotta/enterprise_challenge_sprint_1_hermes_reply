@@ -1,83 +1,13 @@
-# Smart Maintenance SaaS - Complete Documentation Index
-
-## Core Documentation
-
-### Getting Started
-
-- **[Main README](../../../README.md)** - Project overview, quick start, and repository structure
-- **[Backend README](../../../README.md)** - Docker deployment and getting started guide
-- **[Development Orientation](../DEVELOPMENT_ORIENTATION.md)** - Development guidelines and best practices
-
-### Project History & Changelog
-
-- **[30-Day Sprint Changelog](../30-day-sprint-changelog.md)** - Complete development history and daily progress
-- **[Final Sprint Summary](../final_30_day_sprint.md)** - Executive summary of sprint achievements
-
-## System Architecture & Design
-
-### Architecture Documentation
-
-- **[System and Architecture](../SYSTEM_AND_ARCHITECTURE.md)** - Comprehensive system architecture and design patterns
-- **[System Screenshots](../SYSTEM_SCREENSHOTS.md)** - Visual documentation of system interfaces
-- **[System Capabilities Unified System Documentation UI Redesign](../SYSTEM_CAPABILITIES_AND_UI_REDESIGN.md)** - Comprehensive system state and analysis
-- **[Microservice Migration Strategy](../MICROSERVICE_MIGRATION_STRATEGY.md)** - Future architecture evolution plans
-
-### Database Design
-
-- **[Database Documentation](../db/README.md)** - Database schema and design documentation
-- **[Database ERD](../db/erd.dbml)** - Entity Relationship Diagram source
-- **[Database ERD (PNG)](../db/erd.png)** - Entity Relationship Diagram visualization
-- **[Database ERD (Dark Mode)](../db/erd_darkmode.png)** - Entity Relationship Diagram (dark theme)
-- **[Database Schema](../db/schema.sql)** - Complete SQL schema definition
-
-## API & Integration
-
-### API Documentation
-
-- **[API Reference](../api.md)** - Complete REST API documentation and examples
-
-## Performance & Testing
-
-### Performance Documentation
-
-- **[Performance Baseline](../PERFORMANCE_BASELINE.md)** - Performance metrics and SLO targets
-- **[Day 17 Load Test Report](../DAY_17_LOAD_TEST_REPORT.md)** - Comprehensive load testing results (103.8 RPS)
-- **[Day 18 Performance Results](../DAY_18_PERFORMANCE_RESULTS.md)** - TimescaleDB optimization results
-- **[Load Testing Instructions](../LOAD_TESTING_INSTRUCTIONS.md)** - Guide for running performance tests
-
-### Testing Documentation
-
-- **[Test Documentation](../../tests/README.md)** - Test organization and execution guide
-- **[Coverage Improvement Plan](../COVERAGE_IMPROVEMENT_PLAN.md)** - Test coverage strategy and current status
-
-## Machine Learning & Data Science
-
-### ML Documentation
-
-- **[ML Documentation](./README.md)** - Machine learning models and pipelines
-- **[Models Summary](../MODELS_SUMMARY.md)** - Overview of all 17+ production models
-- **[Intelligent Model Selection (Live)](../MODELS_SUMMARY.md#intelligent-dynamic-model-selection-live-system)** - Dynamic recommendations by sensor type via MLflow tags
-- **[Project Gauntlet Plan](../PROJECT_GAUNTLET_PLAN.md)** - Real-world dataset integration execution
-
-## Security & Operations
-
-### Security Documentation
-
-- **[Security Documentation](../SECURITY.md)** - Security architecture and implementation
-- **[Security Audit Checklist](../SECURITY_AUDIT_CHECKLIST.md)** - Comprehensive security audit framework
-
-### Service Documentation
-
-- **[Anomaly Service](../../services/anomaly_service/README.md)** - Future anomaly detection microservice
-- **[Prediction Service](../../services/prediction_service/README.md)** - Future ML prediction microservice
-
----
-
-*This index is automatically maintained and appears at the top of all documentation files for easy navigation.*
-
----
-
 # Machine Learning Pipeline Documentation
+
+**Last Updated:** 2025-09-30  
+**Status:** V1.0 Production Ready  
+**Related Documentation:**
+- [v1_release_must_do.md Section 2.1](../v1_release_must_do.md) - ML capabilities in backend matrix
+- [MODELS_SUMMARY.md](../MODELS_SUMMARY.md) - 17+ production models inventory
+- [Sprint 4 Changelog](../legacy/sprint_4_changelog.md) - MLflow S3 integration achievements
+
+Comprehensive documentation of ML models, training pipelines, and MLflow registry integration with S3 artifact storage (17+ models deployed).
 
 ## Overview
 
