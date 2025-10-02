@@ -120,77 +120,118 @@ curl -X POST http://localhost:8000/api/v1/decisions/submit \
 
 ### 4. UI Functional Tests (Manual)
 
-#### 4.1 Core Pages Navigation
-- [ ] Home page loads (http://localhost:8501)
-- [ ] Data Explorer accessible
-- [ ] Decision Log accessible
-- [ ] Golden Path Demo accessible
-- [ ] Prediction page accessible
-- [ ] Model Metadata accessible
-- [ ] Simulation Console accessible
-- [ ] Metrics Overview accessible
-- [ ] Reporting Prototype accessible
-- [ ] Debug page accessible
+#### 4.1 Core Pages Navigation (✅ COMPLETE - 2025-10-02)
+- [x] Home page loads (http://localhost:8501) - **Renamed to "Manual Sensor Ingestion"**
+- [x] Data Explorer accessible
+- [x] Decision Log accessible
+- [x] Golden Path Demo accessible
+- [x] Prediction page accessible
+- [x] Model Metadata accessible
+- [x] Simulation Console accessible
+- [x] Metrics Overview accessible
+- [x] Reporting Prototype accessible
+- [x] Debug page accessible
 
-#### 4.2 Data Explorer Page Tests
-- [ ] Page loads without errors
-- [ ] Sensor dropdown populates
-- [ ] Date filters work
-- [ ] Pagination functions
-- [ ] Data table displays readings
-- [ ] CSV export downloads
-- [ ] No console errors in browser
+#### 4.2 Data Explorer Page Tests (✅ COMPLETE - 2025-10-02)
+- [x] Page loads without errors
+- [x] Sensor dropdown populates
+- [x] Date filters work
+- [x] Pagination functions
+- [x] Data table displays readings
+- [x] CSV export downloads
+- [x] No console errors in browser
 
-#### 4.3 Prediction Page Tests
-- [ ] Page loads without errors
-- [ ] Sensor type selector works
-- [ ] Model dropdown populates
-- [ ] Forecast generates successfully
-- [ ] Chart displays forecast data
-- [ ] Historical context expander works
-- [ ] "Create Maintenance Order" button functions
-- [ ] Confirmation stays visible after scheduling
-- [ ] Latency metrics display
+**Status:** All functionalities completely operational per user validation
 
-#### 4.4 Golden Path Demo Tests
-- [ ] Demo starts successfully
-- [ ] Progress indicators update
-- [ ] Pipeline steps show status
-- [ ] Events tab displays events
-- [ ] Metrics tab shows latency
-- [ ] Demo completes within 90s
-- [ ] With human decision stage: completes successfully
-- [ ] Success message displays
-- [ ] Correlation ID visible
+#### 4.3 Prediction Page Tests (✅ COMPLETE - 2025-10-02)
+- [x] Page loads without errors
+- [x] Sensor type selector works
+- [x] Model dropdown populates
+- [x] Forecast generates successfully
+- [x] Chart displays forecast data
+- [x] Historical context expander works
+- [x] "Create Maintenance Order" button functions (Fixed: timezone + past deadline issues)
+- [x] Confirmation stays visible after scheduling
+- [x] Latency metrics display
 
-#### 4.5 Decision Log Tests
-- [ ] Page loads without errors
-- [ ] Decision submission form works
-- [ ] Submitted decisions appear in list
-- [ ] Filters function (operator, request_id, dates)
-- [ ] Pagination works
-- [ ] CSV export downloads
-- [ ] Create/list scope acknowledged (no edit/delete)
+**Status:** 100% functional after timezone/deadline logic fixes
+**Fixes Applied:** DateTime timezone awareness, historical data deadline handling
 
-#### 4.6 Simulation Console Tests
-- [ ] All three tabs load (Drift, Anomaly, Normal)
-- [ ] Drift simulation executes without errors
-- [ ] Anomaly simulation executes
-- [ ] Normal simulation executes
-- [ ] Each returns correlation ID
-- [ ] Latency metrics recorded
-- [ ] Recent runs section displays
-- [ ] No TypeError on sensor_id binding
+#### 4.4 Golden Path Demo Tests (✅ COMPLETE - 2025-10-02)
+- [x] Demo starts successfully
+- [x] Progress indicators update
+- [x] Pipeline steps show status
+- [x] Events tab displays events
+- [x] Metrics tab shows latency
+- [x] Demo completes within 90s (64.4s actual)
+- [x] With human decision stage: completes successfully
+- [x] Success message displays
+- [x] Correlation ID visible
 
-#### 4.7 Reporting Prototype Tests
-- [ ] Page loads without errors
-- [ ] Report types selectable
-- [ ] Reports generate successfully
-- [ ] JSON preview displays
-- [ ] Chart previews render (if available)
-- [ ] Download button works
-- [ ] JSON is properly formatted
-- [ ] Maintenance schedule feed displays
+**Status:** Fully operational, all 7 stages completing successfully
+
+#### 4.5 Decision Log Tests (✅ COMPLETE - 2025-10-02)
+- [x] Page loads without errors
+- [x] Decision submission form works
+- [x] Submitted decisions appear in list
+- [x] Filters function (operator, request_id, dates)
+- [x] Pagination works
+- [x] CSV export downloads
+- [x] Create/list scope acknowledged (no edit/delete)
+
+**Status:** All functionalities completely operational per user validation
+
+#### 4.6 Simulation Console Tests (✅ COMPLETE - 2025-10-02)
+- [x] All three tabs load (Drift, Anomaly, Normal)
+- [x] Drift simulation executes without errors
+- [x] Anomaly simulation executes
+- [x] Normal simulation executes
+- [x] Each returns correlation ID
+- [x] Latency metrics recorded (3ms avg)
+- [x] Recent runs section displays
+- [x] No TypeError on sensor_id binding
+
+**Status:** Completely operational - drift/anomaly/normal simulations all working
+**Evidence:** 3 successful runs with correlation IDs, 50-100 events per simulation
+
+#### 4.7 Reporting Prototype Tests (✅ COMPLETE - 2025-10-02)
+- [x] Page loads without errors
+- [x] Report types selectable
+- [x] Reports generate successfully
+- [x] JSON preview displays
+- [x] Chart previews render (if available)
+- [x] Download button works
+- [x] JSON is properly formatted
+- [x] Maintenance schedule feed displays
+
+**Status:** Fully operational per user validation
+
+#### 4.8 Model Metadata Page Tests (✅ COMPLETE - 2025-10-02)
+- [x] Page loads without errors
+- [x] Model list displays correctly
+- [x] Disabled/enabled state badges show
+- [x] Model details expandable
+- [x] No errors with empty states
+
+**Status:** All functionalities completely operational per user validation
+
+#### 4.9 Metrics Overview Page Tests (✅ COMPLETE - 2025-10-02)
+- [x] Page loads without errors
+- [x] Metrics snapshot displays
+- [x] Auto/manual refresh works
+- [x] Prometheus metrics accessible
+- [x] Snapshot-only label present
+
+**Status:** All functionalities completely operational per user validation
+
+#### 4.10 Debug Page Tests (✅ COMPLETE - 2025-10-02)
+- [x] Page loads without errors
+- [x] Connectivity checks functional
+- [x] Health endpoints tested
+- [x] Latency samples display
+- [x] Config inspection works
+
+**Status:** All functionalities completely operational per user validation
 
 ### 5. Integration Tests
 

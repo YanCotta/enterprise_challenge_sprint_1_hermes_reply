@@ -53,9 +53,9 @@ _Merged from the former v1.0 must-do checklist, V1 Readiness Checklist, Prioriti
 
 | Capability | UI Exposure | Coverage Notes | V1.0 Action |
 |-----------|-------------|----------------|-------------|
-| Ingestion | ✅ Exposed | Manual form + verify pattern; verification sometimes races eventual consistency (expected). | Keep stable; monitor ingest→verify latency. |
-| Data Explorer | ✅ Exposed | Pagination, filters, cached sensor list. | Monitor latency, keep cache TTL. |
-| Prediction | ✅ Exposed | Forecast now persists its results and maintenance orders confirm in-place using cached inference state. | Re-run UI flow to confirm schedule payload surfaces and reporting feed updates. |
+| Ingestion | ✅ Exposed | Manual form + verify pattern; verification sometimes races eventual consistency (expected). Page renamed to "Manual Sensor Ingestion". | ✅ VALIDATED 2025-10-02 - Fully operational. |
+| Data Explorer | ✅ Exposed | Pagination, filters, cached sensor list. | ✅ VALIDATED 2025-10-02 - All functionalities operational. |
+| Prediction | ✅ Exposed | Forecast persists results and maintenance orders confirm successfully with schedule details (2s latency). | ✅ VALIDATED 2025-10-02 - 100% functional after fixes. |
 | Model Metadata | ✅ Exposed | Disabled vs empty state clarity. | Badge already live. |
 | Drift Check | ✅ Exposed | Form-based. | None. |
 | Anomaly Detection | ✅ Exposed | Form-based; humidity/voltage accepted. | None. |
@@ -81,11 +81,13 @@ _Merged from the former v1.0 must-do checklist, V1 Readiness Checklist, Prioriti
 | Data Explorer | ✅ | ✅ | None (stability only). | XS | Low |
 | Ingestion Form | ✅ | ✅ | Keep latency copy concise. | XS | Low |
 | Prediction | ✅ | ✅ | Error hints verified. | XS | Low |
-| Decision Audit | ✅ | ✅ | Scope note: create/list only. | XS | Low |
-| Model Metadata | ✅ | ✅ | Badge distinction confirmed. | XS | Low |
-| Simulation Console | ✅ | ✅ | None. | XS | Low |
-| Golden Path Demo | ✅ | ✅ | Messaging polish optional. | XS | Low |
-| Metrics Snapshot | ✅ | ✅ | Snapshot-only label present. | XS | Low |
+| Decision Log | ✅ | ✅ VALIDATED | Scope note: create/list only. All functionalities operational. | XS | Low |
+| Model Metadata | ✅ | ✅ VALIDATED | Badge distinction confirmed. All functionalities operational. | XS | Low |
+| Simulation Console | ✅ | ✅ VALIDATED | All 3 tabs (drift/anomaly/normal) working, 3ms latency. | XS | Low |
+| Golden Path Demo | ✅ | ✅ VALIDATED | Completes in 64.4s with all 7 stages, human decision working. | XS | Low |
+| Metrics Snapshot | ✅ | ✅ VALIDATED | Snapshot-only label present. All functionalities operational. | XS | Low |
+| Reporting Prototype | ✅ | ✅ VALIDATED | JSON formatting, chart previews, maintenance feed operational. | XS | Low |
+| Debug Page | ✅ | ✅ VALIDATED | Connectivity, health checks, diagnostics all operational. | XS | Low |
 | Rerun Stability Layer | ✅ | ✅ | Central helper verified. | XS | Low |
 | Smoke Script (CLI) | N/A | ✅ (script ready to run inside API env) | Execute before tag. | S | Low |
 
@@ -104,7 +106,7 @@ Streaming metrics, report artifacts (PDF/CSV), background SHAP processing, bulk 
 | High | Deployment | Populate production-ready `.env` (or secrets store) and validate values against `docs/DEPLOYMENT_SETUP.md`. | Deployment script finds `.env`, health checks succeed. | Open (operational). |
 | High | Deployment | Finalize deployment automation (shell script + smoke test) and record execution. | `scripts/deploy_vm.sh` (or equivalent) runs end-to-end on target VM, invoking smoke tests with zero failures. | Open (wip). |
 | High | Demo & Workflow | Resolve Golden Path timeout when human decision stage enabled (validation/prediction remain queued past 90s). | Demo completes with human stage on; status transitions through all stages < timeout. | Resolved 2025-09-30 – auto decision injector now mirrors orchestrator request IDs; rerun demo to verify. |
-| High | UI & Scheduling | Fix prediction page "Create maintenance order" action so it confirms scheduling instead of resetting form. | Button triggers maintenance workflow and surfaces confirmation without page reset. | Resolved 2025-09-30 – cached inference state keeps schedule confirmation visible; retest in Streamlit UI. |
+| High | UI & Scheduling | Fix prediction page "Create maintenance order" action so it confirms scheduling instead of resetting form. | Button triggers maintenance workflow and surfaces confirmation without page reset. | ✅ RESOLVED 2025-10-02 – Timezone awareness + past deadline handling fixed; maintenance orders complete successfully in 2s. |
 
 ### 4.2 Medium-Priority Improvements
 
