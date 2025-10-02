@@ -1,9 +1,13 @@
 import streamlit as st
 from ui.lib.api_client import get_current_api_config, probe_connectivity, make_api_request
+from ui.lib.i18n_translations import get_translation, bilingual_text
 
 st.set_page_config(page_title="Debug Panel", page_icon="🛠", layout="wide")
 
-st.title("🛠 Debug & Diagnostics")
+st.title(get_translation("debug", "page_title", "en"))
+st.caption(get_translation("debug", "description", "en"))
+with st.expander("ℹ️ Ajuda / Help"):
+    st.write(f"**🇧🇷 PT:** {get_translation('debug', 'description', 'pt')}")
 
 with st.expander("Resolved API Configuration", expanded=True):
     cfg = get_current_api_config()

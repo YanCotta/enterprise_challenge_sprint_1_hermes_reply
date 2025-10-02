@@ -4,6 +4,7 @@ import uuid
 import streamlit as st
 
 from lib.api_client import make_api_request
+from lib.i18n_translations import get_translation, bilingual_text
 try:  # backward/forward compatibility
     from lib.api_client import record_latency_sample  # type: ignore
 except Exception:  # noqa: BLE001
@@ -17,6 +18,13 @@ HELP_TEXT = """Simulate system conditions to demonstrate drift, anomalies, and b
 Each simulation runs async on the backend and ingests synthetic readings. Drift simulations also
 trigger an automatic drift check showing full MLOps loop.
 """
+
+def _render_page_header():
+    """Render bilingual page header."""
+    st.header(get_translation("simulation", "page_title", "en"))
+    st.caption(get_translation("simulation", "description", "en"))
+    with st.expander("ℹ️ Ajuda / Help"):
+        st.write(f"**🇧🇷 PT:** {get_translation('simulation', 'description', 'pt')}")
 
 SIM_TYPES = {
     "Drift": {
@@ -116,8 +124,7 @@ def _render_runs_table():
 
 
 def render_simulation_console():
-    st.header("🎮 Simulation Console")
-    st.caption(HELP_TEXT)
+    _render_page_header()
 
     tabs = st.tabs(list(SIM_TYPES.keys()))
     for tab, sim_type in zip(tabs, SIM_TYPES.keys()):
