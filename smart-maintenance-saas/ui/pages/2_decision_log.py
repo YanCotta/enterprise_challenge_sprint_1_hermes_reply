@@ -6,6 +6,7 @@ import uuid
 
 from lib.api_client import make_api_request
 from lib.rerun import safe_rerun
+from lib.i18n_translations import get_translation, bilingual_text
 
 
 def _fetch_human_decisions(
@@ -33,24 +34,41 @@ def _fetch_human_decisions(
 
 def render_decision_log_page():
     """Renders the decision log page for viewing and submitting human decisions."""
-    st.header("📋 Decision Audit Trail")
-    st.caption("Filter, inspect, and record human decisions. Maintenance logs tab reserved for future integration.")
-    st.caption("Create/List only (update/delete deferred to V1.5+).")
+    st.header(get_translation("decision_log", "page_title", "en"))
+    st.caption(get_translation("decision_log", "description", "en"))
+    st.info(get_translation("decision_log", "scope_note", "en"))
+    with st.expander("ℹ️ Ajuda / Help"):
+        st.write(f"**🇧🇷 PT:** {get_translation('decision_log', 'description', 'pt')}")
+        st.write(f"**🇧🇷 PT:** {get_translation('decision_log', 'scope_note', 'pt')}")
 
     # --- STATE MANAGEMENT FOR PAGINATION ---
     if 'decision_log_offset' not in st.session_state:
         st.session_state.decision_log_offset = 0
 
     # --- SUBMIT NEW DECISION ---
-    with st.expander("➕ Create Human Decision"):
+    with st.expander(f"➕ {get_translation('decision_log', 'submit_section', 'en')}"):
         with st.form("new_decision_form", clear_on_submit=True):
-            st.subheader("Submit New Decision")
-            req_id = st.text_input("Request ID*", help="The maintenance or analysis request ID.")
-            op_id = st.text_input("Operator ID*", value="log_op_01", help="The ID of the user making the decision.")
-            decision = st.selectbox("Decision*", ["approved", "rejected", "escalated"], help="The outcome of the decision.")
-            justification = st.text_area("Justification", help="Reasoning behind the decision.")
+            st.subheader(get_translation("decision_log", "submit_section", "en"))
+            req_id = st.text_input(
+                get_translation("decision_log", "request_id", "en") + "*",
+                help=bilingual_text("decision_log", "request_id_help")
+            )
+            op_id = st.text_input(
+                get_translation("decision_log", "operator_id", "en") + "*",
+                value="log_op_01",
+                help=bilingual_text("decision_log", "operator_id_help")
+            )
+            decision = st.selectbox(
+                get_translation("decision_log", "decision_type", "en") + "*",
+                ["approved", "rejected", "escalated"],
+                help=f"{get_translation('decision_log', 'decision_approve', 'en')} / {get_translation('decision_log', 'decision_reject', 'en')} / {get_translation('decision_log', 'decision_defer', 'en')}"
+            )
+            justification = st.text_area(
+                get_translation("decision_log", "justification", "en"),
+                help=bilingual_text("decision_log", "justification_help")
+            )
             
-            submit_button = st.form_submit_button("✅ Submit Decision")
+            submit_button = st.form_submit_button(get_translation("decision_log", "submit_button", "en"))
 
             if submit_button:
                 if not req_id or not op_id or not decision:
