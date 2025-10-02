@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from lib.api_client import make_api_request
 from lib.rerun import safe_rerun
+from lib.i18n_translations import get_translation, bilingual_text
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,8 +22,12 @@ def _status_icon(step_status: str) -> str:
 
 def render_golden_path_page():
     """Renders the Golden Path Demo page with live multi-agent event stream."""
-    st.header("🏆 Golden Path Demo – Live Multi-Agent Pipeline")
-    st.caption("Shows real-time event bus activity across agents using a shared correlation ID.")
+    st.header(get_translation("golden_path", "page_title", "en"))
+    st.caption(get_translation("golden_path", "description", "en"))
+    with st.expander("ℹ️ Ajuda / Help"):
+        st.write(f"**🇧🇷 PT:** {get_translation('golden_path', 'description', 'pt')}")
+        st.write(f"**⏱️ EN:** {get_translation('golden_path', 'timeout_warning', 'en')}")
+        st.write(f"**⏱️ PT:** {get_translation('golden_path', 'timeout_warning', 'pt')}")
 
     if "demo_running" not in st.session_state:
         st.session_state.demo_running = False
@@ -55,10 +60,18 @@ def render_golden_path_page():
 
     col_launch, col_opts = st.columns([2, 3])
     with col_opts:
-        sensor_events = st.slider("Sensor Events", 5, 100, 20, help="How many synthetic sensor events to seed")
-        include_decision = st.checkbox("Include human decision stage", value=False)
+        sensor_events = st.slider(
+            get_translation("golden_path", "sensor_events_label", "en"),
+            5, 100, 20,
+            help=bilingual_text("golden_path", "sensor_events_help")
+        )
+        include_decision = st.checkbox(
+            get_translation("golden_path", "include_decision", "en"),
+            value=False,
+            help=bilingual_text("golden_path", "include_decision_help")
+        )
     with col_launch:
-        if st.button("🚀 Start Golden Path Demo", type="primary", disabled=st.session_state.demo_running):
+        if st.button(get_translation("golden_path", "start_button", "en"), type="primary", disabled=st.session_state.demo_running):
             with st.spinner("Initiating demo..."):
                 params = {"sensor_events": sensor_events, "include_decision": str(include_decision).lower()}
                 start_result = make_api_request("POST", "/api/v1/demo/golden-path", params=params)
