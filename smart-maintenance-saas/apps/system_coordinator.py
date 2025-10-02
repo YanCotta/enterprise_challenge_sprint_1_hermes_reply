@@ -51,6 +51,9 @@ from core.database.session import AsyncSessionLocal
 # Database related imports
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# Import settings to access DISABLE_MLFLOW_MODEL_LOADING
+from core.config.settings import get_settings
+
 logger = logging.getLogger(__name__)
 
 class SystemCoordinator:
@@ -82,6 +85,9 @@ class SystemCoordinator:
         # Database session factory
         self.db_session_factory = lambda: AsyncSessionLocal()
 
+        # Load global settings for configuration
+        settings = get_settings()
+
         # Instantiate real services
         data_validator = DataValidator()
         data_enricher = DataEnricher()
@@ -98,9 +104,19 @@ class SystemCoordinator:
             'rate_limit_per_second': 100,
             'enable_sensor_profiling': True
         }
+
+        # Configure AnomalyDetectionAgent based on DISABLE_MLFLOW_MODEL_LOADING setting
+        # When DISABLE_MLFLOW_MODEL_LOADING=true, use local fallback models (IsolationForest + statistical)
+        # This enables offline mode and faster startup without MLflow/S3 dependencies
+        use_serverless = not settings.DISABLE_MLFLOW_MODEL_LOADING
+        logger.info(
+            f"AnomalyDetectionAgent configuration: use_serverless_models={use_serverless} "
+            f"(DISABLE_MLFLOW_MODEL_LOADING={settings.DISABLE_MLFLOW_MODEL_LOADING})"
+        )
         
         anomaly_detection_settings = {
-            'serverless_mode_enabled': True,
+            'use_serverless_models': use_serverless,
+            'serverless_mode_enabled': use_serverless,  # Alias for compatibility
             'model_cache_ttl_minutes': 60,
             'max_concurrent_model_loads': 3,
             'enable_fallback_models': True,

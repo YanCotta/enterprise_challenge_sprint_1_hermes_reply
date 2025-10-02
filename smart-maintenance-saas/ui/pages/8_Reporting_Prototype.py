@@ -6,12 +6,16 @@ import pandas as pd
 import streamlit as st
 
 from lib.api_client import make_api_request
+from lib.i18n_translations import get_translation, bilingual_text
 
 st.set_page_config(page_title="Reporting Prototype", page_icon="🧾")
 
-st.header("🧾 Reporting Prototype")
-st.warning("Prototype – JSON only; artifact downloads deferred (V1.5+).")
-st.caption("Generate lightweight JSON summaries. Artifact persistence and streaming remain deferred.")
+st.header(get_translation("reporting", "page_title", "en"))
+st.caption(get_translation("reporting", "description", "en"))
+st.warning(get_translation("reporting", "prototype_badge", "en"))
+with st.expander("ℹ️ Ajuda / Help"):
+    st.write(f"**🇧🇷 PT:** {get_translation('reporting', 'description', 'pt')}")
+    st.write(f"**🇧🇷 PT:** {get_translation('reporting', 'prototype_badge', 'pt')}")
 
 st.subheader("Automated Maintenance Feed")
 feed_resp = make_api_request("GET", "/api/v1/maintenance/scheduled", params={"limit": 15})

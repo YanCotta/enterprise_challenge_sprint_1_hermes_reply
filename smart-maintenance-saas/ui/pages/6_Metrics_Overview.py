@@ -5,6 +5,7 @@ import requests
 
 from lib.api_client import make_api_request, get_latency_samples
 from lib.rerun import safe_rerun
+from lib.i18n_translations import get_translation, bilingual_text
 
 st.set_page_config(page_title="Metrics Overview", page_icon="📊")
 
@@ -22,18 +23,25 @@ def _fetch_prometheus_metrics(raw_limit: int = 5000) -> str:
 
 
 def render_metrics_overview():
-    st.header("📊 Metrics Snapshot")
+    st.header(get_translation("metrics", "page_title", "en"))
+    st.caption(get_translation("metrics", "description", "en"))
+    with st.expander("ℹ️ Ajuda / Help"):
+        st.write(f"**🇧🇷 PT:** {get_translation('metrics', 'description', 'pt')}")
     if 'metrics_last_refresh' not in st.session_state:
         st.session_state.metrics_last_refresh = None
 
     top_col1, top_col2, top_col3 = st.columns([2,1,1])
     with top_col1:
-        st.info("Snapshot Only – Streaming Deferred (V1.5). Use Refresh or auto-update for a new snapshot.")
+        st.info(get_translation("metrics", "snapshot_label", "en"))
     with top_col2:
-        if st.button("🔄 Refresh Now"):
+        if st.button(get_translation("metrics", "refresh_button", "en")):
             st.session_state.metrics_last_refresh = None
     with top_col3:
-        auto = st.toggle("Auto Refresh 30s", value=True, help="Periodically refresh this snapshot")
+        auto = st.toggle(
+            get_translation("metrics", "auto_refresh", "en"),
+            value=True,
+            help=bilingual_text("metrics", "auto_refresh_help")
+        )
 
     need_fetch = st.session_state.metrics_last_refresh is None or (
         auto and (datetime.now(timezone.utc) - st.session_state.metrics_last_refresh).total_seconds() > REFRESH_INTERVAL_SEC

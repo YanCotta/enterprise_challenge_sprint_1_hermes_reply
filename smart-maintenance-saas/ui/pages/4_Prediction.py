@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st  # type: ignore
 
 from lib.api_client import make_api_request, get_latency_samples
+from lib.i18n_translations import get_translation, bilingual_text
 
 st.set_page_config(page_title="Prediction", page_icon="🤖")
 
@@ -98,6 +99,14 @@ def _load_sensor_catalog() -> Dict[str, List[Dict[str, object]]]:
         }
     )
     return {"sensors": catalog, "sensor_types": sensor_types}
+
+
+def _render_page_header():
+    """Render bilingual page header."""
+    st.header(get_translation("prediction", "page_title", "en"))
+    st.caption(get_translation("prediction", "description", "en"))
+    with st.expander("ℹ️ Ajuda / Help"):
+        st.write(f"**🇧🇷 PT:** {get_translation('prediction', 'description', 'pt')}")
 
 
 def _fetch_history(sensor_id: str, limit: int) -> Tuple[List[Dict[str, object]], pd.DataFrame]:
@@ -212,11 +221,7 @@ def _build_schedule_request(
 
 
 def render_prediction_page():
-    st.header("🤖 Model Prediction")
-    st.caption(
-        "This demo applies our synthetic-data baselines to live sensor readings. "
-        "Explore the Model Metadata page to see additional production models trained on real-world datasets."
-    )
+    _render_page_header()
 
     catalog = _load_sensor_catalog()
     sensor_types = catalog.get("sensor_types", [])

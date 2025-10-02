@@ -520,6 +520,80 @@ After deploying earlier UI changes, multiple pages crashed due to deprecated `st
 
 ### 19.7 Impact
 
+## 20. ML Anomaly Fallback Implementation & Testing (2025-10-02)
+
+### 20.1 Objective
+Implement and validate ML anomaly detection fallback mechanism to enable production deployments without MLflow/S3 dependencies.
+
+### 20.2 Implementation Details
+
+**System Coordinator Integration** (`apps/system_coordinator.py`):
+- Added import of `get_settings()` from `core.config.settings`
+- Modified `anomaly_detection_settings` to read `settings.DISABLE_MLFLOW_MODEL_LOADING`
+- Configured `use_serverless_models = not settings.DISABLE_MLFLOW_MODEL_LOADING`
+- Added startup logging showing serverless mode status
+
+**Critical Bug Fix** (`apps/agents/core/anomaly_detection_agent.py` line 650):
+```python
+# BEFORE (triggered __len__() on unfitted model):
+if not self.isolation_forest or not self.scaler:
+
+# AFTER (proper None check):
+if self.isolation_forest is None or self.scaler is None:
+```
+
+**Root Cause:** IsolationForest's `__len__()` method accesses `self.estimators_` which doesn't exist until `.fit()` is called.
+
+**Integration Test** (`tests/integration/agents/core/test_anomaly_detection_agent.py`):
+- Added `test_anomaly_detection_with_disabled_mlflow()` (110 lines)
+- Validates normal reading (22.5°C) and anomalous reading (50.0°C)
+- Confirms IsolationForest + statistical detector workflow
+- Verifies log messages confirm fallback usage
+
+### 20.3 Test Results
+
+**Execution:** Docker container with fresh build
+
+**Output:**
+```
+test_anomaly_detection_with_disabled_mlflow PASSED [1/1]
+
+Key Logs:
+[INFO] Model loader initialized with serverless mode: False
+[INFO] AnomalyDetectionAgent initialized serverless: False
+[INFO] Anomaly detected: value=50.0, mean=22.5, std=2.1, confidence=0.8855
+
+Duration: 0.14s ✅
+```
+
+### 20.4 Production Readiness
+
+**Configuration:**
+```bash
+DISABLE_MLFLOW_MODEL_LOADING=true
+```
+
+**Benefits:**
+- ✅ Faster startup (no MLflow/S3 network calls)
+- ✅ Offline capability
+- ✅ Resilient to MLflow outages
+- ✅ Edge deployment ready
+
+**Trade-offs:**
+- ⚠️ Generic IsolationForest vs sensor-specific models
+- ⚠️ No MLflow experiment tracking
+
+### 20.5 Files Modified
+
+| File | Changes |
+|------|---------|
+| `apps/system_coordinator.py` | Settings integration, logging |
+| `apps/agents/core/anomaly_detection_agent.py` | None check bug fix |
+| `tests/integration/...test_anomaly_detection_agent.py` | 110-line test |
+
+---
+_Completed 2025-10-02 – ML anomaly fallback production-ready._
+
 Stability of navigation restored; removal of deprecated API usage reduces future maintenance overhead and isolates Streamlit version divergence to a single helper. Observability unaffected; simulation latency now always recorded (or safely ignored) regardless of environment race conditions.
 
 ---

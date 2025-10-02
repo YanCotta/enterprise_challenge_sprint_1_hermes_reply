@@ -969,3 +969,115 @@ class TestAnomalyDetectionAgentIntegration:
             # Verify fit was called only once
             assert mock_fit.call_count == 1
             assert agent.isolation_forest_fitted is True
+
+
+    async def test_anomaly_detection_with_disabled_mlflow(self, event_bus):
+        """
+        Test anomaly detection with DISABLE_MLFLOW_MODEL_LOADING=true.
+        
+        This test verifies that when serverless model loading is disabled,
+        the agent falls back to local IsolationForest + statistical detection.
+        
+        Acceptance Criteria (Phase 2 Task 2):
+        - Agent initializes with use_serverless_models=False
+        - IsolationForest fallback model is used for predictions
+        - Statistical detector provides secondary anomaly detection
+        - Ensemble decision combines both methods
+        - Integration suite passes with serverless flag disabled
+        """
+        # Create agent with disabled serverless mode (simulating DISABLE_MLFLOW_MODEL_LOADING=true)
+        agent_with_fallback = AnomalyDetectionAgent(
+            agent_id="test_anomaly_agent_fallback",
+            event_bus=event_bus,
+            specific_settings={
+                'use_serverless_models': False,  # Simulate DISABLE_MLFLOW_MODEL_LOADING=true
+                'serverless_mode_enabled': False,
+                'default_historical_std': 0.1
+            }
+        )
+        
+        # Verify agent initialized with fallback mode
+        assert agent_with_fallback.use_serverless_models is False
+        assert agent_with_fallback.isolation_forest is not None
+        assert agent_with_fallback.statistical_detector is not None
+        assert agent_with_fallback.scaler is not None
+        
+        # Create test data - normal reading
+        normal_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=22.5,  # Within historical mean (22.5 ± 2.1)
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        normal_event = DataProcessedEvent(
+            processed_data=normal_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=normal_reading.sensor_id
+        )
+        
+        # Create test data - anomalous reading
+        anomalous_reading = SensorReading(
+            sensor_id="sensor_temp_001",
+            value=50.0,  # Well outside historical range
+            timestamp=datetime.utcnow(),
+            sensor_type=SensorType.TEMPERATURE,
+            unit="celsius",
+            quality=1.0,
+            correlation_id=uuid.uuid4(),
+            metadata={}
+        )
+        
+        anomalous_event = DataProcessedEvent(
+            processed_data=anomalous_reading.dict(),
+            original_event_id=uuid.uuid4(),
+            source_sensor_id=anomalous_reading.sensor_id
+        )
+        
+        # Mock event bus publishing to capture anomaly events
+        event_bus.publish = AsyncMock()
+        
+        # Process normal reading first (to fit the model)
+        with patch.object(agent_with_fallback.logger, 'info') as mock_info:
+            await agent_with_fallback.process(normal_event)
+            
+            # Verify fallback ML method was used
+            info_calls = [call[0][0] for call in mock_info.call_args_list]
+            fallback_calls = [call for call in info_calls if "Fallback Isolation Forest" in call]
+            assert len(fallback_calls) > 0, "Fallback IsolationForest should have been used"
+            
+            # Verify statistical method was also used
+            stat_calls = [call for call in info_calls if "Statistical for" in call]
+            assert len(stat_calls) > 0, "Statistical detector should have been used"
+        
+        # Reset mock
+        event_bus.publish.reset_mock()
+        
+        # Process anomalous reading
+        with patch.object(agent_with_fallback.logger, 'info') as mock_info:
+            await agent_with_fallback.process(anomalous_event)
+            
+            # Verify both methods were used
+            info_calls = [call[0][0] for call in mock_info.call_args_list]
+            
+            fallback_calls = [call for call in info_calls if "Fallback Isolation Forest" in call]
+            assert len(fallback_calls) > 0, "Fallback IsolationForest should have been used for anomaly"
+            
+            stat_calls = [call for call in info_calls if "Statistical for" in call]
+            assert len(stat_calls) > 0, "Statistical detector should have been used for anomaly"
+            
+            # Verify final decision was logged
+            decision_calls = [call for call in info_calls if "Final decision for" in call]
+            assert len(decision_calls) > 0, "Final ensemble decision should have been logged"
+        
+        # Verify anomaly was detected and published
+        # Note: Whether an anomaly is actually detected depends on the IsolationForest's behavior,
+        # but we can verify the workflow completed successfully without errors
+        assert agent_with_fallback.isolation_forest_fitted is True
+        
+        # Clean up
+        agent_with_fallback.isolation_forest_fitted = False

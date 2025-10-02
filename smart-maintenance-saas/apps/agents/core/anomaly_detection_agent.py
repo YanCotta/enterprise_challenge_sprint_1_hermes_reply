@@ -647,7 +647,7 @@ class AnomalyDetectionAgent(BaseAgent):
         Raise MLModelError on failure.
         """
         try:
-            if not self.isolation_forest or not self.scaler:
+            if self.isolation_forest is None or self.scaler is None:
                 raise MLModelError("Fallback models not properly initialized")
                 
             scaled_features = self.scaler.fit_transform(features) # fit_transform might be an issue if only predicting one sample

@@ -5,6 +5,7 @@ from datetime import datetime
 
 from lib.api_client import make_api_request
 from lib.rerun import safe_rerun
+from lib.i18n_translations import get_translation, bilingual_text
 
 st.set_page_config(page_title="Model Metadata", page_icon="🧬")
 
@@ -44,8 +45,10 @@ def _human_ts(ts):
 
 
 def render_model_metadata():
-    st.header("🧬 Model Metadata Explorer")
-    st.caption("Browse registered MLflow models, versions, tags, and stages (cached 5m).")
+    st.header(get_translation("model_metadata", "page_title", "en"))
+    st.caption(get_translation("model_metadata", "description", "en"))
+    with st.expander("ℹ️ Ajuda / Help"):
+        st.write(f"**🇧🇷 PT:** {get_translation('model_metadata', 'description', 'pt')}")
 
     # Feature flag / env guard for disabled MLflow
     state_box = st.container()

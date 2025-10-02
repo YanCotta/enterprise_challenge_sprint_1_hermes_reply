@@ -11,8 +11,9 @@ import time
 import streamlit as st
 
 from lib.api_client import make_api_request, get_latency_samples
+from lib.i18n_translations import get_translation, help_tooltip, bilingual_text
 
-st.set_page_config(page_title="Manual Sensor Ingestion", page_icon="�", layout="wide")
+st.set_page_config(page_title="Manual Sensor Ingestion", page_icon="📡", layout="wide")
 
 
 def _env_badge(env: str) -> str:
@@ -42,19 +43,38 @@ def render_sidebar() -> None:
 
 
 def render_overview() -> None:
-    st.title("🔧 Smart Maintenance SaaS – Overview")
-    st.write("Lean shell. Use sidebar to navigate feature pages as they arrive.")
+    st.title(get_translation("manual_ingestion", "page_title", "en"))
+    st.caption(get_translation("manual_ingestion", "description", "en"))
+    with st.expander("ℹ️ Ajuda / Help"):
+        st.write(f"**🇧🇷 PT:** {get_translation('manual_ingestion', 'description', 'pt')}")
     st.subheader("📥 Manual Sensor Ingestion")
     with st.form("ingest_form"):
         c1, c2, c3, c4 = st.columns([1.4,1,1,1])
         with c1:
-            sensor_id = st.text_input("Sensor ID", value="SENSOR_001")
+            sensor_id = st.text_input(
+                get_translation("manual_ingestion", "sensor_id_label", "en"),
+                value="SENSOR_001",
+                help=bilingual_text("manual_ingestion", "sensor_id_help")
+            )
         with c2:
-            value = st.number_input("Value", value=25.5)
+            value = st.number_input(
+                get_translation("manual_ingestion", "value_label", "en"),
+                value=25.5,
+                help=bilingual_text("manual_ingestion", "value_help")
+            )
         with c3:
-            sensor_type = st.selectbox("Type", ["temperature","vibration","pressure"], index=0)
+            sensor_type = st.selectbox(
+                get_translation("manual_ingestion", "sensor_type_label", "en"),
+                ["temperature","vibration","pressure"],
+                index=0,
+                help=bilingual_text("manual_ingestion", "sensor_type_help")
+            )
         with c4:
-            unit = st.text_input("Unit", value="°C")
+            unit = st.text_input(
+                get_translation("manual_ingestion", "unit_label", "en"),
+                value="°C",
+                help=bilingual_text("manual_ingestion", "unit_help")
+            )
         submit = st.form_submit_button("📤 Submit", use_container_width=True)
     if submit:
         wall_start = time.perf_counter()
