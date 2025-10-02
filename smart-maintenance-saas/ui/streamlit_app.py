@@ -1,7 +1,7 @@
-"""Minimal app shell for Smart Maintenance SaaS UI.
+"""Manual Sensor Ingestion page for Smart Maintenance SaaS UI.
 
-Previous monolith removed. Feature pages (explorer, decisions, prediction, metrics)
-will live in `ui/pages/`.
+This page provides manual sensor data ingestion with verification.
+Other feature pages (explorer, decisions, prediction, metrics) live in `ui/pages/`.
 """
 
 from datetime import datetime, timezone
@@ -12,7 +12,7 @@ import streamlit as st
 
 from lib.api_client import make_api_request, get_latency_samples
 
-st.set_page_config(page_title="Smart Maintenance SaaS", page_icon="🔧", layout="wide")
+st.set_page_config(page_title="Manual Sensor Ingestion", page_icon="�", layout="wide")
 
 
 def _env_badge(env: str) -> str:
