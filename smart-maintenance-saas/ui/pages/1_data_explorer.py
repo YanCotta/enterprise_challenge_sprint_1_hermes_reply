@@ -12,6 +12,7 @@ from datetime import datetime, timezone, time as dtime
 
 from lib.api_client import make_api_request
 from lib.rerun import safe_rerun
+from lib.i18n_translations import get_translation, bilingual_text
 
 
 @st.cache_data(ttl=900)
@@ -30,8 +31,10 @@ def _fetch_sensor_options() -> list[str]:
 
 def render_data_explorer():
     """Render the data explorer page for viewing and filtering sensor readings."""
-    st.header("📂 Data Explorer")
-    st.caption("Paginated, filterable view over sensor readings.")
+    st.header(get_translation("data_explorer", "page_title", "en"))
+    st.caption(get_translation("data_explorer", "description", "en"))
+    with st.expander("ℹ️ Ajuda / Help"):
+        st.write(f"**🇧🇷 PT:** {get_translation('data_explorer', 'description', 'pt')}")
 
     # --- STATE MANAGEMENT ---
     if "data_explorer_offset" not in st.session_state:
@@ -40,19 +43,34 @@ def render_data_explorer():
     # --- CONTROLS ---
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        page_size = st.selectbox("Page Size", [25, 50, 100, 250], index=1)
+        page_size = st.selectbox(
+            get_translation("data_explorer", "limit_label", "en"),
+            [25, 50, 100, 250],
+            index=1,
+            help=bilingual_text("data_explorer", "limit_help")
+        )
     with c2:
-        with st.spinner("Loading sensor list..."):
+        with st.spinner(get_translation("data_explorer", "loading", "en")):
             try:
                 sensor_options = _fetch_sensor_options()
             except RuntimeError as sensor_err:
                 st.warning(f"Sensor list unavailable: {sensor_err}")
                 sensor_options = ["(all)"]
-        sensor_filter = st.selectbox("Filter by Sensor ID", sensor_options)
+        sensor_filter = st.selectbox(
+            get_translation("data_explorer", "sensor_filter", "en"),
+            sensor_options,
+            help=bilingual_text("data_explorer", "sensor_filter_help")
+        )
     with c3:
-        start_date = st.date_input("Start Date", value=None)
+        start_date = st.date_input(
+            get_translation("data_explorer", "start_date", "en"),
+            value=None
+        )
     with c4:
-        end_date = st.date_input("End Date", value=None)
+        end_date = st.date_input(
+            get_translation("data_explorer", "end_date", "en"),
+            value=None
+        )
 
     refresh_col = st.columns([1,3,3,3])[0]
     with refresh_col:
