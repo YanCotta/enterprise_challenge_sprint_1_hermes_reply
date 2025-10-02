@@ -289,7 +289,7 @@ Normal Simulation: ✅ 100 events over 60 mins, 3ms, correlation ID validated
 
 ### 4.1 Phase 1: Brazilian Portuguese Internationalization (HIGH PRIORITY)
 
-**Status:** 🟡 Framework Ready - Integration Pending  
+**Status:** ✅ COMPLETE - 2025-10-02 (Portuguese tooltips live in all pages)  
 **Effort:** 4-6 hours  
 **Owner:** Development Team  
 **Deadline:** Before VM deployment
@@ -339,16 +339,16 @@ help_tooltip(
 
 | Page | Elements | Priority | Status |
 |------|----------|----------|--------|
-| Manual Sensor Ingestion | ~15 | High | 🟡 Pending |
-| Data Explorer | ~20 | High | 🟡 Pending |
-| Decision Log | ~15 | High | 🟡 Pending |
-| Golden Path Demo | ~25 | High | 🟡 Pending |
-| Prediction | ~30 | Critical | 🟡 Pending |
-| Model Metadata | ~15 | Medium | 🟡 Pending |
-| Simulation Console | ~20 | Medium | 🟡 Pending |
-| Metrics Overview | ~10 | Low | 🟡 Pending |
-| Reporting Prototype | ~15 | Low | 🟡 Pending |
-| Debug | ~10 | Low | 🟡 Pending |
+| Manual Sensor Ingestion | ~15 | High | ✅ Complete |
+| Data Explorer | ~20 | High | ✅ Complete |
+| Decision Log | ~15 | High | ✅ Complete |
+| Golden Path Demo | ~25 | High | ✅ Complete |
+| Prediction | ~30 | Critical | ✅ Complete |
+| Model Metadata | ~15 | Medium | ✅ Complete |
+| Simulation Console | ~20 | Medium | ✅ Complete |
+| Metrics Overview | ~10 | Low | ✅ Complete |
+| Reporting Prototype | ~15 | Low | ✅ Complete |
+| Debug | ~10 | Low | ✅ Complete |
 
 **Total Translation Items:** 175 text elements
 
@@ -361,7 +361,7 @@ help_tooltip(
 
 ### 4.2 Phase 2: Backend High-Priority Tasks
 
-**Status:** 🟡 Pending  
+**Status:** 🟡 In Progress  
 **Effort:** 6-9 hours  
 **Can Run in Parallel with Phase 1**
 
@@ -369,7 +369,7 @@ help_tooltip(
 |----------|------|---------------------|--------|--------|
 | **High** | API key validation alignment | Support multiple keys, align FastAPI middleware with UI/test fixtures. Rate limiting tests return 200/429 as expected. | 2-3h | 🟡 Open |
 | **High** | ML anomaly fallback with `DISABLE_MLFLOW_MODEL_LOADING=true` | Verify IsolationForest + statistical backup. AnomalyDetectionAgent integration suite green with serverless flag. | 2-3h | 🟡 Open |
-| **High** | Populate production `.env` file | All credentials populated and validated against `DEPLOYMENT_SETUP.md`. Health checks succeed with production config. | 1-2h | 🟡 Open |
+| **High** | Production `.env` configuration | All credentials populated and validated. `.env_example.txt` template updated with cloud architecture documentation. | 1-2h | ✅ Complete (2025-10-02) |
 | **Medium** | ChromaDB production policy | Decide on `DISABLE_CHROMADB` setting. LearningAgent tests pass under chosen configuration. | 1-2h | 🟡 Open |
 
 #### API Key Validation Details
@@ -525,6 +525,125 @@ echo "✅ Rollback complete"
 
 ## 5. Deployment Procedures
 
+### 5.0 Cloud Deployment Architecture Overview
+
+**IMPORTANT:** This V1.0 deployment uses a **hybrid cloud architecture** where services are distributed across cloud providers:
+
+#### Architecture Diagram
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      PUBLIC INTERNET                             │
+│                                                                  │
+│  ┌──────────────┐              ┌──────────────┐                │
+│  │ End Users    │◄────────────►│ Streamlit UI │                │
+│  │ (Browser)    │              │ (Cloud/VM)   │                │
+│  └──────────────┘              └───────┬──────┘                │
+│                                        │                         │
+│                                        │ HTTPS                   │
+│                                        ▼                         │
+│                              ┌─────────────────┐                │
+│                              │   FastAPI       │                │
+│                              │   Backend       │                │
+│                              │   (VM/Docker)   │                │
+│                              └────────┬────────┘                │
+│                                       │                          │
+└───────────────────────────────────────┼──────────────────────────┘
+                                        │
+                    ┌───────────────────┼───────────────────┐
+                    │                   │                   │
+                    ▼                   ▼                   ▼
+         ┌──────────────────┐ ┌─────────────────┐ ┌──────────────┐
+         │ TimescaleDB      │ │ Redis Cache     │ │ AWS S3       │
+         │ (Timescale Cloud)│ │ (Render/Cloud)  │ │ (Artifacts)  │
+         └──────────────────┘ └─────────────────┘ └──────────────┘
+```
+
+#### Components & Responsibilities
+
+| Component | Hosting | Purpose | Connection |
+|-----------|---------|---------|------------|
+| **Streamlit UI** | Streamlit Cloud or VM | User interface, Portuguese support | Connects to API via `API_BASE_URL` |
+| **FastAPI Backend** | VM (Docker Compose) | Business logic, agents, orchestration | Connects to DB, Redis, S3 |
+| **TimescaleDB** | Timescale Cloud | Sensor data, experiments, metadata | `DATABASE_URL` (asyncpg) |
+| **Redis** | Render or Cloud | Idempotency, caching, coordination | `REDIS_URL` (TLS) |
+| **MLflow** | VM (Docker Compose) | Model registry, experiment tracking | Stores in DB + S3 |
+| **S3** | AWS | MLflow artifacts (model files) | `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` |
+
+#### Environment Variables Mapping
+
+**Backend Services (.env on VM):**
+```bash
+# Database: Cloud TimescaleDB
+DATABASE_URL=postgresql+asyncpg://user:pass@host.tsdb.cloud.timescale.com:port/tsdb?ssl=require
+
+# Cache: Cloud Redis
+REDIS_URL=rediss://default:pass@host:6379
+
+# MLflow: Local container, cloud storage
+MLFLOW_TRACKING_URI=http://mlflow:5000
+MLFLOW_BACKEND_STORE_URI=postgresql://user:pass@host.tsdb.cloud.timescale.com:port/tsdb?sslmode=require
+MLFLOW_ARTIFACT_ROOT=s3://your-bucket
+
+# API: Internal Docker network
+API_BASE_URL=http://api:8000
+```
+
+**UI Environment (Streamlit Cloud secrets or .env):**
+```bash
+# API: Public URL of deployed backend
+API_BASE_URL=https://api.yourdomain.com  # or http://VM_IP:8000
+CLOUD_MODE=true
+DEPLOYMENT_ENV=production
+API_KEY=same_as_backend_api_key
+```
+
+#### Critical Connection Points
+
+1. **UI → API Connection:**
+   - UI must use **public URL** of API (domain or VM IP)
+   - API key must match between UI and backend
+   - CORS must allow UI domain (configured in FastAPI)
+
+2. **API → Database Connection:**
+   - Use `postgresql+asyncpg://` for FastAPI (async driver)
+   - Enable SSL with `?ssl=require` parameter
+   - Ensure TimescaleDB firewall allows VM IP
+
+3. **MLflow → Database Connection:**
+   - Use `postgresql://` (NOT asyncpg) for MLflow
+   - Enable SSL with `?sslmode=require` parameter
+   - Same database as API, different connection string format
+
+4. **MLflow → S3 Connection:**
+   - Requires IAM user with S3 access
+   - Bucket must exist and be accessible
+   - AWS credentials must be in `.env`
+
+#### Deployment Sequence
+
+1. **Provision Cloud Infrastructure** (one-time setup)
+   - Create TimescaleDB instance
+   - Create Redis instance
+   - Create S3 bucket
+   - Create IAM user with S3 access
+
+2. **Deploy Backend** (VM with Docker Compose)
+   - Configure `.env` with cloud credentials
+   - Start services: `docker compose up -d`
+   - Verify health endpoints
+   - Note public IP/domain
+
+3. **Deploy UI** (Streamlit Cloud or separate VM)
+   - Configure `API_BASE_URL` to backend public URL
+   - Set `API_KEY` to match backend
+   - Deploy and test connectivity
+
+4. **Validate End-to-End**
+   - Access UI via public URL
+   - Test Golden Path Demo
+   - Verify data persists in TimescaleDB
+   - Confirm MLflow artifacts in S3
+
 ### 5.1 Pre-Deployment Checklist
 
 #### Environment Preparation
@@ -567,8 +686,16 @@ cd smart-maintenance-saas/smart-maintenance-saas
 cp .env_example.txt .env
 nano .env  # Populate all production values
 
-# Validate .env
-./scripts/validate_env.sh  # Create this if needed
+# CRITICAL: Fill in these cloud service credentials:
+# 1. DATABASE_URL - TimescaleDB Cloud connection string
+# 2. REDIS_URL - Redis Cloud connection string  
+# 3. AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY - S3 access
+# 4. MLFLOW_BACKEND_STORE_URI - Same TimescaleDB, different format
+# 5. MLFLOW_ARTIFACT_ROOT - Your S3 bucket path
+# 6. API_KEY, SECRET_KEY, JWT_SECRET - Generate strong random keys
+
+# Validate .env has all required variables
+grep -E "^(DATABASE_URL|REDIS_URL|AWS_ACCESS_KEY_ID|API_KEY)=" .env || echo "Missing required variables!"
 ```
 
 #### Step 3: Execute Deployment
@@ -615,17 +742,76 @@ curl -X POST http://localhost:8000/api/v1/ml/predict \
   -d '{"model_name":"ai4i_classifier_randomforest_baseline","model_version":"auto","features":{"Air_temperature_K":298.1,"Process_temperature_K":308.6,"Rotational_speed_rpm":1551,"Torque_Nm":42.8,"Tool_wear_min":108}}'
 ```
 
-#### Step 6: UI Validation
+#### Step 6: Backend Validation
 ```bash
-# Open browser
-http://<vm-ip-or-domain>:8501
+# Verify backend services are healthy
+curl http://localhost:8000/health
+curl http://localhost:8000/health/db
+curl http://localhost:8000/health/redis
+
+# Test API endpoints
+export API_KEY=$(grep API_KEY .env | cut -d'=' -f2)
+curl -H "x-api-key: $API_KEY" http://localhost:8000/api/v1/sensors/readings?limit=1
+
+# Verify MLflow is accessible
+curl http://localhost:5000/health
+```
+
+#### Step 7: Deploy UI (Streamlit Cloud or Separate VM)
+
+**Option A: Streamlit Cloud (Recommended for Public Access)**
+
+1. Push code to GitHub repository
+2. Go to https://share.streamlit.io/
+3. Connect your repository
+4. Select `smart-maintenance-saas/ui/streamlit_app.py` as main file
+5. Configure secrets in Streamlit Cloud dashboard:
+   ```toml
+   # .streamlit/secrets.toml format
+   API_BASE_URL = "http://YOUR_VM_IP:8000"  # or https://api.yourdomain.com
+   API_KEY = "your_production_api_key_here"
+   CLOUD_MODE = true
+   DEPLOYMENT_ENV = "production"
+   ```
+6. Deploy and note the public URL (e.g., https://your-app.streamlit.app)
+
+**Option B: VM Deployment (Same or Different VM)**
+
+1. On the VM, the UI is already running on port 8501
+2. Update `.env` to ensure `API_BASE_URL` points to correct location:
+   - Same VM: `API_BASE_URL=http://api:8000` (Docker network)
+   - External access: `API_BASE_URL=http://VM_IP:8000`
+3. Restart UI: `docker compose restart ui`
+4. Open firewall for port 8501 (if not already open)
+
+**Critical UI Configuration:**
+
+- `API_BASE_URL`: Must be publicly accessible URL of backend API
+- `API_KEY`: Must match backend API_KEY exactly
+- `CLOUD_MODE=true`: Enables cloud-specific UI behaviors
+- `DEPLOYMENT_ENV=production`: Sets production labels
+
+#### Step 8: End-to-End Validation
+```bash
+# Access UI via public URL
+# Streamlit Cloud: https://your-app.streamlit.app
+# VM: http://VM_IP:8501
 
 # Test all critical pages:
 # 1. Manual Sensor Ingestion - submit test reading
-# 2. Data Explorer - verify pagination
+# 2. Data Explorer - verify pagination, see test reading
 # 3. Prediction - generate forecast + maintenance order
-# 4. Golden Path Demo - run full demo
+# 4. Golden Path Demo - run full demo (64s target)
 # 5. Decision Log - submit test decision
+# 6. Simulation Console - run drift/anomaly/normal simulations
+# 7. Model Metadata - verify MLflow connection
+# 8. Reporting - check maintenance schedule feed
+
+# Verify data persistence:
+# 1. Submit data via UI
+# 2. Check TimescaleDB has records
+# 3. Verify MLflow experiments logged
+# 4. Confirm S3 has artifacts (if models logged)
 ```
 
 ### 5.3 Deployment Troubleshooting
