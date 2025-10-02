@@ -6,7 +6,7 @@ using optimization algorithms (currently simplified greedy approach, with OR-Too
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
@@ -198,16 +198,27 @@ class SchedulingAgent(BaseAgent):
         else:
             required_skills = ["mechanical"]  # Default fallback
         
-        preferred_deadline = predicted_failure_date - timedelta(days=max(1, time_to_failure_days * 0.1))
-        # Handle both dict and object types for prediction_event
-        if isinstance(prediction_event, dict):
-            predicted_failure_date = prediction_event.get('predicted_failure_date')
-        else:
-            predicted_failure_date = getattr(prediction_event, 'predicted_failure_date', None)
-        
         # Set preferred start to next business day at 8 AM
-        preferred_start = datetime.utcnow() + timedelta(days=1)
+        # Use timezone-aware datetime to match predicted_failure_date
+        now = datetime.now(timezone.utc)
+        preferred_start = now + timedelta(days=1)
         preferred_start = preferred_start.replace(hour=8, minute=0, second=0, microsecond=0)
+        
+        # Calculate preferred deadline, but ensure it's in the future
+        preferred_deadline = predicted_failure_date - timedelta(days=max(1, time_to_failure_days * 0.1))
+        
+        # If predicted failure is in the past, schedule for the next 7 days instead
+        if predicted_failure_date < now:
+            self.logger.warning(
+                f"Predicted failure date {predicted_failure_date} is in the past. Using demo scheduling window.",
+                extra={"correlation_id": "N/A"}
+            )
+            preferred_deadline = now + timedelta(days=7)
+            predicted_failure_date = now + timedelta(days=14)  # Adjust deadline to future
+        
+        # Ensure preferred_deadline is after preferred_start
+        if preferred_deadline < preferred_start:
+            preferred_deadline = preferred_start + timedelta(days=7)
         
         return MaintenanceRequest(
             id=str(uuid4()), equipment_id=equipment_id,
@@ -260,9 +271,9 @@ class SchedulingAgent(BaseAgent):
             A tuple of (scheduled_start_time, scheduled_end_time) if a slot is found and booked,
             otherwise None.
         """
-        current_time = maintenance_request.preferred_time_window_start or datetime.utcnow()
+        current_time = maintenance_request.preferred_time_window_start or datetime.now(timezone.utc)
         # Ensure current_time is not in the past for scheduling, adjust to next possible working hour if so.
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if current_time < now:
             current_time = now
 
