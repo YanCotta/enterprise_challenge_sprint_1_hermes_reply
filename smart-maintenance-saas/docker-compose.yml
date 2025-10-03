@@ -182,33 +182,34 @@ services:
   # Jupyter Notebook Runner: Automated execution service for ML training notebooks and experiments.
   # Runs parameterized notebooks using Papermill for reproducible ML pipeline execution.
   # Shares volumes with other services to access datasets and store experiment results.
-  notebook_runner:
-    build:
-      context: .
-      dockerfile: Dockerfile.ml
-    container_name: smart_maintenance_notebook_runner
-    command: >
-      sh -c "papermill notebooks/$${NOTEBOOK_FILE}.ipynb notebooks/$${NOTEBOOK_FILE}_output.ipynb"
-    environment:
-      - DOCKER_ENV=true
-      - NOTEBOOK_FILE=02_anomaly_isolation_forest
-      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
-    env_file:
-      - .env
-    user: "1000:1000"  # Match host user for consistent file ownership with API container
-    volumes:
-      - ./notebooks:/app/notebooks
-      - ./data:/app/data
-      - ./apps:/app/apps
-      - ./docs:/app/docs
-      - ./mlflow_data:/mlruns        # MLflow artifact store (matches other containers)
-    networks:
-      - smart-maintenance-network
-    depends_on:
-      - mlflow
+  # notebook_runner service temporarily disabled while we resolve Poetry install issues in Dockerfile.ml.
+  # notebook_runner:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.ml
+  #   container_name: smart_maintenance_notebook_runner
+  #   command: >
+  #     sh -c "papermill notebooks/$${NOTEBOOK_FILE}.ipynb notebooks/$${NOTEBOOK_FILE}_output.ipynb"
+  #   environment:
+  #     - DOCKER_ENV=true
+  #     - NOTEBOOK_FILE=02_anomaly_isolation_forest
+  #     - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+  #     - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+  #     - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+  #     - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+  #   env_file:
+  #     - .env
+  #   user: "1000:1000"  # Match host user for consistent file ownership with API container
+  #   volumes:
+  #     - ./notebooks:/app/notebooks
+  #     - ./data:/app/data
+  #     - ./apps:/app/apps
+  #     - ./docs:/app/docs
+  #     - ./mlflow_data:/mlruns        # MLflow artifact store (matches other containers)
+  #   networks:
+  #     - smart-maintenance-network
+  #   depends_on:
+  #     - mlflow
 
   # ML Utility Container: General-purpose container for ad-hoc ML operations and load testing.
   # Provides access to full project directory for running scripts, Locust tests, and data analysis.
