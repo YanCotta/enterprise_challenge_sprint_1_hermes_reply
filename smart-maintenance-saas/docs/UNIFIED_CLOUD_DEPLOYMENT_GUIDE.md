@@ -92,6 +92,12 @@ On your **VM** (will install during deployment):
 - Docker Engine v24+
 - Docker Compose v2+
 
+### Dependency Manifest Update (2025-10-03)
+
+- Container images no longer install dependencies with Poetry. The Docker build now creates `/opt/venv` and installs from `requirements/api.txt` using pip.
+- Keep `requirements/api.txt` in sync with `pyproject.toml`. Regenerate the file before deploying if dependencies change, then commit both files together.
+- VM deployments must include `requirements/api.txt`; the automated scripts will fail fast if the file is missing to avoid rebuilding stale images.
+
 ---
 
 ## Pre-Deployment Setup
