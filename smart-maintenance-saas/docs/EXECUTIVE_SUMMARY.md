@@ -117,6 +117,10 @@ All roadmap, audit, and checklist content has been merged into the [V1.0 Deploym
 
 For detailed task tracking, deployment procedures, and risk register, refer to the playbook as the single source of truth.
 
+## License & Authorization
+
+All deployments and derivative work require prior written authorization from Yan Pimentel Cotta. Review the [custom license](../../LICENSE) and coordinate access via <yanpcotta@gmail.com>, <https://www.linkedin.com/in/yan-cotta/>, or <https://github.com/YanCotta> to ensure attribution and usage terms are satisfied.
+
 ---
 
 **Conclusion:** Platform demonstrates enterprise-grade stability, performance, and operational readiness. All critical workflows function reliably. Proceed with V1.0 tag once Section 4.1 tasks are complete or waived per deployment playbook guidance.
