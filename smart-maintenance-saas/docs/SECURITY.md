@@ -56,7 +56,7 @@ Per [v1_release_must_do.md Section 2.1](./v1_release_must_do.md), security capab
 ### 5. Denial of Service (DoS)
 
 - **Threat:** An attacker spams the compute-intensive `/predict` endpoint, overloading the server.
-- **Mitigation:** Rate limiting will be implemented (Day 16) to throttle requests on a per-key and global basis.
+- **Mitigation:** Redis-backed rate limiting throttles requests per API key and at the gateway level, returning `429` responses when thresholds are exceeded.
 
 ### 6. Elevation of Privilege
 
