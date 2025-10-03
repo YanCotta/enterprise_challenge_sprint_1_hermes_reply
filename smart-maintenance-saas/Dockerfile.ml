@@ -1,5 +1,5 @@
 # Dockerfile.ml - Optimized ML-focused Docker image for Smart Maintenance SaaS
-# NOTE 2025-10-03: notebook_runner service is disabled in docker-compose while we fix the Poetry build failure.
+# NOTE 2025-10-03: notebook_runner and ml services are disabled in docker-compose while we fix the Poetry build failure.
 FROM python:3.11-slim AS builder
 
 # Install only system dependencies needed for building
