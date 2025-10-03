@@ -46,7 +46,9 @@ docker system df
 ```
 
 ### 2. Poetry Dependency Management Issues
-**Issue**: Missing `resampy` dependency causing "No module named 'resampy'" errors in audio processing.
+
+#### Issue 2A: Missing Dependencies
+**Symptom**: "No module named 'resampy'" errors in audio processing.
 
 **Root Cause**: Poetry lock files became inconsistent when dependencies were added to `pyproject.toml` without regenerating `poetry.lock`.
 
@@ -55,16 +57,37 @@ docker system df
 - Updated Dockerfile.ml: `COPY pyproject.toml ./` → `poetry lock` → `poetry install`
 - Added `resampy = "^0.4.3"` to `pyproject.toml` for audio resampling support
 
+#### Issue 2B: "Could not parse version constraint: <empty>" Error
+**Symptom**: Docker build fails during `poetry install` with:
+```
+poetry lock && poetry install --with dev --no-root
+Could not parse version constraint: <empty>
+exit code: 1
+```
+
+**Root Cause**: Known bug in Poetry 1.8.x where the dependency resolver encounters malformed version metadata from PyPI packages.
+
+**Solution Applied**:
+- Downgraded Poetry from 1.8.3 to 1.7.1 in Dockerfile.ml
+- Poetry 1.7.1 is stable and doesn't have this parsing bug
+
 **Prevention Strategy**:
 ```bash
 # When adding new dependencies:
 1. Add to pyproject.toml
 2. Delete poetry.lock (optional but recommended for major changes)
-3. Run: poetry lock --no-update
+3. Run: poetry lock
 4. Rebuild Docker images with --no-cache for dependency changes
 
 # For Docker builds with Poetry:
 # Always use: poetry lock (without --no-update) in Dockerfile to regenerate
+# Pin Poetry version to 1.7.1 to avoid the "empty constraint" bug
+
+# If you encounter the "empty constraint" error:
+# 1. Check Poetry version in Dockerfile (should be 1.7.1, not 1.8.x)
+# 2. Clear local cache: rm -f poetry.lock && sudo rm -rf .venv
+# 3. Regenerate: poetry lock
+# 4. Rebuild: docker compose build --no-cache
 ```
 
 ### 3. Build Context Optimization
