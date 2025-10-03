@@ -598,7 +598,7 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 
 ---
 
-**2025-10-03 Update:** Temporarily commented out the `notebook_runner` and `ml` services in `docker-compose.yml` and noted the disablement in `Dockerfile.ml` while we address the Poetry build failure. These containers can be re-enabled once the dependency chain is fixed.
+**2025-10-03 Update:** Temporarily commented out the `notebook_runner`, `ml`, `toxiproxy`, `toxiproxy_init`, `drift_agent`, and `retrain_agent` services in `docker-compose.yml` (with notes in `Dockerfile.ml`) while we address the Poetry build failure and defer chaos testing / V1.5 automation work. Hardened the `toxiproxy_init` bootstrap by calling the script via `bash` and tightening the script itself so future users do not hit permission issues. These containers can be re-enabled once the dependency chain is fixed.
 
 ## 20. Session Update – 2025-09-28 (Golden Path Validation & Smoke Prep)
 
