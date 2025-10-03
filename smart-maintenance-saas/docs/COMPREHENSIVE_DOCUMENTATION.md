@@ -51,6 +51,7 @@ Testing strategy and validation plan are documented in [v1_release_must_do.md Se
 - [`requirements/api.txt` workflow](./api.md#dependency-management-for-api-services) – Pip/venv instructions replacing Poetry within containers
 - [S3 Artifact Mapping](./S3_ARTIFACT_MAPPING.md) – S3 storage configuration for MLflow artifacts
 - [DVC Setup Guide](./DVC_SETUP_GUIDE.md) – Data version control configuration
+- **License & Authorization** – Usage of the Smart Maintenance SaaS codebase requires prior written authorization from Yan Pimentel Cotta; consult the [custom license](../../LICENSE) and request permission via <yanpcotta@gmail.com>, <https://www.linkedin.com/in/yan-cotta/>, or <https://github.com/YanCotta>.
 
 ## 8. Multi-Agent System & Event Framework
 
