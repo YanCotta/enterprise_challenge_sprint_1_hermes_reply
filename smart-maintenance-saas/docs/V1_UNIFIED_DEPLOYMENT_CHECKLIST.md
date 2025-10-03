@@ -34,9 +34,9 @@
 | Critical Workflows | ✅ Validated | 100% |
 | Performance Benchmarks | ✅ Within Targets | 100% |
 | Documentation | ✅ Current | 100% |
-| Internationalization | 🟡 Framework Ready | 0% (Pending) |
+| Internationalization | ✅ Complete | 100% |
 | Deployment Automation | 🟡 Planned | 0% (Pending) |
-| Production .env | 🟡 Template Ready | 0% (Pending) |
+| Production .env | ✅ Populated & Validated | 100% |
 
 ### 1.2 V1.0 Scope Definition
 
@@ -66,8 +66,8 @@
 
 | Phase | Tasks | Effort | Status |
 |-------|-------|--------|--------|
-| **Phase 1: Internationalization** | Portuguese tooltips for all 10 pages | 4-6h | 🟡 Next |
-| **Phase 2: Backend Finalization** | API keys, ML fallback, .env setup | 6-9h | 🟡 Pending |
+| **Phase 1: Internationalization** | Portuguese tooltips for all 10 pages | 4-6h | ✅ Complete |
+| **Phase 2: Backend Finalization** | API keys, ML fallback, .env setup, container rebuild | 6-9h | 🟡 In Progress |
 | **Phase 3: Deployment Automation** | VM script, smoke tests, rollback docs | 3-4h | 🟡 Pending |
 | **Phase 4: VM Deployment** | Execute deployment, external validation | 2-3h | 🟡 Pending |
 | **Phase 5: Production Monitoring** | Monitoring baseline, final docs | 2-3h | 🟡 Pending |
@@ -353,11 +353,11 @@ help_tooltip(
 **Total Translation Items:** 175 text elements
 
 #### Acceptance Criteria
-- [ ] All 10 pages have Portuguese tooltips
-- [ ] Help text displays without UI disruption
-- [ ] Translations accurate and professional
-- [ ] No performance degradation
-- [ ] User can understand all functionality in Portuguese
+- [x] All 10 pages have Portuguese tooltips
+- [x] Help text displays without UI disruption
+- [x] Translations accurate and professional
+- [x] No performance degradation
+- [x] User can understand all functionality in Portuguese
 
 ### 4.2 Phase 2: Backend High-Priority Tasks
 
