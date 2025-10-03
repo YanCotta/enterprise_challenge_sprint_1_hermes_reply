@@ -102,11 +102,12 @@ On your **VM** (will install during deployment):
 
 The system requires trained ML models stored in S3. You have two options:
 
+
 #### Option A: Use Pre-Trained Models (Recommended - 5 minutes)
 
 **Access via DVC (Google Drive):**
 
-1. **Request access** to the project's Google Drive folder (contact repository maintainer)
+1. **Access the shared Google Drive folder**: [Smart Maintenance SaaS - DVC Data](https://drive.google.com/drive/folders/1cJvSRaBG0Fzs4D_wlUeVPM9l47RP_k3G?usp=sharing) (public read access)
 2. **Download DVC-tracked artifacts:**
    ```bash
    cd /path/to/your/repo/smart-maintenance-saas
@@ -114,11 +115,12 @@ The system requires trained ML models stored in S3. You have two options:
    # Install DVC
    pip install dvc[gdrive]
    
-   # Configure Google Drive remote
-   dvc remote add -d gdrive gdrive://YOUR_GDRIVE_FOLDER_ID
-   
-   # Pull all ML artifacts
+   # DVC remote is already configured in .dvc/config
+   # Just pull the data
    dvc pull
+   
+   # If you need to reconfigure the remote:
+   # dvc remote add -d myremote gdrive://1cJvSRaBG0Fzs4D_wlUeVPM9l47RP_k3G
    ```
 
 3. **Verify models downloaded:**
@@ -178,38 +180,80 @@ cd smart-maintenance-saas
 pip install poetry
 poetry install
 
-# Run training notebooks (in order)
+# Build ML Docker image first
+make build-ml
+
+# Option A: Run training notebooks via Make commands (Recommended)
+# These run in Docker containers for reproducibility
+
+# Synthetic data models (foundational)
+make synthetic-validation    # Data quality validation
+make synthetic-anomaly       # Anomaly detection (IsolationForest)
+make synthetic-forecast      # Time-series forecasting (Prophet)
+make synthetic-tune-forecast # Forecasting optimization
+
+# Real-world dataset models (gauntlets)
+make classification-gauntlet # AI4I dataset (99.9% accuracy)
+make pump-gauntlet          # Kaggle Pump dataset (100% accuracy)
+make vibration-gauntlet     # NASA bearing dataset
+make xjtu-gauntlet          # XJTU bearing dataset
+make audio-gauntlet         # MIMII sound dataset (requires 2GB+ RAM)
+
+# Option B: Run notebooks manually via Jupyter
 poetry run jupyter notebook
 
-# Execute these notebooks:
-# 1. notebooks/01_data_exploration.ipynb
-# 2. notebooks/02_feature_engineering.ipynb
-# 3. notebooks/03_model_training_baseline.ipynb
-# 4. notebooks/04_model_optimization.ipynb
-# 5. notebooks/05_ensemble_models.ipynb
+# Execute these notebooks in order:
+# Synthetic models:
+# 1. notebooks/00_synthetic_data_validation.ipynb
+# 2. notebooks/01_synthetic_data_exploration.ipynb
+# 3. notebooks/02_synthetic_anomaly_isolation_forest.ipynb
+# 4. notebooks/03_synthetic_forecast_prophet.ipynb
+# 5. notebooks/04_synthetic_forecasting_tuning_and_challenger_models.ipynb
 
-# Or use Make commands:
-make train-baseline    # Trains RandomForest baseline
-make train-all         # Trains all models (takes 60-90 min)
-make evaluate-models   # Generates evaluation reports
+# Real-world models:
+# 6. notebooks/05_classification_benchmark.ipynb (AI4I)
+# 7. notebooks/08_pump_classification.ipynb (Kaggle Pump)
+# 8. notebooks/06_vibration_benchmark.ipynb (NASA - optional)
+# 9. notebooks/09_xjtu_vibration.ipynb (XJTU - optional)
+# 10. notebooks/07_audio_benchmark.ipynb (MIMII - optional, heavy)
+
+# Expected training time:
+# - Synthetic models: 15-30 minutes total
+# - Classification gauntlets: 10-20 minutes each
+# - Vibration gauntlets: 20-40 minutes each
+# - Audio gauntlet: 60-90 minutes (large dataset)
 ```
 
 **Step 3: Register Models in MLflow**
 
+**Step 3: Verify Models in MLflow**
+
+After training completes, models are automatically logged to MLflow during notebook execution. You need to verify they're accessible:
+
 ```bash
-# Start local MLflow server
+# Start local MLflow server to view models
 poetry run mlflow server \
-  --backend-store-uri sqlite:///mlflow_db/mlflow.db \
-  --default-artifact-root ./mlflow_data \
-  --host 0.0.0.0 \
-  --port 5000
+   --backend-store-uri sqlite:///mlflow_db/mlflow.db \
+   --default-artifact-root ./mlflow_data \
+   --host 0.0.0.0 \
+   --port 5000
 
-# In another terminal, run model registration
-poetry run python scripts/register_models.py
+# Open browser to view MLflow UI
+# Visit: http://localhost:5000
 
-# Verify models registered
-poetry run python scripts/list_models.py
-# Should show: ai4i_classifier_randomforest_baseline, ai4i_xgboost, etc.
+# Verify registered models exist:
+# - Navigate to "Models" tab
+# - Should see models like:
+#   * ai4i_classifier_randomforest_baseline
+#   * anomaly_detector_refined_v2
+#   * prophet_forecaster_enhanced_sensor-001
+#   * vibration_anomaly_isolationforest
+#   * RandomForest_MIMII_Audio_Benchmark
+#   * pump_sensor_models
+#   * xjtu_bearing_models
+
+# If models are missing, re-run the training notebooks
+# The notebooks automatically register champion models to MLflow
 ```
 
 **Step 4: Upload to S3**
@@ -604,27 +648,56 @@ sudo apt-get install -y docker-compose-plugin
 sudo apt-get install -y git
 
 # CRITICAL: Exit and reconnect for group changes to take effect
-exit
+```bash
+
+You have two options to configure the database for Alembic:
+
+**Option A: Use Environment Variable (Recommended)**
+```bash
+# Set DATABASE_URL environment variable
+export DATABASE_URL="postgresql+asyncpg://tsdbadmin:PASSWORD@HOST:PORT/tsdb?ssl=require"
+
+# Alembic will automatically convert asyncpg to psycopg2 driver
+# The env.py script handles this conversion automatically
 ```
 
-**Reconnect to VM:**
+**Option B: Edit alembic.ini Directly**
 ```bash
-ssh -i /path/to/your-key.pem ubuntu@YOUR_VM_IP
-```
+# Edit alembic.ini to use your cloud database
+nano alembic.ini
 
-**Verify installation:**
-```bash
-docker --version
+# Update this line:
+# sqlalchemy.url = driver://user:pass@localhost/dbname
+
+# To your TimescaleDB Cloud URL (synchronous driver):
 docker compose version
+
+# Note: Use 'sslmode=require' (not 'ssl=require') for psycopg2
 ```
 
-**Expected output:**
-```
-Docker version 24.0.7, build ...
-Docker Compose version v2.21.0
-```
+```bash
+# Create test sensors and initial data
+poetry run python scripts/seed_data.py
 
----
+# You can customize the amount of data:
+poetry run python scripts/seed_data.py --sensors 10 --readings 1000
+
+# Verify data was seeded:
+poetry run python -c "
+import asyncio
+from core.database.session import async_session
+from sqlalchemy import select, func
+from data.models.sensor import SensorReading
+
+async def check():
+   async with async_session() as session:
+      result = await session.execute(select(func.count(SensorReading.id)))
+      count = result.scalar()
+      print(f'✅ Database seeded: {count} sensor readings')
+
+asyncio.run(check())
+"
+```
 
 ### Step 4: Prepare Production `.env` File (5 minutes)
 
