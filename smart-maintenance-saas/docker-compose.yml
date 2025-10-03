@@ -214,26 +214,27 @@ services:
   # ML Utility Container: General-purpose container for ad-hoc ML operations and load testing.
   # Provides access to full project directory for running scripts, Locust tests, and data analysis.
   # Used for development tasks, debugging, and manual ML operations outside of automated pipelines.
-  ml:
-    build:
-      context: .
-      dockerfile: Dockerfile.ml
-    container_name: smart_maintenance_ml
-    command: bash
-    environment:
-      - DOCKER_ENV=true
-    user: "1000:1000"  # Match host user for consistent file ownership
-    volumes:
-      - .:/app  # Mount entire project directory
-      - ./notebooks:/app/notebooks
-      - ./data:/app/data
-      - ./apps:/app/apps
-      - ./docs:/app/docs
-      - ./mlflow_data:/app/mlflow_data
-    networks:
-      - smart-maintenance-network
-    depends_on:
-      - mlflow
+  # ml utility container temporarily disabled while Poetry install issues are resolved in Dockerfile.ml.
+  # ml:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.ml
+  #   container_name: smart_maintenance_ml
+  #   command: bash
+  #   environment:
+  #     - DOCKER_ENV=true
+  #   user: "1000:1000"  # Match host user for consistent file ownership
+  #   volumes:
+  #     - .:/app  # Mount entire project directory
+  #     - ./notebooks:/app/notebooks
+  #     - ./data:/app/data
+  #     - ./apps:/app/apps
+  #     - ./docs:/app/docs
+  #     - ./mlflow_data:/app/mlflow_data
+  #   networks:
+  #     - smart-maintenance-network
+  #   depends_on:
+  #     - mlflow
 
   # Automated Drift Detection Agent: Continuously monitors ML model performance and data drift.
   # Runs scheduled checks (every 6 hours) to detect statistical changes in data distribution.
