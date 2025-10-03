@@ -1,5 +1,9 @@
 # Microservice Migration Strategy
 
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Note:** This document describes future microservice migration strategy. V1.0 uses monolithic architecture. For current architecture, see [SYSTEM_AND_ARCHITECTURE.md](../SYSTEM_AND_ARCHITECTURE.md).
+
 # Smart Maintenance SaaS - Complete Documentation Index
 
 ## Core Documentation
