@@ -1,7 +1,7 @@
 # Smart Maintenance SaaS - V1.0 Unified Deployment Checklist
 
 **Version:** 1.0  
-**Last Updated:** 2025-10-02  
+**Last Updated:** 2025-10-03  
 **Status:** 🟡 Pre-Production - Ready for Final Steps  
 **Next Milestone:** VM Deployment for Final Delivery
 
@@ -368,11 +368,13 @@ help_tooltip(
 | Priority | Task | Acceptance Criteria | Effort | Status |
 |----------|------|---------------------|--------|--------|
 | **High** | API key validation alignment | Support multiple keys, align FastAPI middleware with UI/test fixtures. Rate limiting tests return 200/429 as expected. | 2-3h | 🟡 Open |
+| **High** | Container dependency rebuild | Docker images build using `/opt/venv` and `requirements/api.txt`; `docker compose up` succeeds without Poetry. | 1-2h | ✅ Complete (2025-10-03) |
 | **High** | ML anomaly fallback with `DISABLE_MLFLOW_MODEL_LOADING=true` | Verify IsolationForest + statistical backup. AnomalyDetectionAgent integration suite green with serverless flag. | 2-3h | ✅ Complete (2025-10-02) |
 | **High** | Production `.env` configuration | All credentials populated and validated. `.env_example.txt` template updated with cloud architecture documentation. | 1-2h | ✅ Complete (2025-10-02) |
 | **Medium** | ChromaDB production policy | Decide on `DISABLE_CHROMADB` setting. LearningAgent tests pass under chosen configuration. | 1-2h | 🟡 Open |
 
 #### API Key Validation Details
+
 - Current state: Single test key in use
 - Required: Multiple key support or documented test key
 - Files to update:
@@ -383,6 +385,7 @@ help_tooltip(
 #### ML Anomaly Fallback Details (✅ COMPLETE - 2025-10-02)
 
 **Implementation:**
+
 - Connected `settings.DISABLE_MLFLOW_MODEL_LOADING` to `AnomalyDetectionAgent` via `system_coordinator.py`
 - Fixed critical bug: Changed `if not self.isolation_forest` to `if self.isolation_forest is None` (avoided `__len__()` trigger on unfitted model)
 - Created integration test `test_anomaly_detection_with_disabled_mlflow()` validating:
@@ -392,7 +395,8 @@ help_tooltip(
   - Ensemble decision combines both methods
 
 **Test Results:**
-```
+
+```text
 tests/.../test_anomaly_detection_agent.py::...::test_anomaly_detection_with_disabled_mlflow
 PASSED [1/1] in 0.14s
 
@@ -403,6 +407,7 @@ Logs:
 ```
 
 **Acceptance Criteria Met:**
+
 - ✅ IsolationForest fallback instantiated and functional
 - ✅ Statistical backup (z-score) working correctly
 - ✅ Integration test suite passes with serverless flag disabled
@@ -410,6 +415,7 @@ Logs:
 - ✅ Graceful degradation from MLflow to local models confirmed
 
 #### Production .env Template
+
 ```bash
 # Database
 DATABASE_URL=postgresql://user:password@timescaledb.cloud:5432/maindb
@@ -439,6 +445,12 @@ DISABLE_CHROMADB=false
 LOG_LEVEL=INFO
 ENVIRONMENT=production
 ```
+
+#### Container Dependency Rebuild Details (✅ COMPLETE - 2025-10-03)
+
+- Docker images now build an internal virtual environment at `/opt/venv` during the `Dockerfile` multi-stage process.
+- `requirements/api.txt` is the canonical dependency manifest; update it before building images (see `docs/api.md#dependency-management-for-api-services`).
+- `docker compose up -d` runs without Poetry, and runtime entrypoints call `/opt/venv/bin/uvicorn` to ensure the virtualenv is active.
 
 ### 4.3 Phase 3: Deployment Automation
 
@@ -472,15 +484,21 @@ for var in "${required_vars[@]}"; do
   grep -q "^${var}=" .env || { echo "❌ Missing ${var} in .env"; exit 1; }
 done
 
-# 3. Build images
+# 3. Ensure dependency manifest exists
+if [ ! -f requirements/api.txt ]; then
+  echo "❌ requirements/api.txt not found (export dependencies before deploying)"
+  exit 1
+fi
+
+# 4. Build images
 echo "📦 Building Docker images..."
 docker compose build --no-cache
 
-# 4. Start services
+# 5. Start services
 echo "🏃 Starting services..."
 docker compose up -d
 
-# 5. Health check loop (max 3 minutes)
+# 6. Health check loop (max 3 minutes)
 echo "🏥 Waiting for services to be healthy..."
 max_attempts=36
 attempt=0
@@ -501,11 +519,11 @@ if [ $attempt -eq $max_attempts ]; then
   exit 1
 fi
 
-# 6. Run smoke tests
+# 7. Run smoke tests
 echo "🧪 Running smoke tests..."
 docker compose exec -T api python scripts/smoke_v1.py
 
-# 7. Capture logs
+# 8. Capture logs
 echo "📋 Capturing deployment logs..."
 docker compose logs > deployment_logs_$(date +%Y%m%d_%H%M%S).txt
 
