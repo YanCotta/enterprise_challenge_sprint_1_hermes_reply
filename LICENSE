@@ -1,9 +1,26 @@
-MIT LICENSE
+# Smart Maintenance SaaS License (Authorization Required)
 
 Copyright (c) 2025 Yan Pimentel Cotta
+All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+1. Authorization Requirement. You do not have permission to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software or the accompanying documentation (collectively, the "Software") unless you first obtain explicit written authorization from the copyright owner, Yan Pimentel Cotta. Requests for authorization must be submitted through one of the following contact channels:
+	- Email: <yanpcotta@gmail.com>
+	- LinkedIn: <https://www.linkedin.com/in/yan-cotta/>
+	- GitHub: <https://github.com/YanCotta>
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+2. Scope of Authorized Use. Upon receiving explicit authorization, you may exercise the rights granted in that authorization letter or agreement, subject to the conditions outlined in Sections 3 through 6 of this license. Authorization is non-transferable and may be limited in scope, duration, or territory at the sole discretion of the copyright owner.
 
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+3. Attribution and Contact Notice. Any authorized distribution, publication, derivative work, or hosted deployment of the Software must include a clear and prominent attribution statement that references the copyright owner and all contact channels listed in Section 1. The attribution must remain intact in source code headers, documentation, user interfaces, and any public materials generated from the Software.
+
+4. Prohibited Conduct. Authorization will be considered void if you:
+	- Remove, obfuscate, or fail to display the attribution and contact notice required in Section 3.
+	- Misrepresent the Software's origin or claim authorship beyond your authorized contributions.
+	- Breach any additional terms specified in your written authorization, including restrictions on commercialization, sublicensing, or redistribution.
+
+5. Termination. Failure to comply with any term of this license or the applicable authorization automatically terminates your rights to the Software. Upon termination, you must immediately cease all use of the Software and destroy all copies in your possession, including derivative works, except where retention is legally required.
+
+6. Disclaimer of Warranty. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. THE COPYRIGHT OWNER SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+7. Governing Law. This license and any disputes arising from authorized use of the Software are governed by the laws of the jurisdiction specified in your authorization. If no jurisdiction is specified, Brazilian law applies by default.
+
+To initiate an authorization request or confirm compliance, contact Yan Pimentel Cotta using the channels listed in Section 1.
