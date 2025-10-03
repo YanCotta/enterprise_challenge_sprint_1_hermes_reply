@@ -3,9 +3,9 @@
 *[**English**](README.md) | [Português](README_PORTUGUES.md)*
 
 **Status:** V1.0 Production Ready | Documentation Synchronized  
-**Last Updated:** 2025-09-30
+**Last Updated:** 2025-10-03
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/License-Authorization%20Required-critical)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-V1.0%20Ready-brightgreen)](.)
 [![Models](https://img.shields.io/badge/MLflow-17%2B%20Models-blue)](.)
 [![Performance](https://img.shields.io/badge/API%20Response-<2s-purple)](.)
@@ -23,7 +23,7 @@ A production-ready predictive maintenance SaaS platform optimized for industrial
 
 ## Quick Start
 
-**Prerequisites:** Docker & Docker Compose, cloud services configured
+**Prerequisites:** Docker & Docker Compose, cloud services configured, `requirements/api.txt`
 
 ```bash
 git clone <repo>
@@ -33,6 +33,9 @@ cd enterprise_challenge_sprint_1_hermes_reply/smart-maintenance-saas
 cp .env_example.txt .env
 # Fill in cloud credentials (TimescaleDB, Redis, S3, MLflow)
 
+# Ensure dependency manifest is present
+test -f requirements/api.txt || poetry export --without-hashes --format=requirements.txt --output requirements/api.txt
+
 # Deploy
 docker compose up -d --build
 
@@ -40,9 +43,17 @@ docker compose up -d --build
 # API Health: http://localhost:8000/health
 ```
 
+### Dependency Management & Containers
+
+- Docker images build an isolated virtual environment at `/opt/venv` and install dependencies via `pip install -r requirements/api.txt`; Poetry is no longer used inside containers.
+- Regenerate `requirements/api.txt` whenever dependencies change in `pyproject.toml` (see `docs/api.md#dependency-management-for-api-services`).
+- Runtime entrypoints invoke binaries from `/opt/venv/bin`, so commands such as smoke tests now use plain `python` within containers.
+- `scripts/deploy_vm.sh` validates the manifest and will abort if `requirements/api.txt` is missing to prevent stale builds.
+
 ## Core Capabilities
 
 **V1.0 Delivered:**
+
 - Data ingestion + explorer ([see pipeline diagram](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#29-data-ingestion-and-processing-pipeline))
 - ML prediction (auto version resolve) ([see ML pipeline](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#23-mlflow-model-management-pipeline))
 - Basic model metadata explorer (state differentiation)
@@ -57,6 +68,7 @@ docker compose up -d --build
 ## Minimal V1.0 Scope vs Deferred
 
 ### ✅ V1.0 Delivered Capabilities
+
 1. **Data ingestion + explorer** - Single file ingestion with correlation tracking and pagination
 2. **ML prediction** - Auto version resolution with model registry integration (MLflow optional)
 3. **Model metadata explorer** - State differentiation (disabled/empty/error/populated)
@@ -69,6 +81,7 @@ docker compose up -d --build
 10. **Stability layer** - Central safe rerun abstraction preventing runtime crashes
 
 ### 🚫 Deferred to V1.5+ (Explicitly Out-of-Scope)
+
 - Report artifacts (file generation/download)
 - Real-time metrics streaming  
 - Background SHAP processing
@@ -82,12 +95,14 @@ docker compose up -d --build
 ## Links Matrix
 
 ### Authoritative Documentation (Single Source of Truth)
+
 - [V1.0 Deployment Playbook](smart-maintenance-saas/docs/v1_release_must_do.md) - **Canonical reference**: Replaces former backlog, readiness checklist, and audit docs; merged scope, tasks, and deployment procedures
 - [UI Redesign Changelog](smart-maintenance-saas/docs/ui_redesign_changelog.md) - V1.0 UI evolution trail with feature implementations and fixes
 - [Sprint 4 Changelog](smart-maintenance-saas/docs/legacy/sprint_4_changelog.md) - Cloud deployment milestones, MLflow integration, and infrastructure achievements
 - [Executive Summary](smart-maintenance-saas/docs/EXECUTIVE_SUMMARY.md) - System stabilization status and V1.0 readiness confirmation
 
 ### Core Documentation
+
 - [System & Architecture](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md) - High-level architecture with comprehensive diagrams ([visualizations index](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#2-system-architecture-visualizations))
 - [API Reference](smart-maintenance-saas/docs/api.md) - REST endpoints & integration ([see API architecture diagram](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#214-api-endpoints-architecture))
 - [Database Documentation](smart-maintenance-saas/docs/db/README.md) - Schema & TimescaleDB features ([see DB architecture](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#24-timescaledb-performance-architecture))
@@ -95,18 +110,21 @@ docker compose up -d --build
 - [Security Documentation](smart-maintenance-saas/docs/SECURITY.md) - Security architecture ([see security flow](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#211-security-and-authentication-flow))
 
 ### Performance & Testing  
+
 - [Load Test Results](smart-maintenance-saas/docs/legacy/DAY_17_LOAD_TEST_REPORT.md) - 103.8 RPS validation (archived)
 - [Performance Results](smart-maintenance-saas/docs/legacy/DAY_18_PERFORMANCE_RESULTS.md) - TimescaleDB optimization (archived)
 - [Performance Baseline](smart-maintenance-saas/docs/legacy/PERFORMANCE_BASELINE.md) - SLO targets & metrics (archived)
 - [Coverage Plan](smart-maintenance-saas/docs/legacy/COVERAGE_IMPROVEMENT_PLAN.md) - Test coverage strategy (archived)
 
 ### Operations & Deployment
+
 - [Cloud Deployment Guide](smart-maintenance-saas/docs/CLOUD_DEPLOYMENT_GUIDE.md) - Platform-specific deployment (Render, Railway, Heroku) with environment setup ([see deployment architecture](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#appendix-d-deployment-architecture-future-oriented-illustration))
 - [Deployment Setup](smart-maintenance-saas/docs/DEPLOYMENT_SETUP.md) - Environment configuration and .env management ([see Docker services](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#26-docker-services-architecture))
 - [DVC Setup Guide](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md) - Data version control setup
 - [Development Orientation](smart-maintenance-saas/docs/legacy/DEVELOPMENT_ORIENTATION.md) - Engineering standards (archived)
 
 ### Legacy & Historical
+
 - [Legacy Documentation Index](smart-maintenance-saas/docs/legacy/INDEX.md) - Archived historical documents
 
 ## Contribution
@@ -124,3 +142,7 @@ Contributions welcome for V1.0+ enhancements. Review process:
 **V1.0 Release:** All core workflows operational with cloud deployment verified. Backend capabilities at 100% readiness; UI intentionally exposes minimal workflow set per deployment playbook Section 2.
 
 **Next Phase:** V1.1 hardening (enhanced test coverage, metrics percentiles, artifact persistence design) begins after user feedback cycle.
+
+## License & Authorization
+
+All usage of this codebase requires prior written authorization from Yan Pimentel Cotta and must include explicit attribution referencing the owner’s contact channels. Review the [custom license](./LICENSE) for full terms and reach out via <yanpcotta@gmail.com>, <https://www.linkedin.com/in/yan-cotta/>, or <https://github.com/YanCotta> to request permission.
