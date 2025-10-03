@@ -23,32 +23,25 @@ RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /etc/apt/apt.conf.d/80-retries
 
-# Install Poetry (use 1.7.1 to avoid "Could not parse version constraint" bug in 1.8.x)
-RUN pip install poetry==1.7.1
+# Create virtual environment location
+ENV VENV_PATH=/opt/venv
 
-# Configure Poetry to create venv in project
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VENV_IN_PROJECT=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+# Create virtual environment up front for dependency installs
+RUN python -m venv ${VENV_PATH}
+
+# Make sure the venv is active for subsequent commands
+ENV PATH="${VENV_PATH}/bin:${PATH}"
 
 # Set work directory
 WORKDIR /app
 
-# Copy dependency files
-COPY pyproject.toml ./
+# Copy dependency specification
+COPY requirements/api.txt /tmp/requirements.txt
 
-# Create virtual environment and install dependencies
-RUN poetry config virtualenvs.create true && \
-    poetry config virtualenvs.in-project true && \
-    poetry lock && \
-    poetry install --without dev --no-root && \
-    rm -rf $POETRY_CACHE_DIR && \
-    # Clean up unnecessary files to save space
-    find /app/.venv -name "*.pyc" -delete && \
-    find /app/.venv -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-
-# Verify that .venv was created
-RUN ls -la /app/.venv && echo "Virtual environment created successfully"
+# Install Python dependencies inside the virtual environment
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r /tmp/requirements.txt && \
+    rm -rf /root/.cache/pip
 
 # Stage 2: Production - Create slim final image
 FROM python:3.11-slim-bullseye AS production
@@ -64,7 +57,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/app/.venv/bin:$PATH" \
+    PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH="/app"
 
 # Install runtime dependencies only
@@ -85,7 +78,7 @@ RUN groupadd --gid 1000 appuser \
 WORKDIR /app
 
 # Copy virtual environment from builder stage (with proper ownership)
-COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
+COPY --from=builder --chown=appuser:appuser /opt/venv /opt/venv
 
 # Copy application code with proper ownership from the start
 COPY --chown=appuser:appuser . .
