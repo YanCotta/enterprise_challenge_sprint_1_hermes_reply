@@ -13,6 +13,8 @@
 - [Event-Driven Architecture](./SYSTEM_AND_ARCHITECTURE.md#22-production-event-driven-architecture-flow) - Request flow and event processing
 - [Data Ingestion Pipeline](./SYSTEM_AND_ARCHITECTURE.md#29-data-ingestion-and-processing-pipeline) - Data flow through the API
 
+**Authorization Required:** Access to this API and the underlying codebase demands written approval from Yan Pimentel Cotta with attribution to the owner’s published contact channels. Review the [custom license](../LICENSE) before integrating or deploying.
+
 ---
 
 ## Overview
