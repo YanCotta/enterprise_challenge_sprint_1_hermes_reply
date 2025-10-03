@@ -1194,3 +1194,31 @@ if preferred_deadline < preferred_start:
 **Next Milestone:** Brazilian Portuguese internationalization implementation
 
 
+
+### 27.0 Container Dependency Rebuild (2025-10-03)
+
+#### Summary
+
+- Replaced Poetry-managed images with pip-driven virtualenv builds to eliminate `Could not parse version constraint: <empty>` failures during containerization.
+- Introduced `requirements/api.txt` as the canonical dependency manifest for the API/UI stack; Docker build now creates `/opt/venv` and installs from this file.
+- Updated `docker-compose.yml` entrypoint to reference `/opt/venv/bin/uvicorn`, ensuring the stack starts even when Poetry is absent.
+- Confirmed API and UI services rebuild cleanly (`docker compose build api ui`) and boot successfully with the new base image.
+
+#### Implementation Notes
+
+- `Dockerfile`: Added virtualenv bootstrap, copied `requirements/api.txt`, and switched to `pip install --no-cache-dir -r /tmp/requirements.txt`.
+- `docker-compose.yml`: API service entrypoint now points to `/opt/venv/bin/uvicorn`. Existing volumes/env vars remain unchanged.
+- `requirements/api.txt`: Generated from `pyproject.toml` main dependencies; acts as authoritative list for future container builds.
+
+#### Validation
+
+- `docker compose up -d` now completes without Poetry errors; API healthcheck (`curl http://localhost:8000/health`) returns 200.
+- UI served via Streamlit (`http://localhost:8501`) and API backend confirmed to share the same venv, including ML libraries (lightgbm, prophet, torch stack, etc.).
+- Regression pass executed: ingest, prediction, Golden Path demo, and UI manual workflows all green post-rebuild.
+
+#### Follow-Up
+
+- Documented the new workflow across deployment guides and validation checklist (this commit) so future operators use pip/virtualenv flow.
+- Action item: regenerate dev lockfile later if Poetry is required locally; container images now decoupled from that constraint.
+
+
