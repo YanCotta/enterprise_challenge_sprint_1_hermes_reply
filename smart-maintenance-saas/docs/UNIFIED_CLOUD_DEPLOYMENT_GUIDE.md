@@ -1303,6 +1303,78 @@ asyncpg.exceptions.ConnectionTimeoutError: connection timeout
    docker compose restart api
    ```
 
+### Error 8: Poetry "Could not parse version constraint: <empty>"
+
+**Symptom:**
+```
+Building notebook_runner container fails with:
+poetry lock && poetry install --with dev --no-root
+Could not parse version constraint: <empty>
+exit code: 1
+```
+
+**Cause:** This is a known bug in Poetry 1.8.x where the dependency resolver encounters malformed version metadata from PyPI packages, resulting in an empty version constraint during installation.
+
+**Solution:**
+
+**Option A: Downgrade Poetry (Recommended)** 
+
+The project has been updated to use Poetry 1.7.1 which doesn't have this bug:
+
+```bash
+# On local machine
+cd /path/to/your/repo/smart-maintenance-saas
+
+# Verify Dockerfile.ml uses Poetry 1.7.1
+grep "poetry==" Dockerfile.ml
+# Should show: RUN pip install --no-cache-dir poetry==1.7.1
+
+# If it shows 1.8.3, update it:
+sed -i 's/poetry==1.8.3/poetry==1.7.1/g' Dockerfile.ml
+
+# Rebuild without cache
+docker compose build --no-cache
+```
+
+**Option B: Clean Local Poetry Cache**
+
+If you're still encountering issues after downgrading:
+
+```bash
+# Remove local poetry.lock and virtual environment
+rm -f poetry.lock
+sudo rm -rf .venv
+
+# Clear Poetry cache
+poetry cache clear pypi --all
+
+# Regenerate lock file
+poetry lock
+
+# Rebuild Docker images
+docker compose build --no-cache
+```
+
+**Option C: Use Pre-Generated Lock File**
+
+If Option A and B fail, the repository includes a working `poetry.lock` file. Ensure it's not in `.gitignore` and commit it:
+
+```bash
+# Check if poetry.lock exists and is tracked
+git ls-files | grep poetry.lock
+
+# If missing, regenerate and commit
+poetry lock
+git add poetry.lock
+git commit -m "chore: Add working poetry.lock file"
+git push origin main
+```
+
+**Prevention:**
+- Pin Poetry version in Dockerfiles to avoid automatic upgrades
+- Commit `poetry.lock` to version control for reproducible builds
+- Use `poetry lock --no-update` when adding dependencies to avoid unnecessary resolution
+
 ---
 
 ## Monitoring & Maintenance
