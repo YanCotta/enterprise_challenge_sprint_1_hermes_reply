@@ -1,13 +1,10 @@
 #!/bin/bash
-"""
-Toxiproxy Initialization Script for Docker Compose
+# Toxiproxy Initialization Script for Docker Compose
+#
+# Configures Toxiproxy proxies on container startup so Redis and PostgreSQL
+# requests can be routed through the proxy for chaos testing.
 
-This script automatically configures Toxiproxy proxies on container startup.
-It runs as part of the Docker Compose infrastructure to ensure proxies are
-always available without manual intervention.
-"""
-
-set -e
+set -euo pipefail
 
 echo "=== Toxiproxy Auto-Initialization ==="
 echo "Waiting for Toxiproxy server to be ready..."
