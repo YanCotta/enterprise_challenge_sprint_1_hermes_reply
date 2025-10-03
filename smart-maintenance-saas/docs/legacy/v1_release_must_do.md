@@ -1,5 +1,9 @@
 # Smart Maintenance SaaS v1.0 Deployment Playbook
 
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Note:** This is a legacy document. For current v1.0 deployment procedures, see [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) and [UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md](../UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md).
+
 _Merged from the former v1.0 must-do checklist, V1 Readiness Checklist, Prioritized Backlog, and both latest system audit reports._
 
 **System Architecture:** For comprehensive visual guides of the V1.0 system architecture, see [SYSTEM_AND_ARCHITECTURE.md](./SYSTEM_AND_ARCHITECTURE.md) which includes:
@@ -167,7 +171,9 @@ Streaming metrics, report artifacts (PDF/CSV), background SHAP processing, bulk 
 | UI Smoke | Load all Streamlit pages | Manual or Playwright smoke | No exceptions, hints visible, latency panels populate. |
 | Redis/DB Persistence | Ingest data, restart services, re-query | docker-compose restart + curl | Data persists across restart. |
 
-Run `poetry run pytest` (or within container) for targeted suites covering Redis client, ML version resolution, event bus retries, and schema validation. Supplement with manual UI walkthrough post-build.
+Run `pytest` (or `docker compose exec api pytest` within container) for targeted suites covering Redis client, ML version resolution, event bus retries, and schema validation. Supplement with manual UI walkthrough post-build.
+
+**Note (2025-10-03):** Commands inside containers no longer require `poetry run` prefix as dependencies are installed via pip in `/opt/venv` and activated automatically.
 
 ## 7. Deployment Checklist (VM target)
 

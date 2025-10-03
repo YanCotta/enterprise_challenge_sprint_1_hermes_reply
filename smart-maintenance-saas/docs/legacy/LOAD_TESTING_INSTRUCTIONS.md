@@ -1,5 +1,9 @@
 # Load Testing Instructions for Smart Maintenance SaaS
 
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Note:** Commands updated to reflect pip-based dependency management (no `poetry run` prefix needed in local venv).
+
 # Smart Maintenance SaaS - Complete Documentation Index
 
 ## Core Documentation
@@ -204,7 +208,8 @@ docker compose exec api locust -f locustfile_simple.py --host http://localhost:8
 - **Purpose**: Test normal operational load for sensor data processing
 
 ```bash
-poetry run locust -f locustfile.py --host=http://localhost:8000 --users 25 --spawn-rate 3 --run-time 5m --headless --html normal_load_report.html
+# With active virtualenv (poetry run no longer needed as of 2025-10-03)
+locust -f locustfile.py --host=http://localhost:8000 --users 25 --spawn-rate 3 --run-time 5m --headless --html normal_load_report.html
 ```
 
 ### Scenario 2: Peak Load Testing
@@ -214,7 +219,7 @@ poetry run locust -f locustfile.py --host=http://localhost:8000 --users 25 --spa
 - **Purpose**: Test system under peak sensor data load conditions
 
 ```bash
-poetry run locust -f locustfile.py --host=http://localhost:8000 --users 100 --spawn-rate 10 --run-time 10m --headless --html peak_load_report.html
+locust -f locustfile.py --host=http://localhost:8000 --users 100 --spawn-rate 10 --run-time 10m --headless --html peak_load_report.html
 ```
 
 ### Scenario 3: Spike Testing
@@ -225,7 +230,7 @@ poetry run locust -f locustfile.py --host=http://localhost:8000 --users 100 --sp
 
 ```bash
 # Run step load test manually through web UI or use custom step load script
-poetry run locust -f locustfile.py --host=http://localhost:8000
+locust -f locustfile.py --host=http://localhost:8000
 # Configure in web UI: Start with 10 users, then increase to 50, 100, 150, 200 every 3 minutes
 ```
 
@@ -236,7 +241,7 @@ poetry run locust -f locustfile.py --host=http://localhost:8000
 - **Purpose**: Test system stability over extended periods
 
 ```bash
-poetry run locust -f locustfile.py --host=http://localhost:8000 --users 30 --spawn-rate 2 --run-time 30m --headless --html endurance_test_report.html
+locust -f locustfile.py --host=http://localhost:8000 --users 30 --spawn-rate 2 --run-time 30m --headless --html endurance_test_report.html
 ```
 
 ## Performance Metrics to Monitor
@@ -362,8 +367,8 @@ For CI/CD integration, create automated performance tests:
 
 echo "Starting performance regression test..."
 
-# Run light load test
-poetry run locust -f locustfile.py --host=http://localhost:8000 \
+# Run light load test (updated 2025-10-03: no poetry run prefix needed with active venv)
+locust -f locustfile.py --host=http://localhost:8000 \
   --users 20 --spawn-rate 2 --run-time 2m --headless \
   --html performance_regression_report.html
 

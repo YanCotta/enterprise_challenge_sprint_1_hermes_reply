@@ -852,7 +852,7 @@ Next step: once the API container is rebuilt, rerun the UI smoke tour focusing o
 
 **Next Immediate Steps:**
 
-1. Execute smoke test inside API container: `docker compose exec api poetry run python scripts/smoke_v1.py`
+1. Execute smoke test inside API container: `docker compose exec api python scripts/smoke_v1.py` (Note: No `poetry run` prefix needed as of 2025-10-03)
 2. Document smoke test results and any failures
 3. Yan to run comprehensive UI validation pass per checklist
 4. Address any issues found during validation
