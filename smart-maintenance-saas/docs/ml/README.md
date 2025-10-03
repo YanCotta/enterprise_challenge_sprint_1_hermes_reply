@@ -1,9 +1,10 @@
 # Machine Learning Pipeline Documentation
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Status:** V1.0 Production Ready  
 **Related Documentation:**
-- [v1_release_must_do.md Section 2.1](../v1_release_must_do.md) - ML capabilities in backend matrix
+- [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md Section 3.1](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) - ML capabilities in backend matrix
+- [v1_release_must_do.md Section 2.1](../legacy/v1_release_must_do.md) - ML capabilities in backend matrix (archived)
 - [MODELS_SUMMARY.md](../MODELS_SUMMARY.md) - 17+ production models inventory
 - [Sprint 4 Changelog](../legacy/sprint_4_changelog.md) - MLflow S3 integration achievements
 
