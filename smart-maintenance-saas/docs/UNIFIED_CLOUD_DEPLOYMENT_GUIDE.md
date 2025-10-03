@@ -1300,86 +1300,60 @@ asyncpg.exceptions.ConnectionTimeoutError: connection timeout
 
 1. **Add VM IP to TimescaleDB allowlist** (see Step 2)
 2. **Test connection:**
+
    ```bash
    # On VM
    psql "postgresql://tsdbadmin:PASSWORD@HOST:PORT/tsdb?sslmode=require"
    ```
+
 3. **Restart API:**
+
    ```bash
    docker compose restart api
    ```
 
-### Error 8: Poetry "Could not parse version constraint: <empty>"
+### Error 8: `requirements/api.txt` Missing or Out of Date
 
 **Symptom:**
-```
-Building notebook_runner container fails with:
-poetry lock && poetry install --with dev --no-root
-Could not parse version constraint: <empty>
-exit code: 1
+
+```text
+ERROR: Could not open requirements file: [Errno 2] No such file or directory: '/tmp/requirements.txt'
+# or
+ERROR: No matching distribution found for <package>@<hash>
 ```
 
-**Cause:** This is a known bug in Poetry 1.8.x where the dependency resolver encounters malformed version metadata from PyPI packages, resulting in an empty version constraint during installation.
+**Cause:** The Docker build now installs dependencies exclusively from `requirements/api.txt`. If this file is missing, stale, or out of sync with `pyproject.toml`, pip will fail during the build stage.
 
 **Solution:**
 
-**Option A: Downgrade Poetry (Recommended)** 
+1. **Regenerate the requirements manifest.** From the repository root, export fresh dependencies:
 
-The project has been updated to use Poetry 1.7.1 which doesn't have this bug:
+   ```bash
+   poetry export --without-hashes --format=requirements.txt --output requirements/api.txt
+   ```
 
-```bash
-# On local machine
-cd /path/to/your/repo/smart-maintenance-saas
+   *If you are not using Poetry locally, ensure any alternative export step produces the same file path.*
 
-# Verify Dockerfile.ml uses Poetry 1.7.1
-grep "poetry==" Dockerfile.ml
-# Should show: RUN pip install --no-cache-dir poetry==1.7.1
+2. **Commit the updated manifest** so the deployment VM receives the correct file:
 
-# If it shows 1.8.3, update it:
-sed -i 's/poetry==1.8.3/poetry==1.7.1/g' Dockerfile.ml
+   ```bash
+   git add requirements/api.txt
+   git commit -m "chore: refresh api requirements"
+   git push origin main
+   ```
 
-# Rebuild without cache
-docker compose build --no-cache
-```
+3. **Retry the build** on the VM:
 
-**Option B: Clean Local Poetry Cache**
-
-If you're still encountering issues after downgrading:
-
-```bash
-# Remove local poetry.lock and virtual environment
-rm -f poetry.lock
-sudo rm -rf .venv
-
-# Clear Poetry cache
-poetry cache clear pypi --all
-
-# Regenerate lock file
-poetry lock
-
-# Rebuild Docker images
-docker compose build --no-cache
-```
-
-**Option C: Use Pre-Generated Lock File**
-
-If Option A and B fail, the repository includes a working `poetry.lock` file. Ensure it's not in `.gitignore` and commit it:
-
-```bash
-# Check if poetry.lock exists and is tracked
-git ls-files | grep poetry.lock
-
-# If missing, regenerate and commit
-poetry lock
-git add poetry.lock
-git commit -m "chore: Add working poetry.lock file"
-git push origin main
-```
+   ```bash
+   docker compose build --no-cache
+   docker compose up -d
+   ```
 
 **Prevention:**
-- Pin Poetry version in Dockerfiles to avoid automatic upgrades
-- Commit `poetry.lock` to version control for reproducible builds
-- Use `poetry lock --no-update` when adding dependencies to avoid unnecessary resolution
+
+- Always regenerate `requirements/api.txt` after changing dependencies in `pyproject.toml`.
+- Verify the file is present before running `scripts/deploy_vm.sh`; the script will abort early if it is missing.
+- Keep `requirements/api.txt` under version control to guarantee reproducible container builds.
 
 ---
 
@@ -1466,7 +1440,7 @@ git push --tags
 
 After successful deployment, document these URLs:
 
-```
+```text
 Production Environment
 ├── Backend API: http://YOUR_VM_IP:8000
 │   └── API Docs: http://YOUR_VM_IP:8000/docs
@@ -1485,6 +1459,7 @@ Share the **Streamlit UI URL** with stakeholders for testing.
 ### Getting Help
 
 1. **Check logs first:**
+
    ```bash
    docker compose logs <service-name> --tail=200
    ```
@@ -1496,6 +1471,7 @@ Share the **Streamlit UI URL** with stakeholders for testing.
    - `docs/COMPREHENSIVE_DOCUMENTATION.md`
 
 4. **Test components individually:**
+
    ```bash
    # Test database
    curl http://localhost:8000/health/db
@@ -1541,7 +1517,9 @@ Your deployment is successful when:
 - ✅ No errors in browser console
 - ✅ No timeout errors in UI
 
-**Congratulations! Your Smart Maintenance SaaS system is live in production! 🚀**
+### Deployment Complete
+
+Your Smart Maintenance SaaS system is live in production! 🚀
 
 ---
 
