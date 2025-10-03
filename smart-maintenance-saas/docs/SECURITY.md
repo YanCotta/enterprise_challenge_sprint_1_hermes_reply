@@ -1,9 +1,10 @@
 # Security Threat Model & Architecture
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Status:** V1.0 Production Ready  
 **Related Documentation:**
-- [v1_release_must_do.md Section 2.1](./v1_release_must_do.md) - Security measures in backend capability matrix
+- [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md Section 3.1](./V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) - Security in backend capability matrix
+- [v1_release_must_do.md Section 2.1](./legacy/v1_release_must_do.md) - Security measures in backend capability matrix (archived)
 - [COMPREHENSIVE_DOCUMENTATION.md Section 6](./COMPREHENSIVE_DOCUMENTATION.md) - Security documentation index
 - [legacy/SECURITY_AUDIT_CHECKLIST.md](./legacy/SECURITY_AUDIT_CHECKLIST.md) - Archived audit checklist
 
@@ -16,7 +17,7 @@ This document outlines the proactive threat model for the Smart Maintenance SaaS
 
 ## V1.0 Security Status
 
-Per [v1_release_must_do.md Section 2.1](./v1_release_must_do.md), security capabilities are stable and operational:
+Per [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md Section 3.1](./V1_UNIFIED_DEPLOYMENT_CHECKLIST.md), security capabilities are stable and operational:
 - ✅ API key authentication active across all endpoints
 - ✅ Rate limiting implemented and validated
 - ✅ Request validation and input sanitization in place

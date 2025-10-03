@@ -1,8 +1,10 @@
 # S3 Artifact Storage Mapping
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Status:** V1.0 Production (17+ models deployed)  
-**Related:** [Sprint 4 Changelog](./legacy/sprint_4_changelog.md) - S3 integration achievements  
+**Related:** 
+- [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md](./V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) - Current deployment procedures
+- [Sprint 4 Changelog](./legacy/sprint_4_changelog.md) - S3 integration achievements (archived)  
 
 This document provides a comprehensive mapping between our S3 bucket structure (`s3://yan-smart-maintenance-artifacts/`) and the corresponding MLflow experiments, runs, and registered models.
 
