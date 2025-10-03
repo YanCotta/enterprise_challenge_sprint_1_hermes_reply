@@ -38,6 +38,8 @@
 | Deployment Automation | 🟡 Planned | 0% (Pending) |
 | Production .env | ✅ Populated & Validated | 100% |
 
+All deployment activities fall under the custom authorization-required license. Secure written approval from Yan Pimentel Cotta and provide attribution per `LICENSE` before sharing artifacts or environments with external parties.
+
 ### 1.2 V1.0 Scope Definition
 
 **Core Principle:** V1.0 delivers a stable, minimal UI exposing proven backend capabilities for demonstration to Brazilian company evaluators. Advanced features are explicitly deferred to V1.5+.
