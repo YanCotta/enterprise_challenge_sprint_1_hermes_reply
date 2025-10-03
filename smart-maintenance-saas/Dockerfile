@@ -23,8 +23,8 @@ RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /etc/apt/apt.conf.d/80-retries
 
-# Install Poetry
-RUN pip install poetry==1.8.3
+# Install Poetry (use 1.7.1 to avoid "Could not parse version constraint" bug in 1.8.x)
+RUN pip install poetry==1.7.1
 
 # Configure Poetry to create venv in project
 ENV POETRY_NO_INTERACTION=1 \
