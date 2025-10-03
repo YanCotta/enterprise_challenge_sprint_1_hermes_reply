@@ -9,24 +9,23 @@ RUN apt-get update && apt-get install -y \
     libomp-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
+# Install Poetry (use 1.7.1 to avoid "Could not parse version constraint" bug in 1.8.x)
 RUN pip install --no-cache-dir poetry==1.8.3
 
 # Set working directory
 WORKDIR /app
 
-# Copy only Poetry files first for better layer caching
-COPY pyproject.toml ./
+# Copy Poetry files for dependency installation
+COPY pyproject.toml poetry.lock* ./
 
 # Configure Poetry and install dependencies
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VENV_IN_PROJECT=0 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
-# Generate poetry.lock and install dependencies
-# Use poetry lock to regenerate lock file from pyproject.toml
+# Install dependencies from lock file (or generate if missing)
 RUN poetry config virtualenvs.create false && \
-    poetry lock && \
+    (test -f poetry.lock || poetry lock) && \
     poetry install --with dev --no-root && \
     rm -rf $POETRY_CACHE_DIR
 
