@@ -598,7 +598,7 @@ Stability of navigation restored; removal of deprecated API usage reduces future
 
 ---
 
-**2025-10-03 Update:** Temporarily commented out the `notebook_runner` service in `docker-compose.yml` and noted the disablement in `Dockerfile.ml` while we address the Poetry build failure. The service can be re-enabled once the dependency chain is fixed.
+**2025-10-03 Update:** Temporarily commented out the `notebook_runner` and `ml` services in `docker-compose.yml` and noted the disablement in `Dockerfile.ml` while we address the Poetry build failure. These containers can be re-enabled once the dependency chain is fixed.
 
 ## 20. Session Update – 2025-09-28 (Golden Path Validation & Smoke Prep)
 
