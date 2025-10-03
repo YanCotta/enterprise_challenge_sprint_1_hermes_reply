@@ -1,6 +1,6 @@
 # Executive Summary - V1.0 Deployment Status
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Authoritative Source:** This summary reflects the current state documented in [v1_release_must_do.md](./v1_release_must_do.md) (V1.0 Deployment Playbook)
 
 **System Architecture:** See [SYSTEM_AND_ARCHITECTURE.md](./SYSTEM_AND_ARCHITECTURE.md) for comprehensive architecture visualizations including:
@@ -21,7 +21,7 @@ The Smart Maintenance SaaS platform is **ready for V1.0 release** with all criti
 | **Performance** | ✅ Within Targets | p95 prediction <1.5s without SHAP; ingestion and data explorer responsive |
 | **Reliability** | ✅ Strong | Redis pool fixes, request validation, and timeout guards eliminate blockers |
 | **Documentation Alignment** | ✅ Synced | All roadmap, audit, and checklist content merged into deployment playbook |
-| **Deployment Readiness** | 🟡 In Progress | .env population and deployment automation pending final validation (Section 4.1) |
+| **Deployment Readiness** | 🟡 In Progress | Pip/venv container rebuild complete; .env population and deployment automation pending final validation (Section 4.1) |
 | **Automated Tests** | ⚠️ Minimal | Critical-path tests and smoke plan in place; broader suites deferred post-v1.0 |
 
 **Recommendation:** Proceed toward v1.0 once Section 4.1 tasks (deployment automation and .env validation) are complete or explicitly waived. Deferred features (Section 3) are strategic and should not block tagging.
@@ -78,7 +78,7 @@ Per [v1_release_must_do.md Section 3](./v1_release_must_do.md), the following ar
 ### Critical Path (Section 4.1 of Deployment Playbook)
 1. **Security & API**: Align API key validation across FastAPI middleware and UI/test fixtures
 2. **ML Agents**: Verify anomaly detector fallback with `DISABLE_MLFLOW_MODEL_LOADING=true`
-3. **Deployment**: Populate production `.env` and validate against DEPLOYMENT_SETUP.md
+3. **Deployment**: Populate production `.env`, confirm `requirements/api.txt` parity, and validate against DEPLOYMENT_SETUP.md
 4. **Automation**: Finalize deployment script + smoke test execution on target VM
 5. **Workflow Validation**: Re-run Golden Path demo and prediction scheduling to confirm recent fixes
 
