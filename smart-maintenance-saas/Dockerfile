@@ -41,7 +41,7 @@ COPY pyproject.toml ./
 RUN poetry config virtualenvs.create true && \
     poetry config virtualenvs.in-project true && \
     poetry lock && \
-    poetry install --only=main --no-root && \
+    poetry install --without dev --no-root && \
     rm -rf $POETRY_CACHE_DIR && \
     # Clean up unnecessary files to save space
     find /app/.venv -name "*.pyc" -delete && \
