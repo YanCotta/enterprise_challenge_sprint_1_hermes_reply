@@ -1,4 +1,5 @@
 # Dockerfile.ml - Optimized ML-focused Docker image for Smart Maintenance SaaS
+# NOTE 2025-10-03: notebook_runner service is disabled in docker-compose while we fix the Poetry build failure.
 FROM python:3.11-slim AS builder
 
 # Install only system dependencies needed for building
@@ -26,7 +27,7 @@ ENV POETRY_NO_INTERACTION=1 \
 # Install dependencies from lock file (or generate if missing)
 RUN poetry config virtualenvs.create false && \
     (test -f poetry.lock || poetry lock) && \
-    poetry install --with dev --no-root && \
+    poetry install --no-root && \
     rm -rf $POETRY_CACHE_DIR
 
 # === Final stage ===
