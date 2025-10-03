@@ -1,6 +1,6 @@
 # Smart Maintenance SaaS - API Documentation
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Status:** V1.0 Production Ready  
 **Related Documentation:**
 - [v1_release_must_do.md](./v1_release_must_do.md) - V1.0 Deployment Playbook (canonical reference)
@@ -54,6 +54,33 @@ docker compose up -d
 # Docs: http://localhost:8000/docs
 # Metrics: http://localhost:8000/metrics
 ```
+
+> **New in 2025-10-03:** Docker images now build a dedicated virtual environment at `/opt/venv` and install dependencies via `requirements/api.txt`. Poetry is no longer required inside containers, eliminating the previous lock-file parsing failures during `docker compose build`.
+
+## Dependency Management & Local Setup
+
+The API/UI stack shares the same dependency manifest used for container images.
+
+- **Create a local virtual environment (optional but recommended):**
+
+  ```bash
+  cd smart-maintenance-saas
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install --upgrade pip
+  pip install -r requirements/api.txt
+  ```
+
+- **Regenerate `requirements/api.txt` when dependencies change:**
+
+  - Update `pyproject.toml` (main dependencies section)
+  - Manually align the pinned ranges in `requirements/api.txt` (or use an export tool in a clean environment)
+  - Commit both files together so Docker builds remain deterministic
+
+- **Docker builds use pip automatically:**
+
+  - `docker compose build api` copies `requirements/api.txt` into the image, creates `/opt/venv`, and runs `pip install --no-cache-dir -r /tmp/requirements.txt`
+  - The API service entrypoint now calls `/opt/venv/bin/uvicorn`, so no additional setup is required once the container is running
 
 ## Control Panel UI
 
