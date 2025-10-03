@@ -1,7 +1,7 @@
 # Comprehensive Documentation Index (V1.0 Consolidated)
 
 **Status:** Active (V1.0 Production Ready)  
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03
 **Purpose:** Navigational index to long-lived documentation for operating, extending, and auditing the Smart Maintenance SaaS platform.
 
 > **AUTHORITATIVE SOURCE** → [V1.0 Deployment Playbook](./v1_release_must_do.md) is the canonical reference for V1.0 scope, readiness status, task tracking, and deployment procedures. It replaces the former Prioritized Backlog, V1 Readiness Checklist, and audit markdown files.
@@ -48,15 +48,18 @@ Testing strategy and validation plan are documented in [v1_release_must_do.md Se
 - [V1.0 Deployment Playbook](./v1_release_must_do.md) – **Deployment procedures**: VM setup, smoke tests, monitoring (Section 7)
 - [Cloud Deployment Guide](./CLOUD_DEPLOYMENT_GUIDE.md) – Platform-specific cloud deployment (Render, Railway, Heroku)
 - [Deployment Setup](./DEPLOYMENT_SETUP.md) – Environment configuration and .env management
+- [`requirements/api.txt` workflow](./api.md#dependency-management-for-api-services) – Pip/venv instructions replacing Poetry within containers
 - [S3 Artifact Mapping](./S3_ARTIFACT_MAPPING.md) – S3 storage configuration for MLflow artifacts
 - [DVC Setup Guide](./DVC_SETUP_GUIDE.md) – Data version control configuration
 
 ## 8. Multi-Agent System & Event Framework
+
 - Agent architecture, event bus patterns, and orchestration details are documented in [v1_release_must_do.md Section 2](./v1_release_must_do.md) - backend capability matrix
 - UI integration and workflow details in [ui_redesign_changelog.md](./ui_redesign_changelog.md)
 - Cloud deployment achievements in [sprint_4_changelog.md](./legacy/sprint_4_changelog.md) - 12-agent system operational status
 
 ## 9. Historical / Legacy Documentation
+
 - [Legacy Documentation Index](./legacy/INDEX.md) – Archived sprint logs, historical analyses, and superseded documents
 - [Sprint 4 Changelog](./legacy/sprint_4_changelog.md) – Cloud deployment milestones and infrastructure achievements
 - [30-Day Sprint Changelog](./legacy/30-day-sprint-changelog.md) – Historical development timeline
@@ -68,7 +71,9 @@ Testing strategy and validation plan are documented in [v1_release_must_do.md Se
 **Note:** Legacy documents are maintained for historical context only. Refer to V1.0 Deployment Playbook for current authoritative information.
 
 ## 10. Deprecated / Superseded (Reference Only)
+
 The following documents have been **consolidated into the V1.0 Deployment Playbook** and should not be referenced:
+
 - ❌ Prioritized Backlog (merged into v1_release_must_do.md Section 4)
 - ❌ V1 Readiness Checklist (merged into v1_release_must_do.md Sections 1, 10)
 - ❌ System Capabilities & UI Redesign standalone doc (content distributed across playbook and changelogs)
@@ -81,6 +86,7 @@ The following documents have been **consolidated into the V1.0 Deployment Playbo
 **Migration Note:** If you find references to these files, update them to point to the V1.0 Deployment Playbook or the appropriate legacy archive location.
 
 ## 11. How to Maintain This Index
+
 | Action | Trigger | Owner | SLA |
 |--------|--------|-------|-----|
 | Add new doc link | New persistent reference doc added | Tech Lead | < 24h |
@@ -89,6 +95,7 @@ The following documents have been **consolidated into the V1.0 Deployment Playbo
 | Sync with Unified Doc | Structural shift in system scope | Tech Lead | Within sprint |
 
 ## 12. Quick Cross-Link Integrity Checklist
+
 - [x] All relative links resolve (manual or CI doc link checker)
 - [x] No references to deleted interim analysis files
 - [x] Performance section reflects latest validated run
@@ -96,9 +103,12 @@ The following documents have been **consolidated into the V1.0 Deployment Playbo
 - [x] Authoritative V1.0 scope documentation referenced correctly
 
 ---
+
 ### Change Log (for this file only)
+
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-10-03 | Added pip/venv dependency workflow reference and refreshed last-updated metadata | Documentation Update |
 | 2025-09-25 | Initial creation of consolidated index replacing legacy comprehensive doc variant | AI Assistant |
 | 2025-12-19 | Fixed broken UNIFIED_SYSTEM_DOCUMENTATION.md references; updated to reflect V1.0 scope and legacy archival | AI Assistant |
 | 2025-09-30 | Aligned with v1_release_must_do.md as canonical source; fixed cross-references; clarified deprecated documents | Documentation Update |
