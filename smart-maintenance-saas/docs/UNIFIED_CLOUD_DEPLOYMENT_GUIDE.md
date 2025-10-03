@@ -38,6 +38,8 @@ This guide provides a complete, battle-tested process for deploying Smart Mainte
 - ✅ Brazilian Portuguese UI support
 - ✅ ML anomaly detection fallback mode
 
+**Authorization Requirement:** Deployment assets and code are covered by a custom license. Request written authorization from Yan Pimentel Cotta and provide attribution before proceeding (see `LICENSE` for contact channels).
+
 ---
 
 ## Prerequisites
@@ -182,9 +184,11 @@ unzip bearing-dataset.zip -d nasa_bearing_dataset/
 ```bash
 cd smart-maintenance-saas
 
-# Install dependencies
-pip install poetry
-poetry install
+# Install dependencies (local virtual environment recommended)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements/api.txt
 
 # Build ML Docker image first
 make build-ml
@@ -205,8 +209,8 @@ make vibration-gauntlet     # NASA bearing dataset
 make xjtu-gauntlet          # XJTU bearing dataset
 make audio-gauntlet         # MIMII sound dataset (requires 2GB+ RAM)
 
-# Option B: Run notebooks manually via Jupyter
-poetry run jupyter notebook
+# Option B: Run notebooks manually via Jupyter (with the virtualenv activated)
+jupyter notebook
 
 # Execute these notebooks in order:
 # Synthetic models:
@@ -238,7 +242,7 @@ After training completes, models are automatically logged to MLflow during noteb
 
 ```bash
 # Start local MLflow server to view models
-poetry run mlflow server \
+mlflow server \
    --backend-store-uri sqlite:///mlflow_db/mlflow.db \
    --default-artifact-root ./mlflow_data \
    --host 0.0.0.0 \
@@ -284,12 +288,16 @@ The TimescaleDB database needs schema initialization via Alembic migrations.
 ```bash
 cd smart-maintenance-saas
 
-# Install Python dependencies
-pip install poetry
-poetry install
+# Install Python dependencies (activate the project virtualenv first)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements/api.txt
 
 # Verify Alembic is installed
-poetry run alembic --version
+alembic --version
+
+> Keep the `.venv` activated for the remaining steps so CLI tools (alembic, pytest, mlflow) resolve from `/opt/venv`.
 ```
 
 #### Step 2: Configure Database Connection
@@ -309,13 +317,13 @@ sqlalchemy.url = postgresql://tsdbadmin:PASSWORD@HOST:PORT/tsdb
 
 ```bash
 # Check current database version
-poetry run alembic current
+alembic current
 
 # Run all migrations
-poetry run alembic upgrade head
+alembic upgrade head
 
 # Verify tables created
-poetry run python -c "
+python -c "
 from core.database.session import engine
 from sqlalchemy import inspect
 inspector = inspect(engine)
@@ -329,10 +337,10 @@ print(f'Tables created: {tables}')
 
 ```bash
 # Create test sensors and initial data
-poetry run python scripts/seed_database.py
+python scripts/seed_database.py
 
 # Verify seeding
-poetry run python scripts/check_db.py
+python scripts/check_db.py
 # Should show: X sensors, Y readings
 ```
 
@@ -355,7 +363,7 @@ If you're using MLflow with cloud backend, initialize the tracking database:
 export MLFLOW_BACKEND_STORE_URI="postgresql://tsdbadmin:PASSWORD@HOST:PORT/tsdb"
 
 # Initialize MLflow database tables
-poetry run python -c "
+python -c "
 import mlflow
 from mlflow.store.tracking import SEARCH_MAX_RESULTS_DEFAULT
 mlflow.set_tracking_uri('$MLFLOW_BACKEND_STORE_URI')
@@ -363,7 +371,7 @@ mlflow.set_tracking_uri('$MLFLOW_BACKEND_STORE_URI')
 "
 
 # Verify MLflow tables exist
-poetry run python -c "
+python -c "
 from sqlalchemy import create_engine, inspect
 engine = create_engine('$MLFLOW_BACKEND_STORE_URI')
 inspector = inspect(engine)
@@ -423,7 +431,7 @@ sleep 60
 docker compose ps
 
 # Run smoke tests
-poetry run pytest tests/integration/ -v
+pytest tests/integration/ -v
 
 # Test API endpoints
 curl http://localhost:8000/health
@@ -683,13 +691,13 @@ docker compose version
 
 ```bash
 # Create test sensors and initial data
-poetry run python scripts/seed_data.py
+python scripts/seed_data.py
 
 # You can customize the amount of data:
-poetry run python scripts/seed_data.py --sensors 10 --readings 1000
+python scripts/seed_data.py --sensors 10 --readings 1000
 
 # Verify data was seeded:
-poetry run python -c "
+python -c "
 import asyncio
 from core.database.session import async_session
 from sqlalchemy import select, func
