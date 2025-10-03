@@ -20,8 +20,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      toxiproxy_init:
-        condition: service_completed_successfully
     restart: unless-stopped
     user: "1000:1000"  # Match host user for consistent file ownership across containers
     volumes:
@@ -112,38 +110,33 @@ services:
     networks:
       - smart-maintenance-network
 
-  # Toxiproxy Service: Chaos engineering proxy for simulating network failures and latency.
-  # Sits between services to enable resilience testing by injecting faults, delays, and timeouts.
-  # Critical for validating system behavior under adverse network conditions.
-  toxiproxy:
-    image: ghcr.io/shopify/toxiproxy:2.5.0
-    container_name: smart_maintenance_toxiproxy
-    restart: unless-stopped
-    ports:
-      - "8474:8474"  # Toxiproxy API
-      - "5434:5434"  # Proxied PostgreSQL port (changed to avoid conflict)
-      - "6380:6380"  # Proxied Redis port
-    networks:
-      - smart-maintenance-network
+  # toxiproxy and toxiproxy_init services temporarily disabled until chaos testing resumes.
+  # toxiproxy:
+  #   image: ghcr.io/shopify/toxiproxy:2.5.0
+  #   container_name: smart_maintenance_toxiproxy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8474:8474"  # Toxiproxy API
+  #     - "5434:5434"  # Proxied PostgreSQL port (changed to avoid conflict)
+  #     - "6380:6380"  # Proxied Redis port
+  #   networks:
+  #     - smart-maintenance-network
 
-  # Toxiproxy Initialization Service: One-time setup service that configures proxy rules
-  # and establishes connections between services and Toxiproxy for chaos engineering.
-  # Runs once per stack startup to ensure proper proxy configuration.
-  toxiproxy_init:
-    build: .
-    image: smart-maintenance-saas:latest
-    container_name: smart_maintenance_toxiproxy_init
-    command: ["./scripts/toxiproxy_init.sh"]
-    depends_on:
-      toxiproxy:
-        condition: service_started
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: "no"  # Only run once per stack startup
-    networks:
-      - smart-maintenance-network
+  # toxiproxy_init:
+  #   build: .
+  #   image: smart-maintenance-saas:latest
+  #   container_name: smart_maintenance_toxiproxy_init
+  #   command: ["/bin/bash", "/app/scripts/toxiproxy_init.sh"]
+  #   depends_on:
+  #     toxiproxy:
+  #       condition: service_started
+  #     db:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   restart: "no"  # Only run once per stack startup
+  #   networks:
+  #     - smart-maintenance-network
 
   # MLflow Tracking Server: Centralized ML experiment tracking, model versioning, and artifact storage.
   # Provides REST API for logging experiments, storing model artifacts, and managing ML lifecycle.
@@ -239,86 +232,82 @@ services:
   # Automated Drift Detection Agent: Continuously monitors ML model performance and data drift.
   # Runs scheduled checks (every 6 hours) to detect statistical changes in data distribution.
   # Publishes drift events to Redis for triggering automated model retraining workflows.
-  drift_agent:
-    build: .
-    image: smart-maintenance-saas:latest
-    container_name: smart_maintenance_drift_agent
-    environment:
-      - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
-      - REDIS_URL=redis://redis:6379/0
-      - API_BASE_URL=http://api:8000
-      - PYTHONPATH=/app
-      - DRIFT_CHECK_ENABLED=true
-      - DRIFT_CHECK_SCHEDULE=0 */6 * * *  # Every 6 hours
-      - DRIFT_THRESHOLD=0.05
-      - SENSORS_TO_MONITOR=demo-sensor-001
-      - RUN_STARTUP_CHECK=true
-      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    env_file:
-      - .env
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      mlflow:
-        condition: service_started
-      toxiproxy_init:
-        condition: service_completed_successfully
-    restart: unless-stopped
-    user: "1000:1000"
-    volumes:
-      - ./logs:/app/logs
-      - ./mlflow_data:/mlruns
-    command: ["python", "scripts/run_drift_check_agent.py"]
-    healthcheck:
-      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - smart-maintenance-network
+  # drift_agent:
+  #   build: .
+  #   image: smart-maintenance-saas:latest
+  #   container_name: smart_maintenance_drift_agent
+  #   environment:
+  #     - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - API_BASE_URL=http://api:8000
+  #     - PYTHONPATH=/app
+  #     - DRIFT_CHECK_ENABLED=true
+  #     - DRIFT_CHECK_SCHEDULE=0 */6 * * *  # Every 6 hours
+  #     - DRIFT_THRESHOLD=0.05
+  #     - SENSORS_TO_MONITOR=demo-sensor-001
+  #     - RUN_STARTUP_CHECK=true
+  #     - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+  #     - MLFLOW_TRACKING_URI=http://mlflow:5000
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     mlflow:
+  #       condition: service_started
+  #   restart: unless-stopped
+  #   user: "1000:1000"
+  #   volumes:
+  #     - ./logs:/app/logs
+  #     - ./mlflow_data:/mlruns
+  #   command: ["python", "scripts/run_drift_check_agent.py"]
+  #   healthcheck:
+  #     test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+  #   networks:
+  #     - smart-maintenance-network
 
   # Model Retraining Agent: Event-driven service that automatically retrains ML models
   # when drift is detected. Implements cooldown periods and concurrency controls to prevent
   # resource exhaustion. Coordinates with MLflow for model versioning and deployment.
-  retrain_agent:
-    build: .
-    image: smart-maintenance-saas:latest
-    container_name: smart_maintenance_retrain_agent
-    environment:
-      - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
-      - REDIS_URL=redis://redis:6379/0
-      - PYTHONPATH=/app:/app/.venv/lib/python3.11/site-packages
-      - PATH=/app/.venv/bin:$PATH
-      - RETRAINING_ENABLED=true
-      - RETRAINING_COOLDOWN_HOURS=24
-      - MAX_CONCURRENT_RETRAINING=1
-      - MODELS_TO_RETRAIN=anomaly:train-anomaly,forecast:train-forecast
-      - TRAINING_TIMEOUT_MINUTES=60
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    env_file:
-      - .env
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      mlflow:
-        condition: service_started
-      toxiproxy_init:
-        condition: service_completed_successfully
-    restart: unless-stopped
-    user: "1000:1000"
-    volumes:
-      - ./logs:/app/logs
-      - ./mlflow_data:/mlruns
-      - .:/app  # Full access for make commands
-    command: ["/app/.venv/bin/python", "scripts/retrain_models_on_drift.py"]
-    networks:
-      - smart-maintenance-network
+  # retrain_agent:
+  #   build: .
+  #   image: smart-maintenance-saas:latest
+  #   container_name: smart_maintenance_retrain_agent
+  #   environment:
+  #     - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - PYTHONPATH=/app:/app/.venv/lib/python3.11/site-packages
+  #     - PATH=/app/.venv/bin:$PATH
+  #     - RETRAINING_ENABLED=true
+  #     - RETRAINING_COOLDOWN_HOURS=24
+  #     - MAX_CONCURRENT_RETRAINING=1
+  #     - MODELS_TO_RETRAIN=anomaly:train-anomaly,forecast:train-forecast
+  #     - TRAINING_TIMEOUT_MINUTES=60
+  #     - MLFLOW_TRACKING_URI=http://mlflow:5000
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     mlflow:
+  #       condition: service_started
+  #   restart: unless-stopped
+  #   user: "1000:1000"
+  #   volumes:
+  #     - ./logs:/app/logs
+  #     - ./mlflow_data:/mlruns
+  #     - .:/app  # Full access for make commands
+  #   command: ["/app/.venv/bin/python", "scripts/retrain_models_on_drift.py"]
+  #   networks:
+  #     - smart-maintenance-network
 
   # --- Future Microservices: Uncomment when MICROSERVICE_MIGRATION_STRATEGY triggers are met ---
   # 
