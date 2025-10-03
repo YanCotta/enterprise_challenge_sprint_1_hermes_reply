@@ -1,5 +1,9 @@
 # Development Orientation Guide (V1.0 Production Complete)
 
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Note:** This document describes legacy development practices. For current v1.0 deployment procedures, see [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) and [UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md](../UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md).
+
 ## 🎉 V1.0 Production Completion Achievements
 
 ### ✅ **V1.0 Production Hardening Complete**
@@ -45,9 +49,11 @@ docker builder prune -af
 docker system df
 ```
 
-### 2. Poetry Dependency Management Issues
+### 2. Dependency Management Evolution (Historical)
 
-#### Issue 2A: Missing Dependencies
+**Note (2025-10-03):** Docker containers have migrated from Poetry to pip-based dependency management. This section documents the historical Poetry issues and their resolution.
+
+#### Issue 2A: Missing Dependencies (Historical - Resolved)
 **Symptom**: "No module named 'resampy'" errors in audio processing.
 
 **Root Cause**: Poetry lock files became inconsistent when dependencies were added to `pyproject.toml` without regenerating `poetry.lock`.
@@ -57,7 +63,13 @@ docker system df
 - Updated Dockerfile.ml: `COPY pyproject.toml ./` → `poetry lock` → `poetry install`
 - Added `resampy = "^0.4.3"` to `pyproject.toml` for audio resampling support
 
-#### Issue 2B: "Could not parse version constraint: <empty>" Error
+**Current Approach (2025-10-03):**
+- Docker builds now use `requirements/api.txt` with pip instead of Poetry
+- Dependencies are exported from `pyproject.toml` via `poetry export`
+- Container images create `/opt/venv` and install dependencies with `pip install -r requirements/api.txt`
+- Runtime commands execute from `/opt/venv/bin`, so no `poetry run` prefix is needed
+
+#### Issue 2B: "Could not parse version constraint: <empty>" Error (Historical - Obsolete)
 **Symptom**: Docker build fails during `poetry install` with:
 ```
 poetry lock && poetry install --with dev --no-root
@@ -67,27 +79,28 @@ exit code: 1
 
 **Root Cause**: Known bug in Poetry 1.8.x where the dependency resolver encounters malformed version metadata from PyPI packages.
 
-**Solution Applied**:
+**Solution Applied (Historical)**:
 - Downgraded Poetry from 1.8.3 to 1.7.1 in Dockerfile.ml
 - Poetry 1.7.1 is stable and doesn't have this parsing bug
 
-**Prevention Strategy**:
+**Current Approach (2025-10-03):**
+- This issue is **obsolete** as Docker containers no longer use Poetry for dependency installation
+- Poetry is still used locally for development dependency management
+- The `requirements/api.txt` file is generated from `pyproject.toml` and used by Docker builds
+
+**Migration Strategy**:
 ```bash
 # When adding new dependencies:
-1. Add to pyproject.toml
-2. Delete poetry.lock (optional but recommended for major changes)
-3. Run: poetry lock
-4. Rebuild Docker images with --no-cache for dependency changes
+1. Add to pyproject.toml (local development)
+2. Run: poetry lock (regenerate lock file)
+3. Export for Docker: poetry export --without-hashes --format=requirements.txt --output requirements/api.txt
+4. Rebuild Docker images: docker compose build --no-cache
 
-# For Docker builds with Poetry:
-# Always use: poetry lock (without --no-update) in Dockerfile to regenerate
-# Pin Poetry version to 1.7.1 to avoid the "empty constraint" bug
+# Inside containers, commands run directly (no poetry run prefix):
+docker compose exec api python scripts/smoke_v1.py
+docker compose exec api pytest -m unit
 
-# If you encounter the "empty constraint" error:
-# 1. Check Poetry version in Dockerfile (should be 1.7.1, not 1.8.x)
-# 2. Clear local cache: rm -f poetry.lock && sudo rm -rf .venv
-# 3. Regenerate: poetry lock
-# 4. Rebuild: docker compose build --no-cache
+# The /opt/venv/bin directory is in PATH, so Python executables are found automatically
 ```
 
 ### 3. Build Context Optimization
@@ -183,11 +196,29 @@ docker build --no-cache -f Dockerfile.ml -t smart-maintenance-ml .
 docker system df
 ```
 
-### Poetry Management
+### Dependency Management (Updated 2025-10-03)
+
+**Container builds now use pip with `requirements/api.txt` instead of Poetry:**
+
+```bash
+# Regenerate requirements file when dependencies change
+poetry export --without-hashes --format=requirements.txt --output requirements/api.txt
+
+# Rebuild Docker images after dependency changes
+docker compose build --no-cache
+
+# Verify dependencies in container
+docker compose exec api pip list
+```
+
+**For local development (Poetry still used outside containers):**
+
 ```bash
 # Add new dependency safely
 poetry add package_name
 poetry lock --no-update  # Regenerate lock file
+# Export to requirements.txt for Docker builds
+poetry export --without-hashes --format=requirements.txt --output requirements/api.txt
 # Rebuild Docker images
 
 # Debug dependency issues

@@ -1,8 +1,8 @@
 # Smart Maintenance SaaS - Test Documentation
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Status:** V1.0 Critical Path Coverage  
-**Related:** [v1_release_must_do.md Section 6](../docs/v1_release_must_do.md) - Testing & validation plan
+**Related:** [v1_release_must_do.md Section 6](../docs/legacy/v1_release_must_do.md) - Testing & validation plan
 
 Test organization, execution guide, and coverage status for the Smart Maintenance SaaS platform.
 
@@ -159,13 +159,15 @@ pytest -m resilience -k redis
 
 | Scenario | Command |
 |----------|---------|
-| Full suite (host) | `poetry run pytest` |
-| Unit only | `poetry run pytest -m unit` |
-| Integration only | `poetry run pytest -m integration` |
-| E2E workflows | `poetry run pytest tests/e2e/` |
-| With coverage | `poetry run pytest --cov=apps --cov=core` |
+| Full suite (host) | `pytest` |
+| Unit only | `pytest -m unit` |
+| Integration only | `pytest -m integration` |
+| E2E workflows | `pytest tests/e2e/` |
+| With coverage | `pytest --cov=apps --cov=core` |
 | Single test debug | `pytest tests/e2e/test_drift_workflow.py::test_drift_detected` |
 | Inside container | `docker compose exec api pytest -m api` |
+
+**Note:** Tests are executed directly via `pytest` (no `poetry run` prefix needed). When running inside containers, the Python environment at `/opt/venv` is already activated via the entrypoint, so `docker compose exec api pytest` works without additional setup.
 
 ---
 
