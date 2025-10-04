@@ -1,5 +1,9 @@
 # Security Audit Checklist
 
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Note:** This document provides a historical security audit framework. For current v1.0 security architecture, see [SECURITY.md](../SECURITY.md).
+
 This checklist provides a comprehensive framework for conducting security audits of the Smart Maintenance SaaS platform. It is organized by security category and covers all API endpoints with relevant security controls.
 
 ## Overview

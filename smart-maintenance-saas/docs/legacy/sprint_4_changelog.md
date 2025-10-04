@@ -1,5 +1,9 @@
 # Sprint 4 (Cloud Deployment) Changelog
 
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Note:** This document records Sprint 4 cloud deployment milestones. For current v1.0 deployment procedures, see [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) and [UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md](../UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md).
+
 ## Phase 1 (Days 1-4): Foundation & Core Cloud Infrastructure
 
 ### Day 1-2 (Task 1.1)

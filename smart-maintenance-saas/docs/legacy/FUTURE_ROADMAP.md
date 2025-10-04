@@ -1,8 +1,11 @@
 # Smart Maintenance SaaS: Post-V1.0 Future Implementation Roadmap
 
-**Status**: V1.0 Complete - Future Enhancement Roadmap  
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Original Status**: V1.0 Complete - Future Enhancement Roadmap  
 **V1.0 Delivery Date**: September 23, 2025  
 **Current Version**: V1.0 Production Ready  
+**Note:** For current v1.0 deferred features, see [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md Section 8](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md).  
 
 ## 🎉 V1.0 Achievement Status
 

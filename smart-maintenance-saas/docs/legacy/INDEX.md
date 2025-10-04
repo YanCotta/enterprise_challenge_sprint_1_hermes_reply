@@ -1,9 +1,9 @@
 # Legacy Documentation Index
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Status:** Archived - Historical reference only
 
-> **Important:** This directory contains documents predating the V1.0 production release and scope consolidation. For current system documentation, refer to [v1_release_must_do.md](../v1_release_must_do.md) as the single source of truth.
+> **Important:** This directory contains documents predating the V1.0 production release and scope consolidation. For current system documentation, refer to [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) and [UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md](../UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md) as the single sources of truth. The legacy [v1_release_must_do.md](./v1_release_must_do.md) is also available as a historical reference.
 
 ## Purpose
 

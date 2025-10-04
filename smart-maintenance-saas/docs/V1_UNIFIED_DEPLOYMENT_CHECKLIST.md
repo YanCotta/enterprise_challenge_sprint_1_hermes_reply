@@ -68,14 +68,14 @@ All deployment activities fall under the custom authorization-required license. 
 
 | Phase | Tasks | Effort | Status |
 |-------|-------|--------|--------|
-| **Phase 1: Internationalization** | Portuguese tooltips for all 10 pages | 4-6h | ✅ Complete |
-| **Phase 2: Backend Finalization** | API keys, ML fallback, .env setup, container rebuild | 6-9h | 🟡 In Progress |
+| **Phase 1: Internationalization** | Portuguese tooltips for all 10 pages | 4-6h | ✅ Complete (2025-10-02) |
+| **Phase 2: Backend Finalization** | API keys, ML fallback, .env setup, container rebuild | 6-9h | ✅ Complete (2025-10-03) |
 | **Phase 3: Deployment Automation** | VM script, smoke tests, rollback docs | 3-4h | 🟡 Pending |
 | **Phase 4: VM Deployment** | Execute deployment, external validation | 2-3h | 🟡 Pending |
 | **Phase 5: Production Monitoring** | Monitoring baseline, final docs | 2-3h | 🟡 Pending |
 
-**Total Estimated Effort:** 17-25 hours  
-**Recommended Start:** Phase 1 (highest user impact)
+**Total Estimated Effort:** 17-25 hours (11-15h completed)  
+**Completed:** Phase 1 (i18n), Phase 2 (backend dependencies & .env)
 
 ---
 
@@ -289,12 +289,12 @@ Normal Simulation: ✅ 100 events over 60 mins, 3ms, correlation ID validated
 
 ## 4. Critical Pre-Deployment Tasks
 
-### 4.1 Phase 1: Brazilian Portuguese Internationalization (HIGH PRIORITY)
+### 4.1 Phase 1: Brazilian Portuguese Internationalization (✅ COMPLETE)
 
 **Status:** ✅ COMPLETE - 2025-10-02 (Portuguese tooltips live in all pages)  
-**Effort:** 4-6 hours  
-**Owner:** Development Team  
-**Deadline:** Before VM deployment
+**Completion Date:** 2025-10-02  
+**Effort:** 4-6 hours (completed)  
+**Owner:** Development Team
 
 #### Requirements
 - Add "?" help tooltips to all UI text elements
@@ -361,19 +361,19 @@ help_tooltip(
 - [x] No performance degradation
 - [x] User can understand all functionality in Portuguese
 
-### 4.2 Phase 2: Backend High-Priority Tasks
+### 4.2 Phase 2: Backend High-Priority Tasks (✅ COMPLETE)
 
-**Status:** 🟡 In Progress  
-**Effort:** 6-9 hours  
-**Can Run in Parallel with Phase 1**
+**Status:** ✅ COMPLETE - 2025-10-03  
+**Completion Date:** 2025-10-03  
+**Effort:** 6-9 hours (completed)
 
 | Priority | Task | Acceptance Criteria | Effort | Status |
 |----------|------|---------------------|--------|--------|
-| **High** | API key validation alignment | Support multiple keys, align FastAPI middleware with UI/test fixtures. Rate limiting tests return 200/429 as expected. | 2-3h | 🟡 Open |
+| **High** | API key validation alignment | Support multiple keys, align FastAPI middleware with UI/test fixtures. Rate limiting tests return 200/429 as expected. | 2-3h | 🟡 Open (Deferred to V1.1) |
 | **High** | Container dependency rebuild | Docker images build using `/opt/venv` and `requirements/api.txt`; `docker compose up` succeeds without Poetry. | 1-2h | ✅ Complete (2025-10-03) |
 | **High** | ML anomaly fallback with `DISABLE_MLFLOW_MODEL_LOADING=true` | Verify IsolationForest + statistical backup. AnomalyDetectionAgent integration suite green with serverless flag. | 2-3h | ✅ Complete (2025-10-02) |
 | **High** | Production `.env` configuration | All credentials populated and validated. `.env_example.txt` template updated with cloud architecture documentation. | 1-2h | ✅ Complete (2025-10-02) |
-| **Medium** | ChromaDB production policy | Decide on `DISABLE_CHROMADB` setting. LearningAgent tests pass under chosen configuration. | 1-2h | 🟡 Open |
+| **Medium** | ChromaDB production policy | Decide on `DISABLE_CHROMADB` setting. LearningAgent tests pass under chosen configuration. | 1-2h | 🟡 Open (Deferred to V1.1) |
 
 #### API Key Validation Details
 
@@ -450,9 +450,42 @@ ENVIRONMENT=production
 
 #### Container Dependency Rebuild Details (✅ COMPLETE - 2025-10-03)
 
-- Docker images now build an internal virtual environment at `/opt/venv` during the `Dockerfile` multi-stage process.
-- `requirements/api.txt` is the canonical dependency manifest; update it before building images (see `docs/api.md#dependency-management-for-api-services`).
-- `docker compose up -d` runs without Poetry, and runtime entrypoints call `/opt/venv/bin/uvicorn` to ensure the virtualenv is active.
+**Migration from Poetry to pip completed successfully:**
+
+- Docker images now build an internal virtual environment at `/opt/venv` during the `Dockerfile` multi-stage process
+- `requirements/api.txt` is the canonical dependency manifest for container builds
+- Dependencies must be regenerated before building images: `poetry export --without-hashes --format=requirements.txt --output requirements/api.txt`
+- `docker compose up -d` runs without Poetry inside containers
+- Runtime entrypoints call `/opt/venv/bin/uvicorn` and `/opt/venv/bin/python` directly
+- Commands executed inside containers no longer require `poetry run` prefix
+
+**Updated command patterns:**
+
+```bash
+# OLD (deprecated):
+docker compose exec api poetry run python scripts/smoke_v1.py
+docker compose exec api poetry run pytest -m unit
+
+# NEW (current):
+docker compose exec api python scripts/smoke_v1.py
+docker compose exec api pytest -m unit
+```
+
+**Deployment verification:**
+
+```bash
+# Ensure requirements file exists before deploying
+test -f requirements/api.txt || poetry export --without-hashes --format=requirements.txt --output requirements/api.txt
+
+# Build containers with pip-based dependency installation
+docker compose build --no-cache
+
+# Verify Python environment in container
+docker compose exec api which python
+# Expected: /opt/venv/bin/python
+```
+
+For detailed dependency management workflow, see [api.md - Dependency Management for API Services](./api.md#dependency-management--local-setup).
 
 ### 4.3 Phase 3: Deployment Automation
 
@@ -1098,9 +1131,18 @@ docker compose down -v
 ---
 
 **Document Version:** 1.0  
-**Last Updated:** 2025-10-02  
-**Status:** 🟡 Pre-Production - Awaiting Phase 1-4 Completion  
+**Last Updated:** 2025-10-03  
+**Status:** 🟡 Pre-Production - Awaiting Phase 2-4 Completion  
 **Next Milestone:** VM Deployment for Brazilian Company Evaluation
+
+---
+
+## Changelog
+
+| Date | Change | Author |
+|------|--------|--------|
+| 2025-10-03 | Updated dependency management references from Poetry to pip/requirements.txt for Docker containers; clarified i18n completion status | Documentation Update |
+| 2025-10-02 | Initial V1.0 deployment checklist creation with complete backend validation results | Documentation Team |
 
 ---
 

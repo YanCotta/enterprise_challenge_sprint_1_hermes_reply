@@ -1,10 +1,11 @@
 # Smart Maintenance SaaS: ML Project Summary & Model Registry Guide (V1.0 Production)
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Status:** V1.0 Production Ready  
 **Model Count:** 17+ models in MLflow registry with S3 artifact storage  
 **Related Documentation:**
-- [v1_release_must_do.md Section 2.1](./v1_release_must_do.md) - ML registry in backend capability matrix
+- [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md Section 3.1](./V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) - Backend capabilities matrix
+- [v1_release_must_do.md Section 2.1](./legacy/v1_release_must_do.md) - ML registry in backend capability matrix (archived)
 - [ml/README.md](./ml/README.md) - Training pipelines and feature engineering
 - [Sprint 4 Changelog](./legacy/sprint_4_changelog.md) - S3 serverless model loading achievements
 

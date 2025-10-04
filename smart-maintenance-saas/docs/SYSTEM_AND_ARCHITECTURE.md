@@ -1,8 +1,8 @@
 # Smart Maintenance SaaS – System & Architecture (V1.0)
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Status:** V1.0 Production Ready  
-**Authoritative Source:** [v1_release_must_do.md](./v1_release_must_do.md) - V1.0 Deployment Playbook (replaces former readiness checklist and capability matrix)  
+**Authoritative Source:** [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md](./V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) - Current V1.0 Deployment Checklist (see also legacy [v1_release_must_do.md](./legacy/v1_release_must_do.md))  
 **Scope:** High-level architectural overview for engineers and auditors. Detailed capability status, task tracking, and deployment procedures are in the deployment playbook.  
 **Document Philosophy:** Minimize duplication. Link to canonical artifacts instead of restating them.
 

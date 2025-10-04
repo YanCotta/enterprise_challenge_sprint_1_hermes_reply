@@ -1,9 +1,10 @@
 # Database Architecture (TimescaleDB Production Design)
 
-**Last Updated:** 2025-09-30  
+**Last Updated:** 2025-10-03  
 **Status:** V1.0 Production Ready  
 **Related Documentation:**
-- [v1_release_must_do.md Section 2.1](../v1_release_must_do.md) - Database in backend capability matrix
+- [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md Section 3.1](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) - Database in backend capability matrix
+- [v1_release_must_do.md Section 2.1](../legacy/v1_release_must_do.md) - Database in backend capability matrix (archived)
 - [Sprint 4 Changelog](../legacy/sprint_4_changelog.md) - Cloud TimescaleDB deployment achievements
 - [SYSTEM_AND_ARCHITECTURE.md](../SYSTEM_AND_ARCHITECTURE.md) - High-level architecture
 

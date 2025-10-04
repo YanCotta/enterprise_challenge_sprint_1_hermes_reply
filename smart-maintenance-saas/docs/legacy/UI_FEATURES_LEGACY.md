@@ -1,5 +1,9 @@
 # Smart Maintenance SaaS - Comprehensive UI Features Documentation (V1.0 HARDENING UPDATE)
 
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Note:** This document describes legacy UI features prior to v1.0 redesign. For current v1.0 UI features, see [ui_redesign_changelog.md](../ui_redesign_changelog.md) and [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md Section 3.3](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md).
+
 ## Overview
 
 The Smart Maintenance SaaS platform features a sophisticated Streamlit-based web interface (1393 lines) providing predictive maintenance capabilities. **Following comprehensive UI functionality analysis, this document has been updated to reflect actual feature status, identified gaps, and remediation requirements for V1.0 production readiness.**

@@ -1,10 +1,15 @@
 # Test Coverage Improvement Plan
 
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Original Date:** August 31, 2025  
+**Note:** This document records Sprint 3 coverage improvement planning. For current v1.0 testing strategy, see [tests/README.md](../../tests/README.md).
+
 ## Current Status
 - **Current Coverage**: 22.83%
 - **CI Requirement**: 20% (temporarily lowered from 80% for active development)
 - **Target Goal**: 80% (long-term production readiness)
-- **Last Updated**: August 31, 2025
+- **Original Date**: August 31, 2025
 
 # Smart Maintenance SaaS - Complete Documentation Index
 

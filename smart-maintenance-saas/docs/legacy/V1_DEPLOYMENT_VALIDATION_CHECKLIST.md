@@ -1,8 +1,10 @@
 # V1.0 Deployment Validation Checklist
 
-**Status:** Pre-Deployment Validation  
-**Date:** 2025-10-02  
-**Related:** [v1_release_must_do.md](./v1_release_must_do.md) - V1.0 Deployment Playbook
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Date Created:** 2025-10-02  
+**Note:** This is a legacy document. For current v1.0 validation procedures, see [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md) Section 6 (Post-Deployment Validation).  
+**Related:** [v1_release_must_do.md](./v1_release_must_do.md) - V1.0 Deployment Playbook (archived)
 
 ## Pre-Deployment Validation Steps
 
@@ -54,9 +56,11 @@ curl http://localhost:8501
 
 #### 3.1 Run Automated Smoke Test
 ```bash
-# Inside API container
-docker compose exec api poetry run python scripts/smoke_v1.py
+# Inside API container (updated 2025-10-03: no poetry run prefix needed)
+docker compose exec api python scripts/smoke_v1.py
 ```
+
+**Note:** As of 2025-10-03, commands inside containers no longer require `poetry run` prefix as dependencies are installed via pip in `/opt/venv` and activated automatically.
 
 **Expected Results:**
 ```json

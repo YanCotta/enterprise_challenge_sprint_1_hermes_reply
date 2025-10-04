@@ -1,6 +1,9 @@
 # Performance Baseline Report
 
-*Last Updated: August 31, 2025*
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Original Date:** August 31, 2025  
+**Note:** This document records Sprint 3 performance metrics. For current v1.0 performance data, see [V1_UNIFIED_DEPLOYMENT_CHECKLIST.md Section 2](../V1_UNIFIED_DEPLOYMENT_CHECKLIST.md).
 
 ## Overview
 

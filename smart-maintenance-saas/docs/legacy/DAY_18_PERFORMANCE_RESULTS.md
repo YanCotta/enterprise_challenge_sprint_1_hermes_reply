@@ -1,5 +1,10 @@
 # Day 18 - TimescaleDB Optimization Performance Results
 
+**Last Updated:** 2025-10-03  
+**Status:** Archived - Historical Reference Only  
+**Original Date:** Day 18 of Sprint 3  
+**Note:** This document records TimescaleDB optimization results from Sprint 3. For current v1.0 database architecture, see [db/README.md](../db/README.md).
+
 # Smart Maintenance SaaS - Complete Documentation Index
 
 ## Core Documentation
