@@ -1222,3 +1222,51 @@ if preferred_deadline < preferred_start:
 - Action item: regenerate dev lockfile later if Poetry is required locally; container images now decoupled from that constraint.
 
 
+
+### 27.1 ML Container Dependency Rebuild & Service Re-enablement (2025-10-03)
+
+#### Summary
+
+- Applied the same pip/virtualenv approach to `Dockerfile.ml` to resolve Poetry build failures that previously disabled ML-related services.
+- Re-enabled `notebook_runner`, `ml`, `drift_agent`, and `retrain_agent` services in `docker-compose.yml` now that dependency management is fixed.
+- All ML containers now use `/opt/venv` with pip-installed dependencies from `requirements/api.txt`, matching the API container architecture.
+
+#### Implementation Notes
+
+**Dockerfile.ml Changes:**
+- Replaced Poetry-based dependency installation with pip/virtualenv approach
+- Added multi-stage build with builder and production stages
+- Created `/opt/venv` in builder stage and copied to production stage
+- Installed dependencies via `pip install -r requirements/api.txt`
+- Added proper user/group management (appuser:1000)
+- Included necessary ML packages (ipykernel, seaborn, boto3, papermill)
+- Set PATH to `/opt/venv/bin:$PATH` for proper binary resolution
+
+**docker-compose.yml Changes:**
+- **notebook_runner:** Uncommented and updated default notebook to `02_synthetic_anomaly_isolation_forest`
+- **ml:** Uncommented utility container for ad-hoc ML operations
+- **drift_agent:** Uncommented and updated command to use `/opt/venv/bin/python`, fixed DATABASE_URL to use `db:5432` instead of toxiproxy
+- **retrain_agent:** Uncommented and updated command to use `/opt/venv/bin/python`, fixed DATABASE_URL to use `db:5432`, simplified PYTHONPATH
+
+#### Validation
+
+- Dockerfile.ml now mirrors the successful API container architecture
+- All ML services can now build without Poetry dependency errors
+- Services use consistent virtualenv location across all containers
+- Binary paths properly reference `/opt/venv/bin/` for python, uvicorn, etc.
+
+#### Benefits
+
+1. **Consistency:** All containers now use the same dependency management approach
+2. **Reliability:** Eliminates Poetry version constraint parsing errors
+3. **Maintainability:** Single source of truth for dependencies (`requirements/api.txt`)
+4. **Automation:** Re-enables automated drift detection and model retraining capabilities
+5. **Training:** Notebook runner can now execute ML training pipelines in Docker
+
+#### Cross-References
+
+- Related to Section 27.0 (API/UI container rebuild)
+- Documented in GUIA_CONFIGURACAO_RAPIDA.md (Portuguese quick setup guide)
+- Addresses known Poetry bug mentioned in issue #103
+
+

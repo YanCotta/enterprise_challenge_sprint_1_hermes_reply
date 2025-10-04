@@ -24,6 +24,11 @@ Plataforma SaaS de manutenção preditiva pronta para produção, otimizada para
 
 ## Início Rápido
 
+**📖 Guia Completo de Configuração:** Veja o [Guia de Configuração Rápida](smart-maintenance-saas/docs/GUIA_CONFIGURACAO_RAPIDA.md) para instruções detalhadas passo a passo em português sobre como configurar e executar o sistema em 3 cenários diferentes:
+- **Cenário 1:** Implantação completamente local (desenvolvimento)
+- **Cenário 2:** Implantação híbrida (local + serviços cloud)
+- **Cenário 3:** Implantação completamente na cloud (produção)
+
 **Pré-requisitos:** Docker & Docker Compose, serviços de cloud configurados, `requirements/api.txt`
 
 ```bash
@@ -112,9 +117,9 @@ docker compose up -d --build
 
 ### Operações & Implantação
 
-- [Guia de Implantação Cloud](smart-maintenance-saas/docs/CLOUD_DEPLOYMENT_GUIDE.md) - Implantação específica por plataforma (Render, Railway, Heroku) com configuração de ambiente ([veja arquitetura de implantação](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#appendix-d-deployment-architecture-future-oriented-illustration))
-- [Configuração de Implantação](smart-maintenance-saas/docs/DEPLOYMENT_SETUP.md) - Configuração de ambiente e gerenciamento de .env ([veja serviços Docker](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#26-docker-services-architecture))
-- [Guia de Configuração DVC](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md) - Configuração de controle de versão de dados
+- **[Guia de Configuração Rápida](smart-maintenance-saas/docs/GUIA_CONFIGURACAO_RAPIDA.md)** - **🆕 Guia completo em português** para configuração e implantação do sistema em 3 cenários (local, híbrido, cloud completo) com instruções passo a passo
+- [Guia de Implantação Cloud Unificado](smart-maintenance-saas/docs/UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md) - Guia completo de implantação em cloud com AWS EC2 e Streamlit Cloud
+- [Guia de Configuração DVC](smart-maintenance-saas/docs/DVC_SETUP_GUIDE.md) - Configuração de controle de versão de dados com Google Drive
 - [Orientação de Desenvolvimento](smart-maintenance-saas/docs/legacy/DEVELOPMENT_ORIENTATION.md) - Padrões de engenharia (arquivado)
 
 ### Legado & Histórico

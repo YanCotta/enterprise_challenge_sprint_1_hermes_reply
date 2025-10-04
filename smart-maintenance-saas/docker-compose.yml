@@ -175,139 +175,140 @@ services:
   # Jupyter Notebook Runner: Automated execution service for ML training notebooks and experiments.
   # Runs parameterized notebooks using Papermill for reproducible ML pipeline execution.
   # Shares volumes with other services to access datasets and store experiment results.
-  # notebook_runner service temporarily disabled while we resolve Poetry install issues in Dockerfile.ml.
-  # notebook_runner:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.ml
-  #   container_name: smart_maintenance_notebook_runner
-  #   command: >
-  #     sh -c "papermill notebooks/$${NOTEBOOK_FILE}.ipynb notebooks/$${NOTEBOOK_FILE}_output.ipynb"
-  #   environment:
-  #     - DOCKER_ENV=true
-  #     - NOTEBOOK_FILE=02_anomaly_isolation_forest
-  #     - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
-  #     - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-  #     - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-  #     - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
-  #   env_file:
-  #     - .env
-  #   user: "1000:1000"  # Match host user for consistent file ownership with API container
-  #   volumes:
-  #     - ./notebooks:/app/notebooks
-  #     - ./data:/app/data
-  #     - ./apps:/app/apps
-  #     - ./docs:/app/docs
-  #     - ./mlflow_data:/mlruns        # MLflow artifact store (matches other containers)
-  #   networks:
-  #     - smart-maintenance-network
-  #   depends_on:
-  #     - mlflow
+  # Re-enabled 2025-10-03: Now using pip/virtualenv approach instead of Poetry
+  notebook_runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: smart_maintenance_notebook_runner
+    command: >
+      sh -c "papermill notebooks/$${NOTEBOOK_FILE}.ipynb notebooks/$${NOTEBOOK_FILE}_output.ipynb"
+    environment:
+      - DOCKER_ENV=true
+      - NOTEBOOK_FILE=02_synthetic_anomaly_isolation_forest
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    env_file:
+      - .env
+    user: "1000:1000"  # Match host user for consistent file ownership with API container
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+      - ./apps:/app/apps
+      - ./docs:/app/docs
+      - ./mlflow_data:/mlruns        # MLflow artifact store (matches other containers)
+    networks:
+      - smart-maintenance-network
+    depends_on:
+      - mlflow
 
   # ML Utility Container: General-purpose container for ad-hoc ML operations and load testing.
   # Provides access to full project directory for running scripts, Locust tests, and data analysis.
   # Used for development tasks, debugging, and manual ML operations outside of automated pipelines.
-  # ml utility container temporarily disabled while Poetry install issues are resolved in Dockerfile.ml.
-  # ml:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.ml
-  #   container_name: smart_maintenance_ml
-  #   command: bash
-  #   environment:
-  #     - DOCKER_ENV=true
-  #   user: "1000:1000"  # Match host user for consistent file ownership
-  #   volumes:
-  #     - .:/app  # Mount entire project directory
-  #     - ./notebooks:/app/notebooks
-  #     - ./data:/app/data
-  #     - ./apps:/app/apps
-  #     - ./docs:/app/docs
-  #     - ./mlflow_data:/app/mlflow_data
-  #   networks:
-  #     - smart-maintenance-network
-  #   depends_on:
-  #     - mlflow
+  # Re-enabled 2025-10-03: Now using pip/virtualenv approach instead of Poetry
+  ml:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: smart_maintenance_ml
+    command: bash
+    environment:
+      - DOCKER_ENV=true
+    user: "1000:1000"  # Match host user for consistent file ownership
+    volumes:
+      - .:/app  # Mount entire project directory
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+      - ./apps:/app/apps
+      - ./docs:/app/docs
+      - ./mlflow_data:/app/mlflow_data
+    networks:
+      - smart-maintenance-network
+    depends_on:
+      - mlflow
 
   # Automated Drift Detection Agent: Continuously monitors ML model performance and data drift.
   # Runs scheduled checks (every 6 hours) to detect statistical changes in data distribution.
   # Publishes drift events to Redis for triggering automated model retraining workflows.
-  # drift_agent:
-  #   build: .
-  #   image: smart-maintenance-saas:latest
-  #   container_name: smart_maintenance_drift_agent
-  #   environment:
-  #     - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
-  #     - REDIS_URL=redis://redis:6379/0
-  #     - API_BASE_URL=http://api:8000
-  #     - PYTHONPATH=/app
-  #     - DRIFT_CHECK_ENABLED=true
-  #     - DRIFT_CHECK_SCHEDULE=0 */6 * * *  # Every 6 hours
-  #     - DRIFT_THRESHOLD=0.05
-  #     - SENSORS_TO_MONITOR=demo-sensor-001
-  #     - RUN_STARTUP_CHECK=true
-  #     - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
-  #     - MLFLOW_TRACKING_URI=http://mlflow:5000
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #     mlflow:
-  #       condition: service_started
-  #   restart: unless-stopped
-  #   user: "1000:1000"
-  #   volumes:
-  #     - ./logs:/app/logs
-  #     - ./mlflow_data:/mlruns
-  #   command: ["python", "scripts/run_drift_check_agent.py"]
-  #   healthcheck:
-  #     test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 40s
-  #   networks:
-  #     - smart-maintenance-network
+  # Re-enabled 2025-10-03: Uses main API image which now builds with pip/virtualenv
+  drift_agent:
+    build: .
+    image: smart-maintenance-saas:latest
+    container_name: smart_maintenance_drift_agent
+    environment:
+      - DATABASE_URL=postgresql://smart_user:strong_password@db:5432/smart_maintenance_db
+      - REDIS_URL=redis://redis:6379/0
+      - API_BASE_URL=http://api:8000
+      - PYTHONPATH=/app
+      - DRIFT_CHECK_ENABLED=true
+      - DRIFT_CHECK_SCHEDULE=0 */6 * * *  # Every 6 hours
+      - DRIFT_THRESHOLD=0.05
+      - SENSORS_TO_MONITOR=demo-sensor-001
+      - RUN_STARTUP_CHECK=true
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    restart: unless-stopped
+    user: "1000:1000"
+    volumes:
+      - ./logs:/app/logs
+      - ./mlflow_data:/mlruns
+    command: ["/opt/venv/bin/python", "scripts/run_drift_check_agent.py"]
+    healthcheck:
+      test: ["CMD", "/opt/venv/bin/python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - smart-maintenance-network
 
   # Model Retraining Agent: Event-driven service that automatically retrains ML models
   # when drift is detected. Implements cooldown periods and concurrency controls to prevent
   # resource exhaustion. Coordinates with MLflow for model versioning and deployment.
-  # retrain_agent:
-  #   build: .
-  #   image: smart-maintenance-saas:latest
-  #   container_name: smart_maintenance_retrain_agent
-  #   environment:
-  #     - DATABASE_URL=postgresql://smart_user:strong_password@toxiproxy:5434/smart_maintenance_db
-  #     - REDIS_URL=redis://redis:6379/0
-  #     - PYTHONPATH=/app:/app/.venv/lib/python3.11/site-packages
-  #     - PATH=/app/.venv/bin:$PATH
-  #     - RETRAINING_ENABLED=true
-  #     - RETRAINING_COOLDOWN_HOURS=24
-  #     - MAX_CONCURRENT_RETRAINING=1
-  #     - MODELS_TO_RETRAIN=anomaly:train-anomaly,forecast:train-forecast
-  #     - TRAINING_TIMEOUT_MINUTES=60
-  #     - MLFLOW_TRACKING_URI=http://mlflow:5000
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #     mlflow:
-  #       condition: service_started
-  #   restart: unless-stopped
-  #   user: "1000:1000"
-  #   volumes:
-  #     - ./logs:/app/logs
-  #     - ./mlflow_data:/mlruns
-  #     - .:/app  # Full access for make commands
-  #   command: ["/app/.venv/bin/python", "scripts/retrain_models_on_drift.py"]
-  #   networks:
-  #     - smart-maintenance-network
+  # Re-enabled 2025-10-03: Uses main API image which now builds with pip/virtualenv
+  retrain_agent:
+    build: .
+    image: smart-maintenance-saas:latest
+    container_name: smart_maintenance_retrain_agent
+    environment:
+      - DATABASE_URL=postgresql://smart_user:strong_password@db:5432/smart_maintenance_db
+      - REDIS_URL=redis://redis:6379/0
+      - PYTHONPATH=/app
+      - RETRAINING_ENABLED=true
+      - RETRAINING_COOLDOWN_HOURS=24
+      - MAX_CONCURRENT_RETRAINING=1
+      - MODELS_TO_RETRAIN=anomaly:train-anomaly,forecast:train-forecast
+      - TRAINING_TIMEOUT_MINUTES=60
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    restart: unless-stopped
+    user: "1000:1000"
+    volumes:
+      - ./logs:/app/logs
+      - ./mlflow_data:/mlruns
+      - .:/app  # Full access for make commands
+    command: ["/opt/venv/bin/python", "scripts/retrain_models_on_drift.py"]
+    networks:
+      - smart-maintenance-network
 
   # --- Future Microservices: Uncomment when MICROSERVICE_MIGRATION_STRATEGY triggers are met ---
   # 
