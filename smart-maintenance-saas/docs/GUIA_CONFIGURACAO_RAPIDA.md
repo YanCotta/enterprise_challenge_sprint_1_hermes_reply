@@ -16,6 +16,7 @@
 5. [Cenário 3: Implantação Completamente na Cloud](#cenário-3-implantação-completamente-na-cloud)
 6. [Solução de Problemas Comuns](#solução-de-problemas-comuns)
 7. [Próximos Passos](#próximos-passos)
+8. [Índice de Documentação do Sistema](#índice-de-documentação-do-sistema)
 
 ---
 
@@ -27,10 +28,12 @@ Este guia fornece instruções passo a passo para configurar e executar o Smart 
 - **Cenário 2 - Híbrido:** UI e MLflow locais, mas usando serviços cloud (TimescaleDB, Redis, S3)
 - **Cenário 3 - Cloud Completo:** Backend na AWS EC2 e UI no Streamlit Cloud (produção)
 
-**⚠️ NOTA IMPORTANTE SOBRE DEPENDÊNCIAS:**
-- A partir de 03/10/2025, o projeto usa `pip` e `virtualenv` ao invés de Poetry para gerenciar dependências dentro dos containers Docker.
-- Isso resolve um bug conhecido do Poetry (que será corrigido na v1.5).
-- O arquivo `requirements/api.txt` é a fonte autoritativa de dependências para builds de containers.
+**⚠️ NOTA IMPORTANTE SOBRE DEPENDÊNCIAS (Atualizado em 03/10/2025):**
+- A partir de 03/10/2025, **todos os containers Docker** (API, UI, ML, agents) usam `pip` e `virtualenv` ao invés de Poetry para gerenciar dependências.
+- Isso resolve um bug conhecido do Poetry ("Could not parse version constraint: <empty>") que impedia a construção dos containers.
+- O arquivo `requirements/api.txt` é a fonte autoritativa de dependências para todos os builds de containers.
+- **Serviços Re-habilitados:** `notebook_runner`, `ml`, `drift_agent` e `retrain_agent` agora funcionam corretamente após a migração.
+- Veja [ui_redesign_changelog.md Seção 27.1](ui_redesign_changelog.md#271-ml-container-dependency-rebuild--service-re-enablement-2025-10-03) para detalhes técnicos da implementação.
 
 ---
 
@@ -228,10 +231,12 @@ pip install --upgrade pip
 pip install -r requirements/api.txt
 
 # Construir imagem Docker para ML
+# NOTA: A imagem ML agora usa pip/virtualenv (Dockerfile.ml atualizado em 03/10/2025)
 make build-ml
 
 # Executar notebooks de treinamento via Makefile
 # (Estes rodam dentro de containers Docker para reprodutibilidade)
+# Veja docs/ml/README.md para detalhes dos modelos
 
 # Modelos com dados sintéticos (base - 15-30 min total)
 make synthetic-validation    # Validação de qualidade dos dados
@@ -293,12 +298,22 @@ docker compose up -d --build
 # Verificar que todos os containers estão rodando
 docker compose ps
 
-# Você deve ver:
+# Você deve ver (serviços core):
 # - smart_maintenance_api (porta 8000)
 # - smart_maintenance_ui (porta 8501)
 # - smart_maintenance_db (porta 5433)
 # - smart_maintenance_redis (porta 6379)
 # - smart_maintenance_mlflow (porta 5000)
+
+# Serviços adicionais (se habilitados no docker-compose.yml):
+# - smart_maintenance_notebook_runner (execução de notebooks)
+# - smart_maintenance_ml (container utilitário ML)
+# - smart_maintenance_drift_agent (detecção de drift)
+# - smart_maintenance_retrain_agent (retreinamento automático)
+
+# NOTA: Os serviços ML (notebook_runner, ml, drift_agent, retrain_agent)
+# foram re-habilitados em 03/10/2025 após migração para pip/virtualenv.
+# Veja docker-compose.yml e ui_redesign_changelog.md Seção 27.1 para detalhes.
 
 # Ver logs em tempo real (Ctrl+C para sair)
 docker compose logs -f
@@ -988,12 +1003,37 @@ git pull
 
 ### Problema: Container de build falha com erro de Poetry
 
-**Causa:** O projeto agora usa pip ao invés de Poetry para builds Docker.
+**Causa:** O projeto migrou de Poetry para pip/virtualenv para builds Docker em 03/10/2025.
 
-**Solução:**
-- Verifique que `requirements/api.txt` existe
-- Verifique que o `Dockerfile` usa `pip install -r requirements/api.txt`
-- Não use `poetry install` dentro do Docker
+**Sintomas:**
+- Erro: "Could not parse version constraint: <empty>"
+- Build de Dockerfile.ml ou Dockerfile falha
+- Serviços notebook_runner, ml, drift_agent, retrain_agent não inicializam
+
+**Solução (já implementada na versão atual):**
+1. **Verifique que está usando a versão atualizada:**
+   ```bash
+   # Verificar que Dockerfile usa pip/virtualenv
+   grep "pip install -r requirements/api.txt" Dockerfile
+   grep "pip install -r requirements/api.txt" Dockerfile.ml
+   
+   # Verificar que requirements/api.txt existe
+   ls -lh requirements/api.txt
+   ```
+
+2. **Se ainda vir erros de Poetry:**
+   ```bash
+   # Limpar cache Docker
+   docker system prune -a
+   
+   # Rebuild sem cache
+   docker compose build --no-cache
+   ```
+
+3. **Documentação de referência:**
+   - Veja [ui_redesign_changelog.md Seção 27.0 e 27.1](ui_redesign_changelog.md) para detalhes da implementação
+   - Todos os Dockerfiles agora criam `/opt/venv` e usam pip
+   - `requirements/api.txt` é a fonte autoritativa de dependências
 
 ### Problema: "Database connection failed"
 
@@ -1196,6 +1236,105 @@ Qualquer uso deste código exige autorização escrita prévia de Yan Pimentel C
 - Email: yanpcotta@gmail.com
 - LinkedIn: https://www.linkedin.com/in/yan-cotta/
 - GitHub: https://github.com/YanCotta
+
+---
+
+## Índice de Documentação do Sistema
+
+Este guia faz referência e complementa a documentação core do sistema. Abaixo está um índice completo da documentação disponível:
+
+### 📚 Documentação Autoritativa (Fonte Única da Verdade)
+
+- **[Playbook de Implantação V1.0](legacy/v1_release_must_do.md)** - Referência canônica para escopo, tarefas e procedimentos de implantação
+- **[Changelog de Redesign de UI](ui_redesign_changelog.md)** - Trilha de evolução da UI V1.0 com implementações de recursos e correções (veja Seção 27.0 e 27.1 para mudanças de dependências)
+- **[Changelog Sprint 4](legacy/sprint_4_changelog.md)** - Marcos de implantação cloud, integração MLflow e conquistas de infraestrutura
+- **[Resumo Executivo](EXECUTIVE_SUMMARY.md)** - Status de estabilização do sistema e confirmação de prontidão V1.0
+
+### 📖 Documentação Principal
+
+- **[Sistema & Arquitetura](SYSTEM_AND_ARCHITECTURE.md)** - Arquitetura de alto nível com diagramas abrangentes
+- **[Referência da API](api.md)** - Endpoints REST, integração e gerenciamento de dependências (veja seção sobre pip/virtualenv)
+- **[Documentação do Banco de Dados](db/README.md)** - Schema & recursos TimescaleDB
+- **[Documentação ML](ml/README.md)** - Modelos, pipelines de treinamento e integração MLflow
+- **[Documentação de Segurança](SECURITY.md)** - Arquitetura de segurança e melhores práticas
+
+### 🚀 Guias de Implantação e Configuração
+
+- **[Guia de Implantação Cloud Unificado](UNIFIED_CLOUD_DEPLOYMENT_GUIDE.md)** - Guia completo para implantação em AWS EC2 + Streamlit Cloud
+- **[Guia de Configuração DVC](DVC_SETUP_GUIDE.md)** - Configuração de controle de versão de dados com Google Drive
+- **[Comandos de Configuração DVC](dvc_setup_commands.md)** - Referência rápida de comandos DVC
+
+### 📊 Performance, Testes e Validação
+
+- **[Sumário de Modelos](MODELS_SUMMARY.md)** - Inventário de 17+ modelos de produção
+- **[Mapeamento de Artefatos S3](S3_ARTIFACT_MAPPING.md)** - Estrutura de armazenamento de artefatos MLflow
+- **[Checklist de Validação V1](V1_UNIFIED_DEPLOYMENT_CHECKLIST.md)** - Lista de verificação completa para implantação
+- **[Resultados de Teste de Carga](legacy/DAY_17_LOAD_TEST_REPORT.md)** - Validação de 103.8 RPS (arquivado)
+- **[Resultados de Performance](legacy/DAY_18_PERFORMANCE_RESULTS.md)** - Otimização TimescaleDB (arquivado)
+
+### 🛠️ Desenvolvimento e Orientação Técnica
+
+- **[Orientação de Desenvolvimento](legacy/DEVELOPMENT_ORIENTATION.md)** - Padrões de engenharia (arquivado)
+- **[Changelog de 30 Dias](legacy/30-day-sprint-changelog.md)** - Histórico detalhado do Sprint 3
+- **[Estratégia de Migração de Microserviços](legacy/MICROSERVICE_MIGRATION_STRATEGY.md)** - Plano de evolução arquitetural
+
+### 🔧 Problemas Conhecidos e Soluções
+
+**Bug do Poetry (Resolvido em 2025-10-03):**
+- **Problema:** Containers Docker falhavam ao construir com Poetry devido a erro "Could not parse version constraint: <empty>"
+- **Solução:** Migração para pip/virtualenv em todos os containers (API, UI, ML, agents)
+- **Documentação:** Veja [ui_redesign_changelog.md Seção 27.0 e 27.1](ui_redesign_changelog.md#270-container-dependency-rebuild-2025-10-03)
+- **Arquivos Afetados:** `Dockerfile`, `Dockerfile.ml`, `docker-compose.yml`, `requirements/api.txt`
+- **Status:** ✅ Resolvido - Todos os containers agora usam `/opt/venv` com pip
+
+### 📦 Arquivos de Configuração Importantes
+
+- **`.env_example.txt`** - Template de variáveis de ambiente com exemplos para todos os 3 cenários
+- **`docker-compose.yml`** - Orquestração de containers (services: api, ui, db, redis, mlflow, notebook_runner, ml, drift_agent, retrain_agent)
+- **`Dockerfile`** - Imagem principal da API (usa pip/virtualenv)
+- **`Dockerfile.ml`** - Imagem para ML e notebooks (usa pip/virtualenv desde 2025-10-03)
+- **`Makefile`** - Comandos de automação para treinamento de modelos
+- **`requirements/api.txt`** - Manifesto autoritativo de dependências Python
+
+### 🗂️ Estrutura de Diretórios
+
+```
+smart-maintenance-saas/
+├── apps/                    # Código da aplicação (API, serviços)
+├── core/                    # Lógica core e utilitários
+├── data/                    # Datasets para treinamento (gerenciado via DVC)
+├── docs/                    # Documentação (você está aqui!)
+│   ├── legacy/             # Documentação histórica arquivada
+│   ├── db/                 # Documentação do banco de dados
+│   └── ml/                 # Documentação ML
+├── infrastructure/          # Scripts de infraestrutura e init
+├── mlflow_data/            # Artefatos MLflow (sincronizado com S3)
+├── mlflow_db/              # Backend SQLite do MLflow
+├── notebooks/              # Jupyter notebooks para treinamento
+├── requirements/           # Manifestos de dependências
+├── scripts/                # Scripts utilitários e agents
+├── tests/                  # Suíte de testes
+└── ui/                     # Interface Streamlit
+```
+
+### 🔗 Links Externos Importantes
+
+- **Repositório GitHub:** https://github.com/YanCotta/enterprise_challenge_sprint_1_hermes_reply
+- **TimescaleDB Cloud:** https://console.cloud.timescale.com/
+- **Render (Redis):** https://dashboard.render.com/
+- **AWS Console:** https://console.aws.amazon.com/
+- **Streamlit Cloud:** https://share.streamlit.io
+- **DVC Data (Google Drive):** https://drive.google.com/drive/folders/1cJvSRaBG0Fzs4D_wlUeVPM9l47RP_k3G
+
+### 📝 Notas de Versão
+
+**Versão 1.0 (Atual):**
+- Sistema pronto para produção
+- 17+ modelos ML treinados e implantados
+- Integração completa com cloud services
+- UI em português brasileiro
+- Automação de drift detection e retraining
+- Documentação completa em português e inglês
 
 ---
 
