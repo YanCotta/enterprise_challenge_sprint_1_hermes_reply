@@ -22,6 +22,14 @@ Plataforma SaaS de manutenção preditiva pronta para produção, otimizada para
 - [Pipeline de Ingestão de Dados](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#29-data-ingestion-and-processing-pipeline) - Fluxo de dados orientado por eventos
 - [Endpoints da API](smart-maintenance-saas/docs/SYSTEM_AND_ARCHITECTURE.md#214-api-endpoints-architecture) - Estrutura da API REST
 
+---
+
+## Vídeos Demonstrativos do Sistema (v1.0):
+
+- Resumo Interface do Usuário e Funcionalidades do Sistema: [https://www.youtube.com/watch?v=167w3zV5cF8]
+- Resumo Backend e Cloud Deploy do Sistema: [https://www.youtube.com/watch?v=JmZmrvCxHeI]
+
+---
 ## Início Rápido
 
 **📖 Guia Completo de Configuração:** Veja o [Guia de Configuração Rápida](smart-maintenance-saas/docs/GUIA_CONFIGURACAO_RAPIDA.md) para instruções detalhadas passo a passo em português sobre como configurar e executar o sistema em 3 cenários diferentes:
